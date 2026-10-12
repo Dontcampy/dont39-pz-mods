@@ -52,3 +52,29 @@ Added ZombieBuddyKotlin, a prerequisite Workshop mod that swaps the game's bundl
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: Kotlin utils, KSP glue, viewpoint in Kotlin, Mod Options sidebar
+<!-- trellis-session: v=2 fp=32bebe155a61e1c0 -->
+
+**Date**: 2026-10-12
+**Task**: Kotlin utils, KSP glue, viewpoint in Kotlin, Mod Options sidebar
+**Branch**: `feat/kotlin-features-sidebar`
+
+### Summary
+
+Added zombiebuddy-kotlin-utils (Feature/Resolver), KSP glue generation (@Hook/@LuaGlobal -> generated @Patch/@LuaMethod in com.dont39.pz.allinone, KSP 2.3.12), ported viewpoint-blood-fx-fix to pure Kotlin, added the Options > Mods sidebar (jump + highlight, last choice saved across restarts), All-in-One 0.3.0. build + smokeTest pass; in-game checks and corrupted-stdlib negative check not done. Follow-ups: reject @Patch.Local, type-check Thrown/Return/AllArguments params.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5ca2f8e` | Add zombiebuddy-kotlin-utils and KSP glue generation |
+| `594f9bb` | Port viewpoint-blood-fx-fix to Kotlin |
+| `6d0f9ec` | Add a sidebar to Options > Mods |
+| `39789de` | Wire the new modules into All-in-One; 0.3.0 |
+| `b837be4` | Update the mod specs for Kotlin features, generated glue and Lua-only features |
+
+### Status
+
+[OK] **Completed**
