@@ -1,65 +1,104 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
-import org.lwjgl.glfw.GLFWNativeWin32
 import org.lwjgl.system.JNI
+import org.lwjgl.system.MemoryUtil
 import org.lwjgl.system.windows.WindowsLibrary
-import org.lwjglx.opengl.Display
-import zombie.core.Core
 
 /**
- * Attaches the IME to the game window only while a text box takes text entry. Runs after the message pump because IMM
- * association calls only work on the window's own thread.
+ * The IMM calls on the game window: attaches the IME only while a text box takes text entry, and places its windows at
+ * the caret. IMM calls only work on the window's own thread.
  */
 internal object ImeContext {
   // re-attaches the thread's default context, which keeps the player's CN/EN mode
   private const val IACE_DEFAULT = 0x10
   private const val DETACH = 0
 
+  // a point, not GLFW's CFS_RECT: a caret-wide area would clip the system composition window
+  private const val CFS_POINT = 0x2
+  private const val CFS_EXCLUDE = 0x80
+
+  // COMPOSITIONFORM, then CANDIDATEFORM
+  private const val COMPOSITION_FORM = 28
+  private const val CANDIDATE_FORM = 32
+
   private var associate = 0L
+  private var getContext = 0L
+  private var releaseContext = 0L
+  private var setCompositionWindow = 0L
+  private var setCandidateWindow = 0L
+  private var forms = 0L
+
   private var hwnd = 0L
   private var attached = true
 
   fun resolve() {
     val imm = WindowsLibrary("imm32.dll")
-    val address = imm.getFunctionAddress("ImmAssociateContextEx")
-    if (address == 0L) {
-      throw IllegalStateException("${imm.path} has no ImmAssociateContextEx")
-    }
-    associate = address
+    associate = function(imm, "ImmAssociateContextEx")
+    getContext = function(imm, "ImmGetContext")
+    releaseContext = function(imm, "ImmReleaseContext")
+    setCompositionWindow = function(imm, "ImmSetCompositionWindow")
+    setCandidateWindow = function(imm, "ImmSetCandidateWindow")
+    forms = MemoryUtil.nmemCallocChecked(1, (COMPOSITION_FORM + CANDIDATE_FORM).toLong())
   }
 
-  @Hook.Exit(className = "org.lwjglx.opengl.Display", methodName = "processMessages")
-  fun sync() {
-    if (!ImeKeyboardFix.active()) {
-      return
+  private fun function(imm: WindowsLibrary, name: String): Long {
+    val address = imm.getFunctionAddress(name)
+    if (address == 0L) {
+      throw IllegalStateException("${imm.path} has no $name")
+    }
+    return address
+  }
+
+  fun sync(window: Long, wanted: Boolean) {
+    if (window != hwnd) {
+      // a new window starts with the default context
+      hwnd = window
+      attached = true
+    }
+    if (wanted != attached) {
+      if (JNI.callPPI(window, 0L, if (wanted) IACE_DEFAULT else DETACH, associate) == 0) {
+        throw IllegalStateException("ImmAssociateContextEx failed")
+      }
+      attached = wanted
+    }
+  }
+
+  /** [rect] as packed by [ImeCaret]; the context must be attached. */
+  fun place(window: Long, rect: Long) {
+    val x = ImeCaret.x(rect)
+    val y = ImeCaret.y(rect)
+    val right = x + ImeCaret.width(rect)
+    val bottom = y + ImeCaret.height(rect)
+    val composition = forms
+    MemoryUtil.memPutInt(composition, CFS_POINT)
+    MemoryUtil.memPutInt(composition + 4, x)
+    MemoryUtil.memPutInt(composition + 8, y)
+    val candidate = forms + COMPOSITION_FORM
+    MemoryUtil.memPutInt(candidate, 0)
+    MemoryUtil.memPutInt(candidate + 4, CFS_EXCLUDE)
+    MemoryUtil.memPutInt(candidate + 8, x)
+    MemoryUtil.memPutInt(candidate + 12, y)
+    MemoryUtil.memPutInt(candidate + 16, x)
+    MemoryUtil.memPutInt(candidate + 20, y)
+    MemoryUtil.memPutInt(candidate + 24, right)
+    MemoryUtil.memPutInt(candidate + 28, bottom)
+    val context = JNI.callPP(window, getContext)
+    if (context == 0L) {
+      throw IllegalStateException("the game window has no input context")
     }
     try {
-      // written on the main thread, so read once
-      val box = Core.currentTextEntryBox
-      val wanted = box != null && box.isEditable && box.isDoingTextEntry
-      val window = GLFWNativeWin32.glfwGetWin32Window(Display.getWindow())
-      if (window == 0L) {
-        throw IllegalStateException("GLFW has no Win32 window for the game window")
+      if (JNI.callPPI(context, composition, setCompositionWindow) == 0) {
+        throw IllegalStateException("ImmSetCompositionWindow failed")
       }
-      if (window != hwnd) {
-        // a new window starts with the default context
-        hwnd = window
-        attached = true
+      if (JNI.callPPI(context, candidate, setCandidateWindow) == 0) {
+        throw IllegalStateException("ImmSetCandidateWindow failed")
       }
-      if (wanted != attached) {
-        if (JNI.callPPI(window, 0L, if (wanted) IACE_DEFAULT else DETACH, associate) == 0) {
-          throw IllegalStateException("ImmAssociateContextEx failed")
-        }
-        attached = wanted
-      }
-    } catch (t: Throwable) {
-      restore()
-      ImeKeyboardFix.disable("switching the IME for the text box focus", t)
+    } finally {
+      JNI.callPPI(window, context, releaseContext)
     }
   }
 
-  private fun restore() {
+  fun restore() {
     try {
       if (!attached && hwnd != 0L) {
         JNI.callPPI(hwnd, 0L, IACE_DEFAULT, associate)

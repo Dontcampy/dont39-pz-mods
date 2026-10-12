@@ -53,7 +53,7 @@ When the docs and the source disagree, trust the source (see the package rule be
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Name target classes by string; they are not on the classpath.
 - Game classes already loaded when patches apply (e.g. `org.lwjglx.opengl.Display`) are retransformed; smokeTest's
-  `Transformed: ... (retransformed)` line shows it worked. Reference: `ImeContext.kt` (`ime-keyboard-fix`).
+  `Transformed: ... (retransformed)` line shows it worked. Reference: `ImeWindow.kt` (`ime-keyboard-fix`).
 - A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
 - A hook that changes state on enter restores it on exit, including when the target throws.
 - Before using a `Patch.java` option the repo has not used, check its default there, in particular how matching
@@ -131,7 +131,8 @@ When a feature changes another mod's state around a call (`LiftOffsets.kt`, `Aim
 - Main-thread state read from the render thread is read once into a local; game helpers that re-read a static (e.g.
   `Core.isDoingTextEntry()` on `Core.currentTextEntryBox`) can see it change between reads.
 - Win32 calls on the game window (IMM, window procedure) belong on the window's own thread, which is the thread that
-  calls `Display.processMessages()`; hook that method. Reference: `ImeContext.kt`.
+  calls `Display.processMessages()`; hook that method, and undo them there when another thread disables the feature.
+  Reference: `ImeWindow.kt`; subclassing the window procedure: `ImeWindowProc.kt` (both `ime-keyboard-fix`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on (see `LiftOffsets.kt`). Know how often the patched method is called before adding work to it.
 - In Kotlin, per-frame code uses no lambdas, iterators, ranges objects or boxing; confirm with `javap -c`.

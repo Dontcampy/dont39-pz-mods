@@ -35,6 +35,7 @@ description=With an input method (IME) such as Chinese Pinyin switched on, your 
 description=[list]
 description=[*]Windows only; elsewhere it stays idle.
 description=[*]The IME keeps the mode (e.g. Chinese or English) you last used in a text box.
+description=[*]While you type, the IME's input (e.g. the pinyin) and its candidate list show at the text cursor; without this you type blind. Windowed mode only: in borderless or fullscreen mode the game covers the whole screen, and IMEs such as WeChat IME then hide their windows.
 description=[*]Other programs' IME is not affected.
 description=[/list]
 description=

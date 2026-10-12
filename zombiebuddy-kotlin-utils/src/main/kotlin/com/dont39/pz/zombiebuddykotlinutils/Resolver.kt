@@ -35,7 +35,12 @@ object Resolver {
     find("method ${owner.name}.$name$type") { MethodHandles.publicLookup().findStatic(owner, name, type).asType(asType) }
 
   /** The receiver becomes the first parameter. */
-  fun virtual(owner: Class<*>, name: String, type: MethodType, asType: MethodType = type): MethodHandle =
+  fun virtual(
+    owner: Class<*>,
+    name: String,
+    type: MethodType,
+    asType: MethodType = type.insertParameterTypes(0, owner),
+  ): MethodHandle =
     find("method ${owner.name}.$name$type") { MethodHandles.publicLookup().findVirtual(owner, name, type).asType(asType) }
 
   private inline fun <T> find(what: String, block: () -> T): T = try {
