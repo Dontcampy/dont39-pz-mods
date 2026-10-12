@@ -89,9 +89,10 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ## Reaching Other Mods
 
-- Resolve other mods' classes, fields, and methods once, in the helper object's initializer, through `Resolver`
-  ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); never throw from it. See `LiftOffsets.kt`,
-  `AimShift.kt`, `Relief.kt` (feature package of `viewpoint-blood-fx-fix`).
+- Look up other mods' classes, fields, and methods once, in the facade's `resolve()`, through `Resolver`
+  ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)). Not in an object initializer: hooks live on those
+  objects, and a failed initializer makes every later call fail inside the target mod. Reference:
+  `ViewpointBloodFxFix.kt`.
 - Use method handles for calls on the per-frame path (`Relief.kt`). Kotlin derives an `invokeExact` call site's
   descriptor from the argument types and the result cast, and a mismatch with the handle's type fails only at
   runtime: check each call site with `javap -c`.
@@ -100,13 +101,12 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ## Gating
 
-- Every feature decides on first use whether it runs: target mod loaded, required API present, target version known
-  (or forced via a mod option), internals resolved. The decision is cached; an option change may re-open it, a runtime
-  failure may not. Build it on `Feature` and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md));
+- Every feature decides on first use whether it runs: target mods loaded, target version known (or forced via a mod
+  option). The decision is cached; an option change may re-open it, a runtime failure may not. Internals that do not
+  match are an error, not a reason to stay idle. Build it on `Feature` and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md));
   reference: `ViewpointBloodFxFix.kt`.
 - Every patch entry point checks the facade's `active()` first.
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
-- A part that can work independently degrades on its own instead of disabling the whole feature (`AimShift.kt`).
 
 ---
 

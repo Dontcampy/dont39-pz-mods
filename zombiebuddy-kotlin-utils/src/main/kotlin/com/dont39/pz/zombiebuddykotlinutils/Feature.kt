@@ -15,30 +15,48 @@ abstract class Feature(val name: String, modName: String) {
   @Volatile
   private var forced = false
 
+  @Volatile
+  private var resolved = false
+
   /** The feature's mod option to accept untested target versions. */
   protected val force: Boolean
     get() = forced
 
-  /** Why the feature cannot run, as a sentence a player can act on; null when it can. */
+  /**
+   * Why the feature cannot run, as a sentence a player can act on: a target mod is missing or untested. Null when it can.
+   */
   protected abstract fun problem(): String?
+
+  /** Looks up the target mods' internals; runs once, the first time [problem] is null. Throws when they do not match. */
+  protected open fun resolve() {}
+
+  /** What [resolve] was doing, for the error line when it throws. */
+  protected open fun resolveContext(): String = "looking up the target mods' internals"
 
   /** Shown as `ready (<detail>)`. */
   protected open fun readyDetail(): String? = null
 
   fun init() {
-    val line = try {
-      val why = problem()
-      if (why != null) {
-        "idle: $why"
-      } else {
-        val detail = readyDetail()
-        if (detail == null) "ready" else "ready ($detail)"
-      }
+    val why = try {
+      problem()
     } catch (t: Throwable) {
       disable("checking whether it can run", t)
       return
     }
-    log(line)
+    if (why != null) {
+      log("idle: $why")
+      return
+    }
+    if (!resolveOnce()) {
+      return
+    }
+    val detail = try {
+      readyDetail()
+    } catch (t: Throwable) {
+      disable("checking whether it can run", t)
+      return
+    }
+    log(if (detail == null) "ready" else "ready ($detail)")
   }
 
   /** Every hook checks this first. */
@@ -54,11 +72,29 @@ abstract class Feature(val name: String, modName: String) {
       disable("checking whether it can run", t)
       return false
     }
+    if (why == null && !resolveOnce()) {
+      return false
+    }
     if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE)) {
       return state == State.ACTIVE // another thread got there first
     }
     log(if (why == null) "active" else "inactive: $why")
     return why == null
+  }
+
+  @Synchronized
+  private fun resolveOnce(): Boolean {
+    if (resolved) {
+      return true
+    }
+    try {
+      resolve()
+    } catch (t: Throwable) {
+      disable(resolveContext(), t)
+      return false
+    }
+    resolved = true
+    return true
   }
 
   /** Open so the facade can annotate it with `@LuaGlobal`; overrides call `super`. */
@@ -81,11 +117,6 @@ abstract class Feature(val name: String, modName: String) {
 
   fun log(message: String) {
     DebugType.Mod.println(prefix + message)
-  }
-
-  fun warn(message: String) {
-    val line: Any = prefix + message // warn(String, ...) would format it
-    DebugType.Mod.warn(line)
   }
 
   @Synchronized

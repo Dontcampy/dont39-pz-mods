@@ -12,35 +12,31 @@ import java.lang.reflect.Field
  * it stands; lowering the ray by that much for the call gives the same test, with the hit point on flat ground.
  */
 internal object AimShift {
-  private val LAST: Field?
-  private val OX: Field?
-  private val OY: Field?
-  private val OH: Field?
-  private val DX: Field?
-  private val DY: Field?
-  private val DH: Field?
-  private val NANOS: Field?
-  private val RAY: Constructor<*>?
-  private val PROBLEM: String?
+  private lateinit var last: Field
+  private lateinit var ox: Field
+  private lateinit var oy: Field
+  private lateinit var oh: Field
+  private lateinit var dx: Field
+  private lateinit var dy: Field
+  private lateinit var dh: Field
+  private lateinit var nanos: Field
+  private lateinit var newRay: Constructor<*>
   private var original: Any? = null
   private var lowered: Any? = null
-  private var reported = false
 
-  init {
-    val r = Resolver()
-    val aim = r.type("bloodfx.Aim")
-    val ray = r.type("bloodfx.Aim\$Ray")
-    LAST = r.field(aim, "last")
-    OX = r.field(ray, "ox")
-    OY = r.field(ray, "oy")
-    OH = r.field(ray, "oh")
-    DX = r.field(ray, "dx")
-    DY = r.field(ray, "dy")
-    DH = r.field(ray, "dh")
-    NANOS = r.field(ray, "nanos")
+  fun resolve() {
+    val aim = Resolver.type("bloodfx.Aim")
+    val ray = Resolver.type("bloodfx.Aim\$Ray")
+    last = Resolver.field(aim, "last")
+    ox = Resolver.field(ray, "ox")
+    oy = Resolver.field(ray, "oy")
+    oh = Resolver.field(ray, "oh")
+    dx = Resolver.field(ray, "dx")
+    dy = Resolver.field(ray, "dy")
+    dh = Resolver.field(ray, "dh")
+    nanos = Resolver.field(ray, "nanos")
     val double = Double::class.java
-    RAY = r.constructor(ray, double, double, double, double, double, double, Long::class.java)
-    PROBLEM = r.problem
+    newRay = Resolver.constructor(ray, double, double, double, double, double, double, Long::class.java)
   }
 
   @Hook.Enter(className = "bloodfx.Aim", methodName = "target")
@@ -48,37 +44,28 @@ internal object AimShift {
     if (!ViewpointBloodFxFix.active()) {
       return
     }
-    val problem = PROBLEM
-    if (problem != null) {
-      if (!reported) {
-        reported = true
-        ViewpointBloodFxFix.warn("aimed cuts not corrected for terrain relief: $problem")
-      }
-      return
-    }
     try {
-      val last = LAST!!
       val ray = last.get(null)
       val lift = Relief.current()
       if (ray == null || lift == null || character !is IsoMovingObject) {
         return
       }
-      val dh = Relief.at(lift, character.getX().toDouble(), character.getY().toDouble())
+      val relief = Relief.at(lift, character.getX().toDouble(), character.getY().toDouble())
       if (ViewpointBloodFxFix.debug()) {
-        val h = OH!!.getDouble(ray)
+        val h = oh.getDouble(ray)
         ViewpointBloodFxFix.log(
           String.format(
             "aim: zombie at %.2f %.2f z=%.2f, relief %.3f, ray h %.3f -> %.3f",
-            character.getX(), character.getY(), character.getZ(), dh, h, h - dh,
+            character.getX(), character.getY(), character.getZ(), relief, h, h - relief,
           ),
         )
       }
-      if (dh == 0.0f) {
+      if (relief == 0.0f) {
         return
       }
-      val shifted = RAY!!.newInstance(
-        OX!!.getDouble(ray), OY!!.getDouble(ray), OH!!.getDouble(ray) - dh,
-        DX!!.getDouble(ray), DY!!.getDouble(ray), DH!!.getDouble(ray), NANOS!!.getLong(ray),
+      val shifted = newRay.newInstance(
+        ox.getDouble(ray), oy.getDouble(ray), oh.getDouble(ray) - relief,
+        dx.getDouble(ray), dy.getDouble(ray), dh.getDouble(ray), nanos.getLong(ray),
       )
       original = ray
       lowered = shifted
@@ -94,7 +81,6 @@ internal object AimShift {
     val shifted = lowered ?: return
     try {
       // the renderer may have saved a newer ray meanwhile
-      val last = LAST!!
       if (last.get(null) === shifted) {
         last.set(null, original)
       }

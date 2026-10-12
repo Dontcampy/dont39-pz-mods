@@ -8,23 +8,20 @@ import java.lang.invoke.MethodType
  * Lift is measured from the ground under the camera, so it is about zero at the player's feet.
  */
 internal object Relief {
-  @JvmField
-  val PROBLEM: String?
-  private val CURRENT: MethodHandle? // () -> Object
-  private val SCENE: MethodHandle? // (Object lift, double x, double y) -> float
+  private lateinit var currentHandle: MethodHandle // () -> Object
+  private lateinit var sceneHandle: MethodHandle // (Object lift, double x, double y) -> float
 
-  init {
-    val r = Resolver()
-    val lift = r.type("viewpoint.render.FarRelief\$Lift")
-    CURRENT = r.static(
-      r.type("viewpoint.far.Relief"), "current", r.methodType(lift), MethodType.methodType(Any::class.java),
+  fun resolve() {
+    val lift = Resolver.type("viewpoint.render.FarRelief\$Lift")
+    currentHandle = Resolver.static(
+      Resolver.type("viewpoint.far.Relief"), "current", MethodType.methodType(lift),
+      MethodType.methodType(Any::class.java),
     )
     val double = Double::class.java
-    SCENE = r.virtual(
+    sceneHandle = Resolver.virtual(
       lift, "scene", MethodType.methodType(Float::class.java, double, double),
       MethodType.methodType(Float::class.java, Any::class.java, double, double),
     )
-    PROBLEM = r.problem
   }
 
   // invokeExact call sites must match the asType signatures exactly
@@ -32,7 +29,7 @@ internal object Relief {
   /**
    * Null when terrain relief is off.
    */
-  fun current(): Any? = CURRENT!!.invokeExact()
+  fun current(): Any? = currentHandle.invokeExact()
 
-  fun at(lift: Any, x: Double, y: Double): Float = SCENE!!.invokeExact(lift, x, y) as Float
+  fun at(lift: Any, x: Double, y: Double): Float = sceneHandle.invokeExact(lift, x, y) as Float
 }

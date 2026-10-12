@@ -34,7 +34,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
 | [ZombieBuddy Patching](./zombiebuddy-patching.md) | Patch classes, reaching other mods, gating, enter/exit restore |
-| [Error Handling](./error-handling.md) | Never crash the game: probe, degrade, disable |
+| [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |

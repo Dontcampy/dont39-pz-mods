@@ -12,35 +12,30 @@ internal object LiftOffsets {
   private const val STATS_EVERY = 5_000_000_000L
   private const val SAVED_INITIAL = 256
 
-  @JvmField
-  val PROBLEM: String?
-
-  private val DROPS: List<*>?
-  private val MISTS: List<*>?
-  private val PIECES: List<*>?
-  private val SPLATS: Array<Any?>?
-  private val SPLAT_COUNT: Field?
-  private val DROP: Coords?
-  private val MIST: Coords?
-  private val SPLAT: Coords?
-  private val PIECE: Coords?
+  private lateinit var drops: List<*>
+  private lateinit var mists: List<*>
+  private lateinit var pieces: List<*>
+  private lateinit var splats: Array<Any?>
+  private lateinit var splatCount: Field
+  private lateinit var drop: Coords
+  private lateinit var mist: Coords
+  private lateinit var splat: Coords
+  private lateinit var piece: Coords
   private val BLOOD = Saved()
   private val GORE = Saved()
   private val STATS = Stats()
 
-  init {
-    val r = Resolver()
-    val blood = r.type("bloodfx.BloodFx")
-    DROPS = r.staticValue(blood, "drops", List::class.java)
-    MISTS = r.staticValue(blood, "mists", List::class.java)
-    SPLATS = r.staticValue(blood, "splats", Array<Any?>::class.java)
-    SPLAT_COUNT = r.field(blood, "splatCount")
-    PIECES = r.staticValue(r.type("bloodfx.GoreGpu"), "pieces", List::class.java)
-    DROP = coords(r, "bloodfx.BloodFx\$Drop", "x", "y", "h")
-    MIST = coords(r, "bloodfx.BloodFx\$Mist", "x", "y", "h")
-    SPLAT = coords(r, "bloodfx.BloodFx\$Splat", "ox", "oy", "oh")
-    PIECE = coords(r, "bloodfx.Gore\$Piece", "x", "y", "h")
-    PROBLEM = r.problem
+  fun resolve() {
+    val blood = Resolver.type("bloodfx.BloodFx")
+    drops = Resolver.staticValue(blood, "drops", List::class.java)
+    mists = Resolver.staticValue(blood, "mists", List::class.java)
+    splats = Resolver.staticValue(blood, "splats", Array<Any?>::class.java)
+    splatCount = Resolver.field(blood, "splatCount")
+    pieces = Resolver.staticValue(Resolver.type("bloodfx.GoreGpu"), "pieces", List::class.java)
+    drop = coords("bloodfx.BloodFx\$Drop", "x", "y", "h")
+    mist = coords("bloodfx.BloodFx\$Mist", "x", "y", "h")
+    splat = coords("bloodfx.BloodFx\$Splat", "ox", "oy", "oh")
+    piece = coords("bloodfx.Gore\$Piece", "x", "y", "h")
   }
 
   @Hook.Enter(className = "bloodfx.Gpu", methodName = "render")
@@ -52,22 +47,14 @@ internal object LiftOffsets {
     try {
       val lift = Relief.current()
       if (lift != null) {
-        val drops = DROPS!!
-        val drop = DROP!!
-        for (i in 0 until drops.size) {
-          BLOOD.lift(lift, drops[i], drop)
-        }
-        val mists = MISTS!!
-        val mist = MIST!!
-        for (i in 0 until mists.size) {
-          BLOOD.lift(lift, mists[i], mist)
-        }
-        val splats = SPLATS!!
-        val splat = SPLAT!!
-        for (i in 0 until Math.min(SPLAT_COUNT!!.getInt(null), splats.size)) {
-          val owner = splats[i]
+        liftAll(BLOOD, lift, drops, drop)
+        liftAll(BLOOD, lift, mists, mist)
+        val owners = splats
+        val c = splat
+        for (i in 0 until Math.min(splatCount.getInt(null), owners.size)) {
+          val owner = owners[i]
           if (owner != null) {
-            BLOOD.lift(lift, owner, splat)
+            BLOOD.lift(lift, owner, c)
           }
         }
       }
@@ -94,11 +81,7 @@ internal object LiftOffsets {
     try {
       val lift = Relief.current()
       if (lift != null) {
-        val pieces = PIECES!!
-        val piece = PIECE!!
-        for (i in 0 until pieces.size) {
-          GORE.lift(lift, pieces[i], piece)
-        }
+        liftAll(GORE, lift, pieces, piece)
       }
     } catch (t: Throwable) {
       GORE.restore()
@@ -111,12 +94,15 @@ internal object LiftOffsets {
     GORE.restore()
   }
 
-  private fun coords(r: Resolver, owner: String, x: String, y: String, h: String): Coords? {
-    val type = r.type(owner)
-    val fx = r.field(type, x)
-    val fy = r.field(type, y)
-    val fh = r.field(type, h)
-    return if (fx == null || fy == null || fh == null) null else Coords(fx, fy, fh)
+  private fun liftAll(saved: Saved, lift: Any, owners: List<*>, c: Coords) {
+    for (i in 0 until owners.size) {
+      saved.lift(lift, owners[i], c)
+    }
+  }
+
+  private fun coords(owner: String, x: String, y: String, h: String): Coords {
+    val type = Resolver.type(owner)
+    return Coords(Resolver.field(type, x), Resolver.field(type, y), Resolver.field(type, h))
   }
 
   private class Coords(val x: Field, val y: Field, val h: Field)
