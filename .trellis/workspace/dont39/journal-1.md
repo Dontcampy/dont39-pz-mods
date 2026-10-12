@@ -78,3 +78,32 @@ Added zombiebuddy-kotlin-utils (Feature/Resolver), KSP glue generation (@Hook/@L
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: PR #2 follow-ups: processor binding checks, no ZombieBuddyKotlin fallback, comment/spec trims
+<!-- trellis-session: v=2 fp=2a8141ee5d8b0381 -->
+
+**Date**: 2026-10-12
+**Task**: PR #2 follow-ups: processor binding checks, no ZombieBuddyKotlin fallback, comment/spec trims
+**Branch**: `feat/kotlin-features-sidebar`
+
+### Summary
+
+Processor rejects @Patch.Local and checks Thrown/AllArguments/Argument/Return types. Specs trimmed to rules and links. Dropped the ZombieBuddyKotlin-not-ready fallback (user: never handle that case): Main no longer checks readiness, Feature uses an enum state without INERT, library isReady()/problem() removed (ZombieBuddyKotlin 0.2.0), last 1.4.10 workarounds removed. BloodFX debug field resolved once. Feature modName is required. Comments cut to the non-obvious why. build + smokeTest pass; in-game checks still open on PR #2.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b6ffd1b` | Check hook parameter bindings and types at compile time |
+| `563dcd6` | Trim the mod specs to rules and links |
+| `2c3452c` | Drop the fallback for ZombieBuddyKotlin not being ready |
+| `f9c4a89` | Remove ZombieBuddyKotlin's readiness API; 0.2.0 |
+| `69636d5` | Drop the last workarounds for the game's old Kotlin |
+| `4abf653` | Resolve BloodFX's debug field once |
+| `1463527` | Make Feature's mod name a required argument |
+| `cdb4e1e` | Shorten the comments to the non-obvious reasons |
+
+### Status
+
+[OK] **Completed**
