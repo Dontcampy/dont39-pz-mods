@@ -14,7 +14,8 @@
   `init()`, active or inactive on first use, disabled on a runtime error. Copy the wording style from
   `ViewpointBloodFxFix.java`.
 - Reasons are sentences a player can act on, including how to override when an override exists.
-- Each problem is reported once per session.
+- Never repeat a line per call or per frame. State lines are logged once per decision: when the decision is re-made
+  (e.g. after a mod option changes, see `setForce()` in `ViewpointBloodFxFix.java`) the new state is logged again.
 
 ## Debug Output
 

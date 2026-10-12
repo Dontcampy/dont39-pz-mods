@@ -98,4 +98,5 @@ When a feature changes another mod's state around a call (`LiftOffsets.java`, `A
 ## Threading and Hot Paths
 
 - Render patches run on the render thread; follow the reference feature's (lock-free) approach to shared state.
-- Per-frame code must not allocate or build strings unless debug output is on (see `LiftOffsets.java`).
+- Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
+  is on (see `LiftOffsets.java`). Know how often the patched method is called before adding work to it.
