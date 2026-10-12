@@ -21,9 +21,9 @@ the rest conversationally.
 
 ## Status (update the checkboxes as you complete each item)
 
-- [ ] Fill backend guidelines
-- [ ] Fill frontend guidelines
-- [ ] Add code examples
+- [x] Fill backend guidelines — moved to `spec/mod/` (Java / ZombieBuddy mod layer; added `zombiebuddy-patching.md`)
+- [x] Fill frontend guidelines — not applicable: `spec/frontend/` and `database-guidelines.md` removed (no UI, Lua, or database)
+- [x] Add code examples (rules cite `viewpoint-blood-fx-fix` and `dont39-all-in-one` sources)
 
 ---
 
