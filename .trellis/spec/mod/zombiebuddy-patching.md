@@ -32,7 +32,11 @@ When the docs and the source disagree, trust the source (see the package rule be
 
 - Mod declaration: `dont39-all-in-one/mod/42/mod.info`. Check its jar path against the ModdingGuide
   "Client/server JAR paths" section before adding a feature that must run on a dedicated server.
-- Entry point: `dont39-all-in-one/src/main/java/com/dont39/pz/allinone/Main.java` calls each feature's `init()`.
+- Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt` calls each feature's `init()`.
+  Kotlin `Main`: `object Main` with `@JvmStatic fun main(args: Array<String>)`; ZombieBuddy looks up a static
+  `main(String[])`.
+- ZombieBuddy calls `Main.main` and then loads every class in exactly `javaPkgName` while applying patches (see
+  [Kotlin Runtime](./kotlin-runtime.md#contracts)).
   `init()` reports readiness only; it does not hook anything.
 - Mods a feature patches must load before this one (load order in `mod.info`).
 
