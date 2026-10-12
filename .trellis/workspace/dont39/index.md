@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 1
+- **Total Sessions**: 2
 - **Last Active**: 2026-10-12
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~29 | Active |
+| `journal-1.md` | ~54 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 2 | 2026-10-12 | ZombieBuddyKotlin library mod and Kotlin All-in-One | `7803c3d`, `9a9e383`, `852ec6c`, `bbceb55` | `feat/kotlin-lib` |
 | 1 | 2026-10-12 | Bootstrap Trellis spec for ZombieBuddy mods | `76fa026` | `main` |
 <!-- @@@/auto:session-history -->
 
