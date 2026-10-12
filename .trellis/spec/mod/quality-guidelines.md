@@ -44,7 +44,8 @@ If an in-game check was not done, say so in the task report.
 
 ## Code Style
 
-Follow [`.editorconfig`](../../../.editorconfig). Java language level: see `pz-java.gradle.kts`.
+Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
+New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requires it.
 
 ## Forbidden Patterns
 
@@ -57,9 +58,11 @@ Follow [`.editorconfig`](../../../.editorconfig). Java language level: see `pz-j
 | Changing another mod's state without guaranteed restore | Leaves the target corrupted |
 | `System.out`, unprefixed or per-frame logging | See [Logging Guidelines](./logging-guidelines.md) |
 | Bundling game or ZombieBuddy jars | Provided at runtime |
+| `kotlin/` or `kotlinx/` classes in any jar but ZombieBuddyKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
+| Relocating `kotlin.*` | Not needed; ZombieBuddyKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
 
 ## Release Checklist
 
-- Version bumped in `dont39-all-in-one/build.gradle.kts`.
+- Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one` or `zombie-buddy-kotlin`).
 - `mod.info` load order and `workshop.txt` updated for new target mods.

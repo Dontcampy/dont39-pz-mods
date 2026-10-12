@@ -12,5 +12,7 @@ kotlin {
 dependencies {
   // Add a dependency on the Kotlin Gradle plugin, so that convention plugins can apply it.
   implementation(libs.kotlinGradlePlugin)
+  // Lets pz-kotlin apply the kotlinx.serialization compiler plugin.
+  implementation(libs.kotlinSerializationGradlePlugin)
   implementation("io.github.zed-0xff.zb-gradle-plugin:io.github.zed-0xff.zb-gradle-plugin.gradle.plugin:1.0.3")
 }

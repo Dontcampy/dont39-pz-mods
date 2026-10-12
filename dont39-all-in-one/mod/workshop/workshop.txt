@@ -7,9 +7,10 @@ description=
 description=[h2]Requirements[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
+description=[*]ZombieBuddyKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, then the mods below that you use, then this mod.
+description=Load order: ZombieBuddy, ZombieBuddyKotlin, then the mods below that you use, then this mod.
 description=
 description=[h2]Blood FX for Viewpoint: terrain relief fix[/h2]
 description=For [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809306528]Project Viewpoint[/url] 0.1.6+ with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3811472160]3d Blood VFX for Viewpoint[/url] 1.5.1.
