@@ -17,7 +17,7 @@ object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix", "Dont39AllInOne")
   // a newer BloodFX may handle relief itself
   private val KNOWN_BLOODFX = setOf("1.5.1")
 
-  // BloodFX's own "Log blood particles to console.txt" option; null when it cannot be read, which only turns debug off
+  // BloodFX's own "Log blood particles to console.txt" option
   private val DEBUG: Field? = Resolver().run { field(type("bloodfx.BloodFx"), "debug") }
 
   override fun problem(): String? {
@@ -38,11 +38,9 @@ object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix", "Dont39AllInOne")
 
   override fun readyDetail(): String = "BloodFX " + targetVersion(BLOODFX_VERSION_CLASS)
 
-  /** From the mod options; the decision is made again on the next patched call. */
   @LuaGlobal("Dont39AllInOne_setViewpointBloodFxFixForce")
   override fun setForce(value: Boolean) = super.setForce(value)
 
-  /** Whether BloodFX's debug option is on. Called per frame. */
   internal fun debug(): Boolean {
     val field = DEBUG ?: return false
     return try {

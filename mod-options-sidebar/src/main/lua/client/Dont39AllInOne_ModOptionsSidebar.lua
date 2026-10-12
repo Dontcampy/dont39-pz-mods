@@ -1,13 +1,10 @@
--- Dont39 All-in-One: mod-options-sidebar.
--- Options > Mods gets a right sidebar that lists every mod's section and scrolls the page to the one clicked. The page
--- is still built by vanilla: MainOptions:addModOptionsPanel is wrapped, not replaced. If the page is not what this
--- expects, or this code fails, the page stays as built, without the sidebar, and one line goes to console.txt.
+-- Dont39 All-in-One: mod-options-sidebar. A right sidebar on Options > Mods that jumps to each mod's section.
 
 require "OptionScreens/MainOptions"
 require "ISUI/ISScrollingListBox"
 
 local PREFIX = "[Dont39AllInOne] mod-options-sidebar: "
--- relative to ~/Zomboid/Lua/, the same place vanilla keeps keysB42.ini
+-- in ~/Zomboid/Lua/
 local SAVE_FILE = "Dont39AllInOne_ModOptionsSidebar.txt"
 local FONT = UIFont.Small
 local GAP = 10
@@ -17,7 +14,7 @@ local TEXT_X = 15 -- ISScrollingListBox:doDrawItem draws item text at x = 15
 local SCROLLBAR_WIDTH = 17 -- ISScrollBar:instantiate
 local TOP_TOLERANCE = 2 -- a header this close below the top edge counts as "at the top"
 
--- Never throw: they are also called outside pcall, around the vanilla call.
+-- Never throw: also called outside pcall.
 local function log(message)
     pcall(function() DebugType.Mod:println(PREFIX .. message) end)
 end
@@ -67,7 +64,7 @@ end
 
 -- Undo ---------------------------------------------------------------------------------------------------------------
 
--- Never throws. Leaves alone anything someone else replaced in the meantime.
+-- Never throws.
 local function restorePending()
     local p = pending
     if not p then return end
@@ -81,7 +78,7 @@ local function restorePending()
     end
 end
 
--- Never throws. The page keeps the narrower layout it was built with; only the sidebar and its hooks go away.
+-- Never throws.
 local function detach(st)
     if not st or st.detached then return end
     st.detached = true
@@ -93,7 +90,7 @@ local function detach(st)
         st.vscrollMoved = false
         pcall(function() st.vscroll:setX(st.vscroll:getX() + st.shrink) end)
     end
-    -- hidden rather than removed: this can run inside the list's own prerender
+    -- may run inside the list's own prerender
     if st.list then
         pcall(function() st.list:setVisible(false) end)
     end
@@ -130,7 +127,6 @@ local function onClick(st, k)
     end
 end
 
--- Runs while the Mods page is visible: shows the sidebar, and on the first showing opens the saved choice.
 local function panelFrame(st)
     if not st.list:isVisible() then
         st.list:setVisible(true)
@@ -143,19 +139,17 @@ local function panelFrame(st)
     end
 end
 
--- Runs while the sidebar is visible: hides it when another tab is active, else highlights the section at the top.
 local function listFrame(st)
     if st.tabs:getActiveView() ~= st.panel then
         st.list:setVisible(false)
-        -- the game still renders the list's children this frame (UIElement.render checks visibility before
-        -- prerender only); hiding the scroll bar too keeps it from showing for one frame over the other tab
+        -- the scroll bar would still render this frame
         st.list.vscroll:setVisible(false)
         return false
     end
     local scroll = st.panel:getYScroll()
     local k
     if st.clicked and scroll == st.clickedScroll then
-        -- keep the clicked entry even when the page cannot scroll its header all the way up (last sections)
+        -- the last sections cannot scroll to the top
         k = st.clicked
     else
         st.clicked = nil
@@ -181,7 +175,6 @@ local function record(build, mainOptions, y, text)
     sections[#sections + 1] = { y = mainOptions.addY + y, name = text }
 end
 
--- Before vanilla builds the page: size the sidebar, narrow the page, and record each section header.
 local function prepare(self)
     local textManager = getTextManager()
     local textWidth = 0
@@ -193,8 +186,7 @@ local function prepare(self)
     listWidth = math.floor(math.min(listWidth, width * MAX_WIDTH_FRACTION))
     local build = { listWidth = listWidth, shrink = listWidth + GAP * 2, sections = {} }
 
-    -- vanilla emits exactly one addHorizontalLine per PZAPI.ModOptions.Data entry, as its header
-    -- (MainOptions.lua:2805-2806); no option type calls it
+    -- vanilla draws one header line per PZAPI.ModOptions.Data entry
     local addHorizontalLine = self.addHorizontalLine
     local function recorder(mainOptions, y, text)
         if build.sections and not pcall(record, build, mainOptions, y, text) then
@@ -203,19 +195,15 @@ local function prepare(self)
         return addHorizontalLine(mainOptions, y, text)
     end
 
-    -- the game's rawget falls back to the metatable (KahluaTableImpl.rawget), so "no instance field" is told apart by
-    -- comparing with the class method; restoring nil lets the instance fall back to the class method again
+    -- the game's rawget falls back to the metatable, so compare with the class method instead
     local savedLine = nil
     if addHorizontalLine ~= MainOptions.addHorizontalLine then
         savedLine = addHorizontalLine
     end
 
-    -- Width trick: the parts of the page that reach the right edge size themselves from the Lua field self.width
-    -- (headers MainOptions.lua:304, separators :321, descriptions :104, text entries :121), while the page panel and
-    -- the label column use the Java width through self:getWidth() (:249, :2801; ISUIElement.lua:259). Lowering only
-    -- the Lua field while vanilla runs lays the page out for (width - sidebar) without moving the label column. The
-    -- page panel is not resized afterwards: a Java resize would also shift its right-anchored children (keybind
-    -- labels). Fixed-width controls (sliders, combo boxes) do not follow; attach() keeps the sidebar clear of them.
+    -- What reaches the right edge sizes itself from the Lua field self.width, the label column from getWidth(), so
+    -- lowering only the field narrows the page without moving the labels. The page panel itself is not resized: that
+    -- would shift its right-anchored keybind labels.
     pending = {
         target = self,
         recorder = recorder,
@@ -228,7 +216,6 @@ local function prepare(self)
     return build
 end
 
--- After vanilla built the page: check it is what prepare() expected, then add the sidebar.
 -- Returns why the sidebar was not added, or nil.
 local function attach(self, build)
     local data = PZAPI.ModOptions.Data
@@ -250,8 +237,7 @@ local function attach(self, build)
         return "the Mods page is not laid out as expected"
     end
 
-    -- Sliders and combo boxes have fixed widths and can reach past the narrowed page at large UI font sizes. Narrow the
-    -- sidebar (not below MIN_WIDTH) so they and the page's scroll bar stay left of it.
+    -- fixed-width sliders and combo boxes can reach past the narrowed page at large UI fonts
     local contentRight = 0
     for _, child in pairs(panel:getChildren()) do
         if child ~= panel.vscroll then
@@ -295,9 +281,7 @@ local function attach(self, build)
     }
     build.st = st
 
-    -- a child of the tab panel, beside the Mods page rather than in it, so it does not scroll with the page and hides
-    -- with the tabs (confirm dialogs); added last, so it is drawn over the page and gets clicks and the mouse wheel
-    -- before it (UIElement.onMouseDown / onMouseWheel try children from the last one)
+    -- beside the page, not in it, so it does not scroll; added last, so it gets clicks and the wheel first
     local list = ISScrollingListBox:new(panel:getX() + panel:getWidth() - listWidth - GAP, panel:getY() + GAP,
         listWidth, panel:getHeight() - GAP * 2)
     list.anchorLeft = false
@@ -341,10 +325,10 @@ local function attach(self, build)
 
     tabs:addChild(list)
     list:setVisible(false)
-    -- the page's scroll bar moves left of the sidebar (ISScrollBar.lua:274 puts it at the right edge)
+    -- the page's scroll bar sits at its right edge
     st.vscroll:setX(st.vscroll:getX() - shrink)
     st.vscrollMoved = true
-    -- vanilla sets this per page instance (MainOptions.lua addPage), so wrapping it touches only the Mods page
+    -- set per page instance, so this touches only the Mods page
     panel.prerender = st.ourPanelPrerender
 
     log("active (" .. #sections .. " sections)")
@@ -364,8 +348,7 @@ function MainOptions:addModOptionsPanel(...)
         end
     end
 
-    -- outside pcall, so errors of vanilla (or of mods it calls into) surface exactly as without this mod; if it throws,
-    -- the narrowed width and the recorder are undone by afterMainScreen() below
+    -- outside pcall, so vanilla's errors surface as without this mod
     vanilla(self, ...)
     restorePending()
 
@@ -380,7 +363,7 @@ function MainOptions:addModOptionsPanel(...)
     end
 end
 
--- MainScreen builds MainOptions on these events (vanilla registered its handlers first, so they ran already).
+-- vanilla's handlers on these events build MainOptions first
 local function checkReplaced()
     local mainOptions = MainOptions.instance
     if not mainOptions or mainOptions == lastBuilt or mainOptions == lastReported then return end

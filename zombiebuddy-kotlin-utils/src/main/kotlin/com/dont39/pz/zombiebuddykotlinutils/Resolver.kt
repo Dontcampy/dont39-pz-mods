@@ -7,20 +7,15 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 
 /**
- * Looks up another mod's classes and members by name. Use one per helper object, only in that object's initializer, and
- * keep the results in plain `val`s so the per-frame path reads fields.
- *
- * Never throws. The first failure is kept in [problem]; after it every call returns null without trying, because one
- * missing piece makes the rest useless. Null arguments (results of earlier failed calls) are accepted and give null.
+ * Looks up another mod's classes and members by name, once, in a helper object's initializer. Never throws: the first
+ * failure is kept in [problem] and later calls return null.
  */
 class Resolver {
-  /** The first failure (usually the exception's `toString()`), or null when everything resolved. */
   var problem: String? = null
     private set
 
   fun type(name: String): Class<*>? = attempt { Class.forName(name) }
 
-  /** A declared field of [owner], made accessible. */
   fun field(owner: Class<*>?, name: String): Field? {
     if (owner == null) return missing(name)
     return attempt {
@@ -30,10 +25,7 @@ class Resolver {
     }
   }
 
-  /**
-   * The current value of a static field, checked against [type]. A null value counts as a failure. Use object types for
-   * [type] (`List::class.java`, `Array<Any?>::class.java`); a primitive class never matches.
-   */
+  /** A null value counts as a failure. */
   fun <T> staticValue(owner: Class<*>?, name: String, type: Class<T>): T? {
     val field = field(owner, name) ?: return null
     return attempt {
@@ -46,7 +38,6 @@ class Resolver {
     }
   }
 
-  /** A declared constructor of [owner], made accessible. Primitive parameters: `Double::class.java` etc. */
   fun constructor(owner: Class<*>?, vararg params: Class<*>): Constructor<*>? {
     if (owner == null) return missing("constructor")
     return attempt {
@@ -56,22 +47,17 @@ class Resolver {
     }
   }
 
-  /** A method type whose classes may be results of [type]; null if one of them is null. */
   fun methodType(returnType: Class<*>?, vararg params: Class<*>?): MethodType? {
     if (returnType == null || params.any { it == null }) return missing("method type")
     return attempt { MethodType.methodType(returnType, params) }
   }
 
-  /**
-   * A public static method of a public [owner]. [asType] adapts the handle (e.g. the target's own types to `Any`), so
-   * callers can use `invokeExact` with types they can name.
-   */
+  /** [asType] lets callers `invokeExact` with types they can name. */
   fun static(owner: Class<*>?, name: String, type: MethodType?, asType: MethodType? = null): MethodHandle? {
     if (owner == null || type == null) return missing(name)
     return attempt { adapt(MethodHandles.publicLookup().findStatic(owner, name, type), asType) }
   }
 
-  /** A public instance method of a public [owner]; the receiver becomes the first parameter. See [static] for [asType]. */
   fun virtual(owner: Class<*>?, name: String, type: MethodType?, asType: MethodType? = null): MethodHandle? {
     if (owner == null || type == null) return missing(name)
     return attempt { adapt(MethodHandles.publicLookup().findVirtual(owner, name, type), asType) }
@@ -80,7 +66,6 @@ class Resolver {
   private fun adapt(handle: MethodHandle, asType: MethodType?): MethodHandle =
     if (asType == null) handle else handle.asType(asType)
 
-  /** Null input without a recorded failure means the caller passed null itself; record that too. */
   private fun <T> missing(what: String): T? {
     if (problem == null) {
       problem = "nothing to look up $what in"

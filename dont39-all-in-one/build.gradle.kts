@@ -12,7 +12,7 @@ val modId = extra["modId"] as String
 val pzUserDir = extra["pzUserDir"] as Provider<String>
 val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar")
 val kotlinLib = ":zombie-buddy-kotlin"
-// code shared by the features, bundled like a feature's classes; no Lua, no smokeTest expectations
+// bundled code shared by the features
 val internalLibs = listOf(":zombiebuddy-kotlin-utils")
 
 features.forEach { evaluationDependsOn(it) }
@@ -24,8 +24,7 @@ dependencies {
   internalLibs.forEach { implementation(project(it)) }
 }
 
-// What each feature's generated glue contains (written by zombiebuddy-kotlin-utils-processor, see GlueProcessor.kt), by
-// feature module name. Features without generated glue have no files there.
+// each feature's generated glue listing, by feature module name
 val glueDirs = features.associate {
   val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
   project(it).name to resources.resolve("META-INF/dont39/glue")
@@ -34,12 +33,12 @@ val glueDirs = features.associate {
 tasks.jar {
   features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
   internalLibs.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
-  // build data for checkGlue and smokeTest, not needed in game
+  // build data only
   exclude("META-INF/dont39/**")
   duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
-// Each feature's processor checks its own Lua names; Lua globals are shared, so they must also differ across features.
+// Lua globals are shared, so names must differ across features too
 val checkGlue = tasks.register("checkGlue") {
   group = "verification"
   description = "Checks that no two features generate the same global Lua function."
@@ -110,7 +109,6 @@ tasks.register("smokeTest") {
       "[ZombieBuddyKotlin] ready: $kotlinVersions",
       "[Dont39AllInOne] $version loaded",
     )
-    // Features with generated glue: a status line, each patch class and Lua bridge, and the targets once ready.
     val disabled = mutableListOf<String>()
     val generated = glue.flatMap { (name, dir) ->
       val lines = dir.listFiles { file -> file.extension == "txt" }.orEmpty().flatMap { it.readLines() }
@@ -118,7 +116,7 @@ tasks.register("smokeTest") {
       val statusPrefix = "$logPrefix$name: "
       val status = log.lines().lastOrNull { statusPrefix in it }?.substringAfter(statusPrefix)
       logger.lifecycle("$name: ${status ?: "no status line"}")
-      // idle is fine (a target mod is not enabled); disabled means init() itself failed
+      // idle is fine (a target mod is not enabled)
       if (status?.startsWith("disabled") == true) disabled += "$statusPrefix$status"
       listOf(statusPrefix) + lines.mapNotNull { line ->
         val value = line.substringAfter(' ')
@@ -130,7 +128,7 @@ tasks.register("smokeTest") {
         }
       }
     }
-    // Lua-only features log "ready" when their client Lua loads, which GameWindow.init does before ZombieBuddy exits.
+    // GameWindow.init loads client Lua before ZombieBuddy exits
     val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
     val missing = (ordered + generated + luaOnly).filterNot { it in log }
     if (missing.isNotEmpty()) {

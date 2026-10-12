@@ -3,13 +3,7 @@ package com.dont39.pz.zombiebuddykotlinutils
 import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
-/**
- * Gating and lifecycle logging of one feature (zombiebuddy-patching.md "Gating", logging-guidelines.md). The facade is
- * an `object` extending this; it supplies [problem] and, optionally, [readyDetail].
- *
- * Lines: `ready`/`idle` at [init], `active`/`inactive` on the first [active] call after [init] or after [setForce]
- * changed the value, `disabled after an error while ...` on [disable]. All carry the prefix `[<modName>] <name>: `.
- */
+/** Gating and lifecycle logging of one feature. The facade is an `object` extending this. */
 abstract class Feature(val name: String, modName: String) {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
@@ -21,17 +15,16 @@ abstract class Feature(val name: String, modName: String) {
   @Volatile
   private var forced = false
 
-  /** Set from the feature's mod option ([setForce]); [problem] reads it to accept untested target versions. */
+  /** The feature's mod option to accept untested target versions. */
   protected val force: Boolean
     get() = forced
 
-  /** Why the feature cannot run, as a sentence a player can act on, or null when it can. May be called again later. */
+  /** Why the feature cannot run, as a sentence a player can act on; null when it can. */
   protected abstract fun problem(): String?
 
-  /** Shown as `ready (<detail>)`, e.g. the target mod's version; null for a plain `ready`. */
+  /** Shown as `ready (<detail>)`. */
   protected open fun readyDetail(): String? = null
 
-  /** Called once by the mod's `Main`: logs whether the feature can run. */
   fun init() {
     val line = try {
       val why = problem()
@@ -48,7 +41,7 @@ abstract class Feature(val name: String, modName: String) {
     log(line)
   }
 
-  /** Every patch entry checks this first. After the first decision it is a field read. */
+  /** Every hook checks this first. */
   fun active(): Boolean {
     val s = state
     return if (s == State.UNDECIDED) decide() else s == State.ACTIVE
@@ -62,16 +55,13 @@ abstract class Feature(val name: String, modName: String) {
       return false
     }
     if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE)) {
-      return state == State.ACTIVE // decided or disabled meanwhile on another thread
+      return state == State.ACTIVE // another thread got there first
     }
     log(if (why == null) "active" else "inactive: $why")
     return why == null
   }
 
-  /**
-   * From the mod options; the decision is made again on the next [active] call. Open so the facade can redeclare it to
-   * annotate it for the Lua glue; an override must call `super.setForce`.
-   */
+  /** Open so the facade can annotate it with `@LuaGlobal`; overrides call `super`. */
   open fun setForce(value: Boolean) {
     if (forced != value) {
       forced = value
@@ -81,7 +71,7 @@ abstract class Feature(val name: String, modName: String) {
     }
   }
 
-  /** Turns the feature off for the rest of the session and logs [t] once. [what]: "raising blood onto the terrain". */
+  /** Turns the feature off for the rest of the session. */
   fun disable(what: String, t: Throwable) {
     if (!moveToDisabled()) {
       return
@@ -94,7 +84,7 @@ abstract class Feature(val name: String, modName: String) {
   }
 
   fun warn(message: String) {
-    val line: Any = prefix + message // warn(Object), as the Java features call it; warn(String, ...) is a format call
+    val line: Any = prefix + message // warn(String, ...) would format it
     DebugType.Mod.warn(line)
   }
 

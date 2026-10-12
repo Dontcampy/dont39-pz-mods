@@ -14,7 +14,7 @@ dependencies {
   implementation(libs.kotlinGradlePlugin)
   // Lets pz-kotlin apply the kotlinx.serialization compiler plugin.
   implementation(libs.kotlinSerializationGradlePlugin)
-  // Lets pz-feature apply KSP, which generates the ZombieBuddy glue.
+  // Lets pz-feature apply KSP.
   implementation(libs.kspGradlePlugin)
   implementation("io.github.zed-0xff.zb-gradle-plugin:io.github.zed-0xff.zb-gradle-plugin.gradle.plugin:1.0.3")
 }

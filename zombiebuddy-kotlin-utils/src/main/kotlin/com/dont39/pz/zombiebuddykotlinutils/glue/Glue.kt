@@ -2,26 +2,12 @@ package com.dont39.pz.zombiebuddykotlinutils.glue
 
 import kotlin.reflect.KClass
 
-// Read at compile time by zombiebuddy-kotlin-utils-processor (applied by the pz-feature convention plugin), which
-// generates the ZombieBuddy glue in com.dont39.pz.allinone: `<Feature>Patches` for the hooks, `<Feature>Lua` for the
-// Lua functions. The annotated function must be a member of a top-level `object`, or a top-level function, and not
-// private or protected; the processor reports every rule it enforces as a compile error naming the function.
+// Read at compile time by zombiebuddy-kotlin-utils-processor, which generates the ZombieBuddy glue from them.
 
-/**
- * Hooks on another mod's or the game's method, named by string (it is not on the classpath). Parameters of a hook
- * function carry exactly one of ZombieBuddy's parameter annotations (`Patch.Argument`, `This`, `Return`, `Thrown`,
- * `AllArguments`), copied as is onto the generated advice. The hook gets copies, so writable bindings
- * (`readOnly = false`) and `Patch.Local` are not supported. Values the target may pass as null need nullable types
- * (`Argument` / `Return` of a reference type, `Thrown` as `Throwable?`), `AllArguments` is `Array<Any?>`, and `Thrown`
- * needs an [Exit] that runs on throw. At most one [Enter] and one [Exit] per target method per feature; an [Enter] and
- * [Exit] of the same target share one `@Patch`, so their [Enter.strictMatch] / [Enter.warmUp] must agree.
- */
+/** Hooks on a method of another mod or the game, named by string. Parameters use ZombieBuddy's `Patch.*` bindings. */
 @Target()
 annotation class Hook {
-  /**
-   * Runs before [className].[methodName] (`@Patch.OnEnter`). Returns `Unit`, or `Boolean` with [skipOn]: `true` skips
-   * the target method. [strictMatch] and [warmUp] are `@Patch`'s options of the same name.
-   */
+  /** `@Patch.OnEnter`. With [skipOn], returning true skips the target. */
   @Target(AnnotationTarget.FUNCTION)
   @Retention(AnnotationRetention.BINARY)
   annotation class Enter(
@@ -32,10 +18,7 @@ annotation class Hook {
     val warmUp: Boolean = false,
   )
 
-  /**
-   * Runs after [className].[methodName] (`@Patch.OnExit`), returns `Unit`. Unlike ZombieBuddy's default it also runs
-   * when the target throws ([onThrowable]), so a restore always happens (zombiebuddy-patching.md "Patch Classes").
-   */
+  /** `@Patch.OnExit`. Unlike ZombieBuddy's default it also runs when the target throws, so a restore always happens. */
   @Target(AnnotationTarget.FUNCTION)
   @Retention(AnnotationRetention.BINARY)
   annotation class Exit(
@@ -47,10 +30,7 @@ annotation class Hook {
   )
 }
 
-/**
- * Exposes the function to Lua as the global function [name] (`@LuaMethod(name, global = true)`). Lua globals are shared
- * by all mods: [name] starts with the mod's prefix (`Dont39AllInOne_`) and is unique in the build.
- */
+/** Exposes the function as the global Lua function [name]. */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
 annotation class LuaGlobal(val name: String)

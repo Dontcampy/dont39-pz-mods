@@ -1,9 +1,6 @@
 package com.dont39.pz.zombiebuddykotlinutils
 
-/**
- * The target mod's version constant as text (a public static field, `VERSION` by default), or null when the mod is not
- * loaded or the constant is missing. Never throws.
- */
+/** Null when the mod is not loaded. */
 fun targetVersion(versionClass: String, field: String = "VERSION"): String? = try {
   val value: Any? = Class.forName(versionClass).getField(field).get(null)
   value.toString()
@@ -13,11 +10,7 @@ fun targetVersion(versionClass: String, field: String = "VERSION"): String? = tr
   null
 }
 
-/**
- * Null when [version] of [target] is in the allowlist [known] or [force] is set (the feature's mod option, here
- * [optionsPage] > [option]); otherwise the reason for the feature's idle/inactive line, with the override hint. A newer
- * target version may change internals or fix the issue itself (zombiebuddy-patching.md "Gating").
- */
+/** Why [version] is not accepted, with the mod option that overrides it; null when it is. */
 fun versionProblem(
   target: String,
   version: String,

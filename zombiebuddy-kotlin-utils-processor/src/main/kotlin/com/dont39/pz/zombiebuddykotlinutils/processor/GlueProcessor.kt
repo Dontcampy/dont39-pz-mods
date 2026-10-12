@@ -24,31 +24,23 @@ private const val LUA_GLOBAL = "$GLUE.LuaGlobal"
 private const val PATCH = "me.zed_0xff.zombie_buddy.Patch"
 private const val LUA_METHOD = "se.krka.kahlua.integration.annotations.LuaMethod"
 
-/** ZombieBuddy's parameter annotations a hook may use (`Patch.<name>`); the others need features not exposed here. */
+/** `Patch.<name>` parameter bindings a hook may use. */
 private val BINDINGS = setOf("Argument", "This", "Return", "Thrown", "AllArguments")
 private val EXIT_ONLY_BINDINGS = setOf("Return", "Thrown")
 private const val NO_EXCEPTION = "$PATCH.NoException"
 
-/** Non-null Kotlin types that compile to JVM primitives: a target value of that type is never null. */
+/** Kotlin types that compile to JVM primitives, so never null. */
 private val PRIMITIVES = setOf("Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double").map { "kotlin.$it" }
 private val LUA_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
-/** Options pz-feature passes (buildSrc/src/main/kotlin/pz-feature.gradle.kts). */
+/** Set by pz-feature.gradle.kts. */
 private const val OPTION_FEATURE = "dont39.feature"
 private const val OPTION_PACKAGE = "dont39.gluePackage"
 private const val OPTION_LUA_PREFIX = "dont39.luaPrefix"
 
 /**
- * Generates a feature module's ZombieBuddy glue from the annotations in zombiebuddy-kotlin-utils' `glue` package
- * (`Glue.kt` there describes them):
- *
- * - `<package>.<Feature>Patches`: one nested `@Patch` object per hooked method, with static `enter` / `exit` advice
- *   that only calls the annotated function. ZombieBuddy inlines that advice into the target method.
- * - `<package>.<Feature>Lua`: one `@LuaMethod(global = true)` method per Lua function, named like the Lua function.
- * - `META-INF/dont39/glue/<Feature>.txt`: what was generated, one `patch <class>`, `target <class>`, `lua <class>` or
- *   `luaGlobal <name>` per line, for dont39-all-in-one's checks and smokeTest.
- *
- * Every rule violation is a compile error that names the function.
+ * Generates a feature module's ZombieBuddy glue from the `glue` annotations, plus a resource listing it for
+ * dont39-all-in-one's checks and smokeTest. Rule violations are compile errors naming the function.
  */
 class GlueProcessor(
   private val codeGenerator: CodeGenerator,
@@ -170,7 +162,6 @@ class GlueProcessor(
         if (isExit) target.exit = advice else target.enter = advice
       }
     }
-    // Nested class names must not collide (e.g. a.Gpu.render and b.Gpu.render).
     for ((name, clashing) in targets.values.groupBy { it.nestedName }) {
       if (clashing.size > 1) {
         val label = clashing.drop(1).first().let { (it.enter ?: it.exit)!!.callee }
@@ -186,7 +177,6 @@ class GlueProcessor(
 
   private class Param(val annotation: String, val name: String, val type: String)
 
-  /** [catches]: the exit advice runs when the target throws, so `@Patch.Thrown` has something to bind. */
   private fun hookParams(fn: KSFunctionDeclaration, callee: Callee, isExit: Boolean, catches: Boolean): List<Param>? {
     var ok = true
     val params = fn.parameters.map { p ->
@@ -221,10 +211,8 @@ class GlueProcessor(
   }
 
   /**
-   * The parameter type a binding can receive. The target's own types are not known here (it is named by string and
-   * not on the classpath), so a mismatch with them still only fails when ZombieBuddy applies the patch. What is
-   * checked: a value the target may pass as null needs a nullable type, because the advice is inlined into the target
-   * and Kotlin's parameter null check would throw there.
+   * The target's own types are unknown here, so only nullability is checked: the advice is inlined into the target, and
+   * Kotlin's parameter null check would throw there.
    */
   private fun bindingTypeProblem(kind: String, name: String, type: KSType): String? {
     val rendered = render(type)
@@ -344,7 +332,7 @@ class GlueProcessor(
 
   // ---- shared ----
 
-  /** The annotated function as the generated code calls it: [call] is fully qualified, [label] names it in errors. */
+  /** The annotated function: [call] for generated code, [label] for errors. */
   private class Callee(val call: String, val label: String, val file: KSFile?, val node: KSFunctionDeclaration)
 
   private fun callee(fn: KSFunctionDeclaration, kind: String): Callee? {
@@ -431,7 +419,7 @@ private fun render(type: KSType): String {
   return base + args + if (type.isMarkedNullable) "?" else ""
 }
 
-/** A JVM class name part made into an identifier; `<init>` becomes `_init_`. */
+/** `<init>` becomes `_init_`. */
 private fun identifier(text: String) = text.map { if (it.isLetterOrDigit() || it == '_') it else '_' }.joinToString("")
 
 private fun kotlinString(text: String) = buildString {

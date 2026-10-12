@@ -19,7 +19,6 @@ internal object Relief {
     CURRENT = r.static(
       r.type("viewpoint.far.Relief"), "current", r.methodType(lift), MethodType.methodType(Any::class.java),
     )
-    // Float::class.java / Double::class.java are the primitive classes
     val double = Double::class.java
     SCENE = r.virtual(
       lift, "scene", MethodType.methodType(Float::class.java, double, double),
@@ -28,8 +27,7 @@ internal object Relief {
     PROBLEM = r.problem
   }
 
-  // invokeExact call sites must match the asType signatures above exactly: ()Object, and (Object, double, double)float
-  // through the cast.
+  // invokeExact call sites must match the asType signatures exactly
 
   /**
    * Null when terrain relief is off.

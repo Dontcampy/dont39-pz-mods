@@ -38,7 +38,6 @@ internal object AimShift {
     DY = r.field(ray, "dy")
     DH = r.field(ray, "dh")
     NANOS = r.field(ray, "nanos")
-    // Double::class.java / Long::class.java are the primitive classes
     val double = Double::class.java
     RAY = r.constructor(ray, double, double, double, double, double, double, Long::class.java)
     PROBLEM = r.problem
