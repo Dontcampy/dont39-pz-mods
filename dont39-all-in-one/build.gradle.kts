@@ -1,77 +1,53 @@
 import groovy.json.JsonSlurper
 
 plugins {
-  id("buildsrc.convention.pz-java")
+  id("buildsrc.convention.pz-kotlin")
+  id("buildsrc.convention.pz-mod")
 }
 
-version = "0.1.0"
+version = "0.2.0"
 
-val modId = "Dont39AllInOne"
+val modId = extra["modId"] as String
+@Suppress("UNCHECKED_CAST")
+val pzUserDir = extra["pzUserDir"] as Provider<String>
 val features = listOf(":viewpoint-blood-fx-fix")
+val kotlinLib = ":zombie-buddy-kotlin"
 
 features.forEach { evaluationDependsOn(it) }
+evaluationDependsOn(kotlinLib)
 
 dependencies {
   features.forEach { implementation(project(it)) }
+  // provided at runtime by the ZombieBuddyKotlin mod
+  compileOnly(project(kotlinLib))
 }
 
 tasks.jar {
-  archiveFileName = "$modId.jar"
   features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
   duplicatesStrategy = DuplicatesStrategy.FAIL
-  manifest {
-    attributes("Implementation-Title" to modId, "Implementation-Version" to project.version)
-  }
 }
 
-val assembleMod = tasks.register<Sync>("assembleMod") {
-  group = "mod"
-  description = "Assembles the $modId mod folder."
-  val version = project.version.toString()
-  into(layout.buildDirectory.dir("mod/$modId"))
-  from("mod/42") { into("42") }
+tasks.named<Sync>("assembleMod") {
   from(tasks.jar) { into("42/media/java/client") }
   features.forEach { from(project(it).file("src/main/lua")) { into("42/media/lua") } }
-  duplicatesStrategy = DuplicatesStrategy.FAIL
-  // expand() would treat the backslashes in require=\ZombieBuddy as escapes
-  filesMatching("**/mod.info") { filter { it.replace("@VERSION@", version) } }
-  doLast { destinationDir.resolve("common").mkdirs() }
 }
 
 val pzDir = providers.gradleProperty("pzDir")
-val pzUserDir =
-  providers.gradleProperty("pzUserDir").orElse(providers.systemProperty("user.home").map { "$it/Zomboid" })
-val workshopDir = pzUserDir.map { "$it/Workshop/$modId" }
-
-val deployWorkshop = tasks.register<Copy>("deployWorkshop") {
-  group = "mod"
-  description = "Copies $modId into ~/Zomboid/Workshop for local testing and uploading."
-  val staged = file(workshopDir.get())
-  val modFolder = staged.resolve("Contents/mods/$modId")
-  val repoWorkshopTxt = file("mod/workshop/workshop.txt")
-  doFirst {
-    // the uploader writes the Workshop id into the staged copy
-    val stagedTxt = staged.resolve("workshop.txt")
-    val stagedId = if (stagedTxt.exists()) stagedTxt.readLines().firstOrNull { it.startsWith("id=") } else null
-    if (stagedId != null && repoWorkshopTxt.readLines().none { it == stagedId }) {
-      throw GradleException("$stagedTxt has '$stagedId' but $repoWorkshopTxt does not; add it there first.")
-    }
-    modFolder.deleteRecursively()
-  }
-  into(staged)
-  from("mod/workshop")
-  from(assembleMod) { into("Contents/mods/$modId") }
-}
 
 // Starts the game the way ProjectZomboid64.exe would, with ZombieBuddy's exit_after_game_init, then checks console.txt.
 // Needs Steam running; loads whichever mods are enabled in the game's mod list.
 tasks.register("smokeTest") {
   group = "verification"
   description = "Launches Project Zomboid until ZombieBuddy has loaded $modId, then checks the log."
-  dependsOn(deployWorkshop)
+  dependsOn(tasks.named("deployWorkshop"), "$kotlinLib:deployWorkshop")
   val gameDir = file(pzDir.get())
   val console = file(pzUserDir.get()).resolve("console.txt")
   val version = project.version.toString()
+  val kotlinLibVersion = project(kotlinLib).version.toString()
+  val kotlinVersions = libs.versions.let {
+    "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
+      "kotlinx-serialization ${it.kotlinxSerializationJSON.get()}"
+  }
   doLast {
     val launcher = JsonSlurper().parse(gameDir.resolve("ProjectZomboid64.json")) as Map<*, *>
     val vmArgs = (launcher["vmArgs"] as List<*>).map { it.toString() }.map {
@@ -92,8 +68,13 @@ tasks.register("smokeTest") {
     }
 
     val log = console.readText()
-    val expected = listOf(
+    // in this order: the library installs Kotlin before All-in-One's Kotlin Main runs
+    val ordered = listOf(
+      "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
+      "[ZombieBuddyKotlin] ready: $kotlinVersions",
       "[Dont39AllInOne] $version loaded",
+    )
+    val expected = ordered + listOf(
       "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$AimTarget",
       "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$BloodRender",
       "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$GoreRender",
@@ -110,6 +91,10 @@ tasks.register("smokeTest") {
     val missing = (expected + patched).filterNot { it in log }
     if (missing.isNotEmpty() || feature == null) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })
+    }
+    val positions = ordered.map { log.indexOf(it) }
+    if (positions != positions.sorted()) {
+      throw GradleException("$console has these lines out of order:\n" + ordered.joinToString("\n") { "  $it" })
     }
   }
 }
