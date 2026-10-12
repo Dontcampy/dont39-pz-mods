@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
-- **Last Active**: 2026-10-12
+- **Total Sessions**: 6
+- **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~131 | Active |
+| `journal-1.md` | ~153 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-10-13 | IME candidate windows | `31c8d9e` | `feat/ime-keyboard-fix` |
 | 5 | 2026-10-12 | IME keyboard fix | `a8aaf8b` | `main` |
 | 4 | 2026-10-12 | PR #2 follow-ups: processor binding checks, no ZombieBuddyKotlin fallback, comment/spec trims | `b6ffd1b`, `563dcd6`, `2c3452c`, `f9c4a89`, `69636d5`, `4abf653`, `1463527`, `cdb4e1e` | `feat/kotlin-features-sidebar` |
 | 3 | 2026-10-12 | Kotlin utils, KSP glue, viewpoint in Kotlin, Mod Options sidebar | `5ca2f8e`, `594f9bb`, `6d0f9ec`, `39789de`, `b837be4` | `feat/kotlin-features-sidebar` |

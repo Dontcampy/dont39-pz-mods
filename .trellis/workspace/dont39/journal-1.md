@@ -129,3 +129,25 @@ Added ime-keyboard-fix: on Windows the IME is detached from the game window outs
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: IME candidate windows
+<!-- trellis-session: v=2 fp=ebb0c9ccc0d33caa -->
+
+**Date**: 2026-10-13
+**Task**: IME candidate windows
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+ime-keyboard-fix now subclasses the game window procedure to show the system IME composition/candidate windows (GLFW hides them), swallows WM_IME_CHAR, and places them at the UITextBox2 caret. Works in windowed mode; in the game's borderless mode (undecorated desktop-sized window) Windows treats the game as fullscreen and WeChat IME hides its windows - accepted limitation. Fixed Resolver.virtual default asType. Pushed to PR Dontcampy/dont39-pz-mods#3.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `31c8d9e` | Show the IME composition and candidate windows at the text caret |
+
+### Status
+
+[OK] **Completed**
