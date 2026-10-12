@@ -5,3 +5,25 @@
 
 ---
 
+
+
+## Session 1: Bootstrap Trellis spec for ZombieBuddy mods
+<!-- trellis-session: v=2 fp=bfd5365ce2b73e2e -->
+
+**Date**: 2026-10-12
+**Task**: Bootstrap Trellis spec for ZombieBuddy mods
+**Branch**: `main`
+
+### Summary
+
+Replaced template backend/frontend specs with .trellis/spec/mod/ (index, directory-structure, zombiebuddy-patching, error-handling, logging, quality) for the Java ZombieBuddy mod repo. Specs state rules and link code files and the external-repos/ZombieBuddy docs/source instead of restating logic. Verified the @Patch/@LuaMethod exact-javaPkgName rule in PatchEngine.collectPatches (ModdingGuide example subpackage would not load). Synced with cbad9ce (mod/42 layout, Lua mod option, signing, smokeTest; new features must extend smokeTest expectations). Build gate needs a JDK 25 Gradle runtime; build assembleMod passed. Kept DebugType.Mod over ZombieBuddy's internal Logger. Bootstrap task archived.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `76fa026` | Remove outdated documentation files for database, directory structure, error handling, and quality guidelines |
+
+### Status
+
+[OK] **Completed**
