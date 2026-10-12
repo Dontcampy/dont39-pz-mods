@@ -10,12 +10,12 @@
 settings.gradle.kts                  module list
 gradle.properties                    local paths (pzDir)
 buildSrc/src/main/kotlin/
-  pz-java.gradle.kts                 Java + game/ZombieBuddy compile-only jars; every module applies it
-  pz-kotlin.gradle.kts               pz-java + Kotlin; every Kotlin module applies it (see kotlin-runtime.md)
-  pz-mod.gradle.kts                  a shipped mod: mod id from mod.info, jar name, assembleMod, deployWorkshop
+  pz-java.gradle.kts                 convention plugin every module applies
+  pz-kotlin.gradle.kts               convention plugin every Kotlin module applies
+  pz-mod.gradle.kts                  convention plugin every shipped mod applies
 <feature-module>/                    one per feature, e.g. viewpoint-blood-fx-fix/
   build.gradle.kts
-  src/main/{kotlin,java}/com/dont39/pz/<featurepkg>/          feature logic (new features: Kotlin)
+  src/main/kotlin/com/dont39/pz/<featurepkg>/                 feature logic (java/ in the existing feature)
   src/main/java/com/dont39/pz/allinone/<Feature>Patches.java  patch classes
   src/main/java/com/dont39/pz/allinone/<Feature>Lua.java      Lua-exposed functions (if any)
   src/main/lua/client/                                        Lua glue, e.g. mod options (if any)
@@ -25,10 +25,6 @@ dont39-all-in-one/                   shipped mod: all features
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
 zombie-buddy-kotlin/                 shipped mod: Kotlin runtime library (see kotlin-runtime.md)
-  build.gradle.kts                   version, kotlinx merge, stdlib file + checksum, checkBootstrapClasses
-  src/main/java/com/dont39/pz/zombiebuddykotlin/         Main, ZombieBuddyKotlin (Java only)
-  src/main/kotlin/com/dont39/pz/zombiebuddykotlin/selfcheck/
-  mod/42/, mod/workshop/
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua
@@ -49,7 +45,7 @@ All names derive from one kebab-case feature name. Follow the existing feature i
 |-------|---------|
 | Module dir and the facade's `NAME` | `viewpoint-blood-fx-fix` |
 | Feature package | `com.dont39.pz.viewpointbloodfxfix` |
-| Facade class | `ViewpointBloodFxFix.java` (new features: `.kt`) |
+| Facade class | `ViewpointBloodFxFix.java` |
 | Patches class (in `com.dont39.pz.allinone`) | `ViewpointBloodFxFixPatches.java` |
 | Lua bridge class (in `com.dont39.pz.allinone`) | `ViewpointBloodFxFixLua.java` |
 | Lua file, mod-options id, global Lua function names | see `Dont39AllInOne_ViewpointBloodFxFix.lua` and `ViewpointBloodFxFixLua.java` |
@@ -73,8 +69,8 @@ Keep the facade's public surface to what `Main` and the Lua bridge need, make he
 4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.java`.
 5. `<Feature>Patches` (and `<Feature>Lua` plus a Lua file if the feature has options) in the module's
    `com/dont39/pz/allinone/` and `src/main/lua/`, modeled on the existing feature.
-6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`. Call a Kotlin
-   feature's `init()` only when `kotlinProblem()` there returns null; Java features are initialized either way.
+6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`, after the
+   readiness check for a Kotlin feature ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
 7. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
 8. Add the feature's patch classes, Lua exposure, and transformed targets to the `smokeTest` expectations in
    `dont39-all-in-one/build.gradle.kts`.
@@ -83,5 +79,4 @@ Keep the facade's public surface to what `Main` and the Lua bridge need, make he
 
 Do not put feature code inside `dont39-all-in-one`; each feature is its own module.
 
-A further shipped mod applies `buildsrc.convention.pz-mod`, keeps its `mod/42/mod.info` (with `id=`) and
-`mod/workshop/`, and adds its own files to `assembleMod` (compare the two shipped modules' build scripts).
+A further shipped mod applies `buildsrc.convention.pz-mod`; compare the two shipped modules' build scripts.

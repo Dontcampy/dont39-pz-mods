@@ -14,8 +14,6 @@
   the Gradle JVM, so set `JAVA_HOME` accordingly if the shell default is older.
 - `pzDir` in `gradle.properties` must point at a Project Zomboid install that contains the jars
   `buildSrc/src/main/kotlin/pz-java.gradle.kts` compiles against.
-- The build includes `checkBootstrapClasses` (`zombie-buddy-kotlin/build.gradle.kts`); see
-  [Kotlin Runtime](./kotlin-runtime.md#tests-required) for the jar-content checks.
 - Check the assembled jar contains the new patches class (output location: `assembleMod` in
   `dont39-all-in-one/build.gradle.kts`).
 
@@ -46,9 +44,8 @@ If an in-game check was not done, say so in the task report.
 
 ## Code Style
 
-Follow [`.editorconfig`](../../../.editorconfig). Java and Kotlin bytecode level: see `pz-java.gradle.kts` and
-`pz-kotlin.gradle.kts`. New code is Kotlin; Java stays where the [Kotlin Runtime](./kotlin-runtime.md) rules require it
-(the library's bootstrap classes).
+Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
+New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requires it.
 
 ## Forbidden Patterns
 
@@ -63,11 +60,9 @@ Follow [`.editorconfig`](../../../.editorconfig). Java and Kotlin bytecode level
 | Bundling game or ZombieBuddy jars | Provided at runtime |
 | `kotlin/` or `kotlinx/` classes in any jar but ZombieBuddyKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
 | Relocating `kotlin.*` | Not needed; ZombieBuddyKotlin installs the current stdlib |
-| Kotlin types in `zombie-buddy-kotlin`'s Java classes | They run before the stdlib swap (`checkBootstrapClasses`) |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
 
 ## Release Checklist
 
 - Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one` or `zombie-buddy-kotlin`).
-- ZombieBuddyKotlin is uploaded before any mod update that needs a newer version of it.
 - `mod.info` load order and `workshop.txt` updated for new target mods.

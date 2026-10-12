@@ -11,8 +11,8 @@ One Gradle build ships two Workshop mods:
 
 - **Dont39 All-in-One** (`dont39-all-in-one`). Each fix is its own Gradle subproject (a *feature module*), and
   `dont39-all-in-one` packages all of them into one jar and mod folder.
-- **ZombieBuddyKotlin** (`zombie-buddy-kotlin`), a prerequisite library mod. It installs the current Kotlin stdlib at
-  runtime and ships kotlinx, so other mods can be written in plain Kotlin.
+- **ZombieBuddyKotlin** (`zombie-buddy-kotlin`), a prerequisite library mod that provides the current Kotlin runtime
+  ([Kotlin Runtime](./kotlin-runtime.md)).
 
 New mod code is written in Kotlin; the existing `viewpoint-blood-fx-fix` feature is Java. Features patch other mods that are not
 compile dependencies, so they reach them by reflection and switch themselves off when anything does not match.
@@ -37,7 +37,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 | [Error Handling](./error-handling.md) | Never crash the game: probe, degrade, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
-| [Kotlin Runtime](./kotlin-runtime.md) | ZombieBuddyKotlin contract, Kotlin module convention, version bumps |
+| [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
 
 ---
 
@@ -55,8 +55,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 2. Every patch entry is gated and every runtime path ends in restore + disable on failure.
 3. Logging follows [Logging Guidelines](./logging-guidelines.md); nothing logs per frame by default.
 4. New target mods are declared in `dont39-all-in-one/mod/42/mod.info`; `smokeTest` expectations cover new classes.
-5. Kotlin modules apply `pz-kotlin`, and no shipped jar except ZombieBuddyKotlin's contains `kotlin/` or `kotlinx/`
-   classes ([Kotlin Runtime](./kotlin-runtime.md)).
+5. Kotlin code follows [Kotlin Runtime](./kotlin-runtime.md).
 6. In-game check done, or explicitly reported as not done.
 
 ---
