@@ -1,0 +1,31 @@
+{
+  "id": "allinone-kotlin-sidebar",
+  "name": "allinone-kotlin-sidebar",
+  "title": "Kotlin rewrite, mod options sidebar, KSP evaluation",
+  "description": "Rewrite viewpoint-blood-fx-fix in Kotlin, add a per-mod sidebar to the Mod Options page, decide on KSP",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-10-12",
+  "completedAt": "2026-10-12",
+  "branch": "feat/kotlin-features-sidebar",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-12-viewpoint-kotlin",
+    "10-12-mod-options-sidebar",
+    "10-12-zombiebuddy-kotlin-utils",
+    "10-12-ksp-glue"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

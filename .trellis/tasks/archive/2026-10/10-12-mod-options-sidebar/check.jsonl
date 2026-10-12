@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer overview and checklists"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "feature module layout, naming, adding a feature"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "log prefix and lifecycle lines"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "never crash the game; degrade and disable"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate and verification"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua file conventions (Lua Bridge section)"}
