@@ -24,9 +24,8 @@ classes that exist only in game. Do not add a test framework as part of a featur
 
 The automated check is `smokeTest` in `dont39-all-in-one/build.gradle.kts`: it deploys, launches the real game with
 ZombieBuddy until init, and checks `console.txt`. Read the task for its prerequisites (Steam, ZombieBuddy installed,
-the game's enabled-mod list). Its expectations for generated glue come from the processor's resource; only a Lua-only
-feature needs its line added (see [Adding a Feature](./directory-structure.md#adding-a-feature)). A feature whose
-status line is `disabled ...` fails it.
+the game's enabled-mod list). A feature with generated glue needs no edit to it; a Lua-only feature adds its
+line (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
 
