@@ -107,3 +107,25 @@ Processor rejects @Patch.Local and checks Thrown/AllArguments/Argument/Return ty
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: IME keyboard fix
+<!-- trellis-session: v=2 fp=a2d7ed94fba9bcec -->
+
+**Date**: 2026-10-12
+**Task**: IME keyboard fix
+**Branch**: `main`
+
+### Summary
+
+Added ime-keyboard-fix: on Windows the IME is detached from the game window outside text boxes (ImmAssociateContextEx, IACE_DEFAULT on re-attach keeps CN/EN mode), hooked at Display.processMessages exit for the window thread. smokeTest and in-game checks passed; patching spec updated; PR Dontcampy/dont39-pz-mods#3. Found that the bundled GLFW hides the IME composition/candidate UI (vanilla) - next task.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a8aaf8b` | Add ime-keyboard-fix: keep the IME out of the game window outside text boxes |
+
+### Status
+
+[OK] **Completed**

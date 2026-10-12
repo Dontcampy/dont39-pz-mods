@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Verify gating, restore, render-thread hot-path rules"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Verify restore never throws and single disable"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Verify no per-frame logging"}
