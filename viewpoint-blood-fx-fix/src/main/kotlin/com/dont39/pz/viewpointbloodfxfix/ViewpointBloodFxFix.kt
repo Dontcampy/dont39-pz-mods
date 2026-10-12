@@ -1,6 +1,7 @@
 package com.dont39.pz.viewpointbloodfxfix
 
 import com.dont39.pz.zombiebuddykotlinutils.Feature
+import com.dont39.pz.zombiebuddykotlinutils.Resolver
 import com.dont39.pz.zombiebuddykotlinutils.glue.LuaGlobal
 import com.dont39.pz.zombiebuddykotlinutils.targetVersion
 import com.dont39.pz.zombiebuddykotlinutils.versionProblem
@@ -15,7 +16,9 @@ object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix") {
 
   // a newer BloodFX may handle relief itself
   private val KNOWN_BLOODFX = setOf("1.5.1")
-  private var debugField: Field? = null
+
+  // BloodFX's own "Log blood particles to console.txt" option; null when it cannot be read, which only turns debug off
+  private val DEBUG: Field? = Resolver().run { field(type("bloodfx.BloodFx"), "debug") }
 
   override fun problem(): String? {
     val version = targetVersion(BLOODFX_VERSION_CLASS) ?: return "BloodFX (ViewpointBloodFX) is not loaded"
@@ -39,18 +42,13 @@ object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix") {
   @LuaGlobal("Dont39AllInOne_setViewpointBloodFxFixForce")
   override fun setForce(value: Boolean) = super.setForce(value)
 
-  /** BloodFX's own "Log blood particles to console.txt" option. */
-  internal fun debug(): Boolean = try {
-    var field = debugField
-    if (field == null) {
-      field = Class.forName("bloodfx.BloodFx").getDeclaredField("debug")
-      field.isAccessible = true
-      debugField = field
+  /** Whether BloodFX's debug option is on. Called per frame. */
+  internal fun debug(): Boolean {
+    val field = DEBUG ?: return false
+    return try {
+      field.getBoolean(null)
+    } catch (e: Exception) {
+      false
     }
-    field.getBoolean(null)
-  } catch (e: Exception) {
-    false
-  } catch (e: LinkageError) {
-    false
   }
 }
