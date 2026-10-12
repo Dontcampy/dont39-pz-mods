@@ -22,6 +22,14 @@ description=[*]With terrain relief off nothing changes.
 description=[/list]
 description=Thanks to sour_kisel for Blood FX and to the Project Viewpoint team.
 description=
+description=[h2]Mod Options sidebar[/h2]
+description=Options > Mods shows every mod's options on one long page. This adds a list of those mods on the right: click a mod to jump to its options. The list highlights the mod you are looking at while you scroll.
+description=[list]
+description=[*]Remembers the mod you last picked and opens the page there, also after a restart (saved in Zomboid/Lua/Dont39AllInOne_ModOptionsSidebar.txt).
+description=[*]Only adds the list; option values, Apply, Accept and Back work as before.
+description=[*]If another mod changes that page in a way it does not expect, the page still works, just without the list.
+description=[/list]
+description=
 description=[h2]Source and feedback[/h2]
 description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
 description=Problems and suggestions: comments below or GitHub issues.
