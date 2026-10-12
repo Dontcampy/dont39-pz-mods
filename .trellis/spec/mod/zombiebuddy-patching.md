@@ -80,7 +80,8 @@ For a feature that changes the game's own Lua UI. Reference:
   feature does before and after it runs inside `pcall`; an error disables the feature for the session.
 - Changes to vanilla objects for the duration of the call follow [Enter/Exit](#enterexit-change-only-for-the-duration),
   and are undone even when vanilla throws.
-- Check that what vanilla built is what the feature expects before adding to it; if not, leave it and warn once.
+- Check that what vanilla built is what the feature expects before adding to it; if not, it is an error.
+- Report errors with the Lua stack where they were raised: the game's `pcall` returns it as the third value.
 - Per-frame hooks go on the specific instance, not the vanilla class, and stay cheap.
 - The game's `rawget` falls back to the metatable (for ISUI objects, the class), so it cannot tell an instance field
   from a class method.

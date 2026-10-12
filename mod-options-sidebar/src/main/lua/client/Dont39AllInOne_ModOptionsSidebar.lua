@@ -14,32 +14,19 @@ local TEXT_X = 15 -- ISScrollingListBox:doDrawItem draws item text at x = 15
 local SCROLLBAR_WIDTH = 17 -- ISScrollBar:instantiate
 local TOP_TOLERANCE = 2 -- a header this close below the top edge counts as "at the top"
 
--- Never throw: also called outside pcall.
+-- Never throws: also called outside pcall.
 local function log(message)
     pcall(function() DebugType.Mod:println(PREFIX .. message) end)
 end
 
-local function warn(message)
-    pcall(function() DebugType.Mod:warn(PREFIX .. message) end)
-end
-
 if not MainOptions or not MainOptions.addModOptionsPanel or not ISScrollingListBox then
-    log("idle: the game's options screen (MainOptions:addModOptionsPanel) was not found")
-    return
+    error(PREFIX .. "the game's options screen (MainOptions:addModOptionsPanel) was not found")
 end
 
 local vanilla = MainOptions.addModOptionsPanel
 local disabled = false -- after an error in this file; final for the session
 local lastBuilt = nil -- the MainOptions whose Mods page went through the wrapper
-local lastReported = nil -- the MainOptions the "replaced" warning was logged for
 local pending = nil -- changes to MainOptions that last only while vanilla builds the page
-local ioWarned = false
-
-local function ioWarn(message)
-    if ioWarned then return end
-    ioWarned = true
-    warn(message)
-end
 
 -- Saved choice -------------------------------------------------------------------------------------------------------
 
@@ -96,12 +83,16 @@ local function detach(st)
     end
 end
 
-local function fail(st, what, err)
+-- [trace]: the Lua stack where the error was raised (the game's pcall returns it third).
+local function fail(st, what, err, trace)
     restorePending()
     detach(st)
     if disabled then return end
     disabled = true
-    warn("disabled after an error while " .. what .. ": " .. tostring(err))
+    pcall(function()
+        DebugType.Mod:error(PREFIX .. "disabled after an error while " .. what .. ": " .. tostring(err) .. "\n"
+            .. tostring(trace))
+    end)
 end
 
 -- Sidebar ------------------------------------------------------------------------------------------------------------
@@ -116,14 +107,14 @@ end
 
 local function onClick(st, k)
     if st.detached then return end
-    local ok, err = pcall(jump, st, k)
+    local ok, err, trace = pcall(jump, st, k)
     if not ok then
-        fail(st, "scrolling to a mod's options", err)
+        fail(st, "scrolling to a mod's options", err, trace)
         return
     end
-    ok, err = pcall(writeChoice, st.sections[k].id)
+    ok, err, trace = pcall(writeChoice, st.sections[k].id)
     if not ok then
-        ioWarn("could not save the chosen mod to Zomboid/Lua/" .. SAVE_FILE .. " (" .. tostring(err) .. ")")
+        fail(st, "saving the chosen mod to Zomboid/Lua/" .. SAVE_FILE, err, trace)
     end
 end
 
@@ -189,8 +180,11 @@ local function prepare(self)
     -- vanilla draws one header line per PZAPI.ModOptions.Data entry
     local addHorizontalLine = self.addHorizontalLine
     local function recorder(mainOptions, y, text)
-        if build.sections and not pcall(record, build, mainOptions, y, text) then
-            build.sections = nil
+        if not build.recordFailure then
+            local ok, err, trace = pcall(record, build, mainOptions, y, text)
+            if not ok then
+                build.recordFailure = { err = err, trace = trace }
+            end
         end
         return addHorizontalLine(mainOptions, y, text)
     end
@@ -216,25 +210,21 @@ local function prepare(self)
     return build
 end
 
--- Returns why the sidebar was not added, or nil.
 local function attach(self, build)
     local data = PZAPI.ModOptions.Data
     local sections = build.sections
-    if not sections then
-        error("recording the section headers failed", 0)
-    end
     if #sections ~= #data then
-        return "the Mods page has " .. #sections .. " section headers for " .. #data .. " mods with options"
+        error("the Mods page has " .. #sections .. " section headers for " .. #data .. " mods with options")
     end
     for k, section in ipairs(sections) do
         if section.name ~= getText(data[k].name) then
-            return "section header " .. k .. " is not the one of " .. tostring(data[k].modOptionsID)
+            error("section header " .. k .. " is not the one of " .. tostring(data[k].modOptionsID))
         end
         section.id = data[k].modOptionsID
     end
     local tabs, panel = self.tabs, self.mainPanel
     if not tabs or not panel or tabs:getView(getText("UI_mainscreen_mods")) ~= panel or not panel.vscroll then
-        return "the Mods page is not laid out as expected"
+        error("the Mods page is not laid out as expected")
     end
 
     -- fixed-width sliders and combo boxes can reach past the narrowed page at large UI fonts
@@ -253,11 +243,7 @@ local function attach(self, build)
         offsets[k] = section.y - sections[1].y
     end
 
-    local okRead, saved = pcall(readChoice)
-    if not okRead then
-        ioWarn("could not read Zomboid/Lua/" .. SAVE_FILE .. " (" .. tostring(saved) .. ")")
-        saved = nil
-    end
+    local saved = readChoice()
     local restoreIndex = nil
     if saved then
         for k, section in ipairs(sections) do
@@ -303,9 +289,9 @@ local function attach(self, build)
     list:setOnMouseDownFunction(st, onClick)
     list.prerender = function(l)
         if st.detached then return end
-        local ok, show = pcall(listFrame, st)
+        local ok, show, trace = pcall(listFrame, st)
         if not ok then
-            fail(st, "updating the sidebar", show)
+            fail(st, "updating the sidebar", show, trace)
             return
         end
         if show then
@@ -317,9 +303,9 @@ local function attach(self, build)
     st.ourPanelPrerender = function(p)
         st.panelPrerender(p)
         if st.detached then return end
-        local ok, err = pcall(panelFrame, st)
+        local ok, err, trace = pcall(panelFrame, st)
         if not ok then
-            fail(st, "showing the sidebar", err)
+            fail(st, "showing the sidebar", err, trace)
         end
     end
 
@@ -332,7 +318,6 @@ local function attach(self, build)
     panel.prerender = st.ourPanelPrerender
 
     log("active (" .. #sections .. " sections)")
-    return nil
 end
 
 function MainOptions:addModOptionsPanel(...)
@@ -340,11 +325,11 @@ function MainOptions:addModOptionsPanel(...)
     lastBuilt = self
     local build = nil
     if not disabled then
-        local ok, result = pcall(prepare, self)
+        local ok, result, trace = pcall(prepare, self)
         if ok then
             build = result
         else
-            fail(nil, "preparing the Mods page", result)
+            fail(nil, "preparing the Mods page", result, trace)
         end
     end
 
@@ -353,12 +338,14 @@ function MainOptions:addModOptionsPanel(...)
     restorePending()
 
     if build and not disabled then
-        local ok, problem = pcall(attach, self, build)
+        local failure = build.recordFailure
+        if failure then
+            fail(nil, "recording the Mods page's section headers", failure.err, failure.trace)
+            return
+        end
+        local ok, err, trace = pcall(attach, self, build)
         if not ok then
-            fail(build.st, "adding the sidebar", problem)
-        elseif problem then
-            detach(build.st)
-            warn("inactive: " .. problem .. "; it is shown without the sidebar")
+            fail(build.st, "adding the sidebar", err, trace)
         end
     end
 end
@@ -366,16 +353,19 @@ end
 -- vanilla's handlers on these events build MainOptions first
 local function checkReplaced()
     local mainOptions = MainOptions.instance
-    if not mainOptions or mainOptions == lastBuilt or mainOptions == lastReported then return end
+    if not mainOptions or mainOptions == lastBuilt then return end
     local tabs = mainOptions.tabs
     if not tabs or not tabs:getView(getText("UI_mainscreen_mods")) then return end
-    lastReported = mainOptions
-    warn("inactive: another mod replaced MainOptions:addModOptionsPanel; the Mods page is shown without the sidebar")
+    error("another mod replaced MainOptions:addModOptionsPanel")
 end
 
 local function afterMainScreen()
     restorePending()
-    pcall(checkReplaced)
+    if disabled then return end
+    local ok, err, trace = pcall(checkReplaced)
+    if not ok then
+        fail(nil, "checking the Mods page", err, trace)
+    end
 end
 
 Events.OnMainMenuEnter.Add(afterMainScreen)
