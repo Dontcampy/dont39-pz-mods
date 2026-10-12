@@ -52,6 +52,8 @@ When the docs and the source disagree, trust the source (see the package rule be
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Name target classes by string; they are not on the classpath.
+- Game classes already loaded when patches apply (e.g. `org.lwjglx.opengl.Display`) are retransformed; smokeTest's
+  `Transformed: ... (retransformed)` line shows it worked. Reference: `ImeContext.kt` (`ime-keyboard-fix`).
 - A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
 - A hook that changes state on enter restores it on exit, including when the target throws.
 - Before using a `Patch.java` option the repo has not used, check its default there, in particular how matching
@@ -108,6 +110,9 @@ For a feature that changes the game's own Lua UI. Reference:
   reference: `ViewpointBloodFxFix.kt`.
 - Every patch entry point checks the facade's `active()` first.
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
+- A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS), and
+  `resolve()` checks the game members it hooks or reads, so a game update fails loudly instead of leaving the fix
+  unused. Reference: `ImeKeyboardFix.kt`.
 
 ---
 
@@ -123,6 +128,10 @@ When a feature changes another mod's state around a call (`LiftOffsets.kt`, `Aim
 ## Threading and Hot Paths
 
 - Render patches run on the render thread; follow the reference feature's (lock-free) approach to shared state.
+- Main-thread state read from the render thread is read once into a local; game helpers that re-read a static (e.g.
+  `Core.isDoingTextEntry()` on `Core.currentTextEntryBox`) can see it change between reads.
+- Win32 calls on the game window (IMM, window procedure) belong on the window's own thread, which is the thread that
+  calls `Display.processMessages()`; hook that method. Reference: `ImeContext.kt`.
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on (see `LiftOffsets.kt`). Know how often the patched method is called before adding work to it.
 - In Kotlin, per-frame code uses no lambdas, iterators, ranges objects or boxing; confirm with `javap -c`.

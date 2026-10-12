@@ -1,5 +1,6 @@
 package com.dont39.pz.allinone
 
+import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.viewpointbloodfxfix.ViewpointBloodFxFix
 import zombie.debug.DebugType
 
@@ -11,5 +12,6 @@ object Main {
     val version = Main::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX$version loaded")
     ViewpointBloodFxFix.init()
+    ImeKeyboardFix.init()
   }
 }

@@ -21,6 +21,7 @@ plugins {
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
 include(":viewpoint-blood-fx-fix")
 include(":mod-options-sidebar")
+include(":ime-keyboard-fix")
 include(":zombie-buddy-kotlin")
 include(":zombiebuddy-kotlin-utils")
 include(":zombiebuddy-kotlin-utils-processor")
