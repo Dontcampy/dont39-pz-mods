@@ -1,8 +1,9 @@
 package com.dont39.pz.viewpointbloodfxfix;
 
+import zombie.iso.IsoMovingObject;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import zombie.iso.IsoMovingObject;
 
 /**
  * Aim.target tests the crosshair ray against flat-ground bones, but Viewpoint draws the zombie raised by the relief where
@@ -13,6 +14,8 @@ public final class AimShift {
     private static final Field OX, OY, OH, DX, DY, DH, NANOS;
     private static final Constructor<?> RAY;
     private static final String PROBLEM;
+    private static Object original, lowered;
+    private static boolean reported;
 
     static {
         Field last = null, ox = null, oy = null, oh = null, dx = null, dy = null, dh = null, nanos = null;
@@ -46,9 +49,6 @@ public final class AimShift {
         RAY = ray;
         PROBLEM = problem;
     }
-
-    private static Object original, lowered;
-    private static boolean reported;
 
     private AimShift() {
     }

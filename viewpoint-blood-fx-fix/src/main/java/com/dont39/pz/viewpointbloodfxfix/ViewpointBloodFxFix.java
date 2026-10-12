@@ -1,8 +1,9 @@
 package com.dont39.pz.viewpointbloodfxfix;
 
-import java.util.Set;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
+
+import java.util.Set;
 
 /**
  * Viewpoint 0.1.6 raises the near world by terrain relief on the GPU; BloodFX still draws at flat-ground height, so its
@@ -10,14 +11,13 @@ import zombie.debug.LogSeverity;
  */
 public final class ViewpointBloodFxFix {
     public static final String NAME = "viewpoint-blood-fx-fix";
-    private static final String PREFIX = "[Dont39AllInOne] " + NAME + ": ";
-
     // a newer BloodFX may handle relief itself
     static final Set<String> KNOWN_BLOODFX = Set.of("1.5.1");
-
+    private static final String PREFIX = "[Dont39AllInOne] " + NAME + ": ";
     private static volatile boolean force;
     private static volatile boolean failed;
     private static volatile Boolean active;
+    private static java.lang.reflect.Field debugField;
 
     private ViewpointBloodFxFix() {
     }
@@ -38,7 +38,9 @@ public final class ViewpointBloodFxFix {
         return a;
     }
 
-    /** From the mod options; the decision is made again on the next patched call. */
+    /**
+     * From the mod options; the decision is made again on the next patched call.
+     */
     public static void setForce(boolean value) {
         if (force != value) {
             force = value;
@@ -77,9 +79,9 @@ public final class ViewpointBloodFxFix {
         }
     }
 
-    private static java.lang.reflect.Field debugField;
-
-    /** BloodFX's own "Log blood particles to console.txt" option. */
+    /**
+     * BloodFX's own "Log blood particles to console.txt" option.
+     */
     static boolean debug() {
         try {
             if (debugField == null) {

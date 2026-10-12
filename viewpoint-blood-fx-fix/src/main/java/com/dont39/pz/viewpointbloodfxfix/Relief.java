@@ -4,11 +4,13 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-/** Lift is measured from the ground under the camera, so it is about zero at the player's feet. */
+/**
+ * Lift is measured from the ground under the camera, so it is about zero at the player's feet.
+ */
 final class Relief {
+    static final String PROBLEM;
     private static final MethodHandle CURRENT; // () -> Object
     private static final MethodHandle SCENE;   // (Object lift, double x, double y) -> float
-    static final String PROBLEM;
 
     static {
         MethodHandle current = null, scene = null;
@@ -31,7 +33,9 @@ final class Relief {
     private Relief() {
     }
 
-    /** Null when terrain relief is off. */
+    /**
+     * Null when terrain relief is off.
+     */
     static Object current() throws Throwable {
         return (Object) CURRENT.invokeExact();
     }

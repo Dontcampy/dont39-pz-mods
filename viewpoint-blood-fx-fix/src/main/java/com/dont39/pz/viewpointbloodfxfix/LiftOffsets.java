@@ -15,6 +15,9 @@ public final class LiftOffsets {
     private static final Object[] SPLATS;
     private static final Field SPLAT_COUNT;
     private static final Coords DROP, MIST, SPLAT, PIECE;
+    private static final Saved BLOOD = new Saved();
+    private static final Saved GORE = new Saved();
+    private static final Stats STATS = new Stats();
 
     static {
         List<?> drops = null, mists = null, pieces = null;
@@ -47,10 +50,6 @@ public final class LiftOffsets {
         PIECE = piece;
         PROBLEM = problem;
     }
-
-    private static final Saved BLOOD = new Saved();
-    private static final Saved GORE = new Saved();
-    private static final Stats STATS = new Stats();
 
     private LiftOffsets() {
     }
@@ -126,13 +125,15 @@ public final class LiftOffsets {
         }
     }
 
-    /** Keeps the original heights so they are written back exactly, not recomputed. */
+    /**
+     * Keeps the original heights so they are written back exactly, not recomputed.
+     */
     private static final class Saved {
+        float lowest, highest;
         private Object[] owners = new Object[256];
         private Field[] fields = new Field[256];
         private float[] heights = new float[256];
         private int count;
-        float lowest, highest;
 
         void lift(Object lift, Object owner, Coords c) throws Throwable {
             float dh = Relief.at(lift, c.x.getFloat(owner), c.y.getFloat(owner));
