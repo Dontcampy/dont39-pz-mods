@@ -11,8 +11,13 @@ object Main {
   fun main(args: Array<String>) {
     val version = Main::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX$version loaded")
-    kotlinProblem()?.let { DebugType.Mod.warn("${PREFIX}ZombieBuddyKotlin is not ready: $it") }
-    // the features are Java and run either way
+    val problem = kotlinProblem()
+    if (problem != null) {
+      val line: Any = "${PREFIX}ZombieBuddyKotlin is not ready: $problem" // warn(Object); warn(String, ...) formats
+      DebugType.Mod.warn(line)
+      // the features are Kotlin: without init() they stay inactive, and their patches return at once
+      return
+    }
     ViewpointBloodFxFix.init()
   }
 

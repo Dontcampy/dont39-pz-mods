@@ -1,3 +1,3 @@
 plugins {
-  id("buildsrc.convention.pz-java")
+  id("buildsrc.convention.pz-feature")
 }
