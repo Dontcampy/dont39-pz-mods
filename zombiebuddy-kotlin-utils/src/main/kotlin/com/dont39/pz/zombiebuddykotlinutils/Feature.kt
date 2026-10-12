@@ -10,7 +10,7 @@ import zombie.debug.LogSeverity
  * Lines: `ready`/`idle` at [init], `active`/`inactive` on the first [active] call after [init] or after [setForce]
  * changed the value, `disabled after an error while ...` on [disable]. All carry the prefix `[<modName>] <name>: `.
  */
-abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
+abstract class Feature(val name: String, modName: String) {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
   private val prefix = "[$modName] $name: "

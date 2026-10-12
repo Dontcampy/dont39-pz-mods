@@ -11,7 +11,7 @@ import java.lang.reflect.Field
  * Viewpoint 0.1.6 raises the near world by terrain relief on the GPU; BloodFX still draws at flat-ground height, so its
  * blood sinks into rising ground and floats over falling ground.
  */
-object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix") {
+object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix", "Dont39AllInOne") {
   private const val BLOODFX_VERSION_CLASS = "bloodfx.Main"
 
   // a newer BloodFX may handle relief itself
