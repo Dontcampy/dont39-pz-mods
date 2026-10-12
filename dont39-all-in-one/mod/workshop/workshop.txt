@@ -5,7 +5,7 @@ description=A collection of fixes and tweaks for Build 42. Every part switches i
 description=
 description=[h2]Requirements[/h2]
 description=[list]
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] with its Java loader installed (it asks you once to approve this mod's Java code)
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed. The Java code is signed (ZBS) by the uploader, so ZombieBuddy can verify it was not changed.
 description=[*]Project Zomboid 42.21
 description=[/list]
 description=Load order: ZombieBuddy, then the mods below that you use, then this mod.
@@ -15,12 +15,13 @@ description=For [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809
 description=Viewpoint 0.1.6 added terrain relief (hills), on by default. Blood FX still draws its blood and severed parts at flat-ground height, so on raised ground they disappear under the terrain and on lower ground they float. This puts the spray, mist, splats, pools and severed parts back on the ground, and keeps "aim decides the cut part" lined up on slopes.
 description=[list]
 description=[*]Contains no code from Blood FX or Viewpoint; it adjusts Blood FX while it draws.
-description=[*]Switches itself off on Blood FX versions other than 1.5.1, in case a Blood FX update handles terrain relief itself.
+description=[*]Switches itself off on Blood FX versions other than 1.5.1, in case a Blood FX update handles terrain relief itself. To use it anyway: Options > Mods > Dont39: Blood FX for Viewpoint fix > Apply to untested Blood FX versions.
 description=[*]With terrain relief off nothing changes.
 description=[/list]
 description=Thanks to sour_kisel for Blood FX and to the Project Viewpoint team.
 description=
-description=[h2]Feedback[/h2]
-description=Problems and suggestions: comments below.
+description=[h2]Source and feedback[/h2]
+description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
+description=Problems and suggestions: comments below or GitHub issues.
 tags=Build 42;Misc
 visibility=public

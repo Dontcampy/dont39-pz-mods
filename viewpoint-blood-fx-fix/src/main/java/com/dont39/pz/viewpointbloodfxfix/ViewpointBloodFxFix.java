@@ -14,8 +14,9 @@ public final class ViewpointBloodFxFix {
 
     // a newer BloodFX may handle relief itself
     static final Set<String> KNOWN_BLOODFX = Set.of("1.5.1");
-    static final boolean FORCE = Boolean.getBoolean("dont39.viewpointbloodfxfix.force");
 
+    private static volatile boolean force;
+    private static volatile boolean failed;
     private static volatile Boolean active;
 
     private ViewpointBloodFxFix() {
@@ -37,7 +38,18 @@ public final class ViewpointBloodFxFix {
         return a;
     }
 
+    /** From the mod options; the decision is made again on the next patched call. */
+    public static void setForce(boolean value) {
+        if (force != value) {
+            force = value;
+            if (!failed) {
+                active = null;
+            }
+        }
+    }
+
     static void disable(String what, Throwable t) {
+        failed = true;
         active = Boolean.FALSE;
         DebugType.Mod.printException(t, PREFIX + "disabled after an error while " + what, LogSeverity.Error);
     }
@@ -50,9 +62,9 @@ public final class ViewpointBloodFxFix {
         if (Relief.PROBLEM != null) {
             return "this Viewpoint has no terrain relief API (" + Relief.PROBLEM + ")";
         }
-        if (!KNOWN_BLOODFX.contains(version) && !FORCE) {
+        if (!KNOWN_BLOODFX.contains(version) && !force) {
             return "BloodFX " + version + " is not a known version " + KNOWN_BLOODFX
-                    + " (-Ddont39.viewpointbloodfxfix.force=true to apply anyway)";
+                    + " (Options > Mods > Dont39: Blood FX for Viewpoint fix > Apply to untested Blood FX versions)";
         }
         return LiftOffsets.PROBLEM == null ? null : "unexpected BloodFX internals (" + LiftOffsets.PROBLEM + ")";
     }
