@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview and pre-development checklist"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Module layout, naming, shipped-mod packaging that the library mod mirrors"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "ZombieBuddy loading, javaPkgName and Main rules for both mods"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Never crash the game: probe, degrade, disable applies to the stdlib swap"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Logger, prefix and lifecycle lines for the library's loaded/ready lines"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, forbidden patterns"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Extracting shared Workshop deploy logic into pz-mod convention"}

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, forbidden patterns, in-game verification reporting"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Swap failures must degrade to not-ready, never throw"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log line format and smokeTest expectations"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Layout and naming consistency for the new module"}
