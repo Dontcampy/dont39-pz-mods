@@ -24,8 +24,9 @@ classes that exist only in game. Do not add a test framework as part of a featur
 
 The automated check is `smokeTest` in `dont39-all-in-one/build.gradle.kts`: it deploys, launches the real game with
 ZombieBuddy until init, and checks `console.txt`. Read the task for its prerequisites (Steam, ZombieBuddy installed,
-the game's enabled-mod list). Every feature must extend its expectations (see
-[Adding a Feature](./directory-structure.md#adding-a-feature)).
+the game's enabled-mod list). Its expectations for generated glue come from the processor's resource; only a Lua-only
+feature needs its line added (see [Adding a Feature](./directory-structure.md#adding-a-feature)). A feature whose
+status line is `disabled ...` fails it.
 
 ## In-Game Verification
 
@@ -54,6 +55,7 @@ New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requir
 | Compile dependency on another mod's jar, or class literals of its classes | It is not on the classpath |
 | Patch classes outside the `javaPkgName` package | ZombieBuddy skips them |
 | Logic or try/catch in patches classes | Helpers own state and error handling |
+| Hand-written patch or Lua bridge classes in a Kotlin feature | Generated from `@Hook` / `@LuaGlobal` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
 | Running against unchecked target versions | Internals may differ |
 | Changing another mod's state without guaranteed restore | Leaves the target corrupted |
 | `System.out`, unprefixed or per-frame logging | See [Logging Guidelines](./logging-guidelines.md) |

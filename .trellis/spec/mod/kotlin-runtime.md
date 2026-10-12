@@ -28,12 +28,18 @@
 
 ## Dependent Kotlin Modules
 
-- Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`). Never bundle `kotlin/` or
-  `kotlinx/` classes.
+- Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`); All-in-One features get it
+  through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
 - The mod's `mod.info` lists `\ZombieBuddyKotlin` in both `require` and `loadModAfter`. A Kotlin mod that loads first
   makes the library refuse to swap.
 - Kotlin-only code runs only after the readiness check. Follow
-  `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`.
+  `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`: it calls a feature's `init()` only when Kotlin is
+  ready, and without `init()` the feature's `active()` is false.
+- Patches run even when Kotlin is not ready, so everything a hook reaches up to `active()` (the facade's and helper
+  objects' initializers, `active()` itself) uses only the JDK and plain language features. Kotlin library calls belong
+  behind the gate, e.g. the allowlist in `problem()` (`viewpoint-blood-fx-fix`'s `ViewpointBloodFxFix.kt`). Check the
+  `kotlin/` references with `javap -v` (constant pool, so descriptors count too): before the gate only ones the game's
+  1.4.10 also has (e.g. `Intrinsics`, `DefaultConstructorMarker`).
 
 ## Version Bumps
 
@@ -41,3 +47,6 @@
 - After a bump, update the version text in `zombie-buddy-kotlin/mod/workshop/workshop.txt` and run `smokeTest`. The
   ready line must show the new versions.
 - Upload ZombieBuddyKotlin before any mod update that needs the new version.
+- KSP (`ksp` in the catalog; the glue processor, see [ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes))
+  is versioned independently of Kotlin. After a Kotlin bump, `./gradlew build` must still run KSP; if it does not,
+  move KSP to its latest release.
