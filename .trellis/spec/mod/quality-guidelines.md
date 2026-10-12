@@ -44,10 +44,7 @@ If an in-game check was not done, say so in the task report.
 
 ## Code Style
 
-Match the `viewpoint-blood-fx-fix` sources: formatting, `final` utility classes with private constructors, and sparse
-comments that explain *why* (short class Javadoc for the problem or invariant, one-liners for non-obvious choices).
-Stay within the Java release level set in `pz-java.gradle.kts`. Player-facing text (logs, `workshop.txt`) is plain
-English.
+Follow [`.editorconfig`](../../../.editorconfig). Java language level: see `pz-java.gradle.kts`.
 
 ## Forbidden Patterns
 
