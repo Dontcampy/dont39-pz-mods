@@ -1,0 +1,3 @@
+[submodule "external-repos/ZombieBuddy"]
+	path = external-repos/ZombieBuddy
+	url = https://github.com/zed-0xff/ZombieBuddy.git
