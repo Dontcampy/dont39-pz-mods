@@ -12,9 +12,6 @@ import java.lang.reflect.Field
  *
  * Never throws. The first failure is kept in [problem]; after it every call returns null without trying, because one
  * missing piece makes the rest useless. Null arguments (results of earlier failed calls) are accepted and give null.
- *
- * A patch can trigger a helper object's initializer before ZombieBuddyKotlin is ready, so this class uses only the JDK
- * and plain language features, no Kotlin library calls.
  */
 class Resolver {
   /** The first failure (usually the exception's `toString()`), or null when everything resolved. */
@@ -61,10 +58,7 @@ class Resolver {
 
   /** A method type whose classes may be results of [type]; null if one of them is null. */
   fun methodType(returnType: Class<*>?, vararg params: Class<*>?): MethodType? {
-    if (returnType == null) return missing("method type")
-    for (param in params) {
-      if (param == null) return missing("method type")
-    }
+    if (returnType == null || params.any { it == null }) return missing("method type")
     return attempt { MethodType.methodType(returnType, params) }
   }
 
