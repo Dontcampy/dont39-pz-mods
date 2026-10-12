@@ -25,8 +25,12 @@ private const val PATCH = "me.zed_0xff.zombie_buddy.Patch"
 private const val LUA_METHOD = "se.krka.kahlua.integration.annotations.LuaMethod"
 
 /** ZombieBuddy's parameter annotations a hook may use (`Patch.<name>`); the others need features not exposed here. */
-private val BINDINGS = setOf("Argument", "This", "Return", "Thrown", "AllArguments", "Local")
+private val BINDINGS = setOf("Argument", "This", "Return", "Thrown", "AllArguments")
 private val EXIT_ONLY_BINDINGS = setOf("Return", "Thrown")
+private const val NO_EXCEPTION = "$PATCH.NoException"
+
+/** Non-null Kotlin types that compile to JVM primitives: a target value of that type is never null. */
+private val PRIMITIVES = setOf("Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double").map { "kotlin.$it" }
 private val LUA_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 /** Options pz-feature passes (buildSrc/src/main/kotlin/pz-feature.gradle.kts). */
@@ -121,14 +125,15 @@ class GlueProcessor(
           error(callee, "@$kind needs a className and a methodName")
           continue
         }
-        val params = hookParams(fn, callee, isExit) ?: continue
+        val onThrowable = if (isExit) annotation.arg("onThrowable") as? KSType else null
+        val catches = onThrowable?.declaration?.qualifiedName?.asString() != NO_EXCEPTION
+        val params = hookParams(fn, callee, isExit, catches) ?: continue
         val returnType = fn.returnType?.resolve()
         val advice = if (isExit) {
           if (!returnType.isType("kotlin.Unit")) {
             error(callee, "@Hook.Exit must return Unit (found ${returnType?.let(::render)})")
             continue
           }
-          val onThrowable = annotation.arg("onThrowable") as? KSType
           val thrown = onThrowable?.let { render(it.makeNotNullable()) } ?: "kotlin.Throwable"
           Advice(callee, params, null, "@Patch.OnExit(onThrowable = $thrown::class)")
         } else {
@@ -181,10 +186,12 @@ class GlueProcessor(
 
   private class Param(val annotation: String, val name: String, val type: String)
 
-  private fun hookParams(fn: KSFunctionDeclaration, callee: Callee, isExit: Boolean): List<Param>? {
+  /** [catches]: the exit advice runs when the target throws, so `@Patch.Thrown` has something to bind. */
+  private fun hookParams(fn: KSFunctionDeclaration, callee: Callee, isExit: Boolean, catches: Boolean): List<Param>? {
     var ok = true
     val params = fn.parameters.map { p ->
       val name = p.name?.asString() ?: "p"
+      val type = p.type.resolve()
       val bindings = p.annotations.filter { it.qualifiedName().startsWith("$PATCH.") }.toList()
       val binding = bindings.singleOrNull()
       val kind = binding?.qualifiedName()?.removePrefix("$PATCH.")
@@ -192,25 +199,54 @@ class GlueProcessor(
         p.isVararg -> "parameter $name: vararg is not supported; use @Patch.AllArguments with an Array"
         binding == null -> "parameter $name needs exactly one of " +
           BINDINGS.joinToString { "@Patch.$it" } + " (found ${bindings.size})"
+        kind == "Local" ->
+          "parameter $name: @Patch.Local is not supported (the hook gets a copy, so it only ever reads the default)"
         kind !in BINDINGS -> "parameter $name: @Patch.$kind is not supported"
         kind in EXIT_ONLY_BINDINGS && !isExit -> "parameter $name: @Patch.$kind is only available in a @Hook.Exit"
         binding.arg("readOnly") == false ->
           "parameter $name: readOnly = false is not supported (the hook gets a copy; a write never reaches the target)"
-        else -> null
+        kind == "Thrown" && !catches ->
+          "parameter $name: @Patch.Thrown needs the exit to run on throw; remove onThrowable = Patch.NoException::class"
+        else -> bindingTypeProblem(kind!!, name, type)
       }
       if (problem != null) {
         error(callee, problem)
         ok = false
         return@map null
       }
-      val annotation = when (kind) {
-        "Argument" -> "@Patch.Argument(${binding.arg("value") ?: 0})"
-        "Local" -> "@Patch.Local(${kotlinString(binding.arg("value") as String)})"
-        else -> "@Patch.$kind"
-      }
-      Param(annotation, name, render(p.type.resolve()))
+      val annotation = if (kind == "Argument") "@Patch.Argument(${binding!!.arg("value") ?: 0})" else "@Patch.$kind"
+      Param(annotation, name, render(type))
     }
     return if (ok) params.filterNotNull() else null
+  }
+
+  /**
+   * The parameter type a binding can receive. The target's own types are not known here (it is named by string and
+   * not on the classpath), so a mismatch with them still only fails when ZombieBuddy applies the patch. What is
+   * checked: a value the target may pass as null needs a nullable type, because the advice is inlined into the target
+   * and Kotlin's parameter null check would throw there.
+   */
+  private fun bindingTypeProblem(kind: String, name: String, type: KSType): String? {
+    val rendered = render(type)
+    return when (kind) {
+      "Thrown" -> if (rendered != "kotlin.Throwable?" && rendered != "kotlin.Any?") {
+        "parameter $name: @Patch.Thrown must be Throwable? (null when the target returns normally), found $rendered"
+      } else {
+        null
+      }
+      "AllArguments" -> if (rendered.removeSuffix("?") != "kotlin.Array<kotlin.Any?>") {
+        "parameter $name: @Patch.AllArguments must be Array<Any?> (boxed arguments, any may be null), found $rendered"
+      } else {
+        null
+      }
+      "Argument", "Return" -> if (!type.isMarkedNullable && rendered !in PRIMITIVES) {
+        "parameter $name: @Patch.$kind of a reference type must be nullable ($rendered?): the target may pass null, " +
+          "and the null check would throw inside the target"
+      } else {
+        null
+      }
+      else -> null
+    }
   }
 
   private fun patchesSource(pkg: String, outer: String, targets: List<Target>) = buildString {

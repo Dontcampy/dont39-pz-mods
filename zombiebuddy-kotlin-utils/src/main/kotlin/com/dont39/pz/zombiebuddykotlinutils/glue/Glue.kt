@@ -10,9 +10,11 @@ import kotlin.reflect.KClass
 /**
  * Hooks on another mod's or the game's method, named by string (it is not on the classpath). Parameters of a hook
  * function carry exactly one of ZombieBuddy's parameter annotations (`Patch.Argument`, `This`, `Return`, `Thrown`,
- * `AllArguments`, `Local`), copied as is onto the generated advice; writable bindings (`readOnly = false`) are not
- * supported. At most one [Enter] and one [Exit] per target method per feature; an [Enter] and [Exit] of the same target
- * share one `@Patch`, so their [Enter.strictMatch] / [Enter.warmUp] must agree.
+ * `AllArguments`), copied as is onto the generated advice. The hook gets copies, so writable bindings
+ * (`readOnly = false`) and `Patch.Local` are not supported. Values the target may pass as null need nullable types
+ * (`Argument` / `Return` of a reference type, `Thrown` as `Throwable?`), `AllArguments` is `Array<Any?>`, and `Thrown`
+ * needs an [Exit] that runs on throw. At most one [Enter] and one [Exit] per target method per feature; an [Enter] and
+ * [Exit] of the same target share one `@Patch`, so their [Enter.strictMatch] / [Enter.warmUp] must agree.
  */
 @Target()
 annotation class Hook {
