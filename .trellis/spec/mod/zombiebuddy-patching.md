@@ -50,8 +50,7 @@ When the docs and the source disagree, trust the source (see the package rule be
   When in doubt, read the generated code under `<module>/build/generated/ksp/main/`.
 - Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
-- ZombieBuddy inlines advice into the target mod's method: a hook runs inside that mod's class, and it runs even when
-  ZombieBuddyKotlin is not ready ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
+- ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Name target classes by string; they are not on the classpath.
 - A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
 - A hook that changes state on enter restores it on exit, including when the target throws.

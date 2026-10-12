@@ -72,8 +72,7 @@ in the `viewpoint-blood-fx-fix` classes.
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package
    ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are generated. Add a Lua file in
    `src/main/lua/` if the feature has options.
-6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`, after the
-   readiness check for a Kotlin feature ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
+6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`.
 7. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
 8. Add a section for the feature to `dont39-all-in-one/mod/workshop/workshop.txt`, following the existing one.
 9. Bump the version in `dont39-all-in-one/build.gradle.kts` when releasing.

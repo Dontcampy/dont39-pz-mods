@@ -16,9 +16,6 @@
 
 ## Rules for Changing It
 
-- Hooks run even when ZombieBuddyKotlin is not ready ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)),
-  so code a hook can reach before the readiness gate may reference only `kotlin/` classes the game's Kotlin 1.4.10 also
-  has. Check with `javap -v`; descriptors count, not just calls.
 - Nothing it puts on a per-frame path may allocate, box, or go through lambdas or property delegates.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
 - Kotlin can resolve a game API call to a different overload than Java would (e.g. a varargs format overload instead of

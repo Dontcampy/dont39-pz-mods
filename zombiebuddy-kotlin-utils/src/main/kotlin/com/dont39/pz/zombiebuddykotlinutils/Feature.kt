@@ -3,28 +3,20 @@ package com.dont39.pz.zombiebuddykotlinutils
 import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
-// Feature.state
-private const val INERT = 0 // init() has not run, e.g. Main skipped it because Kotlin is not ready
-private const val UNDECIDED = 1
-private const val ACTIVE = 2
-private const val INACTIVE = 3
-private const val DISABLED = 4 // final
-
 /**
  * Gating and lifecycle logging of one feature (zombiebuddy-patching.md "Gating", logging-guidelines.md). The facade is
  * an `object` extending this; it supplies [problem] and, optionally, [readyDetail].
  *
  * Lines: `ready`/`idle` at [init], `active`/`inactive` on the first [active] call after [init] or after [setForce]
  * changed the value, `disabled after an error while ...` on [disable]. All carry the prefix `[<modName>] <name>: `.
- *
- * Constructed in the facade's class initializer, which a patch can trigger before ZombieBuddyKotlin is ready: the
- * constructor and the [active] fast path use only plain language features (no Kotlin library calls).
  */
 abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
+  private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
+
   private val prefix = "[$modName] $name: "
 
   @Volatile
-  private var state = INERT
+  private var state = State.UNDECIDED
 
   @Volatile
   private var forced = false
@@ -39,11 +31,8 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
   /** Shown as `ready (<detail>)`, e.g. the target mod's version; null for a plain `ready`. */
   protected open fun readyDetail(): String? = null
 
-  /** Called once by the mod's `Main`. Until then [active] is false. */
+  /** Called once by the mod's `Main`: logs whether the feature can run. */
   fun init() {
-    if (state != INERT) {
-      return
-    }
     val line = try {
       val why = problem()
       if (why != null) {
@@ -57,13 +46,12 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
       return
     }
     log(line)
-    move(INERT, UNDECIDED)
   }
 
   /** Every patch entry checks this first. After the first decision it is a field read. */
   fun active(): Boolean {
     val s = state
-    return if (s == UNDECIDED) decide() else s == ACTIVE
+    return if (s == State.UNDECIDED) decide() else s == State.ACTIVE
   }
 
   private fun decide(): Boolean {
@@ -73,8 +61,8 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
       disable("checking whether it can run", t)
       return false
     }
-    if (!move(UNDECIDED, if (why == null) ACTIVE else INACTIVE)) {
-      return state == ACTIVE // decided or disabled meanwhile on another thread
+    if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE)) {
+      return state == State.ACTIVE // decided or disabled meanwhile on another thread
     }
     log(if (why == null) "active" else "inactive: $why")
     return why == null
@@ -87,8 +75,8 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
   open fun setForce(value: Boolean) {
     if (forced != value) {
       forced = value
-      if (!move(ACTIVE, UNDECIDED)) {
-        move(INACTIVE, UNDECIDED)
+      if (!move(State.ACTIVE, State.UNDECIDED)) {
+        move(State.INACTIVE, State.UNDECIDED)
       }
     }
   }
@@ -111,7 +99,7 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
   }
 
   @Synchronized
-  private fun move(from: Int, to: Int): Boolean {
+  private fun move(from: State, to: State): Boolean {
     if (state != from) {
       return false
     }
@@ -121,10 +109,10 @@ abstract class Feature(val name: String, modName: String = "Dont39AllInOne") {
 
   @Synchronized
   private fun moveToDisabled(): Boolean {
-    if (state == DISABLED) {
+    if (state == State.DISABLED) {
       return false
     }
-    state = DISABLED
+    state = State.DISABLED
     return true
   }
 }

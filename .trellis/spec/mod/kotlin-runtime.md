@@ -32,11 +32,8 @@
   through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
 - The mod's `mod.info` lists `\ZombieBuddyKotlin` in both `require` and `loadModAfter`. A Kotlin mod that loads first
   makes the library refuse to swap.
-- Kotlin-only code runs only after the readiness check. Follow
-  `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`.
-- Hooks run even when Kotlin is not ready (ZombieBuddy applies patches regardless). Code a hook reaches before the
-  feature's `active()` gate may reference only `kotlin/` classes the game's 1.4.10 also has; check with `javap -v`
-  (descriptors count, not just calls).
+- Dependent mods assume ZombieBuddyKotlin works. Do not check its readiness or add any fallback for it failing; its
+  own log says why it is not ready.
 
 ## Version Bumps
 

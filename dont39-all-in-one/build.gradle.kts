@@ -22,8 +22,6 @@ evaluationDependsOn(kotlinLib)
 dependencies {
   features.forEach { implementation(project(it)) }
   internalLibs.forEach { implementation(project(it)) }
-  // provided at runtime by the ZombieBuddyKotlin mod
-  compileOnly(project(kotlinLib))
 }
 
 // What each feature's generated glue contains (written by zombiebuddy-kotlin-utils-processor, see GlueProcessor.kt), by
