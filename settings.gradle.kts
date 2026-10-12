@@ -22,4 +22,7 @@ plugins {
 include(":app")
 include(":utils")
 
+include(":viewpoint-blood-fx-fix")
+include(":dont39-all-in-one")
+
 rootProject.name = "dont39-pz-mods"

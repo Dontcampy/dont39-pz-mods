@@ -1,0 +1,26 @@
+version=1
+title=Dont39 All-in-One
+description=[h1]Dont39 All-in-One[/h1]
+description=A collection of fixes and tweaks for Build 42. Every part switches itself on only when the mods it works with are enabled, and stays idle otherwise.
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] with its Java loader installed (it asks you once to approve this mod's Java code)
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=Load order: ZombieBuddy, then the mods below that you use, then this mod.
+description=
+description=[h2]Blood FX for Viewpoint: terrain relief fix[/h2]
+description=For [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809306528]Project Viewpoint[/url] 0.1.6+ with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3811472160]3d Blood VFX for Viewpoint[/url] 1.5.1.
+description=Viewpoint 0.1.6 added terrain relief (hills), on by default. Blood FX still draws its blood and severed parts at flat-ground height, so on raised ground they disappear under the terrain and on lower ground they float. This puts the spray, mist, splats, pools and severed parts back on the ground, and keeps "aim decides the cut part" lined up on slopes.
+description=[list]
+description=[*]Contains no code from Blood FX or Viewpoint; it adjusts Blood FX while it draws.
+description=[*]Switches itself off on Blood FX versions other than 1.5.1, in case a Blood FX update handles terrain relief itself.
+description=[*]With terrain relief off nothing changes.
+description=[/list]
+description=Thanks to sour_kisel for Blood FX and to the Project Viewpoint team.
+description=
+description=[h2]Feedback[/h2]
+description=Problems and suggestions: comments below.
+tags=Build 42;Misc
+visibility=public
