@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer overview"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules, readiness gating"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "reflection, gating, hot-path rules the utils encode"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "problem recording and disable rules"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "lifecycle lines and prefix"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "module layout and naming"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate"}

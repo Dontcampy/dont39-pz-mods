@@ -52,3 +52,58 @@ Added ZombieBuddyKotlin, a prerequisite Workshop mod that swaps the game's bundl
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: Kotlin utils, KSP glue, viewpoint in Kotlin, Mod Options sidebar
+<!-- trellis-session: v=2 fp=32bebe155a61e1c0 -->
+
+**Date**: 2026-10-12
+**Task**: Kotlin utils, KSP glue, viewpoint in Kotlin, Mod Options sidebar
+**Branch**: `feat/kotlin-features-sidebar`
+
+### Summary
+
+Added zombiebuddy-kotlin-utils (Feature/Resolver), KSP glue generation (@Hook/@LuaGlobal -> generated @Patch/@LuaMethod in com.dont39.pz.allinone, KSP 2.3.12), ported viewpoint-blood-fx-fix to pure Kotlin, added the Options > Mods sidebar (jump + highlight, last choice saved across restarts), All-in-One 0.3.0. build + smokeTest pass; in-game checks and corrupted-stdlib negative check not done. Follow-ups: reject @Patch.Local, type-check Thrown/Return/AllArguments params.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5ca2f8e` | Add zombiebuddy-kotlin-utils and KSP glue generation |
+| `594f9bb` | Port viewpoint-blood-fx-fix to Kotlin |
+| `6d0f9ec` | Add a sidebar to Options > Mods |
+| `39789de` | Wire the new modules into All-in-One; 0.3.0 |
+| `b837be4` | Update the mod specs for Kotlin features, generated glue and Lua-only features |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 4: PR #2 follow-ups: processor binding checks, no ZombieBuddyKotlin fallback, comment/spec trims
+<!-- trellis-session: v=2 fp=2a8141ee5d8b0381 -->
+
+**Date**: 2026-10-12
+**Task**: PR #2 follow-ups: processor binding checks, no ZombieBuddyKotlin fallback, comment/spec trims
+**Branch**: `feat/kotlin-features-sidebar`
+
+### Summary
+
+Processor rejects @Patch.Local and checks Thrown/AllArguments/Argument/Return types. Specs trimmed to rules and links. Dropped the ZombieBuddyKotlin-not-ready fallback (user: never handle that case): Main no longer checks readiness, Feature uses an enum state without INERT, library isReady()/problem() removed (ZombieBuddyKotlin 0.2.0), last 1.4.10 workarounds removed. BloodFX debug field resolved once. Feature modName is required. Comments cut to the non-obvious why. build + smokeTest pass; in-game checks still open on PR #2.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b6ffd1b` | Check hook parameter bindings and types at compile time |
+| `563dcd6` | Trim the mod specs to rules and links |
+| `2c3452c` | Drop the fallback for ZombieBuddyKotlin not being ready |
+| `f9c4a89` | Remove ZombieBuddyKotlin's readiness API; 0.2.0 |
+| `69636d5` | Drop the last workarounds for the game's old Kotlin |
+| `4abf653` | Resolve BloodFX's debug field once |
+| `1463527` | Make Feature's mod name a required argument |
+| `cdb4e1e` | Shorten the comments to the non-obvious reasons |
+
+### Status
+
+[OK] **Completed**

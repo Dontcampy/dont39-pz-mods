@@ -27,24 +27,9 @@ public final class ZombieBuddyKotlin {
     private static final String REINSTALL = "reinstall ZombieBuddyKotlin (unsubscribe and subscribe again)";
     private static final String SELF_CHECK = "com.dont39.pz.zombiebuddykotlin.selfcheck.SelfCheck";
     private static volatile boolean ready;
-    private static volatile String problem = "ZombieBuddyKotlin has not started yet; load it before the mods that use it";
     private static volatile String kotlinVersion;
 
     private ZombieBuddyKotlin() {
-    }
-
-    /**
-     * True once the current Kotlin runtime is installed and its self-check passed; call before running Kotlin code.
-     */
-    public static boolean isReady() {
-        return ready;
-    }
-
-    /**
-     * Why the runtime is not ready; null when it is.
-     */
-    public static String problem() {
-        return ready ? null : problem;
     }
 
     /**
@@ -76,7 +61,6 @@ public final class ZombieBuddyKotlin {
             }
         }
         if (why != null) {
-            problem = why;
             if (error != null) {
                 DebugType.Mod.printException(error, PREFIX + "not ready: " + why, LogSeverity.Error);
             } else {

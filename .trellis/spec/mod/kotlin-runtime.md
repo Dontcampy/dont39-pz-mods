@@ -28,12 +28,12 @@
 
 ## Dependent Kotlin Modules
 
-- Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`). Never bundle `kotlin/` or
-  `kotlinx/` classes.
+- Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`); All-in-One features get it
+  through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
 - The mod's `mod.info` lists `\ZombieBuddyKotlin` in both `require` and `loadModAfter`. A Kotlin mod that loads first
   makes the library refuse to swap.
-- Kotlin-only code runs only after the readiness check. Follow
-  `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`.
+- Dependent mods assume ZombieBuddyKotlin works. Do not check its readiness or add any fallback for it failing; its
+  own log says why it is not ready.
 
 ## Version Bumps
 
@@ -41,3 +41,5 @@
 - After a bump, update the version text in `zombie-buddy-kotlin/mod/workshop/workshop.txt` and run `smokeTest`. The
   ready line must show the new versions.
 - Upload ZombieBuddyKotlin before any mod update that needs the new version.
+- KSP is versioned independently of Kotlin. After a Kotlin bump, `./gradlew build` must still run KSP; if it does not,
+  move KSP to its latest release.

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer overview"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "patch class and Lua bridge rules the generator must satisfy"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "module layout, naming, adding a feature"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin conventions and version bumps"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate"}

@@ -5,27 +5,60 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.2.0"
+version = "0.3.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
-val features = listOf(":viewpoint-blood-fx-fix")
+val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar")
 val kotlinLib = ":zombie-buddy-kotlin"
+// bundled code shared by the features
+val internalLibs = listOf(":zombiebuddy-kotlin-utils")
 
 features.forEach { evaluationDependsOn(it) }
+internalLibs.forEach { evaluationDependsOn(it) }
 evaluationDependsOn(kotlinLib)
 
 dependencies {
   features.forEach { implementation(project(it)) }
-  // provided at runtime by the ZombieBuddyKotlin mod
-  compileOnly(project(kotlinLib))
+  internalLibs.forEach { implementation(project(it)) }
+}
+
+// each feature's generated glue listing, by feature module name
+val glueDirs = features.associate {
+  val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
+  project(it).name to resources.resolve("META-INF/dont39/glue")
 }
 
 tasks.jar {
   features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
+  internalLibs.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
+  // build data only
+  exclude("META-INF/dont39/**")
   duplicatesStrategy = DuplicatesStrategy.FAIL
 }
+
+// Lua globals are shared, so names must differ across features too
+val checkGlue = tasks.register("checkGlue") {
+  group = "verification"
+  description = "Checks that no two features generate the same global Lua function."
+  dependsOn(features.map { "$it:processResources" })
+  val dirs = glueDirs
+  doLast {
+    val owners = dirs.flatMap { (feature, dir) ->
+      dir.listFiles { file -> file.extension == "txt" }.orEmpty().flatMap { it.readLines() }
+        .filter { it.startsWith("luaGlobal ") }.map { it.substringAfter(' ') to feature }
+    }.groupBy({ it.first }, { it.second })
+    val clashes = owners.filterValues { it.size > 1 }
+    if (clashes.isNotEmpty()) {
+      throw GradleException(
+        "Global Lua functions declared by more than one feature:\n" +
+          clashes.entries.joinToString("\n") { (name, by) -> "  $name: ${by.joinToString()}" },
+      )
+    }
+  }
+}
+tasks.named("check") { dependsOn(checkGlue) }
 
 tasks.named<Sync>("assembleMod") {
   from(tasks.jar) { into("42/media/java/client") }
@@ -44,6 +77,8 @@ tasks.register("smokeTest") {
   val console = file(pzUserDir.get()).resolve("console.txt")
   val version = project.version.toString()
   val kotlinLibVersion = project(kotlinLib).version.toString()
+  val glue = glueDirs
+  val logPrefix = "[$modId] "
   val kotlinVersions = libs.versions.let {
     "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
       "kotlinx-serialization ${it.kotlinxSerializationJSON.get()}"
@@ -74,23 +109,35 @@ tasks.register("smokeTest") {
       "[ZombieBuddyKotlin] ready: $kotlinVersions",
       "[Dont39AllInOne] $version loaded",
     )
-    val expected = ordered + listOf(
-      "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$AimTarget",
-      "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$BloodRender",
-      "Found patch class: com.dont39.pz.allinone.ViewpointBloodFxFixPatches\$GoreRender",
-      "Exposing global functions from class: com.dont39.pz.allinone.ViewpointBloodFxFixLua",
-    )
-    val feature =
-      log.lines().lastOrNull { "viewpoint-blood-fx-fix: " in it }?.substringAfter("viewpoint-blood-fx-fix: ")
-    logger.lifecycle("viewpoint-blood-fx-fix: ${feature ?: "no status line"}")
-    val patched = if (feature?.startsWith("ready") == true) {
-      listOf("bloodfx.Gpu", "bloodfx.GoreGpu", "bloodfx.Aim").map { "Transformed: $it" }
-    } else {
-      emptyList()
+    val disabled = mutableListOf<String>()
+    val generated = glue.flatMap { (name, dir) ->
+      val lines = dir.listFiles { file -> file.extension == "txt" }.orEmpty().flatMap { it.readLines() }
+      if (lines.isEmpty()) return@flatMap emptyList()
+      val statusPrefix = "$logPrefix$name: "
+      val status = log.lines().lastOrNull { statusPrefix in it }?.substringAfter(statusPrefix)
+      logger.lifecycle("$name: ${status ?: "no status line"}")
+      // idle is fine (a target mod is not enabled)
+      if (status?.startsWith("disabled") == true) disabled += "$statusPrefix$status"
+      listOf(statusPrefix) + lines.mapNotNull { line ->
+        val value = line.substringAfter(' ')
+        when (line.substringBefore(' ')) {
+          "patch" -> "Found patch class: $value"
+          "lua" -> "Exposing global functions from class: $value"
+          "target" -> if (status?.startsWith("ready") == true) "Transformed: $value" else null
+          else -> null
+        }
+      }
     }
-    val missing = (expected + patched).filterNot { it in log }
-    if (missing.isNotEmpty() || feature == null) {
+    // GameWindow.init loads client Lua before ZombieBuddy exits
+    val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
+    val missing = (ordered + generated + luaOnly).filterNot { it in log }
+    if (missing.isNotEmpty()) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })
+    }
+    if (disabled.isNotEmpty()) {
+      throw GradleException(
+        "$console has features that disabled themselves:\n" + disabled.joinToString("\n") { "  $it" },
+      )
     }
     val positions = ordered.map { log.indexOf(it) }
     if (positions != positions.sorted()) {
