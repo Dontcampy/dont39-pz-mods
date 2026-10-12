@@ -15,15 +15,6 @@ dependencies {
   features.forEach { implementation(project(it)) }
 }
 
-// Key and SteamID64 come from zbsPrivateKeyFile / zbsSteamID64 in ~/.gradle/gradle.properties.
-zbSigning {
-  enabled = true
-  jarTask = "jar"
-}
-tasks.matching { it.name == "signJarZBS" }.configureEach {
-  notCompatibleWithConfigurationCache("zb-gradle-plugin 1.0.3 keeps a reference to the jar task")
-}
-
 tasks.jar {
   archiveFileName = "$modId.jar"
   features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
@@ -40,9 +31,6 @@ val assembleMod = tasks.register<Sync>("assembleMod") {
   into(layout.buildDirectory.dir("mod/$modId"))
   from("mod/42") { into("42") }
   from(tasks.jar) { into("42/media/java/client") }
-  // signJarZBS only exists when signing is configured; its outputs cannot be used as a copy source directly
-  dependsOn(tasks.matching { it.name == "signJarZBS" })
-  from(layout.buildDirectory.file("libs/$modId.jar.zbs")) { into("42/media/java/client") }
   features.forEach { from(project(it).file("src/main/lua")) { into("42/media/lua") } }
   duplicatesStrategy = DuplicatesStrategy.FAIL
   // expand() would treat the backslashes in require=\ZombieBuddy as escapes
@@ -61,16 +49,7 @@ val deployWorkshop = tasks.register<Copy>("deployWorkshop") {
   val staged = file(workshopDir.get())
   val modFolder = staged.resolve("Contents/mods/$modId")
   val repoWorkshopTxt = file("mod/workshop/workshop.txt")
-  val signature = layout.buildDirectory.file("mod/$modId/42/media/java/client/$modId.jar.zbs")
-  val allowUnsigned = providers.gradleProperty("allowUnsigned").map { it.toBoolean() }.orElse(false)
-  val jarName = "$modId.jar"
   doFirst {
-    if (!signature.get().asFile.exists() && !allowUnsigned.get()) {
-      throw GradleException(
-        "$jarName is not signed: set zbsSteamID64 and zbsPrivateKeyFile in " +
-          "~/.gradle/gradle.properties, or pass -PallowUnsigned=true for a local-only build."
-      )
-    }
     // the uploader writes the Workshop id into the staged copy
     val stagedTxt = staged.resolve("workshop.txt")
     val stagedId = if (stagedTxt.exists()) stagedTxt.readLines().firstOrNull { it.startsWith("id=") } else null

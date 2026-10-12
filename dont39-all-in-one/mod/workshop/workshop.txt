@@ -1,11 +1,12 @@
 version=1
+id=3818388200
 title=Dont39 All-in-One
 description=[h1]Dont39 All-in-One[/h1]
 description=A collection of fixes and tweaks for Build 42. Every part switches itself on only when the mods it works with are enabled, and stays idle otherwise.
 description=
 description=[h2]Requirements[/h2]
 description=[list]
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed. The Java code is signed (ZBS) by the uploader, so ZombieBuddy can verify it was not changed.
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
 description=[*]Project Zomboid 42.21
 description=[/list]
 description=Load order: ZombieBuddy, then the mods below that you use, then this mod.
