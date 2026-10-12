@@ -28,7 +28,6 @@ val assembleMod = tasks.register<Sync>("assembleMod") {
     val version = project.version.toString()
     into(layout.buildDirectory.dir("mod/$modId"))
     from("mod/common") { into("common") }
-    from("mod/42") { into("42") }
     from(tasks.jar) { into("42/media/java/client") }
     // expand() would treat the backslashes in require=\ZombieBuddy as escapes
     filesMatching("**/mod.info") { filter { it.replace("@VERSION@", version) } }
