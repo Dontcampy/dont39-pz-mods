@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, forbidden patterns"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Seam rule and switch checklist must match code"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Preload contract unchanged"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No degrade paths introduced"}
