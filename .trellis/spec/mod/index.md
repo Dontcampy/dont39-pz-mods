@@ -10,7 +10,8 @@
 One Gradle build ships three Workshop items, layered as a small platform for ZombieBuddy Java mods:
 
 - **Zabric** (`zabric`), the loader layer: access widening and preload registration
-  ([Access Widening](./access-widening.md)).
+  ([Access Widening](./access-widening.md)), and the only runtime code that uses ZombieBuddy
+  ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
   ([Kotlin Runtime](./kotlin-runtime.md)).
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
@@ -38,7 +39,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 | Guide | Description |
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
-| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Patch classes, reaching other mods, gating, enter/exit restore |
+| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, patch classes, reaching other mods, gating, enter/exit restore |
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |

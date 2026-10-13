@@ -1,7 +1,6 @@
 package com.dont39.pz.imekeyboardfix
 
 import com.dont39.pz.zbktutils.glue.Hook
-import me.zed_0xff.zombie_buddy.Patch
 import zombie.core.Core
 import zombie.ui.TextManager
 import zombie.ui.UITextBox2
@@ -20,8 +19,8 @@ internal object ImeCaret {
     private set
 
   // mirrors the caret UITextBox2.render draws
-  @Hook.Exit(className = "zombie.ui.UITextBox2", methodName = "render", onThrowable = Patch.NoException::class)
-  fun publish(@Patch.This box: UITextBox2) {
+  @Hook.Exit(className = "zombie.ui.UITextBox2", methodName = "render", onThrow = false)
+  fun publish(@Hook.This box: UITextBox2) {
     if (!ImeKeyboardFix.active()) {
       return
     }

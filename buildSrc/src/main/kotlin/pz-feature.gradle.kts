@@ -26,6 +26,11 @@ ksp {
   arg("dont39.luaPrefix", pzGlue.luaPrefix.required("luaPrefix"))
 }
 
+// the generated glue is ZombieBuddy code
+tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
+  excludes.add(pzGlue.gluePackage.required("gluePackage").map { it.replace('.', '/') + "/*" })
+}
+
 val pzDir = providers.gradleProperty("pzDir")
 val gameJarName = "projectzomboid.jar"
 val gameJar = pzDir.map { file("$it/$gameJarName") }

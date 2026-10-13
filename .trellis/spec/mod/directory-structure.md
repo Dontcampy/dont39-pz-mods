@@ -15,6 +15,7 @@ buildSrc/src/main/kotlin/
   pz-mod.gradle.kts                  convention plugin every shipped mod applies
   pz-feature.gradle.kts              convention plugin every Kotlin feature module applies
   PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
+  CheckLoaderRefs.kt, CheckBootstrapClasses.kt  class-reference checks (see zombiebuddy-patching.md, kotlin-runtime.md)
 <feature-module>/                    one per feature, e.g. viewpoint-blood-fx-fix/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hook / @LuaGlobal annotations

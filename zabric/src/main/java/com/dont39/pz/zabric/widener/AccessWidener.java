@@ -1,9 +1,9 @@
 package com.dont39.pz.zabric.widener;
 
-import com.dont39.pz.zabric.agent.ZombieBuddyAgent;
 import com.dont39.pz.zabric.classtweaker.ClassTweaker;
 import com.dont39.pz.zabric.classtweaker.ClassTweaker.Access;
 import com.dont39.pz.zabric.classtweaker.ClassTweaker.Entry;
+import com.dont39.pz.zabric.loader.Loader;
 import com.dont39.pz.zabric.restart.RestartList;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.ModifierAdjustment;
@@ -57,8 +57,8 @@ public final class AccessWidener {
     public static final String LIST_DIR = "META-INF/zabric/";
     private static final String LIST_SUFFIX = ".classtweaker";
     private static final String PREFIX = "[Zabric] ";
-    private static final String NOT_PRELOADED = "Zabric did not run at game start: it registers itself as a ZombieBuddy"
-            + " preload mod on its first launch; restart the game once";
+    private static final String NOT_PRELOADED = "Zabric did not run at game start: it registers itself as a "
+            + Loader.name() + " preload mod on its first launch; restart the game once";
 
     /** One mod's list as found in one jar; {@code problem} is set when it was not applied. */
     private record Listed(String modId, String source, List<Entry> entries, String problem) {
@@ -118,7 +118,7 @@ public final class AccessWidener {
     private static Scan apply() {
         Instrumentation inst;
         try {
-            inst = ZombieBuddyAgent.instrumentation();
+            inst = Loader.instrumentation();
         } catch (IllegalStateException e) {
             failureError = e;
             failure = e.getMessage();

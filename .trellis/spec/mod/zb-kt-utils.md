@@ -19,6 +19,8 @@
 - It is public runtime API for any Kotlin mod on ZombieBuddyKotlin: nothing mod-specific in it.
 - Read a mod's own resources from the jar of its class, not through the class loader: all mod jars share it.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
+- The glue listing (`META-INF/zbkt/glue/`) is shared by `GlueProcessor.kt`, `HookTargets.kt` and the checks in
+  `dont39-all-in-one/build.gradle.kts`; change them together. Readers skip line kinds they do not use.
 - Add API only when a feature needs it; remove what no feature uses.
 
 ## Packaging

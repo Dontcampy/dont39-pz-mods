@@ -18,14 +18,16 @@ import com.google.devtools.ksp.symbol.Variance
 import com.google.devtools.ksp.symbol.Visibility
 
 private const val GLUE = "com.dont39.pz.zbktutils.glue"
-private const val ENTER = "$GLUE.Hook.Enter"
-private const val EXIT = "$GLUE.Hook.Exit"
+private const val HOOK = "$GLUE.Hook"
+private const val ENTER = "$HOOK.Enter"
+private const val EXIT = "$HOOK.Exit"
 private const val LUA_GLOBAL = "$GLUE.LuaGlobal"
 private const val PATCH = "me.zed_0xff.zombie_buddy.Patch"
 private const val LUA_METHOD = "se.krka.kahlua.integration.annotations.LuaMethod"
 
-/** `Patch.<name>` parameter bindings a hook may use. */
+/** `Hook.<name>` parameter bindings, each generated as ZombieBuddy's `Patch.<name>`. */
 private val BINDINGS = setOf("Argument", "This", "Return", "Thrown", "AllArguments")
+private val BINDING_ANNOTATIONS = BINDINGS.map { "$HOOK.$it" }.toSet()
 private val EXIT_ONLY_BINDINGS = setOf("Return", "Thrown")
 private const val NO_EXCEPTION = "$PATCH.NoException"
 
@@ -55,9 +57,11 @@ private const val OPTION_PACKAGE = "dont39.gluePackage"
 private const val OPTION_LUA_PREFIX = "dont39.luaPrefix"
 
 /**
- * Generates a feature module's ZombieBuddy glue from the `glue` annotations, plus a resource listing it, shipped for the
- * hook checks at runtime (HookTargets.kt) and read by the aggregating mod's checks and smokeTest. Every generated
- * function first checks that ZombieBuddyKotlin is ready. Rule violations are compile errors naming the function.
+ * Generates a feature module's ZombieBuddy glue from the loader-neutral `glue` annotations; besides Zabric's loader
+ * package, the only code that names the loader's API. Also writes a resource listing the glue and its hook targets,
+ * shipped for the hook checks at runtime (HookTargets.kt) and read by the aggregating mod's checks and smokeTest. Every
+ * generated function first checks that ZombieBuddyKotlin is ready. Rule violations are compile errors naming the
+ * function.
  */
 class GlueProcessor(
   private val codeGenerator: CodeGenerator,
@@ -86,6 +90,7 @@ class GlueProcessor(
       write(pkg, outer, patchesSource(pkg, outer, targets), targets.flatMap { it.files() })
       targets.forEach { lines += "patch $pkg.$outer$${it.nestedName}" }
       targets.map { it.className }.distinct().forEach { lines += "target $it" }
+      targets.forEach { lines += "hook ${it.className} ${it.methodName}" }
     }
     if (luaFunctions.isNotEmpty()) {
       val bridge = "${feature}Lua"
@@ -131,8 +136,7 @@ class GlueProcessor(
           error(callee, "@$kind needs a className and a methodName")
           continue
         }
-        val onThrowable = if (isExit) annotation.arg("onThrowable") as? KSType else null
-        val catches = onThrowable?.declaration?.qualifiedName?.asString() != NO_EXCEPTION
+        val catches = !isExit || annotation.arg("onThrow") as? Boolean ?: true
         val params = hookParams(fn, callee, isExit, catches) ?: continue
         val returnType = fn.returnType?.resolve()
         val advice = if (isExit) {
@@ -140,7 +144,7 @@ class GlueProcessor(
             error(callee, "@Hook.Exit must return Unit (found ${returnType?.let(::render)})")
             continue
           }
-          val thrown = onThrowable?.let { render(it.makeNotNullable()) } ?: "kotlin.Throwable"
+          val thrown = if (catches) "kotlin.Throwable" else NO_EXCEPTION
           Advice(callee, params, null, "@Patch.OnExit(onThrowable = $thrown::class)")
         } else {
           val skipOn = annotation.arg("skipOn") as? Boolean ?: false
@@ -193,28 +197,23 @@ class GlueProcessor(
     val params = fn.parameters.map { p ->
       val name = p.name?.asString() ?: "p"
       val type = p.type.resolve()
-      val bindings = p.annotations.filter { it.qualifiedName().startsWith("$PATCH.") }.toList()
+      val bindings = p.annotations.filter { it.qualifiedName() in BINDING_ANNOTATIONS }.toList()
       val binding = bindings.singleOrNull()
-      val kind = binding?.qualifiedName()?.removePrefix("$PATCH.")
+      val kind = binding?.qualifiedName()?.removePrefix("$HOOK.")
       val problem = when {
-        p.isVararg -> "parameter $name: vararg is not supported; use @Patch.AllArguments with an Array"
+        p.isVararg -> "parameter $name: vararg is not supported; use @Hook.AllArguments with an Array"
         binding == null -> "parameter $name needs exactly one of " +
-          BINDINGS.joinToString { "@Patch.$it" } + " (found ${bindings.size})"
-        kind == "Local" ->
-          "parameter $name: @Patch.Local is not supported (the hook gets a copy, so it only ever reads the default)"
-        kind !in BINDINGS -> "parameter $name: @Patch.$kind is not supported"
-        kind in EXIT_ONLY_BINDINGS && !isExit -> "parameter $name: @Patch.$kind is only available in a @Hook.Exit"
-        binding.arg("readOnly") == false ->
-          "parameter $name: readOnly = false is not supported (the hook gets a copy; a write never reaches the target)"
+          BINDINGS.joinToString { "@Hook.$it" } + " (found ${bindings.size})"
+        kind in EXIT_ONLY_BINDINGS && !isExit -> "parameter $name: @Hook.$kind is only available in a @Hook.Exit"
         kind == "Thrown" && !catches ->
-          "parameter $name: @Patch.Thrown needs the exit to run on throw; remove onThrowable = Patch.NoException::class"
+          "parameter $name: @Hook.Thrown needs the exit to run on throw; remove onThrow = false"
         else -> bindingTypeProblem(kind!!, name, type)
       }
       if (problem != null) {
         error(callee, problem)
         return@map null
       }
-      val annotation = if (kind == "Argument") "@Patch.Argument(${binding!!.arg("value") ?: 0})" else "@Patch.$kind"
+      val annotation = if (kind == "Argument") "@Patch.Argument(${binding!!.arg("index")})" else "@Patch.$kind"
       Param(annotation, name, render(type))
     }
     return if (null in params) null else params.filterNotNull()
@@ -228,17 +227,17 @@ class GlueProcessor(
     val rendered = render(type)
     return when (kind) {
       "Thrown" -> if (rendered != "kotlin.Throwable?" && rendered != "kotlin.Any?") {
-        "parameter $name: @Patch.Thrown must be Throwable? (null when the target returns normally), found $rendered"
+        "parameter $name: @Hook.Thrown must be Throwable? (null when the target returns normally), found $rendered"
       } else {
         null
       }
       "AllArguments" -> if (rendered.removeSuffix("?") != "kotlin.Array<kotlin.Any?>") {
-        "parameter $name: @Patch.AllArguments must be Array<Any?> (boxed arguments, any may be null), found $rendered"
+        "parameter $name: @Hook.AllArguments must be Array<Any?> (boxed arguments, any may be null), found $rendered"
       } else {
         null
       }
       "Argument", "Return" -> if (!type.isMarkedNullable && rendered !in PRIMITIVES) {
-        "parameter $name: @Patch.$kind of a reference type must be nullable ($rendered?): the target may pass null, " +
+        "parameter $name: @Hook.$kind of a reference type must be nullable ($rendered?): the target may pass null, " +
           "and the null check would throw inside the target"
       } else {
         null
@@ -251,7 +250,7 @@ class GlueProcessor(
     appendLine("// Generated by zb-kt-utils-processor from @Hook.Enter / @Hook.Exit. Do not edit.")
     appendLine("package $pkg")
     appendLine()
-    appendLine("import me.zed_0xff.zombie_buddy.Patch")
+    appendLine("import $PATCH")
     appendLine()
     appendLine("// ZombieBuddy picks up @Patch classes only in exactly javaPkgName and inlines the static advice.")
     appendLine("object $outer {")
