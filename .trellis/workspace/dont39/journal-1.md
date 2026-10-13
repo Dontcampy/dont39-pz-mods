@@ -173,3 +173,29 @@ Replaced reflection with typed access: target mod jars on the compile classpath 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: Idiomatic Kotlin, lazy logging, module rename
+<!-- trellis-session: v=2 fp=7d442686f7486225 -->
+
+**Date**: 2026-10-13
+**Task**: Idiomatic Kotlin, lazy logging, module rename
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+Trimmed specs to rules and links. Rewrote the Kotlin code to kotlinlang.org idioms and coding conventions (forEach, property syntax, check/error, coerceAtMost) and dropped the spec bans on iterators/lambdas/allocation on per-frame paths, since the JIT handles short-lived objects. Added LoggerUtils (lzInfo/lzDebug/lzWarn DebugType extensions that check severity before building the message); Feature.log/debug wrap them with the prefix. Java logs use DebugType format arguments with compile-time-constant patterns; printException keeps concatenation because the game's varargs overload drops its arguments. Removed redundant 'as Any' casts and the wrong varargs-overload spec example. Added Kotlin/Java wrong-vs-correct logging examples to logging-guidelines.md. Renamed module zombie-buddy-kotlin to zombiebuddy-kotlin. smokeTest passes.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5f15a46` | Trim the specs to rules and links |
+| `22c5703` | refactor: simplify property access and improve readability |
+| `2eeac59` | Write idiomatic Kotlin and build log messages only when they are written |
+| `3539b32` | docs: update logging guidelines to clarify message building rules |
+| `bac5b39` | Rename the zombie-buddy-kotlin module to zombiebuddy-kotlin |
+
+### Status
+
+[OK] **Completed**

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~175 | Active |
+| `journal-1.md` | ~201 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-10-13 | Idiomatic Kotlin, lazy logging, module rename | `5f15a46`, `22c5703`, `2eeac59`, `3539b32`, `bac5b39` | `feat/ime-keyboard-fix` |
 | 7 | 2026-10-13 | Typed access via access widener (Zabric) | `6634038` | `feat/ime-keyboard-fix` |
 | 6 | 2026-10-13 | IME candidate windows | `31c8d9e` | `feat/ime-keyboard-fix` |
 | 5 | 2026-10-12 | IME keyboard fix | `a8aaf8b` | `main` |
