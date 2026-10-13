@@ -1,17 +1,10 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zombiebuddykotlinutils.Resolver
 import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
-import gnu.trove.list.array.TIntArrayList
 import me.zed_0xff.zombie_buddy.Patch
 import zombie.core.Core
 import zombie.ui.TextManager
-import zombie.ui.UIFont
 import zombie.ui.UITextBox2
-import java.lang.invoke.MethodType
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
-import java.util.Stack
 
 /**
  * Where the focused text box draws its caret, in window client pixels. Computed after the box renders, when its scroll
@@ -21,32 +14,10 @@ internal object ImeCaret {
   private const val MIN = -32768
   private const val MAX = 32767
 
-  private lateinit var xOffset: Field
-  private lateinit var centerVertically: Field
-  private lateinit var textOffsetOfLineStart: Field
-
   /** x, y, width, height as 16-bit fields, so the window thread never sees a torn rect; 0 until a box had focus. */
   @Volatile
   var rect = 0L
     private set
-
-  fun resolve() {
-    val box = Resolver.type("zombie.ui.UITextBox2")
-    Resolver.virtual(box, "render", MethodType.methodType(Void.TYPE))
-    xOffset = field(box, "xOffset", Integer.TYPE)
-    centerVertically = field(box, "centerVertically", java.lang.Boolean.TYPE)
-    textOffsetOfLineStart = field(box, "textOffsetOfLineStart", TIntArrayList::class.java)
-    field(box, "lines", Stack::class.java)
-    field(box, "font", UIFont::class.java)
-  }
-
-  private fun field(owner: Class<*>, name: String, type: Class<*>): Field {
-    val field = Resolver.field(owner, name)
-    if (Modifier.isStatic(field.modifiers) || field.type != type) {
-      throw IllegalStateException("$field is not an instance ${type.name}")
-    }
-    return field
-  }
 
   // mirrors the caret UITextBox2.render draws
   @Hook.Exit(className = "zombie.ui.UITextBox2", methodName = "render", onThrowable = Patch.NoException::class)
@@ -62,7 +33,7 @@ internal object ImeCaret {
       val lineHeight = font.getLineHeight()
       val inset = box.getInset()
       var top = inset
-      if (centerVertically.getBoolean(box)) {
+      if (box.centerVertically) {
         top = ((box.getHeight() - TextManager.instance.MeasureStringY(box.font, box.internalText)) / 2.0).toInt()
       }
       // render's own cursorLine is stale when it returned early, e.g. while hidden
@@ -71,14 +42,14 @@ internal object ImeCaret {
       var width = 0
       if (!lines.isEmpty()) {
         val text = lines.get(line)
-        val offsets = textOffsetOfLineStart.get(box) as TIntArrayList
+        val offsets = box.textOffsetOfLineStart
         val column = Math.min(box.getCursorPos() - offsets.get(line), text.length)
         width = font.getWidth(text, 0, column - 1, true)
         if (width > 0) {
           width--
         }
       }
-      val left = -xOffset.getInt(box) + inset + width
+      val left = -box.xOffset + inset + width
       val x = (left.toDouble() + box.getAbsoluteX() + box.getXScroll()).toInt()
       val y = ((top + line * lineHeight).toDouble() + box.getAbsoluteY() + box.getYScroll()).toInt()
       rect = pack(x, y, 1, lineHeight)

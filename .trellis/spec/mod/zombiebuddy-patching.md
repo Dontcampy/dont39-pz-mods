@@ -51,7 +51,6 @@ When the docs and the source disagree, trust the source (see the package rule be
 - Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
-- Name target classes by string; they are not on the classpath.
 - Game classes already loaded when patches apply (e.g. `org.lwjglx.opengl.Display`) are retransformed; smokeTest's
   `Transformed: ... (retransformed)` line shows it worked. Reference: `ImeWindow.kt` (`ime-keyboard-fix`).
 - A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
@@ -90,29 +89,29 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ---
 
-## Reaching Other Mods
+## Reaching the Game and Other Mods
 
-- Look up other mods' classes, fields, and methods once, in the facade's `resolve()`, through `Resolver`
-  ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)). Not in an object initializer: hooks live on those
-  objects, and a failed initializer makes every later call fail inside the target mod. Reference:
-  `ViewpointBloodFxFix.kt`.
-- Use method handles for calls on the per-frame path (`Relief.kt`). Kotlin derives an `invokeExact` call site's
-  descriptor from the argument types and the result cast, and a mismatch with the handle's type fails only at
-  runtime: check each call site with `javap -c`.
+- Compile against them and call them directly; non-public members are widened. Rules and pitfalls:
+  [Access Widening](./access-widening.md). Reference: `LiftOffsets.kt`, `AimShift.kt`, `ImeCaret.kt`.
+- No work that can fail in an object initializer: hooks live on those objects, and a failed initializer makes every
+  later call fail inside the target mod.
+- Check the per-frame paths with `javap -c` for allocation and boxing (see Threading and Hot Paths).
 
 ---
 
 ## Gating
 
 - Every feature decides on first use whether it runs: target mods loaded, target version known (or forced via a mod
-  option). The decision is cached; an option change may re-open it, a runtime failure may not. Internals that do not
-  match are an error, not a reason to stay idle. Build it on `Feature` and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md));
-  reference: `ViewpointBloodFxFix.kt`.
+  option), access widening in effect if the feature uses it. The decision is cached; an option change may re-open it, a
+  runtime failure may not. Internals that do not match are an error, not a reason to stay idle. Build it on `Feature`
+  and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); reference: `ViewpointBloodFxFix.kt`.
+- Before the first activation, `Feature` checks that every class and method the generated patches hook exists
+  (`HookTargets.kt`); ZombieBuddy would leave a missing one out silently. `resolve()` is only for what the compiler
+  cannot check (e.g. native functions in `ImeContext.kt`).
 - Every patch entry point checks the facade's `active()` first.
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
-- A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS), and
-  `resolve()` checks the game members it hooks or reads, so a game update fails loudly instead of leaving the fix
-  unused. Reference: `ImeKeyboardFix.kt`.
+- A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS).
+  Reference: `ImeKeyboardFix.kt`.
 
 ---
 

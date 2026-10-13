@@ -1,3 +1,5 @@
+import buildsrc.convention.MergeClassTweakers
+import buildsrc.convention.WidenJars
 import groovy.json.JsonSlurper
 
 plugins {
@@ -14,10 +16,14 @@ val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar", ":ime-k
 val kotlinLib = ":zombie-buddy-kotlin"
 // bundled code shared by the features
 val internalLibs = listOf(":zombiebuddy-kotlin-utils")
+// shipped in this mod's Workshop item; makes what the features' .classtweaker lists name public at game start
+val preload = ":zabric"
 
 features.forEach { evaluationDependsOn(it) }
 internalLibs.forEach { evaluationDependsOn(it) }
 evaluationDependsOn(kotlinLib)
+evaluationDependsOn(preload)
+val preloadId = project(preload).extra["modId"] as String
 
 dependencies {
   features.forEach { implementation(project(it)) }
@@ -36,6 +42,15 @@ tasks.jar {
   // build data only
   exclude("META-INF/dont39/**")
   duplicatesStrategy = DuplicatesStrategy.FAIL
+}
+
+val mergeClassTweakers = tasks.register<MergeClassTweakers>("mergeClassTweakers") {
+  lists.from(features.flatMap { project(it).tasks.withType<WidenJars>().map { task -> task.expanded } })
+  merged = layout.buildDirectory.file("classtweaker/widen.classtweaker")
+}
+// where PreMain.LIST reads it
+project(preload).tasks.named<Jar>("jar") {
+  from(mergeClassTweakers) { into("com/dont39/pz/zabric") }
 }
 
 // Lua globals are shared, so names must differ across features too
@@ -65,6 +80,14 @@ tasks.named<Sync>("assembleMod") {
   features.forEach { from(project(it).file("src/main/lua")) { into("42/media/lua") } }
 }
 
+tasks.named<Copy>("deployWorkshop") {
+  val preloadFolder = file(pzUserDir.get()).resolve("Workshop/$modId/Contents/mods/$preloadId")
+  doFirst {
+    preloadFolder.deleteRecursively()
+  }
+  from(project(preload).tasks.named("assembleMod")) { into("Contents/mods/$preloadId") }
+}
+
 val pzDir = providers.gradleProperty("pzDir")
 
 // Starts the game the way ProjectZomboid64.exe would, with ZombieBuddy's exit_after_game_init, then checks console.txt.
@@ -79,6 +102,7 @@ tasks.register("smokeTest") {
   val kotlinLibVersion = project(kotlinLib).version.toString()
   val glue = glueDirs
   val logPrefix = "[$modId] "
+  val preloadMod = preloadId
   val kotlinVersions = libs.versions.let {
     "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
       "kotlinx-serialization ${it.kotlinxSerializationJSON.get()}"
@@ -103,6 +127,16 @@ tasks.register("smokeTest") {
     }
 
     val log = console.readText()
+    if ("[$preloadMod] registered itself" in log || "[$preloadMod] is registered" in log) {
+      throw GradleException(
+        "$preloadMod registered itself as a ZombieBuddy preload mod in this launch; run smokeTest again.",
+      )
+    }
+    val widenerPrefix = "${logPrefix}access widener: "
+    val widener = log.lines().lastOrNull { widenerPrefix in it }?.substringAfter(widenerPrefix)
+    if (widener?.startsWith("ok") != true) {
+      throw GradleException("$console: the access widener is not in effect: ${widener ?: "no access widener line"}")
+    }
     // in this order: the library installs Kotlin before All-in-One's Kotlin Main runs
     val ordered = listOf(
       "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
@@ -123,13 +157,18 @@ tasks.register("smokeTest") {
         when (line.substringBefore(' ')) {
           "patch" -> "Found patch class: $value"
           "lua" -> "Exposing global functions from class: $value"
-          "target" -> if (status?.startsWith("ready") == true) "Transformed: $value" else null
+          // ZombieBuddy applies patches whether or not the feature runs; only a running one shows they are needed
+          "target" -> if (status?.startsWith("ready") == true || status?.startsWith("active") == true) {
+            "Transformed: $value"
+          } else {
+            null
+          }
           else -> null
         }
       }
     }
     // GameWindow.init loads client Lua before ZombieBuddy exits
-    val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
+    val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready", "[$preloadMod] restart notice: not needed")
     val missing = (ordered + generated + luaOnly).filterNot { it in log }
     if (missing.isNotEmpty()) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })

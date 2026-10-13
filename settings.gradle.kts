@@ -26,5 +26,6 @@ include(":zombie-buddy-kotlin")
 include(":zombiebuddy-kotlin-utils")
 include(":zombiebuddy-kotlin-utils-processor")
 include(":dont39-all-in-one")
+include(":zabric")
 
 rootProject.name = "dont39-pz-mods"

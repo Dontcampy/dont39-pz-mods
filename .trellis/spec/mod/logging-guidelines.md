@@ -10,7 +10,8 @@
   `Feature.kt` (`zombiebuddy-kotlin-utils`). Lua code uses the same logger (`DebugType.Mod:println` / `:error`), not
   `print`; see the helpers in `mod-options-sidebar/src/main/lua/client/Dont39AllInOne_ModOptionsSidebar.lua`.
 - Each feature logs through its facade's `log` / `disable` helpers, which add the shared mod + feature prefix.
-  Helpers never call the logger directly. Mod-level lines come only from the mod's `Main`.
+  Helpers never call the logger directly. Mod-level lines come only from the mod's `Main` (including the access widener
+  outcome, `reportWidening`). The preload mod logs with its own `[Zabric]` prefix (`Registration.java`).
 - Every feature reports the same lifecycle moments so a player's `console.txt` shows its state: ready or idle at
   `init()`, active or inactive on first use, disabled on a runtime error. The wording is in `Feature.kt`;
   reasons come from the facade's `problem()` (`ViewpointBloodFxFix.kt`).
@@ -21,7 +22,7 @@
 ## Debug Output
 
 - Gate detailed output on the **target mod's own debug option** instead of adding a setting (`debug()` in
-  `ViewpointBloodFxFix.kt`).
+  `LiftOffsets.kt`).
 - Never log per frame: aggregate and emit a periodic summary (`Stats` in `LiftOffsets.kt`).
 - Build log strings only inside the debug branch.
 

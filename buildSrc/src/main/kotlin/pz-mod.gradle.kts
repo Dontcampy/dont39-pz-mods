@@ -1,7 +1,8 @@
 package buildsrc.convention
 
 // A shipped mod: its id comes from mod/42/mod.info. Registers assembleMod (the mod folder; the module adds its jar and
-// any other files) and deployWorkshop. Exposes modId and pzUserDir as extra properties for the module's build script.
+// any other files) and, for a mod with its own Workshop item, deployWorkshop. Exposes modId and pzUserDir as extra
+// properties for the module's build script.
 plugins {
   java
 }
@@ -36,22 +37,25 @@ val assembleMod = tasks.register<Sync>("assembleMod") {
   doLast { destinationDir.resolve("common").mkdirs() }
 }
 
-tasks.register<Copy>("deployWorkshop") {
-  group = "mod"
-  description = "Copies $modId into ~/Zomboid/Workshop for local testing and uploading."
-  val staged = file(workshopDir.get())
-  val modFolder = staged.resolve("Contents/mods/$modId")
-  val repoWorkshopTxt = file("mod/workshop/workshop.txt")
-  doFirst {
-    // the uploader writes the Workshop id into the staged copy
-    val stagedTxt = staged.resolve("workshop.txt")
-    val stagedId = if (stagedTxt.exists()) stagedTxt.readLines().firstOrNull { it.startsWith("id=") } else null
-    if (stagedId != null && repoWorkshopTxt.readLines().none { it == stagedId }) {
-      throw GradleException("$stagedTxt has '$stagedId' but $repoWorkshopTxt does not; add it there first.")
+// a mod shipped inside another mod's Workshop item has no mod/workshop and is deployed by that mod
+if (file("mod/workshop").isDirectory) {
+  tasks.register<Copy>("deployWorkshop") {
+    group = "mod"
+    description = "Copies $modId into ~/Zomboid/Workshop for local testing and uploading."
+    val staged = file(workshopDir.get())
+    val modFolder = staged.resolve("Contents/mods/$modId")
+    val repoWorkshopTxt = file("mod/workshop/workshop.txt")
+    doFirst {
+      // the uploader writes the Workshop id into the staged copy
+      val stagedTxt = staged.resolve("workshop.txt")
+      val stagedId = if (stagedTxt.exists()) stagedTxt.readLines().firstOrNull { it.startsWith("id=") } else null
+      if (stagedId != null && repoWorkshopTxt.readLines().none { it == stagedId }) {
+        throw GradleException("$stagedTxt has '$stagedId' but $repoWorkshopTxt does not; add it there first.")
+      }
+      modFolder.deleteRecursively()
     }
-    modFolder.deleteRecursively()
+    into(staged)
+    from("mod/workshop")
+    from(assembleMod) { into("Contents/mods/$modId") }
   }
-  into(staged)
-  from("mod/workshop")
-  from(assembleMod) { into("Contents/mods/$modId") }
 }

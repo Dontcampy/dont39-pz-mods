@@ -8,9 +8,10 @@ description=[h2]Requirements[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
 description=[*]ZombieBuddyKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
+description=[*]Zabric, included in this item: enable it too. ZombieBuddy has to load it at game start, before the game, so that it can open up game internals the fixes read. On its first launch it registers itself with ZombieBuddy and shows a message asking you to restart the game once; from then on it loads at game start. Until then, the fixes that need it stay off and say why in console.txt.
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, ZombieBuddyKotlin, then the mods below that you use, then this mod.
+description=Load order: ZombieBuddy, ZombieBuddyKotlin, Zabric, then the mods below that you use, then Dont39 All-in-One.
 description=
 description=[h2]Blood FX for Viewpoint: terrain relief fix[/h2]
 description=For [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809306528]Project Viewpoint[/url] 0.1.6+ with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3811472160]3d Blood VFX for Viewpoint[/url] 1.5.1.

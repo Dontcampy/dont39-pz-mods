@@ -3,8 +3,11 @@ package com.dont39.pz.zombiebuddykotlinutils
 import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
-/** Gating and lifecycle logging of one feature. The facade is an `object` extending this. */
-abstract class Feature(val name: String, modName: String) {
+/**
+ * Gating and lifecycle logging of one feature. The facade is an `object` extending this. [widened]: the feature uses
+ * members its `.classtweaker` makes public.
+ */
+abstract class Feature(val name: String, modName: String, private val widened: Boolean = false) {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
   private val prefix = "[$modName] $name: "
@@ -27,18 +30,21 @@ abstract class Feature(val name: String, modName: String) {
    */
   protected abstract fun problem(): String?
 
-  /** Looks up the target mods' internals; runs once, the first time [problem] is null. Throws when they do not match. */
+  /**
+   * Prepares what the compiler cannot check (e.g. native functions); runs once, the first time [problem] is null, after
+   * the hooked methods are checked. Throws when something does not match.
+   */
   protected open fun resolve() {}
 
   /** What [resolve] was doing, for the error line when it throws. */
-  protected open fun resolveContext(): String = "looking up the target mods' internals"
+  protected open fun resolveContext(): String = "preparing to run"
 
   /** Shown as `ready (<detail>)`. */
   protected open fun readyDetail(): String? = null
 
   fun init() {
     val why = try {
-      problem()
+      why()
     } catch (t: Throwable) {
       disable("checking whether it can run", t)
       return
@@ -67,7 +73,7 @@ abstract class Feature(val name: String, modName: String) {
 
   private fun decide(): Boolean {
     val why = try {
-      problem()
+      why()
     } catch (t: Throwable) {
       disable("checking whether it can run", t)
       return false
@@ -82,10 +88,26 @@ abstract class Feature(val name: String, modName: String) {
     return why == null
   }
 
+  // the feature's own reason first: without its target mod, widening is irrelevant to the player
+  private fun why(): String? {
+    val problem = problem()
+    if (problem != null || !widened) {
+      return problem
+    }
+    val widening = wideningProblem() ?: return null
+    return "access widening is not in effect: $widening"
+  }
+
   @Synchronized
   private fun resolveOnce(): Boolean {
     if (resolved) {
       return true
+    }
+    try {
+      checkHookTargets(name)
+    } catch (t: Throwable) {
+      disable("checking the methods it hooks", t)
+      return false
     }
     try {
       resolve()

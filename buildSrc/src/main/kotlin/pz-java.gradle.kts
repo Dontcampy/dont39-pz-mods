@@ -24,7 +24,11 @@ tasks.withType<JavaCompile>().configureEach {
 
 val pzDir = providers.gradleProperty("pzDir")
 
+// pz-feature swaps in a widened copy
+val pzGameJar = objects.fileProperty().convention(layout.file(pzDir.map { file("$it/projectzomboid.jar") }))
+extra["pzGameJar"] = pzGameJar
+
 dependencies {
   compileOnly(files(pzDir.map { "$it/ZombieBuddy.jar" }))
-  compileOnly(files(pzDir.map { "$it/projectzomboid.jar" }))
+  compileOnly(files(pzGameJar))
 }

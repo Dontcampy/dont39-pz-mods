@@ -1,8 +1,9 @@
 package com.dont39.pz.viewpointbloodfxfix
 
-import com.dont39.pz.zombiebuddykotlinutils.Resolver
+import bloodfx.BloodFx
+import bloodfx.Gore
+import bloodfx.GoreGpu
 import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
-import java.lang.reflect.Field
 
 /**
  * Raises heights by the relief only for the duration of BloodFX's draw calls, so its simulation stays on flat ground.
@@ -11,32 +12,17 @@ import java.lang.reflect.Field
 internal object LiftOffsets {
   private const val STATS_EVERY = 5_000_000_000L
   private const val SAVED_INITIAL = 256
+  private const val DROP = 0
+  private const val MIST = 1
+  private const val SPLAT = 2
+  private const val PIECE = 3
 
-  private lateinit var drops: List<*>
-  private lateinit var mists: List<*>
-  private lateinit var pieces: List<*>
-  private lateinit var splats: Array<Any?>
-  private lateinit var splatCount: Field
-  private lateinit var drop: Coords
-  private lateinit var mist: Coords
-  private lateinit var splat: Coords
-  private lateinit var piece: Coords
   private val BLOOD = Saved()
   private val GORE = Saved()
   private val STATS = Stats()
 
-  fun resolve() {
-    val blood = Resolver.type("bloodfx.BloodFx")
-    drops = Resolver.staticValue(blood, "drops", List::class.java)
-    mists = Resolver.staticValue(blood, "mists", List::class.java)
-    splats = Resolver.staticValue(blood, "splats", Array<Any?>::class.java)
-    splatCount = Resolver.field(blood, "splatCount")
-    pieces = Resolver.staticValue(Resolver.type("bloodfx.GoreGpu"), "pieces", List::class.java)
-    drop = coords("bloodfx.BloodFx\$Drop", "x", "y", "h")
-    mist = coords("bloodfx.BloodFx\$Mist", "x", "y", "h")
-    splat = coords("bloodfx.BloodFx\$Splat", "ox", "oy", "oh")
-    piece = coords("bloodfx.Gore\$Piece", "x", "y", "h")
-  }
+  /** BloodFX's own "Log blood particles to console.txt" option. */
+  fun debug(): Boolean = BloodFx.debug
 
   @Hook.Enter(className = "bloodfx.Gpu", methodName = "render")
   fun liftBlood() {
@@ -47,18 +33,37 @@ internal object LiftOffsets {
     try {
       val lift = Relief.current()
       if (lift != null) {
-        liftAll(BLOOD, lift, drops, drop)
-        liftAll(BLOOD, lift, mists, mist)
-        val owners = splats
-        val c = splat
-        for (i in 0 until Math.min(splatCount.getInt(null), owners.size)) {
-          val owner = owners[i]
-          if (owner != null) {
-            BLOOD.lift(lift, owner, c)
+        val drops = BloodFx.drops
+        for (i in 0 until drops.size) {
+          val d = drops[i]
+          val dh = Relief.at(lift, d.x.toDouble(), d.y.toDouble())
+          if (dh != 0.0f) {
+            BLOOD.save(d, DROP, d.h, dh)
+            d.h += dh
+          }
+        }
+        val mists = BloodFx.mists
+        for (i in 0 until mists.size) {
+          val m = mists[i]
+          val dh = Relief.at(lift, m.x.toDouble(), m.y.toDouble())
+          if (dh != 0.0f) {
+            BLOOD.save(m, MIST, m.h, dh)
+            m.h += dh
+          }
+        }
+        val splats = BloodFx.splats
+        for (i in 0 until Math.min(BloodFx.splatCount, splats.size)) {
+          val s = splats[i]
+          if (s != null) {
+            val dh = Relief.at(lift, s.ox.toDouble(), s.oy.toDouble())
+            if (dh != 0.0f) {
+              BLOOD.save(s, SPLAT, s.oh, dh)
+              s.oh += dh
+            }
           }
         }
       }
-      if (ViewpointBloodFxFix.debug()) {
+      if (debug()) {
         STATS.frame(lift != null, BLOOD)
       }
     } catch (t: Throwable) {
@@ -81,7 +86,15 @@ internal object LiftOffsets {
     try {
       val lift = Relief.current()
       if (lift != null) {
-        liftAll(GORE, lift, pieces, piece)
+        val pieces = GoreGpu.pieces
+        for (i in 0 until pieces.size) {
+          val p = pieces[i]
+          val dh = Relief.at(lift, p.x.toDouble(), p.y.toDouble())
+          if (dh != 0.0f) {
+            GORE.save(p, PIECE, p.h, dh)
+            p.h += dh
+          }
+        }
       }
     } catch (t: Throwable) {
       GORE.restore()
@@ -94,19 +107,6 @@ internal object LiftOffsets {
     GORE.restore()
   }
 
-  private fun liftAll(saved: Saved, lift: Any, owners: List<*>, c: Coords) {
-    for (i in 0 until owners.size) {
-      saved.lift(lift, owners[i], c)
-    }
-  }
-
-  private fun coords(owner: String, x: String, y: String, h: String): Coords {
-    val type = Resolver.type(owner)
-    return Coords(Resolver.field(type, x), Resolver.field(type, y), Resolver.field(type, h))
-  }
-
-  private class Coords(val x: Field, val y: Field, val h: Field)
-
   /**
    * Keeps the original heights so they are written back exactly, not recomputed.
    */
@@ -115,43 +115,54 @@ internal object LiftOffsets {
     var highest = 0.0f
     var count = 0
       private set
+
     private var owners = arrayOfNulls<Any>(SAVED_INITIAL)
-    private var fields = arrayOfNulls<Field>(SAVED_INITIAL)
+    private var kinds = ByteArray(SAVED_INITIAL)
     private var heights = FloatArray(SAVED_INITIAL)
 
-    fun lift(lift: Any, owner: Any?, c: Coords) {
-      val dh = Relief.at(lift, c.x.getFloat(owner).toDouble(), c.y.getFloat(owner).toDouble())
-      if (dh == 0.0f) {
-        return
-      }
-      val h = c.h.getFloat(owner)
+    /** [h] is the height before adding [dh]. */
+    fun save(owner: Any, kind: Int, h: Float, dh: Float) {
       if (count == owners.size) {
         val size = count * 2
         owners = owners.copyOf(size)
-        fields = fields.copyOf(size)
+        kinds = kinds.copyOf(size)
         heights = heights.copyOf(size)
       }
       owners[count] = owner
-      fields[count] = c.h
+      kinds[count] = kind.toByte()
       heights[count] = h
       count++
-      c.h.setFloat(owner, h + dh)
       lowest = if (count == 1) dh else Math.min(lowest, dh)
       highest = if (count == 1) dh else Math.max(highest, dh)
     }
 
+    /** Never throws: it runs in the exit hook, inside BloodFX's draw call. */
     fun restore() {
+      var failure: Throwable? = null
       var i = count - 1
       while (i >= 0) {
+        val owner = owners[i]
+        val h = heights[i]
         try {
-          fields[i]!!.setFloat(owners[i], heights[i])
-        } catch (e: Exception) {
+          when (kinds[i].toInt()) {
+            DROP -> (owner as BloodFx.Drop).h = h
+            MIST -> (owner as BloodFx.Mist).h = h
+            SPLAT -> (owner as BloodFx.Splat).oh = h
+            else -> (owner as Gore.Piece).h = h
+          }
+        } catch (t: Throwable) {
           // keep restoring the rest
+          if (failure == null) {
+            failure = t
+          }
         }
         owners[i] = null
         i--
       }
       count = 0
+      if (failure != null) {
+        ViewpointBloodFxFix.disable("restoring the heights it raised", failure)
+      }
     }
   }
 

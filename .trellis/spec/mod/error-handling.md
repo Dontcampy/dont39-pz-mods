@@ -9,13 +9,15 @@
 
 | Where | Rule | Reference |
 |-------|------|-----------|
-| Looking up other mods' internals | Throw, naming what does not match; the feature disables itself with that error | `resolve()` in `ViewpointBloodFxFix.kt` |
+| Hooked classes/methods, and what the compiler cannot check | Throw, naming what does not match; the feature disables itself with that error | `HookTargets.kt`, `resolve()` in `ImeKeyboardFix.kt` |
+| Direct references to game or mod members | A mismatch surfaces as a `LinkageError` inside the hook's `try`, which disables the feature | `LiftOffsets.liftBlood` |
+| Access widening not in effect | The features that need it stay idle with the reason; one outcome line from `Main` | `Widening.kt`, `Feature.kt` |
 | Helpers called from patches | Catch everything at this boundary, restore what was changed, then disable the feature through the facade | `LiftOffsets.liftBlood` / `liftGore`, `AimShift.lower` |
 | Restore paths | Never throw; keep restoring the rest after one failure | `LiftOffsets` (`Saved.restore`), `AimShift.restore` |
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |
 
-All reference files are in `viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`. The lookup
-and gating rules are implemented in `Resolver.kt`, `TargetMod.kt` and `Feature.kt`
+Feature references are in the feature packages of `viewpoint-blood-fx-fix` and `ime-keyboard-fix`. The checking
+and gating rules are implemented in `HookTargets.kt`, `TargetMod.kt`, `Widening.kt` and `Feature.kt`
 ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)).
 
 Disabling is final for the session: no retries. Use the facade's `disable(...)` (`Feature.kt`) and phrase the
