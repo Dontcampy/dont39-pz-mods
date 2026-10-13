@@ -16,10 +16,8 @@
 
 ## Rules for Changing It
 
-- It is public runtime API for any Kotlin mod on ZombieBuddyKotlin: no mod-specific literals (package, mod id, Lua
-  prefix); those come from the calling mod or its jar.
-- What it reads from the feature's mod (glue listing, widening list) is read from the jar of the feature's own class,
-  never through the shared class loader (`HookTargets.kt`, `Widening.kt`).
+- It is public runtime API for any Kotlin mod on ZombieBuddyKotlin: nothing mod-specific in it.
+- Read a mod's own resources from the jar of its class, not through the class loader: all mod jars share it.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
 - Add API only when a feature needs it; remove what no feature uses.
 
@@ -28,4 +26,4 @@
 - Shipped once, inside ZombieBuddyKotlin's jar (`zb-kt/build.gradle.kts`). Every other module has it compile-only;
   never bundle it into another jar: its classes are unrelocated on the shared classloader.
 - The glue processor (`zb-kt-utils-processor`) runs only in the compiler and is never shipped. Change an
-  annotation and the processor together. Its glue listing ships in the mod jar, where `HookTargets.kt` reads it.
+  annotation and the processor together.

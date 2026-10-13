@@ -9,11 +9,10 @@
 
 One Gradle build ships three Workshop items, layered as a small platform for ZombieBuddy Java mods:
 
-- **Zabric** (`zabric`), the loader layer: Java only, preloaded; widens game and mod members for every installed
-  mod and keeps opted-in mods preloaded ([Access Widening](./access-widening.md)).
-- **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric: preloaded; installs the current Kotlin runtime and
-  ships the shared Kotlin runtime `zb-kt-utils` ([Kotlin Runtime](./kotlin-runtime.md),
-  [ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
+- **Zabric** (`zabric`), the loader layer: access widening and preload registration
+  ([Access Widening](./access-widening.md)).
+- **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
+  ([Kotlin Runtime](./kotlin-runtime.md)).
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
   *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
 
@@ -40,12 +39,12 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
 | [ZombieBuddy Patching](./zombiebuddy-patching.md) | Patch classes, reaching other mods, gating, enter/exit restore |
-| [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric, preload registration |
+| [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
-| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on, shipped in ZombieBuddyKotlin: feature base, hook and widening checks |
+| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base, hook and widening checks |
 
 ---
 
@@ -55,7 +54,6 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 2. [ZombieBuddy Patching](./zombiebuddy-patching.md) — for anything that hooks game or mod code.
    [Access Widening](./access-widening.md) — for anything that reads or calls game or mod members.
    [Kotlin Runtime](./kotlin-runtime.md) — for any Kotlin code, version bump, or change to `zb-kt`.
-   [Access Widening](./access-widening.md#zabric) — for any change to `zabric`.
    [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) — for a Kotlin feature or a change to that module.
 3. [Error Handling](./error-handling.md) and [Logging Guidelines](./logging-guidelines.md) — for any runtime code.
 4. Read the reference files those guides link before copying a pattern.

@@ -14,26 +14,21 @@ buildSrc/src/main/kotlin/
   pz-kotlin.gradle.kts               convention plugin every Kotlin module applies
   pz-mod.gradle.kts                  convention plugin every shipped mod applies
   pz-feature.gradle.kts              convention plugin every Kotlin feature module applies
-  PzGlue.kt                          where a feature's glue goes, set by the mod that bundles it
   PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
-  CheckBootstrapClasses.kt           no kotlin/ references in classes that run before the Kotlin swap
-  PzSmoke.kt                         launch and log checks shared by smokeTest and serverSmokeTest
 <feature-module>/                    one per feature, e.g. viewpoint-blood-fx-fix/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hook / @LuaGlobal annotations
   src/main/lua/client/                         Lua glue, e.g. mod options (if any)
   src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
-  build/generated/ksp/main/                    generated glue and its listing META-INF/zbkt/glue/ (read, never edit)
+  build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features
-  build.gradle.kts                   version, feature list, pzGlue values, packaging, smokeTest
+  build.gradle.kts                   version, feature list, packaging, smokeTest
   src/main/kotlin/com/dont39/pz/allinone/Main.kt
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
-zabric/                              shipped mod, own Workshop item: loader layer, Java only (see access-widening.md)
-  src/classtweaker/java/             the list parser, shared with buildSrc
-zb-kt/                               shipped mod, own Workshop item: Kotlin runtime, zb-kt-utils, serverSmokeTest
-                                     (see kotlin-runtime.md)
-zb-kt-utils/                         shared Kotlin runtime, shipped inside zb-kt's jar (see zb-kt-utils.md)
+zabric/                              shipped mod: loader layer (see access-widening.md)
+zb-kt/                               shipped mod: Kotlin runtime library (see kotlin-runtime.md)
+zb-kt-utils/                         shared Kotlin runtime, shipped in zb-kt's jar (see zb-kt-utils.md)
 zb-kt-utils-processor/               KSP processor for the glue; compile time only, not shipped
 ```
 
@@ -96,5 +91,4 @@ A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 8 and 9 
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 
-A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts. One that
-bundles features sets their `pzGlue` as `dont39-all-in-one/build.gradle.kts` does.
+A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts.

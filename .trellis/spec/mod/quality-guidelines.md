@@ -20,28 +20,21 @@
 
 ## Tests
 
-There are no unit tests and no test framework; `./gradlew check` compiles and runs the build checks
-(`checkBootstrapClasses`, `checkGlue`). Feature code depends on other mods' classes that exist only in game. Do not add
-a test framework as part of a feature task; propose it separately.
+There are no unit tests and no test framework; `./gradlew check` compiles and runs the build checks. Feature code
+depends on other mods' classes that exist only in game. Do not add a test framework as part of a feature task; propose
+it separately.
 
-The automated checks launch the real game or server with ZombieBuddy until init and check its log; what they require
-is in the task code (`smokeTest` in `dont39-all-in-one/build.gradle.kts`, `serverSmokeTest` in `zb-kt/build.gradle.kts`,
-shared checks in `buildSrc/src/main/kotlin/PzSmoke.kt`).
+The automated checks launch the real game (`smokeTest`, `dont39-all-in-one/build.gradle.kts`) or dedicated server
+(`serverSmokeTest`, `zb-kt/build.gradle.kts`) with ZombieBuddy until init and check the log. Read the task for its
+prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening list
+in any installed mod fails both.
 
-- `smokeTest`: Steam running, ZombieBuddy installed in the game, the enabled-mod list including Zabric,
-  ZombieBuddyKotlin and All-in-One.
-- `serverSmokeTest`: `pzServerDir` in `gradle.properties` pointing at a dedicated server with ZombieBuddy installed,
-  and the ZombieBuddy Workshop item downloaded on the client (the server runs without Steam and gets a copy).
-- A launch that registers a preload mod fails with "run again": after a fresh registration (new setup, or entries
-  pointing at a copy that is no longer identical) each test needs two runs.
-- Every installed mod's widening list counts: uninstall scratch mods with broken lists before running either test.
-- A feature with generated glue needs no edit to them; a Lua-only feature adds its line to `smokeTest`
-  (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
+A feature with generated glue needs no edit to them; a Lua-only feature adds its line to `smokeTest`
+(see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
 
-1. Deploy with the `deployWorkshop` tasks (`buildSrc/src/main/kotlin/pz-mod.gradle.kts`); `smokeTest` runs those of all
-   three shipped mods.
+1. Deploy with the `deployWorkshop` tasks (`buildSrc/src/main/kotlin/pz-mod.gradle.kts`).
 2. Run `smokeTest`, then play: with target mods enabled `console.txt` shows the feature ready, then active, and the
    fix is visible.
 3. A target mod disabled or at another version: the feature reports idle/inactive, behavior unchanged, no errors.
@@ -72,7 +65,6 @@ New code is Kotlin; Java only in `zabric` and where [Kotlin Runtime](./kotlin-ru
 | Bundling game, ZombieBuddy or target-mod jars | Provided at runtime |
 | `kotlin/` or `kotlinx/` classes in any jar but ZombieBuddyKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
 | `zb-kt-utils` classes in any jar but ZombieBuddyKotlin's | Duplicated on the shared classpath ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)) |
-| Readiness checks on ZombieBuddyKotlin beyond the gate | See [Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules) |
 | Relocating `kotlin.*` | Not needed; ZombieBuddyKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
 

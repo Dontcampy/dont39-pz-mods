@@ -20,13 +20,11 @@
 
 ## Library (`zb-kt`)
 
-- The stdlib is swapped only at premain. ZombieBuddyKotlin is a preload mod, registered through Zabric
-  ([Access Widening](./access-widening.md#preload-registration)), and requires Zabric. Until it has been preloaded
-  once it reports "not ready" with the reason, and the restart notice lists it.
+- The stdlib is swapped only at premain, before any mod can load a `kotlin.*` class. ZombieBuddyKotlin is preloaded
+  through Zabric ([Access Widening](./access-widening.md#preload-registration)).
 - Java classes in `javaPkgName` run before the swap or without it and must not reference Kotlin types
   (`checkBootstrapClasses` enforces this). Put Kotlin code in a subpackage; see the comment in `selfcheck/SelfCheck.kt`.
-- Premain code touches no game class and logs nothing; `Main` reports. Every failure reports "not ready" and leaves
-  the game running ([Error Handling](./error-handling.md)). `Main` never throws into ZombieBuddy.
+- Every failure reports "not ready" and leaves the game running ([Error Handling](./error-handling.md)).
 - Everything in this jar is shared unrelocated by all dependent mods, including `zb-kt-utils`
   ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)). Adding helper APIs or more kotlinx artifacts is a decision, not a
   drive-by change.
@@ -36,11 +34,9 @@
 - Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`); All-in-One features get it
   through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
 - The mod's `mod.info` lists `\Zabric` and `\ZombieBuddyKotlin` in both `require` and `loadModAfter`.
-- The readiness gate is the only readiness check a dependent has: generated glue gates itself
-  ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)), and the mod's `Main` returns on its first line
-  while ZombieBuddyKotlin is not ready (`dont39-all-in-one/.../Main.kt`). The gate must link on Kotlin 1.4.10.
-- Beyond that gate, dependents assume ZombieBuddyKotlin works: no other readiness checks, fallbacks or degraded mode.
-  Its own log says why it is not ready.
+- The only readiness check a dependent has is the gate in generated glue and at the top of its `Main`
+  (`dont39-all-in-one/.../Main.kt`); it must link on the game's Kotlin 1.4.10. Otherwise dependents assume
+  ZombieBuddyKotlin works: no fallback or degraded mode. Its own log says why it is not ready.
 
 ## Version Bumps
 
