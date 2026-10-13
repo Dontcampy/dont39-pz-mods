@@ -1,6 +1,6 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
+import com.dont39.pz.zbktutils.glue.Hook
 import me.zed_0xff.zombie_buddy.Patch
 import zombie.core.Core
 import zombie.ui.TextManager

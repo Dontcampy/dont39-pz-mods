@@ -66,5 +66,5 @@ A literal `%` in a pattern is written `%%`.
 
 Reference files are in `viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/` and
 `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`. The library's lines are in
-`zombiebuddy-kotlin/src/main/java/com/dont39/pz/zombiebuddykotlin/ZombieBuddyKotlin.java`. Kotlin features get the
-prefix and lifecycle lines from `Feature.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)).
+`zb-kt/src/main/java/com/dont39/pz/zbkt/ZombieBuddyKotlin.java`. Kotlin features get the
+prefix and lifecycle lines from `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).

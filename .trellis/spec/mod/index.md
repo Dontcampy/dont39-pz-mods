@@ -12,7 +12,7 @@ One Gradle build ships two Workshop items:
 - **Dont39 All-in-One** (`dont39-all-in-one`). Each fix is its own Gradle subproject (a *feature module*), and
   `dont39-all-in-one` packages all of them into one jar and mod folder. The same Workshop item carries the preload mod
   **Zabric** (`zabric`, [Access Widening](./access-widening.md)).
-- **ZombieBuddyKotlin** (`zombiebuddy-kotlin`), a prerequisite library mod that provides the current Kotlin runtime
+- **ZombieBuddyKotlin** (`zb-kt`), a prerequisite library mod that provides the current Kotlin runtime
   ([Kotlin Runtime](./kotlin-runtime.md)).
 
 Mod code is written in Kotlin. Features switch themselves off when the game or a target mod does not match what they
@@ -40,7 +40,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
-| [ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md) | Internal module every Kotlin feature builds on: feature base, hook and widening checks |
+| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Internal module every Kotlin feature builds on: feature base, hook and widening checks |
 
 ---
 
@@ -49,8 +49,8 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 1. [Directory Structure](./directory-structure.md) — always; it holds the "Adding a Feature" checklist.
 2. [ZombieBuddy Patching](./zombiebuddy-patching.md) — for anything that hooks game or mod code.
    [Access Widening](./access-widening.md) — for anything that reads or calls game or mod members.
-   [Kotlin Runtime](./kotlin-runtime.md) — for any Kotlin code, version bump, or change to `zombiebuddy-kotlin`.
-   [ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md) — for a Kotlin feature or a change to that module.
+   [Kotlin Runtime](./kotlin-runtime.md) — for any Kotlin code, version bump, or change to `zb-kt`.
+   [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) — for a Kotlin feature or a change to that module.
 3. [Error Handling](./error-handling.md) and [Logging Guidelines](./logging-guidelines.md) — for any runtime code.
 4. Read the reference files those guides link before copying a pattern.
 

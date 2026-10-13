@@ -1,8 +1,8 @@
 # Kotlin Runtime (ZombieBuddyKotlin)
 
-> Rules for Kotlin code in this repo and for the `zombiebuddy-kotlin` library mod. How the swap works is in the code:
-> start at `ZombieBuddyKotlin.java` (`zombiebuddy-kotlin/src/main/java/com/dont39/pz/zombiebuddykotlin/`) and
-> `zombiebuddy-kotlin/build.gradle.kts`.
+> Rules for Kotlin code in this repo and for the `zb-kt` library mod. How the swap works is in the code:
+> start at `ZombieBuddyKotlin.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`) and
+> `zb-kt/build.gradle.kts`.
 
 ---
 
@@ -18,7 +18,7 @@
   [`PatchEngine.java`](../../../external-repos/ZombieBuddy/java/src/main/java/me/zed_0xff/zombie_buddy/PatchEngine.java).
 - The library depends on ZombieBuddy internals (`Loader.g_instrumentation`). Recheck it after every ZombieBuddy update.
 
-## Library (`zombiebuddy-kotlin`)
+## Library (`zb-kt`)
 
 - Java classes in `javaPkgName` run before the swap and must not reference Kotlin types (`checkBootstrapClasses`
   enforces this). Put Kotlin code in a subpackage; see the comment in `selfcheck/SelfCheck.kt`.
@@ -38,7 +38,7 @@
 ## Version Bumps
 
 - Versions come only from `gradle/libs.versions.toml`.
-- After a bump, update the version text in `zombiebuddy-kotlin/mod/workshop/workshop.txt` and run `smokeTest`. The
+- After a bump, update the version text in `zb-kt/mod/workshop/workshop.txt` and run `smokeTest`. The
   ready line must show the new versions.
 - Upload ZombieBuddyKotlin before any mod update that needs the new version.
 - KSP is versioned independently of Kotlin. After a Kotlin bump, `./gradlew build` must still run KSP; if it does not,

@@ -7,8 +7,8 @@ plugins {
 }
 
 dependencies {
-  implementation(project(":zombiebuddy-kotlin-utils"))
-  ksp(project(":zombiebuddy-kotlin-utils-processor"))
+  implementation(project(":zb-kt-utils"))
+  ksp(project(":zb-kt-utils-processor"))
 }
 
 ksp {

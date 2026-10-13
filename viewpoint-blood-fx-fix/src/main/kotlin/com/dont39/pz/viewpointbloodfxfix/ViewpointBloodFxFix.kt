@@ -1,10 +1,10 @@
 package com.dont39.pz.viewpointbloodfxfix
 
-import com.dont39.pz.zombiebuddykotlinutils.Feature
-import com.dont39.pz.zombiebuddykotlinutils.glue.LuaGlobal
-import com.dont39.pz.zombiebuddykotlinutils.targetLoaded
-import com.dont39.pz.zombiebuddykotlinutils.targetVersion
-import com.dont39.pz.zombiebuddykotlinutils.versionProblem
+import com.dont39.pz.zbktutils.Feature
+import com.dont39.pz.zbktutils.glue.LuaGlobal
+import com.dont39.pz.zbktutils.targetLoaded
+import com.dont39.pz.zbktutils.targetVersion
+import com.dont39.pz.zbktutils.versionProblem
 
 /**
  * Viewpoint 0.1.6 raises the near world by terrain relief on the GPU; BloodFX still draws at flat-ground height, so its

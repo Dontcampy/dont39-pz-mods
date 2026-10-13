@@ -1,6 +1,6 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
+import com.dont39.pz.zbktutils.glue.Hook
 import org.lwjgl.glfw.GLFWNativeWin32
 import org.lwjglx.opengl.Display
 import zombie.core.Core

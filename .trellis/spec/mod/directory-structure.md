@@ -27,16 +27,16 @@ dont39-all-in-one/                   shipped mod: all features
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
 zabric/                              preload mod in All-in-One's Workshop item (see access-widening.md)
-zombiebuddy-kotlin/                  shipped mod: Kotlin runtime library (see kotlin-runtime.md)
-zombiebuddy-kotlin-utils/            internal module bundled into All-in-One (see zombiebuddy-kotlin-utils.md)
-zombiebuddy-kotlin-utils-processor/  KSP processor for the glue; compile time only, not shipped
+zb-kt/                               shipped mod: Kotlin runtime library (see kotlin-runtime.md)
+zb-kt-utils/                         internal module bundled into All-in-One (see zb-kt-utils.md)
+zb-kt-utils-processor/               KSP processor for the glue; compile time only, not shipped
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua
 are merged into the mod folder, deploy guards, smoke test) is defined in:
 
 - `buildSrc/src/main/kotlin/pz-java.gradle.kts`, `pz-kotlin.gradle.kts`, `pz-mod.gradle.kts`, `pz-feature.gradle.kts`
-- `dont39-all-in-one/build.gradle.kts`, `zombiebuddy-kotlin/build.gradle.kts`
+- `dont39-all-in-one/build.gradle.kts`, `zb-kt/build.gradle.kts`
 
 Read those files rather than assuming; do not duplicate their settings in feature modules.
 
@@ -72,7 +72,7 @@ in the `viewpoint-blood-fx-fix` classes.
 2. Register it in `settings.gradle.kts`.
 3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
 4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.kt`, built on `Feature`
-   ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); non-public members via
+   ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)); non-public members via
    [Access Widening](./access-widening.md).
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package
    ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are generated. Add a Lua file in

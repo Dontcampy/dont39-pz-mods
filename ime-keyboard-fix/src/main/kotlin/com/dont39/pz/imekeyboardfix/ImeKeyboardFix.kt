@@ -1,6 +1,6 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zombiebuddykotlinutils.Feature
+import com.dont39.pz.zbktutils.Feature
 import org.lwjgl.system.Platform
 
 /**

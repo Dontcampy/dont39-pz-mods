@@ -3,7 +3,7 @@ package com.dont39.pz.viewpointbloodfxfix
 import bloodfx.BloodFx
 import bloodfx.Gore
 import bloodfx.GoreGpu
-import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
+import com.dont39.pz.zbktutils.glue.Hook
 
 /**
  * Raises heights by the relief only for the duration of BloodFX's draw calls, so its simulation stays on flat ground.
