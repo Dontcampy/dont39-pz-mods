@@ -6,10 +6,8 @@
 
 ## Rules
 
-- Use the game's `DebugType.Mod` logger only; no `System.out`, no ZombieBuddy logger. Kotlin code logs through the
-  lazy extensions in `LoggerUtils.kt` (`zombiebuddy-kotlin-utils`). Java code passes values as `DebugType` format
-  arguments instead of concatenating them, except in `printException`: the game's varargs overload drops its
-  arguments. Lua code uses the same logger
+- Use the game's `DebugType.Mod` logger only; no `System.out`, no ZombieBuddy logger. Build no message the logger
+  would drop ([Building the Message](#building-the-message)). Lua code uses the same logger
   (`DebugType.Mod:println` / `:error`), not `print`; see the helpers in
   `mod-options-sidebar/src/main/lua/client/Dont39AllInOne_ModOptionsSidebar.lua`.
 - Each feature logs through its facade's `log` / `debug` / `disable` helpers, which add the shared mod + feature
@@ -20,6 +18,44 @@
 - Reasons are sentences a player can act on, including how to override when an override exists.
 - Never repeat a line per call or per frame. State lines are logged once per decision: when the decision is re-made
   (e.g. after a mod option changes, see `setForce()` in `Feature.kt`) the new state is logged again.
+
+## Building the Message
+
+The game checks the severity only after the caller has built the message, so a dropped line still costs its string.
+
+### Kotlin
+
+Wrong:
+
+```kotlin
+DebugType.Mod.println("${prefix}raised $count")  // built even when Mod logging is off
+DebugType.Mod.println { "raised $count" }        // resolves to println(Object): prints the lambda
+```
+
+Correct:
+
+```kotlin
+ViewpointBloodFxFix.log { "raised $count" }                      // feature code: facade helper, adds the prefix
+DebugType.Mod.lzWarn { "[$modName] access widener: not applied" } // no facade: LoggerUtils.kt
+```
+
+### Java
+
+Wrong:
+
+```java
+DebugType.Mod.println(PREFIX + "registered in " + config);                   // concatenated before the check
+DebugType.Mod.printException(t, LogSeverity.Error, PREFIX + "failed: %s", why); // the game drops these arguments
+```
+
+Correct:
+
+```java
+DebugType.Mod.println(PREFIX + "registered in %s", config);  // PREFIX is a constant, folded at compile time
+DebugType.Mod.printException(t, PREFIX + "failed: " + why, LogSeverity.Error); // error path only
+```
+
+A literal `%` in a pattern is written `%%`.
 
 ## Debug Output
 
