@@ -8,14 +8,11 @@
 
 ## Use It
 
-- A feature's facade extends `Feature` (`Feature.kt`), which also checks the hooked methods (`HookTargets.kt`) and the
-  access widening state (`Widening.kt`, [Access Widening](./access-widening.md)); target-mod presence and version checks
-  use `TargetMod.kt`, and hooks and Lua functions use the annotations in
-  `glue/Glue.kt` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
+- A feature's facade extends `Feature` (`Feature.kt`), target-mod presence and version checks use `TargetMod.kt`, and
+  hooks and Lua functions use the annotations in `glue/Glue.kt`
+  ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
 - Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording, hook
   checks, widening state.
-- It compiles against the preload mod (`compileOnly`) but links to it only after probing its class by name
-  (`Widening.kt`), since the preload mod's jar may be missing.
 
 ## Rules for Changing It
 

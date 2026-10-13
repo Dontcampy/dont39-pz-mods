@@ -9,9 +9,9 @@
 
 | Where | Rule | Reference |
 |-------|------|-----------|
-| Hooked classes/methods, and what the compiler cannot check | Throw, naming what does not match; the feature disables itself with that error | `HookTargets.kt`, `resolve()` in `ImeKeyboardFix.kt` |
-| Direct references to game or mod members | A mismatch surfaces as a `LinkageError` inside the hook's `try`, which disables the feature | `LiftOffsets.liftBlood` |
-| Access widening not in effect | The features that need it stay idle with the reason; one outcome line from `Main` | `Widening.kt`, `Feature.kt` |
+| Hook targets, and what the compiler cannot check | Throw, naming what does not match; the feature disables itself with that error | `HookTargets.kt`, `ImeKeyboardFix.resolve()` |
+| Direct references to game or mod members | Leave a mismatch to the hook's `try` (`LinkageError`), which disables the feature | `LiftOffsets.liftBlood` |
+| Access widening not in effect | Stay idle with the reason | `Widening.kt` |
 | Helpers called from patches | Catch everything at this boundary, restore what was changed, then disable the feature through the facade | `LiftOffsets.liftBlood` / `liftGore`, `AimShift.lower` |
 | Restore paths | Never throw; keep restoring the rest after one failure | `LiftOffsets` (`Saved.restore`), `AimShift.restore` |
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |

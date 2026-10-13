@@ -14,8 +14,7 @@
   the Gradle JVM, so set `JAVA_HOME` accordingly if the shell default is older.
 - `pzDir` in `gradle.properties` must point at a Project Zomboid install that contains the jars
   `buildSrc/src/main/kotlin/pz-java.gradle.kts` compiles against.
-- The target mods in the features' `pzTargets` must be downloaded by Steam next to `pzDir` (the build names a missing
-  one).
+- The features' target mods must be subscribed in Steam.
 - Check the assembled jar contains the new patches class (output location: `assembleMod` in
   `dont39-all-in-one/build.gradle.kts`).
 - Check per-frame paths with `javap -c` for allocation, boxing and lambdas.
@@ -27,10 +26,8 @@ classes that exist only in game. Do not add a test framework as part of a featur
 
 The automated check is `smokeTest` in `dont39-all-in-one/build.gradle.kts`: it deploys, launches the real game with
 ZombieBuddy until init, and checks `console.txt`. Read the task for its prerequisites (Steam, ZombieBuddy installed,
-the game's enabled-mod list, which must include Zabric). It requires the access widener to be in
-effect: after a fresh setup the first run registers the preload mod and fails asking for a second run
-([Access Widening](./access-widening.md#the-preload-mod)). A feature with generated glue needs no edit to it; a
-Lua-only feature adds its line (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
+the game's enabled-mod list including Zabric; on a fresh setup run it twice, since the first run registers Zabric).
+A feature with generated glue needs no edit to it; a Lua-only feature adds its line (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
 
@@ -57,9 +54,7 @@ New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requir
 | Pattern | Why |
 |---------|-----|
 | Patch classes outside the `javaPkgName` package | ZombieBuddy skips them |
-| Reflection or method handles in feature code | Compile against the jars and widen ([Access Widening](./access-widening.md)) |
-| Widening methods other than constructors | A visibility change can alter virtual dispatch |
-| Kotlin or patches in the preload mod | Its package is loaded at premain, before the Kotlin runtime ([Access Widening](./access-widening.md#the-preload-mod)) |
+| Reflection or method handles in feature code | See [Access Widening](./access-widening.md) |
 | Logic or try/catch in patches classes | Helpers own state and error handling |
 | Hand-written patch or Lua bridge classes in a Kotlin feature | Generated from `@Hook` / `@LuaGlobal` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
 | Running against unchecked target versions | Internals may differ |

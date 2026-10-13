@@ -26,8 +26,7 @@ dont39-all-in-one/                   shipped mod: all features
   src/main/kotlin/com/dont39/pz/allinone/Main.kt
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
-zabric/                              shipped in All-in-One's Workshop item: game-start access widening, Java and Lua
-                                     only (see access-widening.md)
+zabric/                              preload mod in All-in-One's Workshop item (see access-widening.md)
 zombie-buddy-kotlin/                 shipped mod: Kotlin runtime library (see kotlin-runtime.md)
 zombiebuddy-kotlin-utils/            internal module bundled into All-in-One (see zombiebuddy-kotlin-utils.md)
 zombiebuddy-kotlin-utils-processor/  KSP processor for the glue; compile time only, not shipped
@@ -73,8 +72,8 @@ in the `viewpoint-blood-fx-fix` classes.
 2. Register it in `settings.gradle.kts`.
 3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
 4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.kt`, built on `Feature`
-   ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)). Non-public game or mod members it uses go into its
-   `.classtweaker`, and the facade passes `widened = true` ([Access Widening](./access-widening.md)).
+   ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); non-public members via
+   [Access Widening](./access-widening.md).
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package
    ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are generated. Add a Lua file in
    `src/main/lua/` if the feature has options.

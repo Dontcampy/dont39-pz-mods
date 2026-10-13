@@ -51,8 +51,7 @@ When the docs and the source disagree, trust the source (see the package rule be
 - Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
-- Game classes already loaded when patches apply (e.g. `org.lwjglx.opengl.Display`) are retransformed; smokeTest's
-  `Transformed: ... (retransformed)` line shows it worked. Reference: `ImeWindow.kt` (`ime-keyboard-fix`).
+- Already-loaded game classes can be hooked; ZombieBuddy retransforms them. Reference: `ImeWindow.kt`.
 - A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
 - A hook that changes state on enter restores it on exit, including when the target throws.
 - Before using a `Patch.java` option the repo has not used, check its default there, in particular how matching
@@ -91,11 +90,9 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ## Reaching the Game and Other Mods
 
-- Compile against them and call them directly; non-public members are widened. Rules and pitfalls:
-  [Access Widening](./access-widening.md). Reference: `LiftOffsets.kt`, `AimShift.kt`, `ImeCaret.kt`.
+- Call them directly: [Access Widening](./access-widening.md).
 - No work that can fail in an object initializer: hooks live on those objects, and a failed initializer makes every
   later call fail inside the target mod.
-- Check the per-frame paths with `javap -c` for allocation and boxing (see Threading and Hot Paths).
 
 ---
 
@@ -105,9 +102,8 @@ For a feature that changes the game's own Lua UI. Reference:
   option), access widening in effect if the feature uses it. The decision is cached; an option change may re-open it, a
   runtime failure may not. Internals that do not match are an error, not a reason to stay idle. Build it on `Feature`
   and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); reference: `ViewpointBloodFxFix.kt`.
-- Before the first activation, `Feature` checks that every class and method the generated patches hook exists
-  (`HookTargets.kt`); ZombieBuddy would leave a missing one out silently. `resolve()` is only for what the compiler
-  cannot check (e.g. native functions in `ImeContext.kt`).
+- `Feature` checks the hook targets exist (`HookTargets.kt`); `resolve()` is only for what the compiler cannot check
+  (`ImeContext.kt`).
 - Every patch entry point checks the facade's `active()` first.
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
 - A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS).
@@ -127,11 +123,9 @@ When a feature changes another mod's state around a call (`LiftOffsets.kt`, `Aim
 ## Threading and Hot Paths
 
 - Render patches run on the render thread; follow the reference feature's (lock-free) approach to shared state.
-- Main-thread state read from the render thread is read once into a local; game helpers that re-read a static (e.g.
-  `Core.isDoingTextEntry()` on `Core.currentTextEntryBox`) can see it change between reads.
-- Win32 calls on the game window (IMM, window procedure) belong on the window's own thread, which is the thread that
-  calls `Display.processMessages()`; hook that method, and undo them there when another thread disables the feature.
-  Reference: `ImeWindow.kt`; subclassing the window procedure: `ImeWindowProc.kt` (both `ime-keyboard-fix`).
+- Read main-thread state once into a local on the render thread (`ImeWindow.kt`).
+- Win32 calls on the game window run on the thread that calls `Display.processMessages()`, including their undo
+  (`ImeWindow.kt`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on (see `LiftOffsets.kt`). Know how often the patched method is called before adding work to it.
 - In Kotlin, per-frame code uses no lambdas, iterators, ranges objects or boxing; confirm with `javap -c`.

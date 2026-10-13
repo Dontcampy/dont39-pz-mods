@@ -10,9 +10,8 @@
 One Gradle build ships two Workshop items:
 
 - **Dont39 All-in-One** (`dont39-all-in-one`). Each fix is its own Gradle subproject (a *feature module*), and
-  `dont39-all-in-one` packages all of them into one jar and mod folder. The same Workshop item carries
-  **Zabric** (`zabric`), which makes the non-public members the features use public at game start
-  ([Access Widening](./access-widening.md)).
+  `dont39-all-in-one` packages all of them into one jar and mod folder. The same Workshop item carries the preload mod
+  **Zabric** (`zabric`, [Access Widening](./access-widening.md)).
 - **ZombieBuddyKotlin** (`zombie-buddy-kotlin`), a prerequisite library mod that provides the current Kotlin runtime
   ([Kotlin Runtime](./kotlin-runtime.md)).
 
@@ -36,7 +35,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
 | [ZombieBuddy Patching](./zombiebuddy-patching.md) | Patch classes, reaching other mods, gating, enter/exit restore |
-| [Access Widening](./access-widening.md) | Compiling against game and mod jars, `.classtweaker`, the preload mod |
+| [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
