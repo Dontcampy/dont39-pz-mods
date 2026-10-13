@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
- * Run reflectively by `ZombieBuddyKotlin.install` after the stdlib swap; throws if the runtime does not work.
+ * Run by `ZombieBuddyKotlin.report` after the game-start stdlib swap; throws if the runtime does not work.
  *
- * Kept out of the javaPkgName package: ZombieBuddy loads every class in that exact package (after `Main.main` today);
- * if it ever did so first, this class would pull in the game's old Kotlin before the swap.
+ * Kept out of the javaPkgName package: ZombieBuddy may load every class in that exact package, and this one would then
+ * pull in the game's old Kotlin on a launch without the swap.
  */
 internal object SelfCheck {
   private enum class Part { STDLIB, COROUTINES, SERIALIZATION }

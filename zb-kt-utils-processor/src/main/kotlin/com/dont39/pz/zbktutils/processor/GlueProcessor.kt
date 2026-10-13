@@ -33,14 +33,31 @@ private const val NO_EXCEPTION = "$PATCH.NoException"
 private val PRIMITIVES = setOf("Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double").map { "kotlin.$it" }
 private val LUA_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
+/** What a gated Lua function returns for each primitive return type. */
+private val ZEROS = mapOf(
+  "kotlin.Boolean" to "false",
+  "kotlin.Byte" to "0",
+  "kotlin.Short" to "0",
+  "kotlin.Char" to "'\\u0000'",
+  "kotlin.Int" to "0",
+  "kotlin.Long" to "0L",
+  "kotlin.Float" to "0f",
+  "kotlin.Double" to "0.0",
+)
+
+// On a launch without ZombieBuddyKotlin's swap, ZombieBuddy still inlines the advice and exposes the Lua functions, which
+// would then run on the game's Kotlin 1.4.10. A static Java call and a branch link there.
+private const val READY = "com.dont39.pz.zbkt.ZombieBuddyKotlin.isReady()"
+
 /** Set by pz-feature.gradle.kts. */
 private const val OPTION_FEATURE = "dont39.feature"
 private const val OPTION_PACKAGE = "dont39.gluePackage"
 private const val OPTION_LUA_PREFIX = "dont39.luaPrefix"
 
 /**
- * Generates a feature module's ZombieBuddy glue from the `glue` annotations, plus a resource listing it for
- * dont39-all-in-one's checks and smokeTest. Rule violations are compile errors naming the function.
+ * Generates a feature module's ZombieBuddy glue from the `glue` annotations, plus a resource listing it, shipped for the
+ * hook checks at runtime (HookTargets.kt) and read by the aggregating mod's checks and smokeTest. Every generated
+ * function first checks that ZombieBuddyKotlin is ready. Rule violations are compile errors naming the function.
  */
 class GlueProcessor(
   private val codeGenerator: CodeGenerator,
@@ -76,12 +93,11 @@ class GlueProcessor(
       lines += "lua $pkg.$bridge"
       luaFunctions.forEach { lines += "luaGlobal ${it.name}" }
     }
-    if (lines.isNotEmpty()) {
-      val files = (targets.flatMap { it.files() } + luaFunctions.mapNotNull { it.callee.file }).distinct()
-      val dependencies = Dependencies(true, *files.toTypedArray())
-      codeGenerator.createNewFileByPath(dependencies, "META-INF/dont39/glue/$feature", "txt")
-        .use { it.write(lines.joinToString("\n", postfix = "\n").toByteArray()) }
-    }
+    // also when empty: the runtime check treats a missing listing as a packaging error
+    val files = (targets.flatMap { it.files() } + luaFunctions.mapNotNull { it.callee.file }).distinct()
+    val dependencies = Dependencies(true, *files.toTypedArray())
+    codeGenerator.createNewFileByPath(dependencies, "META-INF/zbkt/glue/$feature", "txt")
+      .use { it.write(lines.joinToString("") { line -> "$line\n" }.toByteArray()) }
     return emptyList()
   }
 
@@ -264,16 +280,27 @@ class GlueProcessor(
     appendLine("    ${advice.annotation}")
     if (advice.returnType == null) {
       appendLine("    fun $name($params) {")
+      appendLine("      if (!$READY) return")
       appendLine("      $call")
-      appendLine("    }")
     } else {
-      appendLine("    fun $name($params): ${advice.returnType} = $call")
+      // skipOn: false runs the target as without this mod
+      appendLine("    fun $name($params): ${advice.returnType} {")
+      appendLine("      if (!$READY) return false")
+      appendLine("      return $call")
     }
+    appendLine("    }")
   }
 
   // ---- Lua ----
 
-  private class LuaFunction(val name: String, val callee: Callee, val params: List<Param>, val returnType: String?)
+  /** [zero]: what the function returns while ZombieBuddyKotlin is not ready; null for Unit. */
+  private class LuaFunction(
+    val name: String,
+    val callee: Callee,
+    val params: List<Param>,
+    val returnType: String?,
+    val zero: String?,
+  )
 
   private fun collectLua(resolver: Resolver, prefix: String): List<LuaFunction> {
     val byName = linkedMapOf<String, LuaFunction>()
@@ -294,7 +321,20 @@ class GlueProcessor(
       }
       val params = fn.parameters.map { Param("", it.name?.asString() ?: "p", render(it.type.resolve())) }
       val returnType = fn.returnType?.resolve()?.takeUnless { it.isType("kotlin.Unit") }?.let(::render)
-      byName[name] = LuaFunction(name, callee, params, returnType)
+      val zero = when {
+        returnType == null -> null
+        returnType.endsWith("?") -> "null"
+        else -> ZEROS[returnType]
+      }
+      if (returnType != null && zero == null) {
+        error(
+          callee,
+          "@LuaGlobal must return Unit, a primitive or a nullable type (found $returnType): while ZombieBuddyKotlin is " +
+            "not ready the generated function returns without calling it; return $returnType? instead",
+        )
+        continue
+      }
+      byName[name] = LuaFunction(name, callee, params, returnType, zero)
     }
     return byName.values.sortedBy { it.name }
   }
@@ -315,11 +355,14 @@ class GlueProcessor(
       appendLine("  @LuaMethod(name = ${kotlinString(function.name)}, global = true)")
       if (function.returnType == null) {
         appendLine("  fun ${function.name}($params) {")
+        appendLine("    if (!$READY) return")
         appendLine("    $call")
-        appendLine("  }")
       } else {
-        appendLine("  fun ${function.name}($params): ${function.returnType} = $call")
+        appendLine("  fun ${function.name}($params): ${function.returnType} {")
+        appendLine("    if (!$READY) return ${function.zero}")
+        appendLine("    return $call")
       }
+      appendLine("  }")
     }
     appendLine("}")
   }

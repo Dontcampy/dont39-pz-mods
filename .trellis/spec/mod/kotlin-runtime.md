@@ -1,7 +1,7 @@
 # Kotlin Runtime (ZombieBuddyKotlin)
 
 > Rules for Kotlin code in this repo and for the `zb-kt` library mod. How the swap works is in the code:
-> start at `ZombieBuddyKotlin.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`) and
+> start at `PreMain.java`, `Main.java` and `ZombieBuddyKotlin.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`) and
 > `zb-kt/build.gradle.kts`.
 
 ---
@@ -9,31 +9,38 @@
 ## Background (not visible in this repo's code)
 
 - The game's `projectzomboid.jar` bundles an old kotlin-stdlib (1.4.10, via okhttp). It is first on the classpath, so a
-  stdlib inside a mod jar would be shadowed. The vanilla game itself never loads a Kotlin class, which is why swapping
-  in the MAIN phase is safe.
+  stdlib inside a mod jar would be shadowed. The vanilla game itself never loads a Kotlin class.
 - ZombieBuddy calls `Main.main` and then loads every class in exactly `javaPkgName` (not subpackages) while applying
   patches: `ApplyPatchesFromPackage` in
   [`Loader.java`](../../../external-repos/ZombieBuddy/java/src/main/java/me/zed_0xff/zombie_buddy/Loader.java), and
   `collectPatches` in
   [`PatchEngine.java`](../../../external-repos/ZombieBuddy/java/src/main/java/me/zed_0xff/zombie_buddy/PatchEngine.java).
-- The library depends on ZombieBuddy internals (`Loader.g_instrumentation`). Recheck it after every ZombieBuddy update.
+- On a launch where the swap did not happen, ZombieBuddy still loads dependent mods, calls their `Main` and inlines
+  their patches; they would run on 1.4.10.
 
 ## Library (`zb-kt`)
 
-- Java classes in `javaPkgName` run before the swap and must not reference Kotlin types (`checkBootstrapClasses`
-  enforces this). Put Kotlin code in a subpackage; see the comment in `selfcheck/SelfCheck.kt`.
-- Every failure reports "not ready" and leaves the game running ([Error Handling](./error-handling.md)).
-- Everything in this jar is shared unrelocated by all dependent mods. Adding helper APIs or more kotlinx artifacts is a
-  decision, not a drive-by change.
+- The stdlib is swapped only at premain. ZombieBuddyKotlin is a preload mod, registered through Zabric
+  ([Access Widening](./access-widening.md#preload-registration)), and requires Zabric. Until it has been preloaded
+  once it reports "not ready" with the reason, and the restart notice lists it.
+- Java classes in `javaPkgName` run before the swap or without it and must not reference Kotlin types
+  (`checkBootstrapClasses` enforces this). Put Kotlin code in a subpackage; see the comment in `selfcheck/SelfCheck.kt`.
+- Premain code touches no game class and logs nothing; `Main` reports. Every failure reports "not ready" and leaves
+  the game running ([Error Handling](./error-handling.md)). `Main` never throws into ZombieBuddy.
+- Everything in this jar is shared unrelocated by all dependent mods, including `zb-kt-utils`
+  ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)). Adding helper APIs or more kotlinx artifacts is a decision, not a
+  drive-by change.
 
 ## Dependent Kotlin Modules
 
 - Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`); All-in-One features get it
   through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
-- The mod's `mod.info` lists `\ZombieBuddyKotlin` in both `require` and `loadModAfter`. A Kotlin mod that loads first
-  makes the library refuse to swap.
-- Dependent mods assume ZombieBuddyKotlin works. Do not check its readiness or add any fallback for it failing; its
-  own log says why it is not ready.
+- The mod's `mod.info` lists `\Zabric` and `\ZombieBuddyKotlin` in both `require` and `loadModAfter`.
+- The readiness gate is the only readiness check a dependent has: generated glue gates itself
+  ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)), and the mod's `Main` returns on its first line
+  while ZombieBuddyKotlin is not ready (`dont39-all-in-one/.../Main.kt`). The gate must link on Kotlin 1.4.10.
+- Beyond that gate, dependents assume ZombieBuddyKotlin works: no other readiness checks, fallbacks or degraded mode.
+  Its own log says why it is not ready.
 
 ## Version Bumps
 

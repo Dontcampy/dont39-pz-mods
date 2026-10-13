@@ -1,22 +1,29 @@
 package buildsrc.convention
 
-// An All-in-One feature module.
+// A feature module, bundled by a mod that sets pzGlue (dont39-all-in-one).
 plugins {
   id("buildsrc.convention.pz-kotlin")
   id("com.google.devtools.ksp")
 }
 
 dependencies {
-  implementation(project(":zb-kt-utils"))
+  // both ship in ZombieBuddyKotlin's jar; the generated glue calls ZombieBuddyKotlin.isReady()
+  compileOnly(project(":zb-kt-utils"))
+  compileOnly(project(":zb-kt"))
   ksp(project(":zb-kt-utils-processor"))
+}
+
+val pzGlue = extensions.create<PzGlue>("pzGlue")
+
+fun Property<String>.required(name: String): Provider<String> {
+  val why = "$path: pzGlue.$name is not set; the mod that bundles this feature sets it"
+  return orElse(providers.provider<String> { throw GradleException(why) })
 }
 
 ksp {
   arg("dont39.feature", project.name.split('-').joinToString("") { it.replaceFirstChar(Char::uppercaseChar) })
-  // All-in-One's javaPkgName; ZombieBuddy only looks there
-  arg("dont39.gluePackage", "com.dont39.pz.allinone")
-  // Lua globals are shared by all mods
-  arg("dont39.luaPrefix", "Dont39AllInOne_")
+  arg("dont39.gluePackage", pzGlue.gluePackage.required("gluePackage"))
+  arg("dont39.luaPrefix", pzGlue.luaPrefix.required("luaPrefix"))
 }
 
 val pzDir = providers.gradleProperty("pzDir")

@@ -1,4 +1,4 @@
-dont39-classtweaker v1
+zabric-classtweaker v1
 # particles whose heights LiftOffsets raises while BloodFX draws
 accessible field bloodfx/BloodFx drops Ljava/util/ArrayList;
 accessible field bloodfx/BloodFx mists Ljava/util/ArrayList;

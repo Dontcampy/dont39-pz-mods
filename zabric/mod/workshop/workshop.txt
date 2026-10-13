@@ -1,0 +1,35 @@
+version=1
+title=Zabric
+description=[h1]Zabric[/h1]
+description=A small loader layer for ZombieBuddy Java mods, made by Dont39. It is not made by ZombieBuddy's author.
+description=It does nothing on its own. Mods that need it require it; subscribe to it along with them and enable it.
+description=
+description=[h2]What it does[/h2]
+description=[list]
+description=[*]Opens up game and mod internals that installed mods list, so that they can use them directly. This has to happen when the game starts, before the game loads them, so Zabric runs at game start for every installed mod's list, whether that mod is enabled or not.
+description=[*]Keeps itself and the mods that ask for it running at game start: on their first launch they register with ZombieBuddy, and from then on ZombieBuddy runs them at game start.
+description=[*]When a mod takes effect only after a restart (it was just registered, or it was installed or updated while the game ran), a message on the main menu lists it. On a dedicated server the list is a line in the log.
+description=[*]Changes no game files and nothing in your saves.
+description=[/list]
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=Load order: ZombieBuddy, then this mod, then the mods that use it. On the first launch Zabric registers itself with ZombieBuddy and asks you to restart the game once.
+description=
+description=[h2]Note on approval[/h2]
+description=ZombieBuddy asks you to approve a mod's Java code when it loads with the mod list. Code that runs at game start comes before that question: after an update of Zabric, or of a mod registered through it, the new version runs at the next game start before ZombieBuddy asks about it. Only mods whose Java code you approved before can register.
+description=
+description=[h2]For mod authors[/h2]
+description=[list]
+description=[*]Opening up members: put a list at META-INF/zabric/<your mod id>.classtweaker in your jar. The first line is "zabric-classtweaker v1", then one directive per line, Fabric access widener style with internal names and JVM descriptors: "accessible class", "accessible field", "mutable field", and "accessible method" for constructors (<init>) only. Call com.dont39.pz.zabric.widener.AccessWidener.problem(modId, aClassInYourJar): null when your list is in effect, otherwise the reason.
+description=[*]Running at game start: set javaPreload=true in mod.info, "ZB-Preload: true" in your jar's manifest, and require Zabric. From your Main, ask Zabric to register you: ZombieBuddy calls the mods' Main in the player's mod list order, so Zabric may not be loaded yet. If Class.forName("com.dont39.pz.zabric.preload.Preload") finds it, call Preload.register(modId, ranAtGameStart) (from a separate class, so nothing links to Zabric otherwise); if not, set the system property "zabric.preload.<modId>" to "true" or "false" (ranAtGameStart) and Zabric registers you when it loads. Your PreMain must be plain Java and must not touch game classes.
+description=[/list]
+description=
+description=[h2]Source and feedback[/h2]
+description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
+description=Problems and suggestions: comments below or GitHub issues.
+tags=Build 42;Framework
+visibility=public

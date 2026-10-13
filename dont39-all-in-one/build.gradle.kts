@@ -1,56 +1,63 @@
 import buildsrc.convention.MergeClassTweakers
+import buildsrc.convention.PzGlue
 import buildsrc.convention.WidenJars
-import groovy.json.JsonSlurper
+import buildsrc.convention.checkPlatformLog
+import buildsrc.convention.runPzUntilInit
 
 plugins {
   id("buildsrc.convention.pz-kotlin")
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.3.0"
+version = "0.4.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
 val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar", ":ime-keyboard-fix")
+// ZombieBuddyKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
-// bundled code shared by the features
-val internalLibs = listOf(":zb-kt-utils")
-// shipped in this mod's Workshop item; makes what the features' .classtweaker lists name public at game start
-val preload = ":zabric"
+// makes what the features' .classtweaker lists name public at game start
+val zabric = ":zabric"
 
 features.forEach { evaluationDependsOn(it) }
-internalLibs.forEach { evaluationDependsOn(it) }
 evaluationDependsOn(kotlinLib)
-evaluationDependsOn(preload)
-val preloadId = project(preload).extra["modId"] as String
+evaluationDependsOn(zabric)
+val zabricId = project(zabric).extra["modId"] as String
 
 dependencies {
   features.forEach { implementation(project(it)) }
-  internalLibs.forEach { implementation(project(it)) }
+  compileOnly(project(":zb-kt-utils"))
+  compileOnly(project(kotlinLib))
+}
+
+val javaPkgName = file("mod/42/mod.info").readLines().firstOrNull { it.startsWith("javaPkgName=") }
+  ?.substringAfter('=')?.trim() ?: throw GradleException("mod/42/mod.info has no javaPkgName= line")
+features.forEach {
+  project(it).extensions.findByType<PzGlue>()?.apply {
+    gluePackage = javaPkgName
+    luaPrefix = "${modId}_"
+  }
 }
 
 // each feature's generated glue listing, by feature module name
 val glueDirs = features.associate {
   val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
-  project(it).name to resources.resolve("META-INF/dont39/glue")
-}
-
-tasks.jar {
-  features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
-  internalLibs.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
-  // build data only
-  exclude("META-INF/dont39/**")
-  duplicatesStrategy = DuplicatesStrategy.FAIL
+  project(it).name to resources.resolve("META-INF/zbkt/glue")
 }
 
 val mergeClassTweakers = tasks.register<MergeClassTweakers>("mergeClassTweakers") {
   lists.from(features.flatMap { project(it).tasks.withType<WidenJars>().map { task -> task.expanded } })
-  merged = layout.buildDirectory.file("classtweaker/widen.classtweaker")
+  merged = layout.buildDirectory.file("classtweaker/$modId.classtweaker")
 }
-// where PreMain.LIST reads it
-project(preload).tasks.named<Jar>("jar") {
-  from(mergeClassTweakers) { into("com/dont39/pz/zabric") }
+
+tasks.jar {
+  features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
+  // build data only (the features' source .classtweaker lists)
+  exclude("META-INF/dont39/**")
+  // where Zabric reads it at game start
+  from(mergeClassTweakers) { into("META-INF/zabric") }
+  duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
 // Lua globals are shared, so names must differ across features too
@@ -80,14 +87,6 @@ tasks.named<Sync>("assembleMod") {
   features.forEach { from(project(it).file("src/main/lua")) { into("42/media/lua") } }
 }
 
-tasks.named<Copy>("deployWorkshop") {
-  val preloadFolder = file(pzUserDir.get()).resolve("Workshop/$modId/Contents/mods/$preloadId")
-  doFirst {
-    preloadFolder.deleteRecursively()
-  }
-  from(project(preload).tasks.named("assembleMod")) { into("Contents/mods/$preloadId") }
-}
-
 val pzDir = providers.gradleProperty("pzDir")
 
 // Starts the game the way ProjectZomboid64.exe would, with ZombieBuddy's exit_after_game_init, then checks console.txt.
@@ -95,50 +94,38 @@ val pzDir = providers.gradleProperty("pzDir")
 tasks.register("smokeTest") {
   group = "verification"
   description = "Launches Project Zomboid until ZombieBuddy has loaded $modId, then checks the log."
-  dependsOn(tasks.named("deployWorkshop"), "$kotlinLib:deployWorkshop")
+  dependsOn(tasks.named("deployWorkshop"), "$kotlinLib:deployWorkshop", "$zabric:deployWorkshop")
   val gameDir = file(pzDir.get())
   val console = file(pzUserDir.get()).resolve("console.txt")
   val version = project.version.toString()
   val kotlinLibVersion = project(kotlinLib).version.toString()
   val glue = glueDirs
   val logPrefix = "[$modId] "
-  val preloadMod = preloadId
+  val zabricMod = zabricId
   val kotlinVersions = libs.versions.let {
     "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
       "kotlinx-serialization ${it.kotlinxSerializationJSON.get()}"
   }
   doLast {
-    val launcher = JsonSlurper().parse(gameDir.resolve("ProjectZomboid64.json")) as Map<*, *>
-    val vmArgs = (launcher["vmArgs"] as List<*>).map { it.toString() }.map {
-      if (it.startsWith("-agentlib:zbNative")) "$it,exit_after_game_init,verbosity=1" else it
-    }
-    if (vmArgs.none { it.startsWith("-agentlib:zbNative") }) {
-      throw GradleException("ProjectZomboid64.json has no -agentlib:zbNative argument; is ZombieBuddy installed?")
-    }
-    val classpath = (launcher["classpath"] as List<*>).joinToString(File.pathSeparator)
-    val command = listOf(gameDir.resolve("jre64/bin/java.exe").path) + vmArgs +
-      listOf("-cp", classpath, (launcher["mainClass"] as String).replace('/', '.'))
-    // the game's output also goes to console.txt, which is what gets checked
-    val game = ProcessBuilder(command).directory(gameDir).redirectOutput(ProcessBuilder.Redirect.DISCARD)
-      .redirectError(ProcessBuilder.Redirect.DISCARD).start()
-    if (!game.waitFor(10, TimeUnit.MINUTES)) {
-      game.destroyForcibly()
-      throw GradleException("The game did not exit within 10 minutes")
-    }
+    runPzUntilInit(gameDir, "game")
 
     val log = console.readText()
-    if ("[$preloadMod] registered itself" in log || "[$preloadMod] is registered" in log) {
-      throw GradleException(
-        "$preloadMod registered itself as a ZombieBuddy preload mod in this launch; run smokeTest again.",
-      )
-    }
+    checkPlatformLog(log, console, "smokeTest")
     val widenerPrefix = "${logPrefix}access widener: "
     val widener = log.lines().lastOrNull { widenerPrefix in it }?.substringAfter(widenerPrefix)
     if (widener?.startsWith("ok") != true) {
       throw GradleException("$console: the access widener is not in effect: ${widener ?: "no access widener line"}")
     }
-    // in this order: the library installs Kotlin before All-in-One's Kotlin Main runs
+    // GameWindow.init loads client Lua before ZombieBuddy exits
+    val noticePrefix = "[$zabricMod] restart notice: "
+    val notice = log.lines().lastOrNull { noticePrefix in it }?.substringAfter(noticePrefix)
+    if (notice != "not needed") {
+      throw GradleException("$console: restart notice is '${notice ?: "missing"}', not 'not needed'")
+    }
+    // in this order: ZombieBuddy runs the preload mods' Main first, Zabric's first, so Kotlin is checked before
+    // All-in-One's Kotlin Main runs
     val ordered = listOf(
+      "[$zabricMod] access widener: ok (",
       "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
       "[ZombieBuddyKotlin] ready: $kotlinVersions",
       "[Dont39AllInOne] $version loaded",
@@ -167,8 +154,7 @@ tasks.register("smokeTest") {
         }
       }
     }
-    // GameWindow.init loads client Lua before ZombieBuddy exits
-    val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready", "[$preloadMod] restart notice: not needed")
+    val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
     val missing = (ordered + generated + luaOnly).filterNot { it in log }
     if (missing.isNotEmpty()) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })

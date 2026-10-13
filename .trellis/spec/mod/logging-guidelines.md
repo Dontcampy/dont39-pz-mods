@@ -65,6 +65,7 @@ A literal `%` in a pattern is written `%%`.
 - Never log per frame: aggregate and emit a periodic summary (`Stats` in `LiftOffsets.kt`).
 
 Reference files are in `viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/` and
-`dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`. The library's lines are in
-`zb-kt/src/main/java/com/dont39/pz/zbkt/ZombieBuddyKotlin.java`. Kotlin features get the
+`dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`. The library's lines are in `Main.java` and
+`ZombieBuddyKotlin.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`); Zabric's are reported at MAIN, never at
+premain (`zabric/src/main/java/com/dont39/pz/zabric/`). Kotlin features get the
 prefix and lifecycle lines from `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).

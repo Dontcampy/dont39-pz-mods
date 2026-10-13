@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Layer overview; which guides apply"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric rules being turned into the public widening contract"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "ZombieBuddyKotlin rules; swap moves to premain, readiness gate exception"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "zb-kt-utils moves into ZombieBuddyKotlin as public runtime"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Glue generation, javaPkgName rules, ZombieBuddy reference"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Module layout and shipped mods change"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Report and disable, never crash, never hide"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Lifecycle log lines read by smokeTest"}
