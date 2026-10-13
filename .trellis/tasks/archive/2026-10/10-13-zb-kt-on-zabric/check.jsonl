@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Failures reported with context, no silent degrade"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Bootstrap classes stay Java-only; readiness gate is the only check"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Widening contract and premain constraints"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log wording is a contract for smokeTest"}

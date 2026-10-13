@@ -20,18 +20,21 @@
 
 ## Tests
 
-There are no unit tests and no test framework; `./gradlew check` only compiles. Feature code depends on other mods'
-classes that exist only in game. Do not add a test framework as part of a feature task; propose it separately.
+There are no unit tests and no test framework; `./gradlew check` compiles and runs the build checks. Feature code
+depends on other mods' classes that exist only in game. Do not add a test framework as part of a feature task; propose
+it separately.
 
-The automated check is `smokeTest` in `dont39-all-in-one/build.gradle.kts`: it deploys, launches the real game with
-ZombieBuddy until init, and checks `console.txt`. Read the task for its prerequisites (Steam, ZombieBuddy installed,
-the game's enabled-mod list including Zabric; on a fresh setup run it twice, since the first run registers Zabric).
-A feature with generated glue needs no edit to it; a Lua-only feature adds its line (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
+The automated checks launch the real game (`smokeTest`, `dont39-all-in-one/build.gradle.kts`) or dedicated server
+(`serverSmokeTest`, `zb-kt/build.gradle.kts`) with ZombieBuddy until init and check the log. Read the task for its
+prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening list
+in any installed mod fails both.
+
+A feature with generated glue needs no edit to them; a Lua-only feature adds its line to `smokeTest`
+(see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
 
-1. Deploy with the `deployWorkshop` task (`dont39-all-in-one/build.gradle.kts`). It refuses unsigned builds; the task
-   says how to configure signing or opt out for a local-only build.
+1. Deploy with the `deployWorkshop` tasks (`buildSrc/src/main/kotlin/pz-mod.gradle.kts`).
 2. Run `smokeTest`, then play: with target mods enabled `console.txt` shows the feature ready, then active, and the
    fix is visible.
 3. A target mod disabled or at another version: the feature reports idle/inactive, behavior unchanged, no errors.
@@ -46,7 +49,7 @@ If an in-game check was not done, say so in the task report.
 ## Code Style
 
 Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
-New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requires it.
+New code is Kotlin; Java only in `zabric` and where [Kotlin Runtime](./kotlin-runtime.md) requires it.
 
 ## Forbidden Patterns
 
@@ -61,6 +64,7 @@ New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requir
 | `System.out`, unprefixed or per-frame logging | See [Logging Guidelines](./logging-guidelines.md) |
 | Bundling game, ZombieBuddy or target-mod jars | Provided at runtime |
 | `kotlin/` or `kotlinx/` classes in any jar but ZombieBuddyKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
+| `zb-kt-utils` classes in any jar but ZombieBuddyKotlin's | Duplicated on the shared classpath ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)) |
 | Relocating `kotlin.*` | Not needed; ZombieBuddyKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
 
@@ -69,3 +73,4 @@ New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requir
 - Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zabric` or
   `zb-kt`).
 - `mod.info` load order and `workshop.txt` updated for new target mods.
+- Upload order when a release spans layers: Zabric, then ZombieBuddyKotlin, then All-in-One.

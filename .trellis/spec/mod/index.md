@@ -7,13 +7,17 @@
 
 ## Overview
 
-One Gradle build ships two Workshop items:
+One Gradle build ships three Workshop items, layered as a small platform for ZombieBuddy Java mods:
 
-- **Dont39 All-in-One** (`dont39-all-in-one`). Each fix is its own Gradle subproject (a *feature module*), and
-  `dont39-all-in-one` packages all of them into one jar and mod folder. The same Workshop item carries the preload mod
-  **Zabric** (`zabric`, [Access Widening](./access-widening.md)).
-- **ZombieBuddyKotlin** (`zb-kt`), a prerequisite library mod that provides the current Kotlin runtime
+- **Zabric** (`zabric`), the loader layer: access widening and preload registration
+  ([Access Widening](./access-widening.md)).
+- **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
   ([Kotlin Runtime](./kotlin-runtime.md)).
+- **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
+  *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
+
+The runtime of the two lower layers is public for other mods; the build tooling (KSP processor, widening Gradle logic)
+stays in this repo.
 
 Mod code is written in Kotlin. Features switch themselves off when the game or a target mod does not match what they
 expect.
@@ -40,7 +44,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
-| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Internal module every Kotlin feature builds on: feature base, hook and widening checks |
+| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base, hook and widening checks |
 
 ---
 

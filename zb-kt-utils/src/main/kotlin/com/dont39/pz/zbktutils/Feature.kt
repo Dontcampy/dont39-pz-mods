@@ -6,14 +6,14 @@ import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
 /**
- * Gating and lifecycle logging of one feature. The facade is an `object` extending this. [widened]: the feature uses
- * members its `.classtweaker` makes public.
+ * Gating and lifecycle logging of one feature. The facade is an `object` extending this. [modId]: the mod that ships
+ * the feature, also the name of its Zabric list. [widened]: the feature uses members its `.classtweaker` makes public.
  */
-abstract class Feature(val name: String, modName: String, private val widened: Boolean = false) {
+abstract class Feature(val name: String, private val modId: String, private val widened: Boolean = false) {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
   @PublishedApi
-  internal val prefix = "[$modName] $name: "
+  internal val prefix = "[$modId] $name: "
 
   @Volatile
   private var state = State.UNDECIDED
@@ -97,7 +97,7 @@ abstract class Feature(val name: String, modName: String, private val widened: B
     if (problem != null || !widened) {
       return problem
     }
-    val widening = wideningProblem() ?: return null
+    val widening = wideningProblem(modId, javaClass) ?: return null
     return "access widening is not in effect: $widening"
   }
 
@@ -107,7 +107,7 @@ abstract class Feature(val name: String, modName: String, private val widened: B
       return true
     }
     try {
-      checkHookTargets(name)
+      checkHookTargets(name, javaClass)
     } catch (t: Throwable) {
       disable("checking the methods it hooks", t)
       return false

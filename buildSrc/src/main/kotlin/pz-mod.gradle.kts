@@ -1,8 +1,7 @@
 package buildsrc.convention
 
 // A shipped mod: its id comes from mod/42/mod.info. Registers assembleMod (the mod folder; the module adds its jar and
-// any other files) and, for a mod with its own Workshop item, deployWorkshop. Exposes modId and pzUserDir as extra
-// properties for the module's build script.
+// any other files) and deployWorkshop. Exposes modId and pzUserDir as extra properties for the module's build script.
 plugins {
   java
 }
@@ -37,13 +36,12 @@ val assembleMod = tasks.register<Sync>("assembleMod") {
   doLast { destinationDir.resolve("common").mkdirs() }
 }
 
-// a mod shipped inside another mod's Workshop item has no mod/workshop and is deployed by that mod
 if (file("mod/workshop").isDirectory) {
   tasks.register<Copy>("deployWorkshop") {
     group = "mod"
     description = "Copies $modId into ~/Zomboid/Workshop for local testing and uploading."
     val staged = file(workshopDir.get())
-    val modFolder = staged.resolve("Contents/mods/$modId")
+    val modsFolder = staged.resolve("Contents/mods")
     val repoWorkshopTxt = file("mod/workshop/workshop.txt")
     doFirst {
       // the uploader writes the Workshop id into the staged copy
@@ -52,7 +50,8 @@ if (file("mod/workshop").isDirectory) {
       if (stagedId != null && repoWorkshopTxt.readLines().none { it == stagedId }) {
         throw GradleException("$stagedTxt has '$stagedId' but $repoWorkshopTxt does not; add it there first.")
       }
-      modFolder.deleteRecursively()
+      // also drops a mod the item no longer ships
+      modsFolder.deleteRecursively()
     }
     into(staged)
     from("mod/workshop")

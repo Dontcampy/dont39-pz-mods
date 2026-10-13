@@ -1,9 +1,9 @@
-// Shared helpers for All-in-One's features, bundled by dont39-all-in-one.
+// The runtime Kotlin mods build on; shipped in ZombieBuddyKotlin's jar (zb-kt), compile-only everywhere else.
 plugins {
   id("buildsrc.convention.pz-kotlin")
 }
 
 dependencies {
-  // linked only after its presence is probed (Widening.kt)
+  // ZombieBuddyKotlin requires Zabric
   compileOnly(project(":zabric"))
 }

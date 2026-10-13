@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  * Shared by the build (buildSrc) and the game-start widening, so plain JDK only.
  */
 public final class ClassTweaker {
-    public static final String HEADER = "dont39-classtweaker v1";
+    public static final String HEADER = "zabric-classtweaker v1";
 
     public enum Access {
         ACCESSIBLE, MUTABLE;

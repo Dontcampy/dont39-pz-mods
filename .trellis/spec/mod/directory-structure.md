@@ -8,7 +8,7 @@
 
 ```
 settings.gradle.kts                  module list
-gradle.properties                    local paths (pzDir)
+gradle.properties                    local paths (pzDir, pzServerDir)
 buildSrc/src/main/kotlin/
   pz-java.gradle.kts                 convention plugin every module applies, except the processor
   pz-kotlin.gradle.kts               convention plugin every Kotlin module applies
@@ -26,9 +26,9 @@ dont39-all-in-one/                   shipped mod: all features
   src/main/kotlin/com/dont39/pz/allinone/Main.kt
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
-zabric/                              preload mod in All-in-One's Workshop item (see access-widening.md)
+zabric/                              shipped mod: loader layer (see access-widening.md)
 zb-kt/                               shipped mod: Kotlin runtime library (see kotlin-runtime.md)
-zb-kt-utils/                         internal module bundled into All-in-One (see zb-kt-utils.md)
+zb-kt-utils/                         shared Kotlin runtime, shipped in zb-kt's jar (see zb-kt-utils.md)
 zb-kt-utils-processor/               KSP processor for the glue; compile time only, not shipped
 ```
 
@@ -36,7 +36,7 @@ Build, signing, and packaging behavior (toolchain, Java release level, compile-o
 are merged into the mod folder, deploy guards, smoke test) is defined in:
 
 - `buildSrc/src/main/kotlin/pz-java.gradle.kts`, `pz-kotlin.gradle.kts`, `pz-mod.gradle.kts`, `pz-feature.gradle.kts`
-- `dont39-all-in-one/build.gradle.kts`, `zb-kt/build.gradle.kts`
+- `dont39-all-in-one/build.gradle.kts`, `zb-kt/build.gradle.kts`, `zabric/build.gradle.kts`
 
 Read those files rather than assuming; do not duplicate their settings in feature modules.
 
@@ -91,4 +91,4 @@ A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 8 and 9 
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 
-A further shipped mod applies `buildsrc.convention.pz-mod`; compare the two shipped modules' build scripts.
+A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts.
