@@ -13,6 +13,7 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars, merged list | `buildSrc/src/main/kotlin/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts` |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/AccessWidener.java`, `ModFolders.java` |
+| ZombieBuddy access (Instrumentation, preload settings) | `zabric/.../loader/Loader.java`, `PreloadConfig.java` |
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
 | Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
@@ -36,17 +37,20 @@ Reference features: `viewpoint-blood-fx-fix` (target mods, nested classes, a con
 ## Zabric
 
 - Java and Lua only, no patches: its package loads at premain, before the Kotlin runtime.
+- ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages
+  elsewhere name it through `Loader.name()`.
 - Premain code touches no game class and logs nothing: the classes it widens are not loaded yet, and the game's log is
   not up. Outcomes are reported at MAIN.
 - It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`).
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
-- After a ZombieBuddy update, recheck the `Loader.g_instrumentation` read in `agent/ZombieBuddyAgent.java`.
+- After a ZombieBuddy update, recheck the `Loader.g_instrumentation` read in `loader/Loader.java`.
 
 ## Preload Registration
 
 - A mod asks for registration from its own Java `Main` only, so registration follows code ZombieBuddy approved and ran
-  (`preload/Preload.java`; requester side `zb-kt/.../PreloadRequest.java`).
+  (`preload/Preload.java`; requester side `zb-kt/.../PreloadRequest.java`; ZombieBuddy's side
+  `loader/PreloadConfig.java`).
 - ZombieBuddy runs the mods' `Main` in the player's mod-list order: a requester must not assume Zabric is loaded.
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

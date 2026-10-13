@@ -2,7 +2,6 @@ package com.dont39.pz.viewpointbloodfxfix
 
 import bloodfx.Aim
 import com.dont39.pz.zbktutils.glue.Hook
-import me.zed_0xff.zombie_buddy.Patch
 import zombie.iso.IsoMovingObject
 
 /**
@@ -14,7 +13,7 @@ internal object AimShift {
   private var lowered: Aim.Ray? = null
 
   @Hook.Enter(className = "bloodfx.Aim", methodName = "target")
-  fun lower(@Patch.Argument(0) character: Any?) {
+  fun lower(@Hook.Argument(0) character: Any?) {
     if (!ViewpointBloodFxFix.active()) {
       return
     }

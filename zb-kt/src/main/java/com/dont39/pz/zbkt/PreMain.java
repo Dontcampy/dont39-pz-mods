@@ -1,6 +1,6 @@
 package com.dont39.pz.zbkt;
 
-import com.dont39.pz.zabric.agent.ZombieBuddyAgent;
+import com.dont39.pz.zabric.loader.Loader;
 
 import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
@@ -71,7 +71,7 @@ public final class PreMain {
 
         Instrumentation inst;
         try {
-            inst = ZombieBuddyAgent.instrumentation();
+            inst = Loader.instrumentation();
         } catch (NoClassDefFoundError e) {
             error = e;
             return "Zabric's Java code did not load at game start before ZombieBuddyKotlin; enable Zabric and restart"

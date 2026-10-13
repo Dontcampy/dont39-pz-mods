@@ -1,4 +1,5 @@
 import buildsrc.convention.CheckBootstrapClasses
+import buildsrc.convention.CheckLoaderRefs
 
 // Java (and Lua) only: ZombieBuddy runs PreMain before ZombieBuddyKotlin has installed the Kotlin runtime.
 plugins {
@@ -6,7 +7,7 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.2.0"
+version = "0.3.0"
 
 // the .classtweaker parser, shared with buildSrc
 sourceSets.main {
@@ -19,6 +20,11 @@ val checkBootstrapClasses = tasks.register<CheckBootstrapClasses>("checkBootstra
 }
 
 tasks.check { dependsOn(checkBootstrapClasses) }
+
+// the one hand-written place that uses ZombieBuddy's types
+tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
+  excludes.add("com/dont39/pz/zabric/loader/**")
+}
 
 tasks.jar {
   dependsOn(checkBootstrapClasses)

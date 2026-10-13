@@ -36,3 +36,11 @@ dependencies {
   zombieBuddy(files(pzDir.map { "$it/ZombieBuddy.jar" }))
   compileOnly(files(pzGameJar))
 }
+
+// Keeps loader types (ZombieBuddy) in Zabric's loader package and generated glue, which exclude themselves.
+val checkLoaderRefs = tasks.register<CheckLoaderRefs>("checkLoaderRefs") {
+  description = "Fails if a class of this module references a ZombieBuddy type."
+  classes.from(sourceSets.main.map { it.output.classesDirs })
+}
+
+tasks.check { dependsOn(checkLoaderRefs) }

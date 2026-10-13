@@ -222,3 +222,25 @@ Planned (D1-D10) and implemented: Zabric as its own Workshop item that widens ev
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: Zabric loader seam for ZombieBuddy
+<!-- trellis-session: v=2 fp=57dab4758624314e -->
+
+**Date**: 2026-10-13
+**Task**: Zabric loader seam for ZombieBuddy
+**Branch**: `zabric-loader-adapter`
+
+### Summary
+
+Planned (D1 scope R+H, D2 compile-time seam) and implemented a loader seam: Zabric's new loader package (Loader, PreloadConfig) is the only runtime code using ZombieBuddy; ZombieBuddyAgent removed; Preload contract and config.json bytes unchanged. Hooks bind parameters with neutral Hook.This/Argument/Return/Thrown/AllArguments and Hook.Exit.onThrow; GlueProcessor still emits identical @Patch glue; glue listing gains hook lines checked by HookTargets. checkLoaderRefs (shared constant-pool scanner with checkBootstrapClasses) fails the build on ZombieBuddy refs outside the seam. Specs: Loader Seam section + switch checklist. Zabric 0.3.0, zb-kt 0.4.0, All-in-One 0.5.0. Verified build, negative check, smokeTest, serverSmokeTest; in-game IME/blood check not done. PR Dontcampy/dont39-pz-mods#6.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ee284b5` | Put ZombieBuddy behind a loader seam in Zabric |
+
+### Status
+
+[OK] **Completed**

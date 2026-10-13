@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Module layering and pre-development checklist"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Glue, hook bindings and patch rules the H seam changes"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric rules, preload registration contract, g_instrumentation note"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "HookTargets and Feature checks"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "zb-kt PreMain constraints and version bump rules"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Fail fast, never degrade"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and smoke tests"}

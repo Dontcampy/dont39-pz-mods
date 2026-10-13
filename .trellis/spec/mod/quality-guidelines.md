@@ -56,6 +56,7 @@ New code is Kotlin; Java only in `zabric` and where [Kotlin Runtime](./kotlin-ru
 | Pattern | Why |
 |---------|-----|
 | Patch classes outside the `javaPkgName` package | ZombieBuddy skips them |
+| ZombieBuddy types outside Zabric's loader package and generated glue | Breaks the [Loader Seam](./zombiebuddy-patching.md#loader-seam); `checkLoaderRefs` fails |
 | Reflection or method handles in feature code | See [Access Widening](./access-widening.md) |
 | Logic or try/catch in patches classes | Helpers own state and error handling |
 | Hand-written patch or Lua bridge classes in a Kotlin feature | Generated from `@Hook` / `@LuaGlobal` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
