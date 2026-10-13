@@ -103,6 +103,7 @@ tasks.register("smokeTest") {
   val glue = glueDirs
   val logPrefix = "[$modId] "
   val zabricMod = zabricId
+  val mainLine = "[$zabricId] main: $modId"
   val kotlinVersions = libs.versions.let {
     "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
       "kotlinx-serialization ${it.kotlinxSerializationJSON.get()}"
@@ -129,7 +130,7 @@ tasks.register("smokeTest") {
       "[$zabricMod] access widener: ok (",
       "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
       "[ZombieBuddyKotlin] ready: $kotlinVersions",
-      "[$zabricMod] main: $modId",
+      mainLine,
       "[Dont39AllInOne] $version loaded",
     )
     val disabled = mutableListOf<String>()
