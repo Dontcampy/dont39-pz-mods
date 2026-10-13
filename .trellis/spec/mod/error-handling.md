@@ -18,7 +18,7 @@
 
 Feature references are in the feature packages of `viewpoint-blood-fx-fix` and `ime-keyboard-fix`. The checking
 and gating rules are implemented in `HookTargets.kt`, `TargetMod.kt`, `Widening.kt` and `Feature.kt`
-([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)).
+([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
 
 Disabling is final for the session: no retries. Use the facade's `disable(...)` (`Feature.kt`) and phrase the
 description like the existing calls in `LiftOffsets.kt` and `AimShift.kt`.

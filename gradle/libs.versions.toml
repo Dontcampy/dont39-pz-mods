@@ -7,7 +7,7 @@ kotlin = "2.4.21"
 kotlinxDatetime = "0.8.0"
 kotlinxSerializationJSON = "1.11.0"
 kotlinxCoroutines = "1.11.0"
-# KSP2, versioned independently of Kotlin; generates the ZombieBuddy glue (zombiebuddy-kotlin-utils-processor)
+# KSP2, versioned independently of Kotlin; generates the ZombieBuddy glue (zb-kt-utils-processor)
 ksp = "2.3.12"
 # build only: widens the jars features compile against (buildSrc)
 asm = "9.11"

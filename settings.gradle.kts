@@ -22,9 +22,9 @@ plugins {
 include(":viewpoint-blood-fx-fix")
 include(":mod-options-sidebar")
 include(":ime-keyboard-fix")
-include(":zombiebuddy-kotlin")
-include(":zombiebuddy-kotlin-utils")
-include(":zombiebuddy-kotlin-utils-processor")
+include(":zb-kt")
+include(":zb-kt-utils")
+include(":zb-kt-utils-processor")
 include(":dont39-all-in-one")
 include(":zabric")
 

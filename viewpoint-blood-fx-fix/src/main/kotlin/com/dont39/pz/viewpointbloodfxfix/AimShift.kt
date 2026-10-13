@@ -1,7 +1,7 @@
 package com.dont39.pz.viewpointbloodfxfix
 
 import bloodfx.Aim
-import com.dont39.pz.zombiebuddykotlinutils.glue.Hook
+import com.dont39.pz.zbktutils.glue.Hook
 import me.zed_0xff.zombie_buddy.Patch
 import zombie.iso.IsoMovingObject
 

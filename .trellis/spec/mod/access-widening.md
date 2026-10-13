@@ -12,7 +12,7 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars | `buildSrc/src/main/kotlin/PzTargets.kt`, `ClassTweakerTasks.kt` |
 | Game-start widening, self-registration, restart dialog | `zabric/` (`PreMain.java`, `widener/AccessWidener.java`, `setup/Registration.java`) |
-| Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zombiebuddy-kotlin-utils` |
+| Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
 Reference features: `viewpoint-blood-fx-fix` (target mods, nested classes, a constructor) and `ime-keyboard-fix`
 (game fields).

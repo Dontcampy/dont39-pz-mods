@@ -2,7 +2,7 @@ package com.dont39.pz.allinone
 
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.viewpointbloodfxfix.ViewpointBloodFxFix
-import com.dont39.pz.zombiebuddykotlinutils.reportWidening
+import com.dont39.pz.zbktutils.reportWidening
 import zombie.debug.DebugType
 
 object Main {

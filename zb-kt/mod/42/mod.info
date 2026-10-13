@@ -1,0 +1,12 @@
+name=ZombieBuddyKotlin
+id=ZombieBuddyKotlin
+author=Dont39
+modversion=@VERSION@
+poster=poster.png
+description=Unofficial Kotlin runtime for ZombieBuddy Java mods, by Dont39: current Kotlin, kotlinx-coroutines and kotlinx-serialization. Does nothing on its own; other mods require it.
+require=\ZombieBuddy
+loadModAfter=\ZombieBuddy
+javaJarFile=media/java/ZombieBuddyKotlin.jar
+javaPkgName=com.dont39.pz.zbkt
+ZBVersionMin=2.3.4
+versionMin=42.21.0
