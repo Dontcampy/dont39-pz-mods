@@ -34,10 +34,8 @@ Only two places use ZombieBuddy's API (`me.zed_0xff.*`), so that moving to anoth
 agent) rewrites those two and rebuilds:
 
 - Runtime services: Zabric's loader package
-  ([`Loader.java`](../../../zabric/src/main/java/com/dont39/pz/zabric/loader/Loader.java)), including the loader's
-  per-jar decisions and the hook after its pass over the mod list that Zabric's entrypoints run on. The rest of Zabric
-  and `zb-kt` call it; other mods go through Zabric's public API and entrypoints
-  ([Access Widening](./access-widening.md)).
+  ([`Loader.java`](../../../zabric/src/main/java/com/dont39/pz/zabric/loader/Loader.java)). The rest of Zabric and
+  `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
 - Hooks: the code
   [`GlueProcessor.kt`](../../../zb-kt-utils-processor/src/main/kotlin/com/dont39/pz/zbktutils/processor/GlueProcessor.kt)
   generates. Feature code uses only the annotations and bindings in
@@ -54,11 +52,11 @@ What is not behind the seam and needs rework when switching loaders:
 
 | Touchpoint | Where |
 |------------|-------|
-| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`): Zabric's own, and ZombieBuddyKotlin's `Main` for the swap (deliberate; it runs before its dependents because they require it and load after it, [Kotlin Runtime](./kotlin-runtime.md#library-zb-kt)); every other mod here uses Zabric entrypoints | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
-| preLaunch running after the loader's preloads and before the game's `main` | `entrypoint/PreLaunchHook.java` in `zabric` |
+| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
+| The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
-| Manifest `ZB-Preload` (the `Zabric-*` attributes are Zabric's own) | `tasks.jar` in `zabric/build.gradle.kts` |
+| Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts) |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
@@ -70,16 +68,13 @@ What is not behind the seam and needs rework when switching loaders:
 
 - Mod declaration: `dont39-all-in-one/mod/42/mod.info`. Check its jar path against the ModdingGuide
   "Client/server JAR paths" section before adding a feature that must run on a dedicated server.
-- Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint
-  (`Zabric-Main` in `dont39-all-in-one/build.gradle.kts`), calls each feature's `init()`, with no check of
-  ZombieBuddyKotlin's state ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)). `init()` reports
-  readiness only; it does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy loads and initializes
-  one as its own entry point.
-- Mods a feature patches, and mods whose jar any class in `javaPkgName` links (patch code and the main entrypoint),
-  must load before this one (`loadModAfter` in `mod.info`): ZombieBuddy loads every class there and applies the
-  patches as it reaches the jar, one jar after another, and drops failed loads silently. ZombieBuddyKotlin is one of
-  them, also because it installs Kotlin only when ZombieBuddy reaches its jar.
-  Zabric is the exception: on every launch that runs entrypoints it was preloaded, so its jar is already there.
+- Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
+  calls each feature's `init()`; `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy
+  runs one as its own entry point.
+- `loadModAfter` lists the mods a feature patches and the mods whose jars its classes link: ZombieBuddy loads each
+  jar's classes and applies its patches one jar after another, and drops failed loads silently. Direct dependencies
+  only; the chain covers the rest. Zabric needs no entry from mods that use only its entrypoints: it is preloaded on
+  every launch that runs them.
 
 ---
 
@@ -95,8 +90,6 @@ What is not behind the seam and needs rework when switching loaders:
   When in doubt, read the generated code under `<module>/build/generated/ksp/main/`.
 - Hook parameters use the bindings in `Glue.kt`, never ZombieBuddy's `Patch` annotations
   ([Loader Seam](#loader-seam)).
-- Generated glue calls the feature directly, with no readiness gate
-  ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
 - Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
