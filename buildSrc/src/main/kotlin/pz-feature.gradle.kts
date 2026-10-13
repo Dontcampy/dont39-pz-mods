@@ -7,9 +7,8 @@ plugins {
 }
 
 dependencies {
-  // both ship in ZombieBuddyKotlin's jar; the generated glue calls ZombieBuddyKotlin.isReady()
+  // ships in ZombieBuddyKotlin's jar
   compileOnly(project(":zb-kt-utils"))
-  compileOnly(project(":zb-kt"))
   ksp(project(":zb-kt-utils-processor"))
 }
 

@@ -35,22 +35,6 @@ private const val NO_EXCEPTION = "$PATCH.NoException"
 private val PRIMITIVES = setOf("Boolean", "Byte", "Short", "Char", "Int", "Long", "Float", "Double").map { "kotlin.$it" }
 private val LUA_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
-/** What a gated Lua function returns for each primitive return type. */
-private val ZEROS = mapOf(
-  "kotlin.Boolean" to "false",
-  "kotlin.Byte" to "0",
-  "kotlin.Short" to "0",
-  "kotlin.Char" to "'\\u0000'",
-  "kotlin.Int" to "0",
-  "kotlin.Long" to "0L",
-  "kotlin.Float" to "0f",
-  "kotlin.Double" to "0.0",
-)
-
-// On a launch without ZombieBuddyKotlin's swap, ZombieBuddy still inlines the advice and exposes the Lua functions, which
-// would then run on the game's Kotlin 1.4.10. A static Java call and a branch link there.
-private const val READY = "com.dont39.pz.zbkt.ZombieBuddyKotlin.isReady()"
-
 /** Set by pz-feature.gradle.kts. */
 private const val OPTION_FEATURE = "dont39.feature"
 private const val OPTION_PACKAGE = "dont39.gluePackage"
@@ -59,9 +43,8 @@ private const val OPTION_LUA_PREFIX = "dont39.luaPrefix"
 /**
  * Generates a feature module's ZombieBuddy glue from the loader-neutral `glue` annotations; besides Zabric's loader
  * package, the only code that names the loader's API. Also writes a resource listing the glue and its hook targets,
- * shipped for the hook checks at runtime (HookTargets.kt) and read by the aggregating mod's checks and smokeTest. Every
- * generated function first checks that ZombieBuddyKotlin is ready. Rule violations are compile errors naming the
- * function.
+ * shipped for the hook checks at runtime (HookTargets.kt) and read by the aggregating mod's checks and smokeTest. Rule
+ * violations are compile errors naming the function.
  */
 class GlueProcessor(
   private val codeGenerator: CodeGenerator,
@@ -279,12 +262,9 @@ class GlueProcessor(
     appendLine("    ${advice.annotation}")
     if (advice.returnType == null) {
       appendLine("    fun $name($params) {")
-      appendLine("      if (!$READY) return")
       appendLine("      $call")
     } else {
-      // skipOn: false runs the target as without this mod
       appendLine("    fun $name($params): ${advice.returnType} {")
-      appendLine("      if (!$READY) return false")
       appendLine("      return $call")
     }
     appendLine("    }")
@@ -292,14 +272,7 @@ class GlueProcessor(
 
   // ---- Lua ----
 
-  /** [zero]: what the function returns while ZombieBuddyKotlin is not ready; null for Unit. */
-  private class LuaFunction(
-    val name: String,
-    val callee: Callee,
-    val params: List<Param>,
-    val returnType: String?,
-    val zero: String?,
-  )
+  private class LuaFunction(val name: String, val callee: Callee, val params: List<Param>, val returnType: String?)
 
   private fun collectLua(resolver: Resolver, prefix: String): List<LuaFunction> {
     val byName = linkedMapOf<String, LuaFunction>()
@@ -320,20 +293,7 @@ class GlueProcessor(
       }
       val params = fn.parameters.map { Param("", it.name?.asString() ?: "p", render(it.type.resolve())) }
       val returnType = fn.returnType?.resolve()?.takeUnless { it.isType("kotlin.Unit") }?.let(::render)
-      val zero = when {
-        returnType == null -> null
-        returnType.endsWith("?") -> "null"
-        else -> ZEROS[returnType]
-      }
-      if (returnType != null && zero == null) {
-        error(
-          callee,
-          "@LuaGlobal must return Unit, a primitive or a nullable type (found $returnType): while ZombieBuddyKotlin is " +
-            "not ready the generated function returns without calling it; return $returnType? instead",
-        )
-        continue
-      }
-      byName[name] = LuaFunction(name, callee, params, returnType, zero)
+      byName[name] = LuaFunction(name, callee, params, returnType)
     }
     return byName.values.sortedBy { it.name }
   }
@@ -354,11 +314,9 @@ class GlueProcessor(
       appendLine("  @LuaMethod(name = ${kotlinString(function.name)}, global = true)")
       if (function.returnType == null) {
         appendLine("  fun ${function.name}($params) {")
-        appendLine("    if (!$READY) return")
         appendLine("    $call")
       } else {
         appendLine("  fun ${function.name}($params): ${function.returnType} {")
-        appendLine("    if (!$READY) return ${function.zero}")
         appendLine("    return $call")
       }
       appendLine("  }")

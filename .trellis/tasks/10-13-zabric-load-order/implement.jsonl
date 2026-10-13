@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "layer overview and guideline index for zabric, zb-kt, all-in-one"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric premain rules and Preload Registration contract being replaced"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader Seam: ZombieBuddy types only in zabric loader/; Loading and Switch Checklist"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "ZombieBuddyKotlin swap timing and readiness gate rules"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "fail-fast, per-mod error reporting for entrypoint failures"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "log line format for phase/entrypoint lines checked by smoke tests"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "comment and code style rules"}

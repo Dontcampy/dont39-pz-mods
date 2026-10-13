@@ -11,8 +11,8 @@ description=[*]Zabric, the loader layer for ZombieBuddy mods (also by Dont39). I
 description=[*]ZombieBuddyKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, Zabric, ZombieBuddyKotlin, then the mods below that you use, then Dont39 All-in-One.
-description=On their first launch Zabric and ZombieBuddyKotlin register themselves with ZombieBuddy to load at game start, and a message on the main menu asks you to restart the game once. Until then the fixes stay off; console.txt says why.
+description=Load order: ZombieBuddy, Zabric, ZombieBuddyKotlin, then Dont39 All-in-One, which also goes after the mods below that you use.
+description=On the first launch Zabric registers itself with ZombieBuddy to load at game start, and a message on the main menu asks you to restart the game once. Until then the fixes stay off; console.txt says why.
 description=
 description=[h2]Blood FX for Viewpoint: terrain relief fix[/h2]
 description=For [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3809306528]Project Viewpoint[/url] 0.1.6+ with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3811472160]3d Blood VFX for Viewpoint[/url] 1.5.1.

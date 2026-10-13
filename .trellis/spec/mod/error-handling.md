@@ -28,8 +28,8 @@ description like the existing calls in `LiftOffsets.kt` and `AimShift.kt`.
 ## Anti-Patterns
 
 - Degrading, skipping a part, or returning a neutral value when another mod is not as expected: it hides the problem.
-  The one exception is the generated readiness gate, which does nothing while ZombieBuddyKotlin reports why it is not
-  ready ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
+  No exception for ZombieBuddyKotlin: dependents do not check whether it is ready, they assume it is
+  ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
 - Throwing from a static initializer: the failure surfaces inside the patched game method on first call.
 - Catching in a patch path without restoring and disabling: the target stays half-modified and the error repeats every
   frame.

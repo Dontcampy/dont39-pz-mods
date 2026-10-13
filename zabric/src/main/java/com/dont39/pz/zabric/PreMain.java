@@ -1,8 +1,9 @@
 package com.dont39.pz.zabric;
 
+import com.dont39.pz.zabric.entrypoint.Lifecycle;
 import com.dont39.pz.zabric.widener.AccessWidener;
 
-/** Called by ZombieBuddy at game start, before the game classes the lists name are loaded. */
+/** Called by ZombieBuddy at game start, before the game classes the lists name and the game's main class are loaded. */
 public final class PreMain {
     private static volatile boolean ran;
 
@@ -17,5 +18,6 @@ public final class PreMain {
     public static void premain(String[] args) {
         ran = true;
         AccessWidener.install();
+        Lifecycle.install();
     }
 }

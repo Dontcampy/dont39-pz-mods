@@ -28,7 +28,7 @@ val zabricId = project(zabric).extra["modId"] as String
 dependencies {
   features.forEach { implementation(project(it)) }
   compileOnly(project(":zb-kt-utils"))
-  compileOnly(project(kotlinLib))
+  compileOnly(project(zabric))
 }
 
 val javaPkgName = file("mod/42/mod.info").readLines().firstOrNull { it.startsWith("javaPkgName=") }
@@ -52,6 +52,7 @@ val mergeClassTweakers = tasks.register<MergeClassTweakers>("mergeClassTweakers"
 }
 
 tasks.jar {
+  manifest { attributes("Zabric-Main" to "$javaPkgName.AllInOneMain") }
   features.forEach { from(project(it).the<SourceSetContainer>()["main"].output) }
   // build data only (the features' source .classtweaker lists)
   exclude("META-INF/dont39/**")
@@ -122,12 +123,13 @@ tasks.register("smokeTest") {
     if (notice != "not needed") {
       throw GradleException("$console: restart notice is '${notice ?: "missing"}', not 'not needed'")
     }
-    // in this order: ZombieBuddy runs the preload mods' Main first, Zabric's first, so Kotlin is checked before
-    // All-in-One's Kotlin Main runs
+    // in this order: ZombieBuddyKotlin's Main logs Kotlin's state before ZombieBuddy reaches the mods that require it,
+    // and the main entrypoints run after the pass
     val ordered = listOf(
       "[$zabricMod] access widener: ok (",
       "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
       "[ZombieBuddyKotlin] ready: $kotlinVersions",
+      "[$zabricMod] main: $modId",
       "[Dont39AllInOne] $version loaded",
     )
     val disabled = mutableListOf<String>()

@@ -2,20 +2,18 @@ package com.dont39.pz.allinone
 
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.viewpointbloodfxfix.ViewpointBloodFxFix
-import com.dont39.pz.zbkt.ZombieBuddyKotlin
+import com.dont39.pz.zabric.entrypoint.MainEntrypoint
 import com.dont39.pz.zbktutils.reportWidening
 import zombie.debug.DebugType
 
-object Main {
+// not named Main: ZombieBuddy loads and initializes a class of that name in javaPkgName as its own entry point
+object AllInOneMain : MainEntrypoint {
   private const val PREFIX = "[Dont39AllInOne] "
 
-  @JvmStatic
-  fun main(args: Array<String>) {
-    // without the current Kotlin this runs on the game's 1.4.10; ZombieBuddyKotlin has logged why
-    if (!ZombieBuddyKotlin.isReady()) return
-    val version = Main::class.java.`package`.implementationVersion ?: "dev"
+  override fun onMain() {
+    val version = AllInOneMain::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX%s loaded", version)
-    reportWidening("Dont39AllInOne", Main::class.java)
+    reportWidening("Dont39AllInOne", AllInOneMain::class.java)
     ViewpointBloodFxFix.init()
     ImeKeyboardFix.init()
   }
