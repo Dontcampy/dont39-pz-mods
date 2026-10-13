@@ -2,6 +2,7 @@ name=Zabric
 id=Zabric
 author=Dont39
 modversion=@VERSION@
+poster=poster.png
 description=Loader layer for ZombieBuddy Java mods, by Dont39: at game start it opens up the game and mod internals that installed mods list, and keeps mods that need it loading at game start. Does nothing on its own; other mods require it.
 require=\ZombieBuddy
 loadModAfter=\ZombieBuddy
