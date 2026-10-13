@@ -67,5 +67,5 @@ New code is Kotlin; Java only where [Kotlin Runtime](./kotlin-runtime.md) requir
 ## Release Checklist
 
 - Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zabric` or
-  `zombie-buddy-kotlin`).
+  `zombiebuddy-kotlin`).
 - `mod.info` load order and `workshop.txt` updated for new target mods.

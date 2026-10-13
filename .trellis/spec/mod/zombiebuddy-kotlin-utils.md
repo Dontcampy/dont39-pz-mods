@@ -25,6 +25,6 @@
   `buildSrc/src/main/kotlin/pz-feature.gradle.kts`.
 - Its classes are unrelocated on the shared classloader, so only one shipped mod may bundle it. A second mod needing it
   means moving it into ZombieBuddyKotlin first, which is a separate decision
-  ([Kotlin Runtime](./kotlin-runtime.md#library-zombie-buddy-kotlin)).
+  ([Kotlin Runtime](./kotlin-runtime.md#library-zombiebuddy-kotlin)).
 - The glue processor (`zombiebuddy-kotlin-utils-processor`) runs only in the compiler and is never shipped. Change an
   annotation and the processor together.

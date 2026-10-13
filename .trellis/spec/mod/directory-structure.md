@@ -27,7 +27,7 @@ dont39-all-in-one/                   shipped mod: all features
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
 zabric/                              preload mod in All-in-One's Workshop item (see access-widening.md)
-zombie-buddy-kotlin/                 shipped mod: Kotlin runtime library (see kotlin-runtime.md)
+zombiebuddy-kotlin/                  shipped mod: Kotlin runtime library (see kotlin-runtime.md)
 zombiebuddy-kotlin-utils/            internal module bundled into All-in-One (see zombiebuddy-kotlin-utils.md)
 zombiebuddy-kotlin-utils-processor/  KSP processor for the glue; compile time only, not shipped
 ```
@@ -36,7 +36,7 @@ Build, signing, and packaging behavior (toolchain, Java release level, compile-o
 are merged into the mod folder, deploy guards, smoke test) is defined in:
 
 - `buildSrc/src/main/kotlin/pz-java.gradle.kts`, `pz-kotlin.gradle.kts`, `pz-mod.gradle.kts`, `pz-feature.gradle.kts`
-- `dont39-all-in-one/build.gradle.kts`, `zombie-buddy-kotlin/build.gradle.kts`
+- `dont39-all-in-one/build.gradle.kts`, `zombiebuddy-kotlin/build.gradle.kts`
 
 Read those files rather than assuming; do not duplicate their settings in feature modules.
 

@@ -13,7 +13,7 @@ val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
 val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar", ":ime-keyboard-fix")
-val kotlinLib = ":zombie-buddy-kotlin"
+val kotlinLib = ":zombiebuddy-kotlin"
 // bundled code shared by the features
 val internalLibs = listOf(":zombiebuddy-kotlin-utils")
 // shipped in this mod's Workshop item; makes what the features' .classtweaker lists name public at game start
