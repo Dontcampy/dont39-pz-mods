@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.preload;
+package com.dont39.pz.zabric.entrypoint;
 
 import com.dont39.pz.zabric.loader.Loader;
 import com.dont39.pz.zabric.restart.RestartList;
@@ -10,16 +10,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Keeps a mod running at game start through the loader ({@link Loader#keepPreloaded}).
- * <p>
- * A mod opts in from its Java {@code Main}, so registration only ever happens from code the loader already approved and
- * ran. The loader calls the mods' {@code Main} in the player's mod list order, so Zabric may not be loaded yet: the mod
- * then sets the system property {@link #REQUEST_PREFIX}{@code <modId>} to whether it was preloaded this launch, and
- * Zabric's {@code Main} registers it. Otherwise it calls {@link #register}.
+ * Keeps a mod running at game start through the loader ({@link Loader#keepPreloaded}): Zabric itself, and every mod that
+ * declares a preLaunch entrypoint. Only for mods the loader approved and loaded, so registration only ever follows code
+ * the loader approved.
  */
-public final class Preload {
-    /** Followed by the mod id; the value is {@code true} or {@code false}, as {@code preloadedThisLaunch}. */
-    public static final String REQUEST_PREFIX = "zabric.preload.";
+final class Preload {
     private static final String PREFIX = "[Zabric] ";
 
     private Preload() {
@@ -27,28 +22,15 @@ public final class Preload {
 
     /**
      * Registers {@code modId} from the folder the game uses this session, unless its entry already points there or at a
-     * byte-identical copy. {@code preloadedThisLaunch}: the mod's {@code PreMain} ran. Puts the mod on the restart list
-     * when a restart is needed for its premain code to run. Never throws: it runs inside the loader's call to
-     * {@code Main}.
+     * byte-identical copy. {@code preloadedThisLaunch}: its game-start code ran. Puts the mod on the restart list when a
+     * restart is needed for that code to run. Never throws: it runs inside the loader's pass over the mod list.
      */
-    public static synchronized void register(String modId, boolean preloadedThisLaunch) {
+    static synchronized void register(String modId, boolean preloadedThisLaunch) {
         try {
             update(modId, preloadedThisLaunch);
         } catch (Throwable t) {
             DebugType.Mod.printException(t, PREFIX + "cannot register " + modId + " as a " + Loader.name()
                     + " preload mod", LogSeverity.Error);
-        }
-    }
-
-    /** Registers the mods that asked before Zabric was loaded. Called by Zabric's Main, after its own registration. */
-    public static synchronized void registerRequested() {
-        for (String key : System.getProperties().stringPropertyNames()) {
-            if (key.startsWith(REQUEST_PREFIX)) {
-                String value = System.clearProperty(key);
-                if (value != null) {
-                    register(key.substring(REQUEST_PREFIX.length()), Boolean.parseBoolean(value));
-                }
-            }
         }
     }
 

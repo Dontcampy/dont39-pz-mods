@@ -35,7 +35,7 @@ agent) rewrites those two and rebuilds:
 
 - Runtime services: Zabric's loader package
   ([`Loader.java`](../../../zabric/src/main/java/com/dont39/pz/zabric/loader/Loader.java)). The rest of Zabric and
-  `zb-kt` call it; other mods go through Zabric's public API ([Access Widening](./access-widening.md)).
+  `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
 - Hooks: the code
   [`GlueProcessor.kt`](../../../zb-kt-utils-processor/src/main/kotlin/com/dont39/pz/zbktutils/processor/GlueProcessor.kt)
   generates. Feature code uses only the annotations and bindings in
@@ -52,10 +52,11 @@ What is not behind the seam and needs rework when switching loaders:
 
 | Touchpoint | Where |
 |------------|-------|
-| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric` and `zb-kt`; `dont39-all-in-one/.../Main.kt` |
+| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
+| The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
-| `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`, `javaPreload`) | every `mod/42/mod.info` |
-| Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts`, `zb-kt/build.gradle.kts` |
+| `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
+| Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts) |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
@@ -67,10 +68,13 @@ What is not behind the seam and needs rework when switching loaders:
 
 - Mod declaration: `dont39-all-in-one/mod/42/mod.info`. Check its jar path against the ModdingGuide
   "Client/server JAR paths" section before adding a feature that must run on a dedicated server.
-- Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt` calls each feature's `init()` after the
-  readiness gate ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
-  `init()` reports readiness only; it does not hook anything.
-- Mods a feature patches must load before this one (load order in `mod.info`).
+- Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
+  calls each feature's `init()`; `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy
+  runs one as its own entry point.
+- `loadModAfter` lists the mods a feature patches and the mods whose jars its classes link: ZombieBuddy loads each
+  jar's classes and applies its patches one jar after another, and drops failed loads silently. Direct dependencies
+  only; the chain covers the rest. Zabric needs no entry from mods that use only its entrypoints: it is preloaded on
+  every launch that runs them.
 
 ---
 
@@ -86,7 +90,6 @@ What is not behind the seam and needs rework when switching loaders:
   When in doubt, read the generated code under `<module>/build/generated/ksp/main/`.
 - Hook parameters use the bindings in `Glue.kt`, never ZombieBuddy's `Patch` annotations
   ([Loader Seam](#loader-seam)).
-- Generated glue is gated on ZombieBuddyKotlin's readiness ([Kotlin Runtime](./kotlin-runtime.md#dependent-kotlin-modules)).
 - Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.

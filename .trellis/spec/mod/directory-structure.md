@@ -24,7 +24,7 @@ buildSrc/src/main/kotlin/
   build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features
   build.gradle.kts                   version, feature list, packaging, smokeTest
-  src/main/kotlin/com/dont39/pz/allinone/Main.kt
+  src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt   the mod's main entrypoint
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
 zabric/                              shipped mod: loader layer (see access-widening.md)
@@ -60,9 +60,9 @@ Lua-visible names are global across all mods, so keep the mod-id prefix used the
 
 ## Visibility
 
-Keep the facade's public surface to what `Main` and the Lua bridge need, and keep the rest `internal` / `private`.
-Annotated hook and Lua functions and their objects are `internal` or `public`, never `private`. Compare the modifiers
-in the `viewpoint-blood-fx-fix` classes.
+Keep the facade's public surface to what `AllInOneMain` and the Lua bridge need, and keep the rest `internal` /
+`private`. Annotated hook and Lua functions and their objects are `internal` or `public`, never `private`. Compare the
+modifiers in the `viewpoint-blood-fx-fix` classes.
 
 ---
 
@@ -78,7 +78,7 @@ in the `viewpoint-blood-fx-fix` classes.
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package
    ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are generated. Add a Lua file in
    `src/main/lua/` if the feature has options.
-6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`.
+6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`.
 7. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
 8. Add a section for the feature to `dont39-all-in-one/mod/workshop/workshop.txt`, following the existing one.
 9. Bump the version in `dont39-all-in-one/build.gradle.kts` when releasing.

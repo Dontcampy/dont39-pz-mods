@@ -13,7 +13,8 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars, merged list | `buildSrc/src/main/kotlin/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts` |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/AccessWidener.java`, `ModFolders.java` |
-| ZombieBuddy access (Instrumentation, preload settings) | `zabric/.../loader/Loader.java`, `PreloadConfig.java` |
+| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list hook) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java` |
+| Entrypoints, preload registration | `zabric/.../entrypoint/Lifecycle.java`, `Preload.java`, `PreLaunchHook.java` |
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
 | Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
@@ -39,18 +40,23 @@ Reference features: `viewpoint-blood-fx-fix` (target mods, nested classes, a con
 - Java and Lua only, no patches: its package loads at premain, before the Kotlin runtime.
 - ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages
   elsewhere name it through `Loader.name()`.
-- Premain code touches no game class and logs nothing: the classes it widens are not loaded yet, and the game's log is
-  not up. Outcomes are reported at MAIN.
+- Premain and preLaunch code touches no game class and logs nothing: the classes it widens are not loaded yet, and the
+  game's log is not up. Outcomes are reported at MAIN.
+- Its hooks run inside code every mod depends on (the game's `main`, ZombieBuddy's `loadMods`): they never throw out,
+  and a failure stops the whole lifecycle for the session instead of running part of it (`entrypoint/Lifecycle.java`).
 - It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`).
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
-- After a ZombieBuddy update, recheck the `Loader.g_instrumentation` read in `loader/Loader.java`.
+- After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
+  and the `loadMods` hook (`ModsLoadedHook.java`).
 
-## Preload Registration
+## Entrypoints and Preload Registration
 
-- A mod asks for registration from its own Java `Main` only, so registration follows code ZombieBuddy approved and ran
-  (`preload/Preload.java`; requester side `zb-kt/.../PreloadRequest.java`; ZombieBuddy's side
-  `loader/PreloadConfig.java`).
-- ZombieBuddy runs the mods' `Main` in the player's mod-list order: a requester must not assume Zabric is loaded.
+- Startup code of a Zabric-based mod is an entrypoint, not a ZombieBuddy `PreMain` or `Main` (author contract:
+  `zabric/mod/workshop/workshop.txt`; phases: `entrypoint/Lifecycle.java`).
+- Order within a phase is undefined: no entrypoint may assume another mod's entrypoint of that phase has run.
+  Class-path dependencies are a separate matter ([Loading](./zombiebuddy-patching.md#loading)).
+- Mods without entrypoints are left alone: mods that use only ZombieBuddy load as without Zabric.
+- Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

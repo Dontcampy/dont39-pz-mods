@@ -11,7 +11,8 @@
   (`DebugType.Mod:println` / `:error`), not `print`; see the helpers in
   `mod-options-sidebar/src/main/lua/client/Dont39AllInOne_ModOptionsSidebar.lua`.
 - Each feature logs through its facade's `log` / `debug` / `disable` helpers, which add the shared mod + feature
-  prefix. Mod-level lines come only from the mod's `Main`; Zabric uses its own `[Zabric]` prefix.
+  prefix. Mod-level lines come only from the mod's main entrypoint (ZombieBuddyKotlin: its `Main`); Zabric uses its own
+  `[Zabric]` prefix.
 - Every feature reports the same lifecycle moments so a player's `console.txt` shows its state: ready or idle at
   `init()`, active or inactive on first use, disabled on a runtime error. The wording is in `Feature.kt`;
   reasons come from the facade's `problem()` (`ViewpointBloodFxFix.kt`).
@@ -65,6 +66,6 @@ A literal `%` in a pattern is written `%%`.
 - Never log per frame: aggregate and emit a periodic summary (`Stats` in `LiftOffsets.kt`).
 
 Reference files are in `viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/` and
-`dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/Main.kt`. The library's lines are in `Main.java` and
-`ZombieBuddyKotlin.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`). Kotlin features get the
+`dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`. The library's lines are in
+`Main.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`). Kotlin features get the
 prefix and lifecycle lines from `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).

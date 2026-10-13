@@ -1,0 +1,88 @@
+package com.dont39.pz.zbkt;
+
+import com.dont39.pz.zabric.loader.Loader;
+
+import java.io.InputStream;
+import java.lang.instrument.Instrumentation;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.CodeSource;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.Properties;
+import java.util.jar.JarFile;
+
+/**
+ * Installs the current Kotlin. The game bundles kotlin-stdlib 1.4.10 in projectzomboid.jar, which wins over any stdlib
+ * in a mod jar; this puts the stdlib shipped next to the mod jar on the bootstrap search first, so every mod sees the
+ * current Kotlin. kotlinx comes from the mod jar. Works only while no kotlin.* class is loaded.
+ */
+final class KotlinSwap {
+    private static final String REINSTALL = "reinstall ZombieBuddyKotlin (unsubscribe and subscribe again)";
+
+    private KotlinSwap() {
+    }
+
+    /** The swap failed for a reason a player can act on. */
+    static final class Failure extends Exception {
+        Failure(String message) {
+            super(message);
+        }
+
+        Failure(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /** Returns the shipped versions (stdlib.properties). */
+    static Properties install() throws Exception {
+        Properties p = new Properties();
+        try (InputStream in = KotlinSwap.class.getResourceAsStream("stdlib.properties")) {
+            if (in == null) {
+                throw new Failure("stdlib.properties is missing from ZombieBuddyKotlin.jar; " + REINSTALL);
+            }
+            p.load(in);
+        }
+
+        Instrumentation inst;
+        try {
+            inst = Loader.instrumentation();
+        } catch (NoClassDefFoundError e) {
+            // Zabric's jar is not on the classpath yet: ZombieBuddy has not loaded Zabric before this jar
+            throw new Failure("Zabric's Java code is not loaded; enable Zabric, approve it in ZombieBuddy and keep it"
+                    + " above ZombieBuddyKotlin in the mod list", e);
+        } catch (IllegalStateException e) {
+            throw new Failure(e.getMessage() + "; check for a Zabric update that supports this ZombieBuddy", e);
+        }
+        for (Class<?> c : inst.getAllLoadedClasses()) {
+            if (c.getName().startsWith("kotlin.")) {
+                throw new Failure("Kotlin was already loaded (" + c.getName() + ") before ZombieBuddyKotlin could"
+                        + " install the current one, by ZombieBuddy or another mod");
+            }
+        }
+
+        String file = p.getProperty("file");
+        CodeSource source = KotlinSwap.class.getProtectionDomain().getCodeSource();
+        if (source == null || source.getLocation() == null) {
+            throw new Failure("cannot tell where ZombieBuddyKotlin.jar is, so " + file + " cannot be found");
+        }
+        Path stdlib = Path.of(source.getLocation().toURI()).resolveSibling("lib").resolve(file);
+        if (!Files.isRegularFile(stdlib)) {
+            throw new Failure(stdlib + " is missing; " + REINSTALL);
+        }
+        String sha256 = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(Files.readAllBytes(stdlib)));
+        if (!sha256.equalsIgnoreCase(p.getProperty("sha256"))) {
+            throw new Failure(stdlib + " does not match its checksum (damaged or modified); " + REINSTALL);
+        }
+
+        inst.appendToBootstrapClassLoaderSearch(new JarFile(stdlib.toFile()));
+
+        String expected = p.getProperty("version");
+        String actual = String.valueOf(Class.forName("kotlin.KotlinVersion").getField("CURRENT").get(null));
+        if (!actual.equals(expected)) {
+            throw new Failure("Kotlin " + actual + " was loaded instead of " + expected);
+        }
+        return p;
+    }
+}

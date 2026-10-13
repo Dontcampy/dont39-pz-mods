@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "verify Zabric/Preload sections match the new lifecycle"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "verify no ZombieBuddy refs outside loader/ and seam docs updated"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "verify ZBK preLaunch stays Kotlin-free and readiness is order-free"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "verify entrypoint failures are reported, never silenced or degraded"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "comment and code style rules"}

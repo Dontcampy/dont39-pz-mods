@@ -1,6 +1,8 @@
 import buildsrc.convention.CheckBootstrapClasses
 import buildsrc.convention.checkPlatformLog
 import buildsrc.convention.runPzUntilInit
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import java.security.MessageDigest
 import java.util.HexFormat
 import java.util.UUID
@@ -55,7 +57,7 @@ interface Injected {
 
 val archives = objects.newInstance<Injected>().archives
 
-// Read by PreMain; inside the mod jar, so ZombieBuddy's approval of the jar covers the checksum.
+// Read by KotlinSwap; inside the mod jar, so ZombieBuddy's approval of the jar covers the checksum.
 val runtimeProperties = tasks.register<WriteProperties>("runtimeProperties") {
   destinationFile = layout.buildDirectory.file("generated/runtime/$pkgDir/stdlib.properties")
   property("file", stdlib.get().elements.map { it.single().asFile.name })
@@ -81,8 +83,6 @@ tasks.check { dependsOn(checkBootstrapClasses) }
 
 tasks.jar {
   dependsOn(checkBootstrapClasses)
-  // ZombieBuddy also needs javaPreload=true in mod.info, so a mod.info edit alone cannot make a jar preload
-  manifest { attributes("ZB-Preload" to "true") }
   from(project(utils).the<SourceSetContainer>()["main"].output)
   from(bundledJars.elements.map { jars -> jars.map { archives.zipTree(it) } }) {
     exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "META-INF/*.EC")
@@ -127,11 +127,13 @@ val stageServerMods = tasks.register<Sync>("stageServerMods") {
 }
 
 // Starts the dedicated server the way its ProjectZomboid64.json does, without Steam, with its own cache dir and a test
-// server that enables only these mods, until ZombieBuddy's exit_after_game_init; then checks the server's log.
+// server that enables only these mods, until ZombieBuddy's exit_after_game_init; then checks the server's log. Two
+// launches: with the player's ZombieBuddy config, as players run it; with a test config that still has a preload entry
+// for this mod from when it was one, which ZombieBuddy must drop without harm.
 tasks.register("serverSmokeTest") {
   group = "verification"
-  description = "Launches the dedicated server with $zabricId and $modId until init, then checks the log."
-  // the client's copies too, so the shared preload entries can stay as the client registered them
+  description = "Launches the dedicated server with $zabricId and $modId until init, also with a leftover preload entry, and checks the log."
+  // the client's copies too: the player's config points at them, and they must be current as after a Workshop update
   dependsOn(stageServerMods, tasks.named("deployWorkshop"), "$zabric:deployWorkshop")
   val serverDir = file(pzServerDir.get())
   val smokeDir = serverSmokeDir.get().asFile
@@ -142,6 +144,10 @@ tasks.register("serverSmokeTest") {
   }
   val mods = listOf("ZombieBuddy", zabricId, modId)
   val server = serverName
+  val id = modId
+  val zabricMod = zabricId
+  val loaded = "[$id] ${project.version} loaded"
+  val ready = "[$id] ready: $kotlinVersions"
   doLast {
     // the server asks for one on a new server name and would wait for console input
     val passwordFile = smokeDir.resolve("adminpassword.txt")
@@ -153,30 +159,97 @@ tasks.register("serverSmokeTest") {
     cache.resolve("Server/$server.ini").writeText(
       "Mods=${mods.joinToString(";")}\nWorkshopItems=\nMap=Muldraugh, KY\nPublic=false\nUPnP=false\n",
     )
-    val console = cache.resolve("server-console.txt")
-    console.delete()
-    runPzUntilInit(
-      serverDir,
-      "dedicated server",
-      programArgs = listOf(
-        "-cachedir=${cache.absolutePath}",
-        "-servername",
-        server,
-        "-adminpassword",
-        passwordFile.readText().trim(),
-        "-nosteam",
-      ),
-      osVmArgs = true,
-    ) { if (it == "-Dzomboid.steam=1") "-Dzomboid.steam=0" else it }
 
-    if (!console.isFile) {
-      throw GradleException("The server wrote no $console")
+    // configDir: ZombieBuddy's config_dir, null for the player's; returns the server's log
+    fun launch(name: String, configDir: File?): Pair<String, File> {
+      logger.lifecycle("serverSmokeTest: $name")
+      val console = cache.resolve("server-console.txt")
+      console.delete()
+      runPzUntilInit(
+        serverDir,
+        "dedicated server",
+        programArgs = listOf(
+          "-cachedir=${cache.absolutePath}",
+          "-servername",
+          server,
+          "-adminpassword",
+          passwordFile.readText().trim(),
+          "-nosteam",
+        ),
+        osVmArgs = true,
+      ) {
+        when {
+          it == "-Dzomboid.steam=1" -> "-Dzomboid.steam=0"
+          configDir != null && it.startsWith("-agentlib:zbNative") -> "$it,config_dir=${configDir.absolutePath}"
+          else -> it
+        }
+      }
+      if (!console.isFile) {
+        throw GradleException("The server wrote no $console")
+      }
+      return console.readText() to console
     }
-    val log = console.readText()
-    checkPlatformLog(log, console, "serverSmokeTest")
-    val ready = "[ZombieBuddyKotlin] ready: $kotlinVersions"
-    if (ready !in log) {
-      throw GradleException("$console is missing:\n  $ready")
+
+    fun expect(name: String, log: String, console: File, ordered: List<String>, absent: List<String> = emptyList()) {
+      val missing = ordered.filterNot { it in log }
+      if (missing.isNotEmpty()) {
+        throw GradleException("$console ($name) is missing:\n" + missing.joinToString("\n") { "  $it" })
+      }
+      val present = absent.filter { it in log }
+      if (present.isNotEmpty()) {
+        throw GradleException("$console ($name) should not have:\n" + present.joinToString("\n") { "  $it" })
+      }
+      val positions = ordered.map { log.indexOf(it) }
+      if (positions != positions.sorted()) {
+        throw GradleException(
+          "$console ($name) has these lines out of order:\n" + ordered.joinToString("\n") { "  $it" },
+        )
+      }
+    }
+
+    // Main installs Kotlin on every launch; this mod is no preload mod, so Zabric neither runs nor registers it
+    fun expectReady(name: String, log: String, console: File) {
+      checkPlatformLog(log, console, "serverSmokeTest")
+      expect(
+        name,
+        log,
+        console,
+        listOf(loaded, ready),
+        absent = listOf("[$zabricMod] preLaunch: $id", "[$zabricMod] restart the server once"),
+      )
+    }
+
+    val player = "player's config"
+    launch(player, null).let { (log, console) -> expectReady(player, log, console) }
+
+    val configDir = smokeDir.resolve("zombie_buddy")
+    configDir.deleteRecursively()
+    configDir.mkdirs()
+    fun preloadEntry(mod: String): Map<String, String> {
+      val dir = cache.resolve("mods/$mod/42")
+      val jar = dir.resolve("mod.info").readLines().first { it.startsWith("javaJarFile=") }.substringAfter('=').trim()
+      return mapOf("infPath" to dir.resolve("mod.info").absolutePath, "jarPath" to dir.resolve(jar).absolutePath)
+    }
+    val config = configDir.resolve("config.json")
+    config.writeText(
+      JsonOutput.prettyPrint(
+        JsonOutput.toJson(
+          mapOf(
+            "trusted_authors" to emptyList<String>(),
+            "preload_mods" to mapOf(zabricMod to preloadEntry(zabricMod), id to preloadEntry(id)),
+            "auto_fix_mod_order" to true,
+            "fix_approval_dialog_cursor" to true,
+          ),
+        ),
+      ),
+    )
+
+    val leftover = "leftover $id preload entry"
+    launch(leftover, configDir).let { (log, console) -> expectReady(leftover, log, console) }
+    // its jar has no ZB-Preload, so ZombieBuddy drops the entry at premain
+    val preload = (JsonSlurper().parse(config) as Map<*, *>)["preload_mods"] as Map<*, *>
+    if (id in preload || zabricMod !in preload) {
+      throw GradleException("$config ($leftover): preload_mods should have $zabricMod and not $id: ${preload.keys}")
     }
   }
 }

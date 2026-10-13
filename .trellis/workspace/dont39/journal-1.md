@@ -244,3 +244,27 @@ Planned (D1 scope R+H, D2 compile-time seam) and implemented a loader seam: Zabr
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: Zabric phased entrypoints: load-order independence
+<!-- trellis-session: v=2 fp=adff916110f48232 -->
+
+**Date**: 2026-10-14
+**Task**: Zabric phased entrypoints: load-order independence
+**Branch**: `zabric-load-order`
+
+### Summary
+
+Zabric gets Fabric-style phased entrypoints (manifest Zabric-PreLaunch/Zabric-Main; preLaunch on the game's main, main after each ZombieBuddy pass, only for mods ZombieBuddy approved and loaded) and drives preload registration from them; the system-property handshake is gone. ZombieBuddyKotlin is no longer a preload mod: its ZombieBuddy Main swaps Kotlin before any dependent; dependents and generated glue no longer check readiness. loadModAfter lists only direct class-path dependencies. Tried and dropped: an own-jar glue gate (overkill) and preload plus late swap. Client and server smoke tests pass; smokeTest configuration-cache fix found during client checks. PR #7.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `54b6e53` | Give Zabric phased entrypoints so mods do not depend on load order |
+| `f90b1e3` | Keep smokeTest's expected lines out of the script object |
+| `5d593d2` | List only direct dependencies in loadModAfter; trim specs to rules and links |
+
+### Status
+
+[OK] **Completed**
