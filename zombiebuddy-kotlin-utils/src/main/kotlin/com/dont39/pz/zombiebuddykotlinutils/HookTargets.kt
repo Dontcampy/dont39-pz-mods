@@ -11,8 +11,8 @@ private const val GLUE_PACKAGE = "com.dont39.pz.allinone"
  */
 internal fun checkHookTargets(feature: String) {
   val patches = try {
-    Class.forName(GLUE_PACKAGE + "." + feature.split('-').joinToString("") { it.replaceFirstChar(Char::uppercaseChar) } +
-      "Patches")
+    val outer = feature.split('-').joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
+    Class.forName("$GLUE_PACKAGE.${outer}Patches")
   } catch (e: ClassNotFoundException) {
     return // the feature hooks nothing
   }
@@ -23,8 +23,8 @@ internal fun checkHookTargets(feature: String) {
     } catch (e: ClassNotFoundException) {
       throw IllegalStateException("class ${target.className}, which ${patch.name} hooks, is not there", e)
     }
-    if (owner.declaredMethods.none { it.name == target.methodName }) {
-      throw IllegalStateException("${target.className} has no method ${target.methodName}, which ${patch.name} hooks")
+    check(owner.declaredMethods.any { it.name == target.methodName }) {
+      "${target.className} has no method ${target.methodName}, which ${patch.name} hooks"
     }
   }
 }

@@ -24,9 +24,7 @@ internal object ImeWindow {
       val box = Core.currentTextEntryBox
       val wanted = box != null && box.isEditable && box.isDoingTextEntry
       val window = GLFWNativeWin32.glfwGetWin32Window(Display.getWindow())
-      if (window == 0L) {
-        throw IllegalStateException("GLFW has no Win32 window for the game window")
-      }
+      check(window != 0L) { "GLFW has no Win32 window for the game window" }
       if (window != hwnd) {
         hwnd = window
         placed = 0L

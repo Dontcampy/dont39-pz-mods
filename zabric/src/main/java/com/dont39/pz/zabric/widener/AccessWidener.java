@@ -159,7 +159,6 @@ public final class AccessWidener {
      * Returns {@link #problem()}.
      */
     public static String report(String modName) {
-        String prefix = "[" + modName + "] access widener: ";
         if (problem == null) {
             String mismatch = verify();
             if (mismatch != null) {
@@ -168,11 +167,13 @@ public final class AccessWidener {
         }
         String why = problem;
         if (why == null) {
-            DebugType.Mod.println(prefix + "ok (" + entries.size() + " directives)");
+            DebugType.Mod.println("[%s] access widener: ok (%d directives)", modName, entries.size());
         } else if (error != null) {
-            DebugType.Mod.printException(error, prefix + "not applied: " + why, LogSeverity.Error);
+            // the game's varargs printException drops its arguments
+            DebugType.Mod.printException(error, "[" + modName + "] access widener: not applied: " + why,
+                    LogSeverity.Error);
         } else {
-            DebugType.Mod.warn(prefix + "not applied: " + why);
+            DebugType.Mod.warn("[%s] access widener: not applied: %s", modName, why);
         }
         return why;
     }

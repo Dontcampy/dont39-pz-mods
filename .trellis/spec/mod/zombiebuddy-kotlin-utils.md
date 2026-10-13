@@ -16,10 +16,7 @@
 
 ## Rules for Changing It
 
-- Nothing it puts on a per-frame path may allocate, box, or go through lambdas or property delegates.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
-- Kotlin can resolve a game API call to a different overload than Java would (e.g. a varargs format overload instead of
-  `(Object)`); confirm game API calls with `javap -c`.
 - Add API only when a feature needs it; remove what no feature uses.
 
 ## Packaging

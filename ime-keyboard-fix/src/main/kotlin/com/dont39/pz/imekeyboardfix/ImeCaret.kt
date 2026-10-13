@@ -30,28 +30,29 @@ internal object ImeCaret {
         return
       }
       val font = TextManager.instance.getFontFromEnum(box.font)
-      val lineHeight = font.getLineHeight()
-      val inset = box.getInset()
-      var top = inset
-      if (box.centerVertically) {
-        top = ((box.getHeight() - TextManager.instance.MeasureStringY(box.font, box.internalText)) / 2.0).toInt()
+      val lineHeight = font.lineHeight
+      val inset = box.inset
+      val top = if (box.centerVertically) {
+        ((box.getHeight() - TextManager.instance.MeasureStringY(box.font, box.internalText)) / 2.0).toInt()
+      } else {
+        inset
       }
       // render's own cursorLine is stale when it returned early, e.g. while hidden
-      val line = box.toDisplayLine(box.getCursorPos())
+      val line = box.toDisplayLine(box.cursorPos)
       val lines = box.lines
       var width = 0
       if (!lines.isEmpty()) {
-        val text = lines.get(line)
+        val text = lines[line]
         val offsets = box.textOffsetOfLineStart
-        val column = Math.min(box.getCursorPos() - offsets.get(line), text.length)
+        val column = (box.cursorPos - offsets[line]).coerceAtMost(text.length)
         width = font.getWidth(text, 0, column - 1, true)
         if (width > 0) {
           width--
         }
       }
       val left = -box.xOffset + inset + width
-      val x = (left.toDouble() + box.getAbsoluteX() + box.getXScroll()).toInt()
-      val y = ((top + line * lineHeight).toDouble() + box.getAbsoluteY() + box.getYScroll()).toInt()
+      val x = (left.toDouble() + box.absoluteX + box.xScroll).toInt()
+      val y = ((top + line * lineHeight).toDouble() + box.absoluteY + box.yScroll).toInt()
       rect = pack(x, y, 1, lineHeight)
     } catch (t: Throwable) {
       ImeKeyboardFix.disable("locating the text caret for the IME windows", t)
@@ -59,8 +60,8 @@ internal object ImeCaret {
   }
 
   private fun pack(x: Int, y: Int, width: Int, height: Int): Long {
-    if (x < MIN || x > MAX || y < MIN || y > MAX || height < 0 || height > MAX) {
-      throw IllegalStateException("caret at $x,$y height $height does not fit the packed rect")
+    check(x in MIN..MAX && y in MIN..MAX && height in 0..MAX) {
+      "caret at $x,$y height $height does not fit the packed rect"
     }
     return ((x.toLong() and 0xFFFF) shl 48) or ((y.toLong() and 0xFFFF) shl 32) or
       ((width.toLong() and 0xFFFF) shl 16) or (height.toLong() and 0xFFFF)

@@ -1,5 +1,7 @@
 package com.dont39.pz.zombiebuddykotlinutils
 
+import com.dont39.pz.zombiebuddykotlinutils.LoggerUtils.lzDebug
+import com.dont39.pz.zombiebuddykotlinutils.LoggerUtils.lzInfo
 import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
@@ -10,7 +12,8 @@ import zombie.debug.LogSeverity
 abstract class Feature(val name: String, modName: String, private val widened: Boolean = false) {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
-  private val prefix = "[$modName] $name: "
+  @PublishedApi
+  internal val prefix = "[$modName] $name: "
 
   @Volatile
   private var state = State.UNDECIDED
@@ -50,7 +53,7 @@ abstract class Feature(val name: String, modName: String, private val widened: B
       return
     }
     if (why != null) {
-      log("idle: $why")
+      log { "idle: $why" }
       return
     }
     if (!resolveOnce()) {
@@ -62,7 +65,7 @@ abstract class Feature(val name: String, modName: String, private val widened: B
       disable("checking whether it can run", t)
       return
     }
-    log(if (detail == null) "ready" else "ready ($detail)")
+    log { if (detail == null) "ready" else "ready ($detail)" }
   }
 
   /** Every hook checks this first. */
@@ -84,7 +87,7 @@ abstract class Feature(val name: String, modName: String, private val widened: B
     if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE)) {
       return state == State.ACTIVE // another thread got there first
     }
-    log(if (why == null) "active" else "inactive: $why")
+    log { if (why == null) "active" else "inactive: $why" }
     return why == null
   }
 
@@ -134,12 +137,12 @@ abstract class Feature(val name: String, modName: String, private val widened: B
     if (!moveToDisabled()) {
       return
     }
-    DebugType.Mod.printException(t, prefix + "disabled after an error while " + what, LogSeverity.Error)
+    DebugType.Mod.printException(t, "${prefix}disabled after an error while $what", LogSeverity.Error)
   }
 
-  fun log(message: String) {
-    DebugType.Mod.println(prefix + message)
-  }
+  inline fun log(message: () -> String) = DebugType.Mod.lzInfo { "$prefix${message()}" }
+
+  inline fun debug(message: () -> String) = DebugType.Mod.lzDebug { "$prefix${message()}" }
 
   @Synchronized
   private fun move(from: State, to: State): Boolean {

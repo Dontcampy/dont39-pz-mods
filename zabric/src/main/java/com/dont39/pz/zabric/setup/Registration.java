@@ -84,13 +84,14 @@ public final class Registration {
         }
         if (preloaded) {
             if (!current) {
-                log("updated its ZombieBuddy preload entry in " + config + " to " + dir);
+                DebugType.Mod.println(PREFIX + "updated its ZombieBuddy preload entry in %s to %s", config, dir);
             }
             return;
         }
         restartNeeded = true;
-        log((current ? "is registered" : "registered itself") + " as a ZombieBuddy preload mod in " + config
-                + " but did not run at game start; restart the game once");
+        DebugType.Mod.println(
+                PREFIX + "%s as a ZombieBuddy preload mod in %s but did not run at game start; restart the game once",
+                current ? "is registered" : "registered itself", config);
     }
 
     private static boolean same(String stored, Path current) {
@@ -118,9 +119,5 @@ public final class Registration {
         } finally {
             Files.deleteIfExists(tmp);
         }
-    }
-
-    private static void log(String message) {
-        DebugType.Mod.println(PREFIX + message);
     }
 }

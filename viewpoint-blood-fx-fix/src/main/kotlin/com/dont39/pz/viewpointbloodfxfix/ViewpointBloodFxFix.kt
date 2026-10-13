@@ -30,7 +30,7 @@ object ViewpointBloodFxFix : Feature("viewpoint-blood-fx-fix", "Dont39AllInOne",
     return versionProblem("BloodFX", version, KNOWN_BLOODFX, force, OPTIONS_PAGE, FORCE_OPTION)
   }
 
-  override fun readyDetail(): String = "BloodFX " + targetVersion(BLOODFX_VERSION_CLASS)
+  override fun readyDetail(): String = "BloodFX ${targetVersion(BLOODFX_VERSION_CLASS)}"
 
   @LuaGlobal("Dont39AllInOne_setViewpointBloodFxFixForce")
   override fun setForce(value: Boolean) = super.setForce(value)

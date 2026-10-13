@@ -26,13 +26,12 @@ internal object AimShift {
       }
       val relief = Relief.at(lift, character.x.toDouble(), character.y.toDouble())
       if (LiftOffsets.debug()) {
-        val h = ray.oh()
-        ViewpointBloodFxFix.log(
-          String.format(
-            "aim: zombie at %.2f %.2f z=%.2f, relief %.3f, ray h %.3f -> %.3f",
+        ViewpointBloodFxFix.log {
+          val h = ray.oh()
+          "aim: zombie at %.2f %.2f z=%.2f, relief %.3f, ray h %.3f -> %.3f".format(
             character.x, character.y, character.z, relief, h, h - relief,
-          ),
-        )
+          )
+        }
       }
       if (relief == 0.0f) {
         return

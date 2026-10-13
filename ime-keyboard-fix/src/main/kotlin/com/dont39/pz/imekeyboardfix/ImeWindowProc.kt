@@ -41,16 +41,10 @@ internal object ImeWindowProc {
       return
     }
     restore()
-    var ours = proc
-    if (ours == null) {
-      ours = Proc()
-      proc = ours
-    }
+    val ours = proc ?: Proc().also { proc = it }
     val error = BufferUtils.createIntBuffer(1)
     val previous = User32.SetWindowLongPtr(error, window, GWLP_WNDPROC, ours.address())
-    if (previous == 0L) {
-      throw IllegalStateException("SetWindowLongPtr failed with error ${error.get(0)}")
-    }
+    check(previous != 0L) { "SetWindowLongPtr failed with error ${error[0]}" }
     original = previous
     hwnd = window
   }

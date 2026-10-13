@@ -17,7 +17,6 @@
 - The features' target mods must be subscribed in Steam.
 - Check the assembled jar contains the new patches class (output location: `assembleMod` in
   `dont39-all-in-one/build.gradle.kts`).
-- Check per-frame paths with `javap -c` for allocation, boxing and lambdas.
 
 ## Tests
 

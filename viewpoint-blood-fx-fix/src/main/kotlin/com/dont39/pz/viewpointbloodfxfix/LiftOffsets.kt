@@ -17,9 +17,9 @@ internal object LiftOffsets {
   private const val SPLAT = 2
   private const val PIECE = 3
 
-  private val BLOOD = Saved()
-  private val GORE = Saved()
-  private val STATS = Stats()
+  private val blood = Saved()
+  private val gore = Saved()
+  private val stats = Stats()
 
   /** BloodFX's own "Log blood particles to console.txt" option. */
   fun debug(): Boolean = BloodFx.debug
@@ -29,25 +29,21 @@ internal object LiftOffsets {
     if (!ViewpointBloodFxFix.active()) {
       return
     }
-    BLOOD.restore() // never stack on a lift whose exit did not run
+    blood.restore() // never stack on a lift whose exit did not run
     try {
       val lift = Relief.current()
       if (lift != null) {
-        val drops = BloodFx.drops
-        for (i in 0 until drops.size) {
-          val d = drops[i]
+        BloodFx.drops.forEach { d ->
           val dh = Relief.at(lift, d.x.toDouble(), d.y.toDouble())
           if (dh != 0.0f) {
-            BLOOD.save(d, DROP, d.h, dh)
+            blood.save(d, DROP, d.h, dh)
             d.h += dh
           }
         }
-        val mists = BloodFx.mists
-        for (i in 0 until mists.size) {
-          val m = mists[i]
+        BloodFx.mists.forEach { m ->
           val dh = Relief.at(lift, m.x.toDouble(), m.y.toDouble())
           if (dh != 0.0f) {
-            BLOOD.save(m, MIST, m.h, dh)
+            blood.save(m, MIST, m.h, dh)
             m.h += dh
           }
         }
@@ -57,24 +53,24 @@ internal object LiftOffsets {
           if (s != null) {
             val dh = Relief.at(lift, s.ox.toDouble(), s.oy.toDouble())
             if (dh != 0.0f) {
-              BLOOD.save(s, SPLAT, s.oh, dh)
+              blood.save(s, SPLAT, s.oh, dh)
               s.oh += dh
             }
           }
         }
       }
       if (debug()) {
-        STATS.frame(lift != null, BLOOD)
+        stats.frame(lift != null, blood)
       }
     } catch (t: Throwable) {
-      BLOOD.restore()
+      blood.restore()
       ViewpointBloodFxFix.disable("raising blood onto the terrain", t)
     }
   }
 
   @Hook.Exit(className = "bloodfx.Gpu", methodName = "render")
   fun restoreBlood() {
-    BLOOD.restore()
+    blood.restore()
   }
 
   @Hook.Enter(className = "bloodfx.GoreGpu", methodName = "render")
@@ -82,29 +78,27 @@ internal object LiftOffsets {
     if (!ViewpointBloodFxFix.active()) {
       return
     }
-    GORE.restore()
+    gore.restore()
     try {
       val lift = Relief.current()
       if (lift != null) {
-        val pieces = GoreGpu.pieces
-        for (i in 0 until pieces.size) {
-          val p = pieces[i]
+        GoreGpu.pieces.forEach { p ->
           val dh = Relief.at(lift, p.x.toDouble(), p.y.toDouble())
           if (dh != 0.0f) {
-            GORE.save(p, PIECE, p.h, dh)
+            gore.save(p, PIECE, p.h, dh)
             p.h += dh
           }
         }
       }
     } catch (t: Throwable) {
-      GORE.restore()
+      gore.restore()
       ViewpointBloodFxFix.disable("raising severed parts onto the terrain", t)
     }
   }
 
   @Hook.Exit(className = "bloodfx.GoreGpu", methodName = "render")
   fun restoreGore() {
-    GORE.restore()
+    gore.restore()
   }
 
   /**
@@ -139,8 +133,7 @@ internal object LiftOffsets {
     /** Never throws: it runs in the exit hook, inside BloodFX's draw call. */
     fun restore() {
       var failure: Throwable? = null
-      var i = count - 1
-      while (i >= 0) {
+      for (i in count - 1 downTo 0) {
         val owner = owners[i]
         val h = heights[i]
         try {
@@ -157,12 +150,9 @@ internal object LiftOffsets {
           }
         }
         owners[i] = null
-        i--
       }
       count = 0
-      if (failure != null) {
-        ViewpointBloodFxFix.disable("restoring the heights it raised", failure)
-      }
+      failure?.let { ViewpointBloodFxFix.disable("restoring the heights it raised", it) }
     }
   }
 
@@ -186,12 +176,11 @@ internal object LiftOffsets {
       }
       val now = System.nanoTime()
       if (now - since >= STATS_EVERY) {
-        ViewpointBloodFxFix.log(
-          String.format(
-            "%d frames, %d with terrain relief, %d particle draws raised by %.3f..%.3f",
+        ViewpointBloodFxFix.log {
+          "%d frames, %d with terrain relief, %d particle draws raised by %.3f..%.3f".format(
             frames, withRelief, raised, lowest, highest,
-          ),
-        )
+          )
+        }
         since = now
         frames = 0
         withRelief = 0

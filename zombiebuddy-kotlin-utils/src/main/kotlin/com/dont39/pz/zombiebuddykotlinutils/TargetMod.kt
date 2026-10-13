@@ -19,7 +19,7 @@ fun targetVersion(versionClass: String, field: String = "VERSION"): String? {
   } catch (e: ReflectiveOperationException) {
     throw IllegalStateException("cannot read $versionClass.$field", e)
   }
-  return value?.toString() ?: throw IllegalStateException("$versionClass.$field is null")
+  return value?.toString() ?: error("$versionClass.$field is null")
 }
 
 /** Why [version] is not accepted, with the mod option that overrides it; null when it is. */
@@ -30,7 +30,7 @@ fun versionProblem(
   force: Boolean,
   optionsPage: String,
   option: String,
-): String? = if (force || known.contains(version)) {
+): String? = if (force || version in known) {
   null
 } else {
   "$target $version is not a known version $known (Options > Mods > $optionsPage > $option)"

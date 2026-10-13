@@ -43,9 +43,7 @@ internal object ImeContext {
 
   private fun function(imm: WindowsLibrary, name: String): Long {
     val address = imm.getFunctionAddress(name)
-    if (address == 0L) {
-      throw IllegalStateException("${imm.path} has no $name")
-    }
+    check(address != 0L) { "${imm.path} has no $name" }
     return address
   }
 
@@ -56,8 +54,8 @@ internal object ImeContext {
       attached = true
     }
     if (wanted != attached) {
-      if (JNI.callPPI(window, 0L, if (wanted) IACE_DEFAULT else DETACH, associate) == 0) {
-        throw IllegalStateException("ImmAssociateContextEx failed")
+      check(JNI.callPPI(window, 0L, if (wanted) IACE_DEFAULT else DETACH, associate) != 0) {
+        "ImmAssociateContextEx failed"
       }
       attached = wanted
     }
@@ -83,16 +81,10 @@ internal object ImeContext {
     MemoryUtil.memPutInt(candidate + 24, right)
     MemoryUtil.memPutInt(candidate + 28, bottom)
     val context = JNI.callPP(window, getContext)
-    if (context == 0L) {
-      throw IllegalStateException("the game window has no input context")
-    }
+    check(context != 0L) { "the game window has no input context" }
     try {
-      if (JNI.callPPI(context, composition, setCompositionWindow) == 0) {
-        throw IllegalStateException("ImmSetCompositionWindow failed")
-      }
-      if (JNI.callPPI(context, candidate, setCandidateWindow) == 0) {
-        throw IllegalStateException("ImmSetCandidateWindow failed")
-      }
+      check(JNI.callPPI(context, composition, setCompositionWindow) != 0) { "ImmSetCompositionWindow failed" }
+      check(JNI.callPPI(context, candidate, setCandidateWindow) != 0) { "ImmSetCandidateWindow failed" }
     } finally {
       JNI.callPPI(window, context, releaseContext)
     }

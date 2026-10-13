@@ -85,7 +85,7 @@ abstract class WidenJars : DefaultTask() {
       fun info(owner: String): Info? = infos.getOrPut(owner) { read(owner, zips) }
 
       val errors = mutableListOf<String>()
-      val expandedEntries = LinkedHashMap<String, Entry>()
+      val expandedEntries = linkedMapOf<String, Entry>()
       val specs = mutableMapOf<String, Spec>()
       fun spec(owner: String) = specs.getOrPut(owner) { Spec() }
 
@@ -203,7 +203,7 @@ abstract class WidenJars : DefaultTask() {
   private fun copy(zip: ZipFile, target: File, specs: Map<String, Spec>, publicTypes: Set<String>) {
     ZipOutputStream(target.outputStream().buffered()).use { out ->
       out.setLevel(Deflater.BEST_SPEED)
-      for (entry in zip.entries()) {
+      zip.entries().asSequence().forEach { entry ->
         out.putNextEntry(ZipEntry(entry.name).also { it.time = entry.time })
         if (!entry.isDirectory) {
           val spec = if (entry.name.endsWith(".class")) specs[entry.name.removeSuffix(".class")] else null
@@ -268,7 +268,7 @@ abstract class MergeClassTweakers : DefaultTask() {
 
   @TaskAction
   fun merge() {
-    val entries = LinkedHashMap<String, Entry>()
+    val entries = linkedMapOf<String, Entry>()
     lists.files.sortedBy { it.name }.forEach { file ->
       ClassTweaker.parse(file.name, file.readLines()).forEach { entries.putIfAbsent(it.directive(), it) }
     }

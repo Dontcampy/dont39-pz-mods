@@ -1,6 +1,7 @@
 package com.dont39.pz.zombiebuddykotlinutils
 
 import com.dont39.pz.zabric.widener.AccessWidener
+import com.dont39.pz.zombiebuddykotlinutils.LoggerUtils.lzWarn
 import zombie.debug.DebugType
 
 // the preload mod's jar is missing when ZombieBuddy did not load it
@@ -15,7 +16,6 @@ fun reportWidening(modName: String) {
   if (targetLoaded(WIDENER)) {
     AccessWidener.report(modName)
   } else {
-    // as Any: Kotlin would pick the varargs format overload
-    DebugType.Mod.warn("[$modName] access widener: not applied: $NOT_LOADED" as Any)
+    DebugType.Mod.lzWarn { "[$modName] access widener: not applied: $NOT_LOADED" }
   }
 }

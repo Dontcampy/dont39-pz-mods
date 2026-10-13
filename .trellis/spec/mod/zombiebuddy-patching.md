@@ -128,4 +128,3 @@ When a feature changes another mod's state around a call (`LiftOffsets.kt`, `Aim
   (`ImeWindow.kt`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on (see `LiftOffsets.kt`). Know how often the patched method is called before adding work to it.
-- In Kotlin, per-frame code uses no lambdas, iterators, ranges objects or boxing; confirm with `javap -c`.
