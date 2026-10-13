@@ -9,11 +9,14 @@ kotlinxSerializationJSON = "1.11.0"
 kotlinxCoroutines = "1.11.0"
 # KSP2, versioned independently of Kotlin; generates the ZombieBuddy glue (zombiebuddy-kotlin-utils-processor)
 ksp = "2.3.12"
+# build only: widens the jars features compile against (buildSrc)
+asm = "9.11"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinSerializationGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 kspGradlePlugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }

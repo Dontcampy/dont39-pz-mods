@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature checklist, naming, module layout"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Hooks, vanilla-only gating, render-thread reads, window-thread Win32 calls"}
+{"file": ".trellis/spec/mod/zombiebuddy-kotlin-utils.md", "reason": "Feature base class and Resolver usage"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Catch at boundary, restore, disable once"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Status lines, no per-frame logging"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules"}

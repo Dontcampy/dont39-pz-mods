@@ -1,6 +1,8 @@
 package com.dont39.pz.allinone
 
+import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.viewpointbloodfxfix.ViewpointBloodFxFix
+import com.dont39.pz.zombiebuddykotlinutils.reportWidening
 import zombie.debug.DebugType
 
 object Main {
@@ -10,6 +12,8 @@ object Main {
   fun main(args: Array<String>) {
     val version = Main::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX$version loaded")
+    reportWidening("Dont39AllInOne")
     ViewpointBloodFxFix.init()
+    ImeKeyboardFix.init()
   }
 }

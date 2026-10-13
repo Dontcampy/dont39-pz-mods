@@ -1,0 +1,12 @@
+name=Zabric
+id=Zabric
+author=Dont39
+modversion=@VERSION@
+description=Part of Dont39 All-in-One, required by it: at game start it opens up the game internals that All-in-One's fixes use. Does nothing on its own.
+require=\ZombieBuddy
+loadModAfter=\ZombieBuddy
+javaJarFile=media/java/client/Zabric.jar
+javaPkgName=com.dont39.pz.zabric
+javaPreload=true
+ZBVersionMin=2.3.4
+versionMin=42.21.0

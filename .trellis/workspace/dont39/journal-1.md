@@ -107,3 +107,95 @@ Processor rejects @Patch.Local and checks Thrown/AllArguments/Argument/Return ty
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: IME keyboard fix
+<!-- trellis-session: v=2 fp=a2d7ed94fba9bcec -->
+
+**Date**: 2026-10-12
+**Task**: IME keyboard fix
+**Branch**: `main`
+
+### Summary
+
+Added ime-keyboard-fix: on Windows the IME is detached from the game window outside text boxes (ImmAssociateContextEx, IACE_DEFAULT on re-attach keeps CN/EN mode), hooked at Display.processMessages exit for the window thread. smokeTest and in-game checks passed; patching spec updated; PR Dontcampy/dont39-pz-mods#3. Found that the bundled GLFW hides the IME composition/candidate UI (vanilla) - next task.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a8aaf8b` | Add ime-keyboard-fix: keep the IME out of the game window outside text boxes |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 6: IME candidate windows
+<!-- trellis-session: v=2 fp=ebb0c9ccc0d33caa -->
+
+**Date**: 2026-10-13
+**Task**: IME candidate windows
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+ime-keyboard-fix now subclasses the game window procedure to show the system IME composition/candidate windows (GLFW hides them), swallows WM_IME_CHAR, and places them at the UITextBox2 caret. Works in windowed mode; in the game's borderless mode (undecorated desktop-sized window) Windows treats the game as fullscreen and WeChat IME hides its windows - accepted limitation. Fixed Resolver.virtual default asType. Pushed to PR Dontcampy/dont39-pz-mods#3.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `31c8d9e` | Show the IME composition and candidate windows at the text caret |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 7: Typed access via access widener (Zabric)
+<!-- trellis-session: v=2 fp=eb89c50652dced4c -->
+
+**Date**: 2026-10-13
+**Task**: Typed access via access widener (Zabric)
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+Replaced reflection with typed access: target mod jars on the compile classpath (pzTargets), Fabric-style .classtweaker widening at build time, and Zabric (new unsigned Java preload mod) widening the same members at runtime before classes load; it self-registers in ZombieBuddy config.json under policy=allow-all and shows a restart dialog. @Advice.FieldValue was tried first and fails in ZombieBuddy 2.3.4 (silently not woven). Migrated ime-keyboard-fix and viewpoint-blood-fx-fix, removed Resolver, rewrote specs. Verified by smokeTest and in game. PR Dontcampy/dont39-pz-mods#3.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6634038` | Reach game and target-mod members by direct access instead of reflection |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 8: Idiomatic Kotlin, lazy logging, module rename
+<!-- trellis-session: v=2 fp=7d442686f7486225 -->
+
+**Date**: 2026-10-13
+**Task**: Idiomatic Kotlin, lazy logging, module rename
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+Trimmed specs to rules and links. Rewrote the Kotlin code to kotlinlang.org idioms and coding conventions (forEach, property syntax, check/error, coerceAtMost) and dropped the spec bans on iterators/lambdas/allocation on per-frame paths, since the JIT handles short-lived objects. Added LoggerUtils (lzInfo/lzDebug/lzWarn DebugType extensions that check severity before building the message); Feature.log/debug wrap them with the prefix. Java logs use DebugType format arguments with compile-time-constant patterns; printException keeps concatenation because the game's varargs overload drops its arguments. Removed redundant 'as Any' casts and the wrong varargs-overload spec example. Added Kotlin/Java wrong-vs-correct logging examples to logging-guidelines.md. Renamed module zombie-buddy-kotlin to zombiebuddy-kotlin. smokeTest passes.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5f15a46` | Trim the specs to rules and links |
+| `22c5703` | refactor: simplify property access and improve readability |
+| `2eeac59` | Write idiomatic Kotlin and build log messages only when they are written |
+| `3539b32` | docs: update logging guidelines to clarify message building rules |
+| `bac5b39` | Rename the zombie-buddy-kotlin module to zombiebuddy-kotlin |
+
+### Status
+
+[OK] **Completed**

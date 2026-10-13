@@ -14,17 +14,20 @@ buildSrc/src/main/kotlin/
   pz-kotlin.gradle.kts               convention plugin every Kotlin module applies
   pz-mod.gradle.kts                  convention plugin every shipped mod applies
   pz-feature.gradle.kts              convention plugin every Kotlin feature module applies
+  PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
 <feature-module>/                    one per feature, e.g. viewpoint-blood-fx-fix/
-  build.gradle.kts                   the pz-feature plugin line only
+  build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hook / @LuaGlobal annotations
   src/main/lua/client/                         Lua glue, e.g. mod options (if any)
+  src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
   build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features
   build.gradle.kts                   version, feature list, packaging, smokeTest
   src/main/kotlin/com/dont39/pz/allinone/Main.kt
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
-zombie-buddy-kotlin/                 shipped mod: Kotlin runtime library (see kotlin-runtime.md)
+zabric/                              preload mod in All-in-One's Workshop item (see access-widening.md)
+zombiebuddy-kotlin/                  shipped mod: Kotlin runtime library (see kotlin-runtime.md)
 zombiebuddy-kotlin-utils/            internal module bundled into All-in-One (see zombiebuddy-kotlin-utils.md)
 zombiebuddy-kotlin-utils-processor/  KSP processor for the glue; compile time only, not shipped
 ```
@@ -33,7 +36,7 @@ Build, signing, and packaging behavior (toolchain, Java release level, compile-o
 are merged into the mod folder, deploy guards, smoke test) is defined in:
 
 - `buildSrc/src/main/kotlin/pz-java.gradle.kts`, `pz-kotlin.gradle.kts`, `pz-mod.gradle.kts`, `pz-feature.gradle.kts`
-- `dont39-all-in-one/build.gradle.kts`, `zombie-buddy-kotlin/build.gradle.kts`
+- `dont39-all-in-one/build.gradle.kts`, `zombiebuddy-kotlin/build.gradle.kts`
 
 Read those files rather than assuming; do not duplicate their settings in feature modules.
 
@@ -64,11 +67,13 @@ in the `viewpoint-blood-fx-fix` classes.
 
 ## Adding a Feature
 
-1. New module dir whose `build.gradle.kts` only applies `buildsrc.convention.pz-feature`.
+1. New module dir whose `build.gradle.kts` applies `buildsrc.convention.pz-feature` and declares its target mods with
+   `pzTargets` ([Access Widening](./access-widening.md)).
 2. Register it in `settings.gradle.kts`.
 3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
-4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.kt`, built on `Feature` and `Resolver`
-   ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)).
+4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.kt`, built on `Feature`
+   ([ZombieBuddy Kotlin Utils](./zombiebuddy-kotlin-utils.md)); non-public members via
+   [Access Widening](./access-widening.md).
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package
    ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are generated. Add a Lua file in
    `src/main/lua/` if the feature has options.

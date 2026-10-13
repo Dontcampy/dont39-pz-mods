@@ -1,0 +1,5 @@
+dont39-classtweaker v1
+# where UITextBox2.render draws the caret, read by ImeCaret after it
+accessible field zombie/ui/UITextBox2 xOffset I
+accessible field zombie/ui/UITextBox2 centerVertically Z
+accessible field zombie/ui/UITextBox2 textOffsetOfLineStart Lgnu/trove/list/array/TIntArrayList;

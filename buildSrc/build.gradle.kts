@@ -9,6 +9,11 @@ kotlin {
   jvmToolchain(25)
 }
 
+// the .classtweaker parser, shared with the game-start widening
+sourceSets.main {
+  java.srcDir("../zabric/src/classtweaker/java")
+}
+
 dependencies {
   // Add a dependency on the Kotlin Gradle plugin, so that convention plugins can apply it.
   implementation(libs.kotlinGradlePlugin)
@@ -16,5 +21,7 @@ dependencies {
   implementation(libs.kotlinSerializationGradlePlugin)
   // Lets pz-feature apply KSP.
   implementation(libs.kspGradlePlugin)
+  // Lets pz-feature widen the jars features compile against.
+  implementation(libs.asm)
   implementation("io.github.zed-0xff.zb-gradle-plugin:io.github.zed-0xff.zb-gradle-plugin.gradle.plugin:1.0.3")
 }

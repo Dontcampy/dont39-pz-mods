@@ -2,3 +2,8 @@
 plugins {
   id("buildsrc.convention.pz-kotlin")
 }
+
+dependencies {
+  // linked only after its presence is probed (Widening.kt)
+  compileOnly(project(":zabric"))
+}

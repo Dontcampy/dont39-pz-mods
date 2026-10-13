@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Hook/glue rules and the Reaching Other Mods section being rewritten"}
+{"file": ".trellis/spec/mod/zombiebuddy-kotlin-utils.md", "reason": "Feature/Resolver/glue processor rules; change annotation and processor together"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature checklist, convention plugins"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Gate, report, disable; resolve() rows to update"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, forbidden patterns"}

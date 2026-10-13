@@ -8,18 +8,15 @@
 
 ## Use It
 
-- A feature's facade extends `Feature` (`Feature.kt`), its helpers reach other mods through `Resolver`
-  (`Resolver.kt`), target-mod version checks use `TargetMod.kt`, and hooks and Lua functions use the annotations in
-  `glue/Glue.kt` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
-- Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording,
-  reflection error handling.
+- A feature's facade extends `Feature` (`Feature.kt`), target-mod presence and version checks use `TargetMod.kt`, and
+  hooks and Lua functions use the annotations in `glue/Glue.kt`
+  ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
+- Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording, hook
+  checks, widening state.
 
 ## Rules for Changing It
 
-- Nothing it puts on a per-frame path may allocate, box, or go through lambdas or property delegates.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
-- Kotlin can resolve a game API call to a different overload than Java would (e.g. a varargs format overload instead of
-  `(Object)`); confirm game API calls with `javap -c`.
 - Add API only when a feature needs it; remove what no feature uses.
 
 ## Packaging
@@ -28,6 +25,6 @@
   `buildSrc/src/main/kotlin/pz-feature.gradle.kts`.
 - Its classes are unrelocated on the shared classloader, so only one shipped mod may bundle it. A second mod needing it
   means moving it into ZombieBuddyKotlin first, which is a separate decision
-  ([Kotlin Runtime](./kotlin-runtime.md#library-zombie-buddy-kotlin)).
+  ([Kotlin Runtime](./kotlin-runtime.md#library-zombiebuddy-kotlin)).
 - The glue processor (`zombiebuddy-kotlin-utils-processor`) runs only in the compiler and is never shipped. Change an
   annotation and the processor together.

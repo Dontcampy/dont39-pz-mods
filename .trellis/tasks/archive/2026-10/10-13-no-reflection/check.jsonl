@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, forbidden patterns"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Verify hook, gating and hot-path rules after the rewrite"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Verify single disable and restore paths"}
+{"file": ".trellis/spec/mod/zombiebuddy-kotlin-utils.md", "reason": "Verify utils API pruning and processor/annotation pairing"}

@@ -85,10 +85,8 @@ class GlueProcessor(
     return emptyList()
   }
 
-  private fun option(name: String): String? {
-    val value = options[name]
-    if (value.isNullOrBlank()) error("KSP option $name is missing; apply the buildsrc.convention.pz-feature plugin")
-    return value
+  private fun option(name: String): String? = options[name].also {
+    if (it.isNullOrBlank()) error("KSP option $name is missing; apply the buildsrc.convention.pz-feature plugin")
   }
 
   // ---- hooks ----
@@ -162,15 +160,13 @@ class GlueProcessor(
         if (isExit) target.exit = advice else target.enter = advice
       }
     }
-    for ((name, clashing) in targets.values.groupBy { it.nestedName }) {
-      if (clashing.size > 1) {
-        val label = clashing.drop(1).first().let { (it.enter ?: it.exit)!!.callee }
-        error(
-          label,
-          "hooks on ${clashing.joinToString(" and ") { "${it.className}.${it.methodName}" }} would both generate the " +
-            "patch class $name",
-        )
-      }
+    targets.values.groupBy { it.nestedName }.filterValues { it.size > 1 }.forEach { (name, clashing) ->
+      val label = clashing[1].let { (it.enter ?: it.exit)!!.callee }
+      error(
+        label,
+        "hooks on ${clashing.joinToString(" and ") { "${it.className}.${it.methodName}" }} would both generate the " +
+          "patch class $name",
+      )
     }
     return targets.values.sortedBy { it.nestedName }
   }
@@ -178,7 +174,6 @@ class GlueProcessor(
   private class Param(val annotation: String, val name: String, val type: String)
 
   private fun hookParams(fn: KSFunctionDeclaration, callee: Callee, isExit: Boolean, catches: Boolean): List<Param>? {
-    var ok = true
     val params = fn.parameters.map { p ->
       val name = p.name?.asString() ?: "p"
       val type = p.type.resolve()
@@ -201,13 +196,12 @@ class GlueProcessor(
       }
       if (problem != null) {
         error(callee, problem)
-        ok = false
         return@map null
       }
       val annotation = if (kind == "Argument") "@Patch.Argument(${binding!!.arg("value") ?: 0})" else "@Patch.$kind"
       Param(annotation, name, render(type))
     }
-    return if (ok) params.filterNotNull() else null
+    return if (null in params) null else params.filterNotNull()
   }
 
   /**
@@ -245,7 +239,7 @@ class GlueProcessor(
     appendLine()
     appendLine("// ZombieBuddy picks up @Patch classes only in exactly javaPkgName and inlines the static advice.")
     appendLine("object $outer {")
-    for ((i, target) in targets.withIndex()) {
+    targets.forEachIndexed { i, target ->
       if (i > 0) appendLine()
       val extra = buildString {
         if (target.strictMatch) append(", strictMatch = true")
@@ -314,7 +308,7 @@ class GlueProcessor(
     appendLine("// ZombieBuddy exposes global Lua functions only from classes in exactly javaPkgName; Kahlua calls")
     appendLine("// them on an instance ZombieBuddy creates through the private constructor.")
     appendLine("object $bridge {")
-    for ((i, function) in functions.withIndex()) {
+    functions.forEachIndexed { i, function ->
       if (i > 0) appendLine()
       val params = function.params.joinToString(", ") { "${it.name}: ${it.type}" }
       val call = "${function.callee.call}(${function.params.joinToString(", ") { it.name }})"
@@ -410,8 +404,8 @@ private fun render(type: KSType): String {
     type.arguments.joinToString(", ", "<", ">") {
       when (it.variance) {
         Variance.STAR -> "*"
-        Variance.COVARIANT -> "out " + render(it.type!!.resolve())
-        Variance.CONTRAVARIANT -> "in " + render(it.type!!.resolve())
+        Variance.COVARIANT -> "out ${render(it.type!!.resolve())}"
+        Variance.CONTRAVARIANT -> "in ${render(it.type!!.resolve())}"
         Variance.INVARIANT -> render(it.type!!.resolve())
       }
     }
@@ -424,13 +418,13 @@ private fun identifier(text: String) = text.map { if (it.isLetterOrDigit() || it
 
 private fun kotlinString(text: String) = buildString {
   append('"')
-  for (c in text) {
-    when (c) {
+  text.forEach {
+    when (it) {
       '\\' -> append("\\\\")
       '"' -> append("\\\"")
       '$' -> append("\\$")
       '\n' -> append("\\n")
-      else -> append(c)
+      else -> append(it)
     }
   }
   append('"')

@@ -23,7 +23,7 @@ import java.util.jar.JarFile;
  * Java only, with no reference to any kotlin.* type: this runs before the swap (checkBootstrapClasses).
  */
 public final class ZombieBuddyKotlin {
-    private static final String PREFIX = "[ZombieBuddyKotlin] ";
+    static final String PREFIX = "[ZombieBuddyKotlin] ";
     private static final String REINSTALL = "reinstall ZombieBuddyKotlin (unsubscribe and subscribe again)";
     private static final String SELF_CHECK = "com.dont39.pz.zombiebuddykotlin.selfcheck.SelfCheck";
     private static volatile boolean ready;
@@ -64,14 +64,14 @@ public final class ZombieBuddyKotlin {
             if (error != null) {
                 DebugType.Mod.printException(error, PREFIX + "not ready: " + why, LogSeverity.Error);
             } else {
-                warn("not ready: " + why);
+                DebugType.Mod.warn(PREFIX + "not ready: %s", why);
             }
             return;
         }
         kotlinVersion = runtime.getProperty("version");
         ready = true;
-        log("ready: Kotlin " + kotlinVersion + ", kotlinx-coroutines " + runtime.getProperty("coroutines")
-                + ", kotlinx-serialization " + runtime.getProperty("serialization"));
+        DebugType.Mod.println(PREFIX + "ready: Kotlin %s, kotlinx-coroutines %s, kotlinx-serialization %s",
+                kotlinVersion, runtime.getProperty("coroutines"), runtime.getProperty("serialization"));
     }
 
     /**
@@ -145,13 +145,5 @@ public final class ZombieBuddyKotlin {
         } catch (RuntimeException | LinkageError e) {
             return "(unknown version)";
         }
-    }
-
-    static void log(String message) {
-        DebugType.Mod.println(PREFIX + message);
-    }
-
-    static void warn(String message) {
-        DebugType.Mod.warn(PREFIX + message);
     }
 }

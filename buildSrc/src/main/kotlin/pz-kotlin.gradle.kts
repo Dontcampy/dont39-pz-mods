@@ -31,10 +31,11 @@ dependencies {
 
 // projectzomboid.jar also contains the game's kotlin-stdlib 1.4.10 and the first copy on the classpath wins, so it goes
 // last
-val gameJar = providers.gradleProperty("pzDir").map { file("$it/projectzomboid.jar") }
+@Suppress("UNCHECKED_CAST")
+val gameJar = (extra["pzGameJar"] as RegularFileProperty).map { it.asFile }
 
 tasks.withType<KotlinCompile>().configureEach {
-  val game = gameJar.get()
+  val game = gameJar
   val classpath = files(libraries.from.toList())
-  libraries.setFrom(classpath.filter { it != game }, game)
+  libraries.setFrom(classpath.filter { it != game.get() }, game)
 }
