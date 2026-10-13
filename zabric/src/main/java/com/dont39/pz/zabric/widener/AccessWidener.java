@@ -8,6 +8,7 @@ import net.bytebuddy.asm.ModifierAdjustment;
 import net.bytebuddy.description.modifier.ModifierContributor;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.utility.JavaModule;
+import org.jspecify.annotations.NonNull;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 
@@ -139,8 +140,8 @@ public final class AccessWidener {
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .with(new AgentBuilder.Listener.Adapter() {
                     @Override
-                    public void onError(String typeName, ClassLoader cl, JavaModule module, boolean isLoaded,
-                            Throwable t) {
+                    public void onError(@NonNull String typeName, ClassLoader cl, JavaModule module, boolean isLoaded,
+                                        @NonNull Throwable t) {
                         error = t;
                         problem = "widening " + typeName + " failed: " + t;
                     }

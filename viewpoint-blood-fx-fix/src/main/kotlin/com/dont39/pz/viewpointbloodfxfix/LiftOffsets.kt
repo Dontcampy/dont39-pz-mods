@@ -52,7 +52,7 @@ internal object LiftOffsets {
           }
         }
         val splats = BloodFx.splats
-        for (i in 0 until Math.min(BloodFx.splatCount, splats.size)) {
+        for (i in 0 until BloodFx.splatCount.coerceAtMost(splats.size)) {
           val s = splats[i]
           if (s != null) {
             val dh = Relief.at(lift, s.ox.toDouble(), s.oy.toDouble())
@@ -132,8 +132,8 @@ internal object LiftOffsets {
       kinds[count] = kind.toByte()
       heights[count] = h
       count++
-      lowest = if (count == 1) dh else Math.min(lowest, dh)
-      highest = if (count == 1) dh else Math.max(highest, dh)
+      lowest = if (count == 1) dh else lowest.coerceAtMost(dh)
+      highest = if (count == 1) dh else highest.coerceAtLeast(dh)
     }
 
     /** Never throws: it runs in the exit hook, inside BloodFX's draw call. */
@@ -180,8 +180,8 @@ internal object LiftOffsets {
         withRelief++
       }
       if (saved.count > 0) {
-        lowest = if (raised == 0) saved.lowest else Math.min(lowest, saved.lowest)
-        highest = if (raised == 0) saved.highest else Math.max(highest, saved.highest)
+        lowest = if (raised == 0) saved.lowest else lowest.coerceAtMost(saved.lowest)
+        highest = if (raised == 0) saved.highest else highest.coerceAtLeast(saved.highest)
         raised += saved.count
       }
       val now = System.nanoTime()
