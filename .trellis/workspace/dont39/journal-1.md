@@ -151,3 +151,25 @@ ime-keyboard-fix now subclasses the game window procedure to show the system IME
 ### Status
 
 [OK] **Completed**
+
+
+## Session 7: Typed access via access widener (Zabric)
+<!-- trellis-session: v=2 fp=eb89c50652dced4c -->
+
+**Date**: 2026-10-13
+**Task**: Typed access via access widener (Zabric)
+**Branch**: `feat/ime-keyboard-fix`
+
+### Summary
+
+Replaced reflection with typed access: target mod jars on the compile classpath (pzTargets), Fabric-style .classtweaker widening at build time, and Zabric (new unsigned Java preload mod) widening the same members at runtime before classes load; it self-registers in ZombieBuddy config.json under policy=allow-all and shows a restart dialog. @Advice.FieldValue was tried first and fails in ZombieBuddy 2.3.4 (silently not woven). Migrated ime-keyboard-fix and viewpoint-blood-fx-fix, removed Resolver, rewrote specs. Verified by smokeTest and in game. PR Dontcampy/dont39-pz-mods#3.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6634038` | Reach game and target-mod members by direct access instead of reflection |
+
+### Status
+
+[OK] **Completed**
