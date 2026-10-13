@@ -199,3 +199,26 @@ Trimmed specs to rules and links. Rewrote the Kotlin code to kotlinlang.org idio
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: Zabric as a standalone platform, ZombieBuddyKotlin built on it
+<!-- trellis-session: v=2 fp=d762784848826b04 -->
+
+**Date**: 2026-10-13
+**Task**: Zabric as a standalone platform, ZombieBuddyKotlin built on it
+**Branch**: `zb-kt-on-zabric`
+
+### Summary
+
+Planned (D1-D10) and implemented: Zabric as its own Workshop item that widens every installed mod's .classtweaker list at premain with per-mod status, a public preload registration service with an order-independent handshake and identical-copy rule, and a restart dialog listing mods; ZombieBuddyKotlin preloaded through Zabric, Kotlin swap at premain only, zb-kt-utils shipped inside it, isReady() gate in generated glue and Main; All-in-One ships its own merged list. Verified with client smokeTest (register, then pass), new serverSmokeTest on the dedicated server, and a scratch broken-list mod. Fixed load-order registration bug and pre-existing configuration-cache problems. Specs trimmed to rules and links after user feedback. PR Dontcampy/dont39-pz-mods#5. Not verified: mid-session restart-list path; in-game IME/blood check.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6264e41` | Make Zabric a standalone platform and build ZombieBuddyKotlin on it |
+| `54ccb04` | Trim the specs to rules and links |
+
+### Status
+
+[OK] **Completed**
