@@ -1,6 +1,9 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zbktutils.glue.Hook
+import com.pzlauncher.zabric.hook.At
+import com.pzlauncher.zabric.hook.CallbackInfo
+import com.pzlauncher.zabric.hook.Hooks
+import com.pzlauncher.zabric.hook.Inject
 import org.lwjgl.glfw.GLFWNativeWin32
 import org.lwjglx.opengl.Display
 import zombie.core.Core
@@ -9,13 +12,14 @@ import zombie.core.Core
  * Runs after the message pump, on the window's own thread, where IMM and window procedure calls belong. Restores the
  * window here too, so a failure elsewhere is undone on the next frame.
  */
+@Hooks(Display::class)
 internal object ImeWindow {
   private var hwnd = 0L
   private var placed = 0L
 
   // always: undoes the install once the feature is off, including after an error
-  @Hook.Exit(className = "org.lwjglx.opengl.Display", methodName = "processMessages", always = true)
-  fun sync() {
+  @Inject(method = ["processMessages"], at = [At("FINALLY")], always = true)
+  fun sync(ci: CallbackInfo) {
     if (!ImeKeyboardFix.active()) {
       restore()
       return

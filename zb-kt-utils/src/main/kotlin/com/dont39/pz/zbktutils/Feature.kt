@@ -2,14 +2,17 @@ package com.dont39.pz.zbktutils
 
 import com.dont39.pz.zbktutils.LoggerUtils.lzDebug
 import com.dont39.pz.zbktutils.LoggerUtils.lzInfo
+import com.pzlauncher.zabric.hook.HookGate
+import com.pzlauncher.zabric.hook.ZabricHooks
 import zombie.debug.DebugType
 import zombie.debug.LogSeverity
 
 /**
- * Gating and lifecycle logging of one feature. The facade is an `object` extending this. [modId]: the mod that ships
- * the feature, also the name of its Zabric list. [widened]: the feature uses members its `.classtweaker` makes public.
+ * Gating and lifecycle logging of one feature. The facade is an `object` extending this, and the gate of the module's
+ * hook classes. [modId]: the mod that ships the feature, also the name of its Zabric list. [widened]: the feature uses
+ * members its `.classtweaker` makes public.
  */
-abstract class Feature(val name: String, private val modId: String, private val widened: Boolean = false) {
+abstract class Feature(val name: String, private val modId: String, private val widened: Boolean = false) : HookGate {
   private enum class State { UNDECIDED, ACTIVE, INACTIVE, DISABLED }
 
   @PublishedApi
@@ -46,6 +49,10 @@ abstract class Feature(val name: String, private val modId: String, private val 
   protected open fun readyDetail(): String? = null
 
   fun init() {
+    // Zabric's weave check may have disabled it already; the last status line must still read disabled
+    if (state == State.DISABLED) {
+      return
+    }
     val why = try {
       why()
     } catch (t: Throwable) {
@@ -69,7 +76,7 @@ abstract class Feature(val name: String, private val modId: String, private val 
   }
 
   /** The generated glue checks this before every hook. */
-  fun active(): Boolean {
+  override fun active(): Boolean {
     val s = state
     return if (s == State.UNDECIDED) decide() else s == State.ACTIVE
   }
@@ -111,7 +118,7 @@ abstract class Feature(val name: String, private val modId: String, private val 
       return false
     }
     try {
-      checkHookTargets(name, javaClass)
+      ZabricHooks.gateProblem(javaClass)?.let { throw IllegalStateException(it) }
     } catch (t: Throwable) {
       disable("checking the methods it hooks", t)
       return false
@@ -144,6 +151,9 @@ abstract class Feature(val name: String, private val modId: String, private val 
     val message = if (moveToDisabled()) "disabled after an error while $what" else "disabled; then an error while $what"
     DebugType.Mod.printException(t, "$prefix$message", LogSeverity.Error)
   }
+
+  /** What a hook throws, from the generated glue. */
+  override fun failed(what: String, t: Throwable) = disable(what, t)
 
   inline fun log(message: () -> String) = DebugType.Mod.lzInfo { "$prefix${message()}" }
 

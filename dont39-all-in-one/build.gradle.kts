@@ -34,14 +34,20 @@ dependencies {
 val javaPkgName = file("mod/42/mod.info").readLines().firstOrNull { it.startsWith("javaPkgName=") }
   ?.substringAfter('=')?.trim() ?: throw GradleException("mod/42/mod.info has no javaPkgName= line")
 features.forEach {
-  project(it).extensions.findByType<PzGlue>()?.apply {
-    gluePackage = javaPkgName
-    luaPrefix = "${modId}_"
+  project(it).extensions.findByType<PzGlue>()?.let { glue ->
+    glue.gluePackage = javaPkgName
+    glue.luaPrefix = "${modId}_"
+    glue.modId = modId
   }
 }
 
-// each feature's generated glue listing, by feature module name
-val glueDirs = features.associate {
+// each feature's generated listings, by feature module name: Zabric's hook listings (one file per hook class) and the
+// Lua bridge's
+val hookDirs = features.associate {
+  val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
+  project(it).name to resources.resolve("META-INF/zabric/hooks")
+}
+val luaDirs = features.associate {
   val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
   project(it).name to resources.resolve("META-INF/zbkt/glue")
 }
@@ -61,16 +67,32 @@ tasks.jar {
   duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
-// Lua globals are shared, so names must differ across features too
 val checkGlue = tasks.register("checkGlue") {
   group = "verification"
-  description = "Checks that no two features generate the same global Lua function."
+  description = "Checks that the features' hook listings name this mod and package, and that no two features " +
+    "generate the same global Lua function."
   dependsOn(features.map { "$it:processResources" })
-  val dirs = glueDirs
+  val hooks = hookDirs
+  val lua = luaDirs
+  val mod = modId
+  val pkg = javaPkgName
   doLast {
-    val owners = dirs.flatMap { (feature, dir) ->
-      dir.listFiles { file -> file.extension == "txt" }.orEmpty().flatMap { it.readLines() }
-        .filter { it.startsWith("luaGlobal ") }.map { it.substringAfter(' ') to feature }
+    fun lines(dir: File) =
+      dir.listFiles { file -> file.extension == "txt" }.orEmpty().sorted().flatMap { it.readLines() }
+
+    // Zabric opens hooks by the listing's mod id; ZombieBuddy finds patch classes only in exactly javaPkgName
+    val wrong = hooks.flatMap { (feature, dir) ->
+      val lines = lines(dir)
+      lines.filter { it.startsWith("mod ") && it != "mod $mod" }.map { "$feature: '$it', not $mod" } +
+        lines.filter { it.startsWith("patch ") && it.substringAfter(' ').substringBeforeLast('.') != pkg }
+          .map { "$feature: '$it', not in $pkg" }
+    }
+    if (wrong.isNotEmpty()) {
+      throw GradleException("Hook listings that do not match this mod:\n" + wrong.joinToString("\n") { "  $it" })
+    }
+    // Lua globals are shared, so names must differ across features too
+    val owners = lua.flatMap { (feature, dir) ->
+      lines(dir).filter { it.startsWith("luaGlobal ") }.map { it.substringAfter(' ') to feature }
     }.groupBy({ it.first }, { it.second })
     val clashes = owners.filterValues { it.size > 1 }
     if (clashes.isNotEmpty()) {
@@ -100,9 +122,11 @@ tasks.register("smokeTest") {
   val console = file(pzUserDir.get()).resolve("console.txt")
   val version = project.version.toString()
   val kotlinLibVersion = project(kotlinLib).version.toString()
-  val glue = glueDirs
+  val hooks = hookDirs
+  val lua = luaDirs
   val logPrefix = "[$modId] "
   val zabricMod = zabricId
+  val hooksReady = "[$zabricId] $modId: hooks ready ("
   val mainLine = "[$zabricId] main: $modId"
   val kotlinVersions = libs.versions.let {
     "Kotlin ${it.kotlin.get()}, kotlinx-coroutines ${it.kotlinxCoroutines.get()}, " +
@@ -133,9 +157,12 @@ tasks.register("smokeTest") {
       mainLine,
       "[Dont39AllInOne] $version loaded",
     )
+    fun lines(dir: File) =
+      dir.listFiles { file -> file.extension == "txt" }.orEmpty().sorted().flatMap { it.readLines() }
+
     val disabled = mutableListOf<String>()
-    val generated = glue.flatMap { (name, dir) ->
-      val lines = dir.listFiles { file -> file.extension == "txt" }.orEmpty().flatMap { it.readLines() }
+    val generated = hooks.keys.flatMap { name ->
+      val lines = lines(hooks.getValue(name)) + lines(lua.getValue(name))
       if (lines.isEmpty()) return@flatMap emptyList()
       val statusPrefix = "$logPrefix$name: "
       val status = log.lines().lastOrNull { statusPrefix in it }?.substringAfter(statusPrefix)
@@ -148,8 +175,8 @@ tasks.register("smokeTest") {
           "patch" -> "Found patch class: $value"
           "lua" -> "Exposing global functions from class: $value"
           // ZombieBuddy applies patches whether or not the feature runs; only a running one shows they are needed
-          "target" -> if (status?.startsWith("ready") == true || status?.startsWith("active") == true) {
-            "Transformed: $value"
+          "hook" -> if (status?.startsWith("ready") == true || status?.startsWith("active") == true) {
+            "Transformed: ${value.substringBefore(' ')}"
           } else {
             null
           }
@@ -158,9 +185,15 @@ tasks.register("smokeTest") {
       }
     }
     val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
-    val missing = (ordered + generated + luaOnly).filterNot { it in log }
+    val ready = listOf(hooksReady).filter { hooks.values.any { dir -> lines(dir).isNotEmpty() } }
+    val missing = (ordered + generated + luaOnly + ready).distinct().filterNot { it in log }
     if (missing.isNotEmpty()) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })
+    }
+    // any mod's, not only this one's: their hooks run inside the same game methods
+    val stopped = log.lines().filter { "[$zabricMod] " in it && ": hooks stopped" in it }
+    if (stopped.isNotEmpty()) {
+      throw GradleException("$console has hooks Zabric stopped:\n" + stopped.joinToString("\n") { "  $it" })
     }
     if (disabled.isNotEmpty()) {
       throw GradleException(
