@@ -312,3 +312,25 @@ Removed the Blood FX for Viewpoint feature module and its wiring (settings, feat
 ### Status
 
 [OK] **Completed**
+
+
+## Session 14: Report IME undo failures and errors after a disable
+<!-- trellis-session: v=2 fp=bf07ed753cc4a5a6 -->
+
+**Date**: 2026-10-14
+**Task**: Report IME undo failures and errors after a disable
+**Branch**: `remove-viewpoint-blood-fx-fix`
+
+### Summary
+
+Feature.disable now logs errors after the feature is disabled as 'disabled; then an error while ...' (still read as disabled by smokeTest); resolveOnce no longer retries after a racing failure. ImeWindowProc/ImeContext restores drop their empty catches, check Win32 results and throw; each clears state first so a failure is reported once; ImeWindow.restore runs both and throws the first with the second suppressed. Specs updated. build + smokeTest pass; the after-disable path verified by code review only. Folded into PR #9 at the user's request.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `49faa7b` | Report errors after a disable and stop swallowing IME undo failures |
+
+### Status
+
+[OK] **Completed**
