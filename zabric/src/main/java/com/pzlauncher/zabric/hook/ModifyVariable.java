@@ -6,15 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A handler that replaces an argument of the target before its body runs (Mixin's {@code @ModifyVariable} with
- * {@code at = @At("HEAD"), argsOnly = true}; Mixin's {@code @ModifyArg} changes an argument of a call inside the
- * method, which is not supported). Signature:
- * {@code static P h(P original [, @Self T self] [, target parameters...] [, @Share(...) LocalRef<S> ...])}, returning
- * the new value.
- * <p>
- * The argument, as in Mixin: {@link #index()} is its local variable slot ({@code this} takes slot 0 of an instance
- * method, {@code long} and {@code double} take two); else {@link #ordinal()} counts the arguments of type {@code P};
- * with neither, the target has exactly one argument of type {@code P}.
+ * Mixin's {@code @ModifyVariable} at {@code HEAD} with {@code argsOnly = true}, replacing a target argument (Mixin's
+ * {@code @ModifyArg} means a call-site argument):
+ * {@code static P h(P original [, @Self T self] [, target parameters...] [, @Share(...) LocalRef<S> ...])}. With
+ * neither {@link #index()} nor {@link #ordinal()}, the target must have exactly one argument of type {@code P}.
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
@@ -25,12 +20,12 @@ public @interface ModifyVariable {
     /** {@code HEAD} only. */
     At at();
 
-    /** Must be true: only arguments can be modified. */
+    /** Must be true. */
     boolean argsOnly() default false;
 
     /** The argument's local variable slot, or -1. */
     int index() default -1;
 
-    /** Among the target's arguments of the handler's type, which one, or -1. */
+    /** Which of the target's arguments of type {@code P}, or -1. */
     int ordinal() default -1;
 }

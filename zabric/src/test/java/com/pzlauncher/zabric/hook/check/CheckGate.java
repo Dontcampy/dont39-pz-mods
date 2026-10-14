@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** A named gate whose failures the weave check test reads. */
 public final class CheckGate implements HookGate {
     public static final CheckGate INSTANCE = new CheckGate();
 

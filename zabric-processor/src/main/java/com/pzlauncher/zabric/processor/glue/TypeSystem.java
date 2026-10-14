@@ -2,33 +2,23 @@ package com.pzlauncher.zabric.processor.glue;
 
 import java.util.List;
 
-/**
- * What {@link HookAnalyzer} needs to know about a front end's types ({@code T}: javac's TypeMirror, KSP's type, ...).
- * Types here are Java types as the JVM sees them.
- */
+/** A front end's types as {@link HookAnalyzer} needs them; the front end presents them as the JVM sees them. */
 public interface TypeSystem<T> {
-    /**
-     * The canonical name of the erasure, as Java source: {@code int}, {@code void}, {@code java.lang.String[]},
-     * {@code a.b.Outer.Inner}.
-     */
+    /** Canonical name of the erasure as Java source, e.g. {@code java.lang.String[]}, {@code a.b.Outer.Inner}. */
     String erasedName(T type);
 
-    /** The JVM descriptor of the erasure, e.g. {@code I}, {@code [Ljava/lang/String;}, {@code La/b/Outer$Inner;}. */
+    /** JVM descriptor of the erasure, e.g. {@code La/b/Outer$Inner;}. */
     String descriptor(T type);
 
-    /** Java source of the full type, type arguments included and type annotations left out. */
+    /** Java source with type arguments, without type annotations. */
     String source(T type);
 
-    /** The type arguments, empty for a raw or non-generic type. */
     List<T> typeArguments(T type);
 
-    /** The component type of an array type, else null. */
+    /** Null for a non-array type. */
     T component(T type);
 
-    /**
-     * Whether a value of {@code sub}'s erasure can be used as {@code sup}'s erasure without conversion: reference
-     * widening only, a primitive only to itself (ByteBuddy's {@code isAssignableTo}).
-     */
+    /** Assignability of the erasures as ByteBuddy's {@code isAssignableTo}: no primitive widening or boxing. */
     boolean isSubtype(T sub, T sup);
 
     /** Why code in package {@code pkg} cannot name {@code type}'s erasure, or null when it can. */

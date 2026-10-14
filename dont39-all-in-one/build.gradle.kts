@@ -41,8 +41,7 @@ features.forEach {
   }
 }
 
-// each feature's generated listings, by feature module name: Zabric's hook listings (one file per hook class) and the
-// Lua bridge's
+// each feature's generated listings, by feature module name
 val hookDirs = features.associate {
   val resources = project(it).the<SourceSetContainer>()["main"].output.resourcesDir!!
   project(it).name to resources.resolve("META-INF/zabric/hooks")

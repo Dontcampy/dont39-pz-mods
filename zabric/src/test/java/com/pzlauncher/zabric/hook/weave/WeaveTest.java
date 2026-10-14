@@ -16,11 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Weaves the reference glue ({@code glue/WeaveGlue.java}) into {@link Target} through ZombieBuddy's own patch engine,
- * as ZombieBuddy does for a mod's javaPkgName, and checks what each injector does. Zabric's weave check runs on every
- * pass and must find the reference glue woven.
- */
+/** Runs the reference glue ({@code glue/WeaveGlue.java}) as ZombieBuddy weaves it at game start. */
 class WeaveTest {
     private CapturedLog log;
 

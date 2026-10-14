@@ -12,10 +12,7 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.symbol.Variance
 import com.pzlauncher.zabric.processor.glue.TypeSystem
 
-/**
- * A Java type as the generated glue sees it. [descriptor]: the JVM descriptor of the erasure; [name]: its canonical
- * name (`int`, `a.b.Outer.Inner[]`); [wildcard]: `?`, `? extends ` or `? super ` for a type argument.
- */
+/** A Java type: [descriptor] of the erasure, canonical [name], and the [wildcard] prefix of a type argument. */
 internal data class JType(
   val descriptor: String,
   val name: String,
@@ -43,10 +40,7 @@ private val KOTLIN_PRIMITIVES = mapOf(
 )
 private val KOTLIN_PRIMITIVE_ARRAYS = KOTLIN_PRIMITIVES.entries.associate { (name, jvm) -> "${name}Array" to jvm.first }
 
-/**
- * Zabric's [TypeSystem] on KSP. Erasures come from JVM descriptors where KSP has them (the declarations' JVM
- * signatures), so `Int` and `Int?` map as the Kotlin compiler maps them; type arguments come from the Kotlin types.
- */
+/** Zabric's [TypeSystem] on KSP; erasures come from JVM signatures, so `Int` and `Int?` map as the compiler does. */
 @OptIn(KspExperimental::class)
 internal class KspTypes(private val resolver: Resolver) : TypeSystem<JType> {
   private val supertypes = HashMap<String, Set<String>>()

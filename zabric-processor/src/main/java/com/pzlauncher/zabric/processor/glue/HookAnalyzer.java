@@ -20,10 +20,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Checks the hook classes of one compilation against their targets and the loader's rules, and builds the
- * {@link GlueModel}. Every problem is reported, naming the handler or class; {@link #analyze} then returns null.
- */
+/** Checks one compilation's hook classes against their targets and the loader's matcher, and builds their glue. */
 public final class HookAnalyzer<T> {
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*");
     private static final Pattern PACKAGE = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*");
@@ -45,10 +42,7 @@ public final class HookAnalyzer<T> {
         this.reporter = reporter;
     }
 
-    /**
-     * The glue of {@code hookClasses}, the hook classes of one compilation, in class {@code className} of
-     * {@code packageName} (the mod's javaPkgName); null when anything was reported.
-     */
+    /** {@code packageName}: the mod's javaPkgName. Null when anything was reported. */
     public GlueModel.Unit analyze(String modId, String packageName, String className,
                                   List<HookClass<T>> hookClasses) {
         failed = false;
@@ -93,9 +87,7 @@ public final class HookAnalyzer<T> {
         return failed ? null : new GlueModel.Unit(modId, packageName, className, patches, listings);
     }
 
-    // ---- per hook class and handler ----
-
-    /** A target method and the handlers on it, by hook class binary name. */
+    /** {@code byClass} is sorted: hook classes on one target run in name order. */
     private final class Site {
         final TargetClass<T> targetClass;
         final Member<T> member;
@@ -113,7 +105,7 @@ public final class HookAnalyzer<T> {
         }
     }
 
-    /** A handler on one target method. {@code named}: types from the handler that the glue writes out. */
+    /** {@code named}: the handler's types the glue writes out. */
     private record Resolved(String label, Object node, HookClass<?> hookClass, Kind kind, boolean always, At at,
                             boolean cancellable, String name, List<Value> values, String returnable,
                             int modifiedArg, Map<String, String> shares, List<Object> named) {
@@ -251,7 +243,7 @@ public final class HookAnalyzer<T> {
         }
     }
 
-    /** The target member's index in {@code target.members()}, or -1 after reporting why there is none. */
+    /** Index in {@code target.members()}, or -1 after reporting. */
     private int member(HookClass<T> hookClass, Handler<T> handler, Shape shape, TargetClass<T> target) {
         String label = label(hookClass, handler);
         List<Integer> named = new ArrayList<>();
@@ -319,7 +311,6 @@ public final class HookAnalyzer<T> {
         }).collect(Collectors.joining(", "));
     }
 
-    /** Matches the handler's parameters to what the glue passes. */
     private Resolved bind(HookClass<T> hookClass, Handler<T> handler, Shape shape, TargetClass<T> target,
                           Member<T> member) {
         String label = label(hookClass, handler);
@@ -529,8 +520,6 @@ public final class HookAnalyzer<T> {
         return ofType.get(0);
     }
 
-    // ---- per target method ----
-
     private GlueModel.Patch patch(Site site, String packageName, Set<String> patchNames) {
         Member<T> member = site.member;
         List<GlueModel.Block> blocks = new ArrayList<>();
@@ -692,8 +681,6 @@ public final class HookAnalyzer<T> {
         }
         return name;
     }
-
-    // ---- helpers ----
 
     private static String identifier(String name) {
         StringBuilder out = new StringBuilder();

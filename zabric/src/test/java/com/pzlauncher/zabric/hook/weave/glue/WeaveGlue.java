@@ -1,31 +1,6 @@
-// REFERENCE GLUE: what zabric-processor generates for the hook classes AlwaysHooks, DefaultHooks, GatedHooks and
-// ShapeHooks (mod "weave", javaPkgName com.pzlauncher.zabric.hook.weave.glue). WeaveTest weaves it through
-// ZombieBuddy's patch engine; zabric-processor's GoldenTest checks that the generator's output equals it from the
-// package line on.
-//
-// Rules the shape follows (the generator has no others):
-// - One @Patch class per target method, nested in one outer class per compilation. Hook classes on that method are
-//   h0, h1, ... by qualified name; their handlers run in declaration order. The outer class is the mod id in
-//   PascalCase + "Glue" unless the option zabric.glueClass names it; a patch class is <target simple name>_<method>
-//   ("init" for constructors; _2, _3, ... on a clash), ordered by target class and the target's declaration order.
-// - strictMatch, every target argument bound with @Patch.Argument, @Patch.This only when a handler takes @Self. An
-//   array argument no handler modifies is bound as Object and cast where passed: ZombieBuddy's matcher compares a
-//   bound array with its component type.
-// - Enter stores per hook class whether its handlers run this call: hN$active (MOD.active(gate)), or hN$open
-//   (MOD.open()) for a class with an always handler. Exit runs hook class hN only when that Local is true, so
-//   enter and exit of one call pair exactly.
-// - skipOn and the Locals cancelled/value only when a HEAD handler is cancellable; onThrowable = Throwable.class and
-//   @Patch.Thrown only when there is a FINALLY handler. Writable @Patch.Argument only for @ModifyVariable, writable
-//   @Patch.Return only when a RETURN handler can change the value or a HEAD handler can cancel with one.
-// - After a cancel (HEAD or RETURN) no further HEAD/RETURN handler runs; FINALLY handlers always run. RETURN handlers
-//   do not run when the target threw; a FINALLY handler's CallbackInfoReturnable then holds null, set by an if
-//   statement: a conditional expression among the constructor's arguments fails verification once inlined, and
-//   ZombieBuddy then drops every patch of that target class without an error.
-// - Every handler call is in its own try/catch that reports to the class's gate through MOD.failed and never
-//   rethrows. "what" is "running <hook class simple name>.<handler> on <target binary name>.<method>".
-// - A @Share key is the Local hN$share$<key>, created in enter when the class is active.
-// - Exit declares only the Locals it reads; a method without exit handlers has no exit, unless a HEAD handler can
-//   cancel a non-void target, whose exit then returns the value.
+// Reference glue: what zabric-processor generates for AlwaysHooks, DefaultHooks, GatedHooks and ShapeHooks (mod
+// "weave"). zabric-processor's GoldenTest checks the generator's output equals it from the package line on; WeaveTest
+// weaves it through ZombieBuddy's patch engine.
 package com.pzlauncher.zabric.hook.weave.glue;
 
 import com.pzlauncher.zabric.hook.CallbackInfo;

@@ -14,9 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Writes the glue of a {@link GlueModel.Unit}: one Java source with a ZombieBuddy {@code @Patch} class per target
- * method, and one listing per hook class. The shape is that of Zabric's reference glue
- * ({@code zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java}), whose header lists the rules.
+ * Writes a {@link GlueModel.Unit}'s glue source and listings, in the shape of Zabric's reference glue
+ * ({@code zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java}).
  */
 public final class GlueWriter {
     private static final int WIDTH = 120;
@@ -25,12 +24,11 @@ public final class GlueWriter {
     private GlueWriter() {
     }
 
-    /** The resource path of a hook class's listing. */
     public static String listingPath(String hookClassBinaryName) {
         return Names.LISTING_DIR + hookClassBinaryName + Names.LISTING_SUFFIX;
     }
 
-    /** The listings by resource path. */
+    /** By resource path. */
     public static Map<String, String> listings(GlueModel.Unit unit) {
         Map<String, String> listings = new LinkedHashMap<>();
         for (GlueModel.Listing listing : unit.listings()) {
@@ -46,7 +44,6 @@ public final class GlueWriter {
         return listings;
     }
 
-    /** The Java source of the outer glue class. */
     public static String source(GlueModel.Unit unit) {
         Out out = new Out();
         out.line(0, "package " + unit.packageName() + ";");
@@ -239,7 +236,6 @@ public final class GlueWriter {
             }
         }
 
-        /** The handler call in its own try/catch that reports to the block's gate. */
         private void guarded(int level, int n, Block block, Call call) {
             out.line(level, "try {");
             call(level + 1, n, block, call);
@@ -346,7 +342,7 @@ public final class GlueWriter {
         return "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
 
-    /** Lines with four-space indent levels; calls wrap their arguments greedily at {@link #WIDTH}. */
+    /** Wraps call arguments greedily at {@link #WIDTH}. */
     private static final class Out {
         private final StringBuilder text = new StringBuilder();
 

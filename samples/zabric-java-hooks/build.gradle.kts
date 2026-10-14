@@ -2,8 +2,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.ZipFile
 import javax.inject.Inject
 
-// A Java mod that hooks the game through Zabric. Zabric comes from Maven (settings.gradle.kts); the game and
-// ZombieBuddy jars come from your install: set pzDir in ~/.gradle/gradle.properties or pass -PpzDir=...
+// The game and ZombieBuddy jars come from your install: set pzDir in ~/.gradle/gradle.properties or pass -PpzDir=...
 plugins {
   java
 }
@@ -89,7 +88,6 @@ val verifyGlue = tasks.register("verifyGlue") {
   }
 }
 
-// Compiles one probe source set with the toolchain's javac and the published processor, then checks the outcome.
 abstract class JavacProbe : DefaultTask() {
   @get:InputFiles
   abstract val sources: ConfigurableFileCollection

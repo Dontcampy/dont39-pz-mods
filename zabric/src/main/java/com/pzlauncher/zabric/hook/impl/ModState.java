@@ -5,12 +5,11 @@ import com.pzlauncher.zabric.hook.ModHooks;
 
 import java.util.List;
 
-/** The one {@link ModHooks}. */
 final class ModState implements ModHooks {
     private final String modId;
     private final HookGate defaultGate = new DefaultGate();
     private boolean inPass;
-    // entered the pass, waiting for the pass-time weave check: its hooks must not run on unchecked targets
+    // until the pass-time weave check: hooks must not run on unchecked targets
     private boolean held;
     private boolean stopped;
     private boolean checked;
@@ -55,7 +54,7 @@ final class ModState implements ModHooks {
         try {
             gate.failed(what, t);
         } catch (Throwable reporting) {
-            // a failing default gate is dropped: nowhere left to report, and never into the hooked method
+            // a throwing default gate has nowhere left to report to
             if (gate != defaultGate) {
                 if (reporting != t) {
                     reporting.addSuppressed(t);
@@ -66,7 +65,6 @@ final class ModState implements ModHooks {
         }
     }
 
-    /** True the first time only: the mod's targets are checked once per session. */
     synchronized boolean firstPass() {
         if (checked) {
             return false;
@@ -75,7 +73,6 @@ final class ModState implements ModHooks {
         return true;
     }
 
-    /** True when the mod was not in the previous pass; such a mod stays closed until {@link #release()}. */
     synchronized boolean enterPass() {
         boolean entering = !inPass;
         if (entering) {
@@ -86,7 +83,6 @@ final class ModState implements ModHooks {
         return entering;
     }
 
-    /** Opens a mod {@link #enterPass()} held, unless it stopped meanwhile. */
     synchronized void release() {
         held = false;
         update();
@@ -98,12 +94,10 @@ final class ModState implements ModHooks {
         update();
     }
 
-    /** In the pass and not stopped: open, or held until the pass-time weave check is done. */
     synchronized boolean live() {
         return inPass && !stopped;
     }
 
-    /** The mod's hook listings, read at its first pass. */
     List<HookListing> listings() {
         return listings;
     }
@@ -112,7 +106,6 @@ final class ModState implements ModHooks {
         this.listings = List.copyOf(listings);
     }
 
-    /** Closes the mod's hooks for the session; true the first time. */
     synchronized boolean stop() {
         boolean first = !stopped;
         stopped = true;

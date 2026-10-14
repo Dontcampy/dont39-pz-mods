@@ -15,10 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Zabric's side of the hook runtime: one {@link ModState} per mod id, opened and closed by Zabric's lifecycle after
- * each of the loader's passes over the mod list. Not API: only Zabric calls it.
- */
 public final class HookRuntime {
     static final String PREFIX = "[Zabric] ";
 
@@ -29,7 +25,7 @@ public final class HookRuntime {
     private HookRuntime() {
     }
 
-    /** Where the hook runtime logs; the game's log unless Zabric's tests replace it. */
+    /** Replaced by Zabric's tests. */
     public interface Log {
         void info(String format, Object... args);
 
@@ -46,14 +42,7 @@ public final class HookRuntime {
         return mods.computeIfAbsent(modId, ModState::new);
     }
 
-    /**
-     * After a pass over the mod list: closes the hooks of mods not in {@code jarsByMod} (the jars the loader loaded for
-     * each mod) and opens those of the mods in it. The first time a mod is in a pass, the targets of its default-gate
-     * hook classes are checked against {@code loader}; a mismatch stops its hooks for the session. Then checks through
-     * {@code inst} that the loader wove the mods' hooks ({@link WeaveCheck}): now for targets already loaded, later for
-     * the others as they load. A mod entering the pass opens only after that check. A mod checked for the first time
-     * and open after that is logged as ready. Call it after the loader registered the pass's patches.
-     */
+    /** Call after the loader registered the pass's patch transformers: the weave check must come after them. */
     public static synchronized void passProcessed(Map<String, List<Path>> jarsByMod, ClassLoader loader,
                                                   Instrumentation inst) {
         mods.forEach((modId, state) -> {
@@ -95,13 +84,11 @@ public final class HookRuntime {
         }
     }
 
-    /** Closes every mod's hooks, e.g. when Zabric's lifecycle stops. */
     public static synchronized void closeAll() {
         mods.values().forEach(ModState::leavePass);
         weave.clear();
     }
 
-    /** For Zabric's tests. */
     public static void logTo(Log log) {
         HookRuntime.log = log;
     }
@@ -110,7 +97,6 @@ public final class HookRuntime {
         return log;
     }
 
-    /** False when the targets do not match, which stops the mod's hooks. */
     private static boolean check(ModState state, List<Path> jars, ClassLoader loader) {
         String modId = state.modId();
         List<HookListing> mine = new ArrayList<>();

@@ -1,34 +1,28 @@
 package com.pzlauncher.zabric.hook;
 
 /**
- * Passed to an {@link Inject} handler on a non-void target (Mixin's {@code CallbackInfoReturnable}); one per handler
- * call. {@code R} is the boxed return type. The generated glue creates it and reads the value back through the
- * primitive getters, which turn null into the type's default, as Mixin's do.
+ * Mixin's {@code CallbackInfoReturnable}, for an {@link Inject} handler on a non-void target; {@code R} is boxed, and
+ * the primitive getters read null as the type's default, as Mixin's do.
  */
 public final class CallbackInfoReturnable<R> extends CallbackInfo {
     private R returnValue;
 
-    /** At {@code HEAD}: no return value yet. */
     public CallbackInfoReturnable(String id, boolean cancellable) {
         super(id, cancellable);
     }
 
-    /** At {@code RETURN} and {@code FINALLY}: the value the target returns so far. */
     public CallbackInfoReturnable(String id, boolean cancellable, R returnValue) {
         super(id, cancellable);
         this.returnValue = returnValue;
     }
 
-    /**
-     * Cancels ({@link #cancel()}) with this value: at {@code HEAD} the target returns it without running, at
-     * {@code RETURN} it replaces the return value.
-     */
+    /** {@link #cancel()} with this value as the target's result. */
     public void setReturnValue(R returnValue) {
         cancel();
         this.returnValue = returnValue;
     }
 
-    /** The value the target returns so far; null at {@code HEAD} until set, and when the target threw. */
+    /** Null at {@code HEAD} until set, and when the target threw. */
     public R getReturnValue() {
         return returnValue;
     }

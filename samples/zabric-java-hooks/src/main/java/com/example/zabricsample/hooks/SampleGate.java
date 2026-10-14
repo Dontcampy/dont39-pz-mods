@@ -5,10 +5,7 @@ import com.pzlauncher.zabric.hook.ZabricHooks;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 
-/**
- * The gate of {@link GameTimeHooks}: a failure there switches off only the hook classes on this gate, not the whole
- * mod. The settings stand in for a real mod's options.
- */
+/** A named gate: a failure switches off only its hook classes, not the whole mod. Fields stand in for mod options. */
 public final class SampleGate implements HookGate {
     public static final SampleGate INSTANCE = new SampleGate();
 

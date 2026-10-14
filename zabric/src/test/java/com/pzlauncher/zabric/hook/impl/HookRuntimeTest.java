@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** When a mod's hooks are open, and what closes them. */
 class HookRuntimeTest {
     private static final ClassLoader LOADER = HookRuntimeTest.class.getClassLoader();
     private static final String WHAT = "running MyHooks.onRender on zombie.ui.UITextBox2.render";

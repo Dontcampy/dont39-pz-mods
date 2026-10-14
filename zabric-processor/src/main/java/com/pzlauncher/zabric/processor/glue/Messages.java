@@ -2,7 +2,7 @@ package com.pzlauncher.zabric.processor.glue;
 
 import java.util.Map;
 
-/** Diagnostics every front end reports in the same words. */
+/** Diagnostic texts; every front end reports them verbatim. */
 public final class Messages {
     private Messages() {
     }
@@ -10,14 +10,12 @@ public final class Messages {
     private static final String DISCLAIMER = "it has no Zabric gate, error catching or target check, and Zabric takes"
             + " no responsibility when it breaks, e.g. when Zabric moves to another loader";
 
-    /** A class annotated with ZombieBuddy's {@code @Patch} without {@code @UnsafeLoaderPatch}: an error. */
     public static String loaderPatch(String className) {
         return className + " is a ZombieBuddy @Patch class: hook through Zabric's API instead (@Hooks with @Inject,"
                 + " @ModifyReturnValue or @ModifyVariable). Adding @UnsafeLoaderPatch lets it compile, but that is not"
                 + " recommended: " + DISCLAIMER + ".";
     }
 
-    /** A class annotated with both: a warning. */
     public static String unsafeLoaderPatch(String className) {
         return className + " is a ZombieBuddy @Patch class marked @UnsafeLoaderPatch. Not recommended: " + DISCLAIMER
                 + ". Hook through Zabric's API (@Hooks) instead.";
@@ -57,7 +55,6 @@ public final class Messages {
                 + " handler";
     }
 
-    /** Mixin and MixinExtras names a hook class might use, and what to do instead. */
     private static final Map<String, String> MIXIN_ADVICE = Map.ofEntries(
             Map.entry("ModifyArg", "to change a parameter of the target, use @ModifyVariable(at = @At(\"HEAD\"),"
                     + " argsOnly = true)"),
@@ -78,7 +75,6 @@ public final class Messages {
             Map.entry("Unique", "hooks add no members to the target"),
             Map.entry("Mixin", "use @Hooks"));
 
-    /** True for an annotation of Mixin or MixinExtras. */
     public static boolean isMixin(String annotation) {
         return annotation.startsWith("org.spongepowered.asm.mixin.")
                 || annotation.startsWith("com.llamalad7.mixinextras.");

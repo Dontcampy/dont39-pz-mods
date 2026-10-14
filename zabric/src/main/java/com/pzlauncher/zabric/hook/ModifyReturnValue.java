@@ -6,9 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A handler that replaces the target's return value (MixinExtras' {@code @ModifyReturnValue}). Signature:
- * {@code static R h(R original [, @Self T self] [, target parameters...] [, @Share(...) LocalRef<S> ...])}, returning
- * the new value. Runs when the target returns normally.
+ * MixinExtras' {@code @ModifyReturnValue}:
+ * {@code static R h(R original [, @Self T self] [, target parameters...] [, @Share(...) LocalRef<S> ...])}.
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)

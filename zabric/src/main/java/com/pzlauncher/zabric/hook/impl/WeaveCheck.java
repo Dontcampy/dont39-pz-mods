@@ -21,13 +21,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Checks that the loader wove each hook of a live mod ({@link ModState#live()}) into its target method, and reports a hook class whose patch is
- * missing to its gate, once per session. The loader drops a target class's patches without an error when ByteBuddy
- * rejects the advice or the JVM rejects the woven class; a hook that never runs must not pass for a working one.
- * <p>
- * Inlined advice always reads its glue class's {@code MOD}, so a woven method contains {@code GETSTATIC <glue>.MOD}.
- * The check is a read-only transformer, re-registered last after each pass so that it sees what the loader's
- * transformers produced; targets loaded before the pass are retransformed once to show it the woven bytes.
+ * The loader drops a target's patches without an error when ByteBuddy or the JVM rejects them, so this read-only
+ * transformer, last in the chain, looks for the {@code GETSTATIC <glue>.MOD} every inlined advice contains.
  */
 final class WeaveCheck implements ClassFileTransformer {
     private static final String MOD_FIELD = "MOD";
@@ -42,7 +37,7 @@ final class WeaveCheck implements ClassFileTransformer {
     private record Finding(Watched watched, Throwable cause) {
     }
 
-    /** The class the pass is retransforming on this thread; the JVM's verdict comes after the transformers. */
+    // findings wait for retransformClasses: the JVM's verdict comes after the transformers
     private static final class Retransform {
         final String internalName;
         final List<Finding> findings = new ArrayList<>();
@@ -59,10 +54,6 @@ final class WeaveCheck implements ClassFileTransformer {
     private final Set<String> reported = ConcurrentHashMap.newKeySet();
     private final ThreadLocal<Retransform> retransforming = new ThreadLocal<>();
 
-    /**
-     * After a pass: watches the hooks of the {@code live} mods and puts this transformer last, then checks the targets
-     * of the {@code entering} mods that are already loaded. Throws when the transformer cannot be registered.
-     */
     void afterPass(Instrumentation inst, ClassLoader loader, Collection<ModState> live, Set<ModState> entering) {
         this.loader = loader;
         Map<String, List<Watched>> table = new HashMap<>();
@@ -95,7 +86,6 @@ final class WeaveCheck implements ClassFileTransformer {
         }
     }
 
-    /** Stops watching, e.g. when every mod's hooks close. */
     void clear() {
         watched = Map.of();
     }
@@ -190,7 +180,6 @@ final class WeaveCheck implements ClassFileTransformer {
         return findings;
     }
 
-    // per wanted method (name + descriptor): the classes whose MOD it reads
     private static Map<String, Set<String>> modReads(byte[] bytes, Set<String> methods) {
         Map<String, Set<String>> reads = new HashMap<>();
         ClassReader reader = OpenedClassReader.of(bytes);

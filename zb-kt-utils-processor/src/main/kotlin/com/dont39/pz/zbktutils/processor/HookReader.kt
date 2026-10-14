@@ -33,11 +33,7 @@ internal val PARAM_ANNOTATIONS = listOf(Names.SELF, Names.SHARE, Names.THROWN)
 private val CALLBACK_INFOS = setOf(Names.CALLBACK_INFO, Names.CALLBACK_INFO_RETURNABLE)
 private val INSTANCE_MODIFIERS = setOf(Modifier.PUBLIC, Modifier.JAVA_STATIC, Modifier.FINAL)
 
-/**
- * Reads `@Hooks` objects into Zabric's [HookDecls], with the Kotlin rules on top of the shared ones: hook classes are
- * top-level objects called through `INSTANCE`, handlers are public (internal names are mangled) and take what the
- * target may pass as null as nullable. [facade] is the gate of hook classes that name none.
- */
+/** Reads `@Hooks` objects into Zabric's [HookDecls], adding the Kotlin-only rules. [facade]: the default gate. */
 @OptIn(KspExperimental::class)
 internal class HookReader(
   private val resolver: Resolver,
@@ -232,10 +228,7 @@ internal class HookReader(
     return ok
   }
 
-  /**
-   * Declared methods and constructors, plus the bridges the compiler adds for them, which KSP does not show. Null
-   * after an error.
-   */
+  /** Includes the compiler's bridge methods, which KSP does not show; null after an error. */
   private fun target(declaration: KSClassDeclaration): TargetClass<JType>? {
     val members = mutableListOf<Member<JType>>()
     val descriptors = mutableSetOf<String>()

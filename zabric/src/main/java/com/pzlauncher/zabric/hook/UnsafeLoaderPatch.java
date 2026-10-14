@@ -6,12 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Lets a class keep a patch written directly against the loader (ZombieBuddy's {@code @Patch}); Zabric's annotation
- * processor rejects such a class without this marker and warns on every class with it.
- * <p>
- * <b>Not supported, not recommended.</b> Such a patch is plain loader code: Zabric does not gate it, does not catch
- * what it throws, does not check its target and does not close it when its mod leaves the mod list. Zabric takes no
- * responsibility when it breaks, e.g. when Zabric moves to another loader. Hook through {@link Hooks} instead.
+ * Allows a ZombieBuddy {@code @Patch} class, which is otherwise a compile error. <b>Not supported, not recommended</b>:
+ * Zabric does not gate, catch or check such a patch and takes no responsibility when it breaks, e.g. on a loader
+ * switch; use {@link Hooks}.
  */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)

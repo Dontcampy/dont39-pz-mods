@@ -16,10 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Compiles sources in process with {@link ZabricProcessor}, against the test class path (Zabric's hook API and
- * ZombieBuddy's jar).
- */
+/** In-process compilation with {@link ZabricProcessor} on the test class path. */
 final class Compiler {
     static final String MOD_ID = "test-mod";
     static final String PKG = "glue";

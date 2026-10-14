@@ -19,20 +19,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * The listing Zabric's annotation processor writes for each hook class, at {@link #DIR}{@code <hook class binary
- * name>}{@link #SUFFIX} in the mod's jar (one file per hook class, so jars that bundle others merge without clashes).
- * UTF-8, one item per line, fields separated by single spaces:
+ * The listing the processor writes per hook class (one file each, so bundling jars merge without clashes):
  * <pre>
  * zabric-hooks v1
  * mod &lt;mod id&gt;
- * gate default | gate &lt;binary name of the gate class&gt;
- * patch &lt;binary name of a generated patch class&gt;             (one or more)
- * hook &lt;binary name of the target class&gt; &lt;method name&gt; &lt;JVM method descriptor&gt; &lt;its patch class&gt;   (one or more)
+ * gate default | gate &lt;gate class&gt;
+ * patch &lt;patch class&gt;                                            (one or more)
+ * hook &lt;target class&gt; &lt;method&gt; &lt;descriptor&gt; &lt;patch class&gt;   (one or more)
  * </pre>
- * The first line is the header. {@code mod} and {@code gate} appear once; constructors are {@code <init>}; a hook's
- * patch class is one of the {@code patch} lines, nested in the compilation's glue class (its {@code MOD}). Blank lines
- * and lines of other kinds are skipped, so a v1 writer may add kinds that readers do not need; a change readers must
- * understand takes a new header.
+ * Readers skip line kinds they do not need; a change old readers must understand takes a new header.
  */
 public record HookListing(String source, String hookClass, String modId, String gate, List<String> patches,
                           List<Hook> hooks) {
@@ -41,7 +36,6 @@ public record HookListing(String source, String hookClass, String modId, String 
     public static final String HEADER = "zabric-hooks v1";
     public static final String DEFAULT_GATE = "default";
 
-    /** A hooked method and the patch class that hooks it. */
     public record Hook(String owner, String method, String descriptor, String patch) {
         @Override
         public String toString() {
@@ -49,12 +43,10 @@ public record HookListing(String source, String hookClass, String modId, String 
         }
     }
 
-    /** True when the hook class uses its mod's default gate. */
     public boolean defaultGate() {
         return gate.equals(DEFAULT_GATE);
     }
 
-    /** Parses one listing; {@code source} names it in errors. Throws {@link IllegalArgumentException} naming the line. */
     public static HookListing parse(String source, String hookClass, List<String> lines) {
         if (lines.isEmpty() || !lines.get(0).strip().equals(HEADER)) {
             throw new IllegalArgumentException(source + ": the first line is not '" + HEADER + "'");
@@ -94,7 +86,6 @@ public record HookListing(String source, String hookClass, String modId, String 
                     hooks.add(new Hook(f[1], f[2], f[3], f[4]));
                 }
                 default -> {
-                    // a kind this reader does not need
                 }
             }
         }
@@ -117,7 +108,6 @@ public record HookListing(String source, String hookClass, String modId, String 
         }
     }
 
-    /** The listing of {@code hookClass} in {@code location}, a jar or a class directory. */
     public static HookListing read(Path location, String hookClass) throws IOException {
         String name = DIR + hookClass + SUFFIX;
         String source = location + "!/" + name;
@@ -137,7 +127,6 @@ public record HookListing(String source, String hookClass, String modId, String 
         }
     }
 
-    /** All listings in {@code jar}, a jar or a class directory. */
     public static List<HookListing> readAll(Path jar) throws IOException {
         List<HookListing> all = new ArrayList<>();
         if (Files.isDirectory(jar)) {
@@ -176,7 +165,7 @@ public record HookListing(String source, String hookClass, String modId, String 
         }
     }
 
-    /** {@link com.pzlauncher.zabric.hook.ZabricHooks#problem}. */
+    // from the class's own jar: all mod jars share one class loader, so a resource lookup could find another mod's
     public static String problem(Class<?> hookClass) {
         Path location;
         try {
@@ -187,7 +176,6 @@ public record HookListing(String source, String hookClass, String modId, String 
         return problem(hookClass, location);
     }
 
-    /** {@link com.pzlauncher.zabric.hook.ZabricHooks#gateProblem}. */
     public static String gateProblem(Class<?> gate) {
         Path location;
         try {
@@ -225,7 +213,6 @@ public record HookListing(String source, String hookClass, String modId, String 
         return listing.problem(hookClass.getClassLoader());
     }
 
-    /** Why the patch classes or the targets named here are not there, or null; loads classes without initializing. */
     public String problem(ClassLoader loader) {
         List<String> wrong = new ArrayList<>();
         for (String patch : patches) {

@@ -9,14 +9,12 @@ public final class GlueModel {
     private GlueModel() {
     }
 
-    /** {@code className}: the outer glue class's simple name, in {@code packageName}. */
     public record Unit(String modId, String packageName, String className, List<Patch> patches,
                        List<Listing> listings) {
         public String qualifiedName() {
             return packageName + "." + className;
         }
 
-        /** The binary name of a patch class, as the listing names it. */
         public String binaryName(Patch patch) {
             return qualifiedName() + "$" + patch.name();
         }
@@ -26,10 +24,7 @@ public final class GlueModel {
     public record Patch(String name, Target target, List<Block> blocks) {
     }
 
-    /**
-     * A target method. {@code owner}: binary name; {@code ownerSource}: canonical name. {@code returnType}: erased,
-     * {@code void} for none (and constructors).
-     */
+    /** {@code owner}: binary name; {@code ownerSource}: canonical name; {@code returnType}: erased. */
     public record Target(String owner, String ownerSource, String method, String descriptor, List<Arg> args,
                          String returnType) {
         public boolean isVoid() {
@@ -37,22 +32,16 @@ public final class GlueModel {
         }
     }
 
-    /**
-     * A target argument: its erased type and the type the glue binds it as ({@code java.lang.Object} for an array the
-     * loader's matcher could not match by type); {@code writable} when a handler modifies it.
-     */
+    /** {@code binding}: {@code java.lang.Object} for an array, which the loader's matcher cannot match by type. */
     public record Arg(String type, String binding, boolean writable) {
     }
 
-    /**
-     * The handlers of one hook class on the target ({@code hN} in the glue). {@code gate}: the gate as a Java
-     * expression; {@code always}: all its handlers here are {@code always}.
-     */
+    /** The handlers of one hook class on the target; {@code gate} is a Java expression. */
     public record Block(String hookClass, String callee, String gate, boolean always, List<Share> shares,
                         List<Call> calls) {
     }
 
-    /** A {@code @Share} key and the type argument of its {@code LocalRef}. */
+    /** {@code type}: the type argument of the {@code LocalRef}. */
     public record Share(String key, String type) {
     }
 
@@ -60,10 +49,7 @@ public final class GlueModel {
         HEAD, RETURN, FINALLY
     }
 
-    /**
-     * One handler call. {@code returnable}: the type argument of its CallbackInfoReturnable, null for CallbackInfo
-     * (and for the modify kinds); {@code modifiedArg}: the argument a {@code @ModifyVariable} replaces, else -1.
-     */
+    /** {@code returnable}: CallbackInfoReturnable's type argument, else null; {@code modifiedArg}: -1 for none. */
     public record Call(String handler, Kind kind, At at, boolean cancellable, String returnable, int modifiedArg,
                        List<Value> values) {
         public boolean exits() {

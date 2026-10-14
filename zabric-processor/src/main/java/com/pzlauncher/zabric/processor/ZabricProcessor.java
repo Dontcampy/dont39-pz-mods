@@ -48,11 +48,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Zabric's annotation processor: checks the {@code @Hooks} classes of a compilation against the compile classpath and
- * writes their loader glue and listings ({@link GlueWriter}). Options: {@value Names#OPTION_MOD_ID} and
- * {@value Names#OPTION_JAVA_PKG_NAME} (required with hook classes), {@value Names#OPTION_GLUE_CLASS} (the outer glue
- * class's simple name; default: the mod id in PascalCase + {@code Glue}, e.g. {@code MyModGlue} for {@code my-mod}).
- * Also rejects ZombieBuddy {@code @Patch} classes without {@code @UnsafeLoaderPatch}.
+ * Zabric's javac annotation processor. Options: {@value Names#OPTION_MOD_ID} and {@value Names#OPTION_JAVA_PKG_NAME}
+ * (required with hook classes), {@value Names#OPTION_GLUE_CLASS} (outer glue class name; default: the mod id in
+ * PascalCase + {@code Glue}).
  */
 public final class ZabricProcessor extends AbstractProcessor {
     private static final List<String> HANDLERS = List.of(Names.INJECT, Names.MODIFY_RETURN_VALUE,
@@ -108,8 +106,6 @@ public final class ZabricProcessor extends AbstractProcessor {
         return false;
     }
 
-    // ---- D9: hand-written loader patches ----
-
     private void checkLoaderPatches(RoundEnvironment round) {
         for (Element e : annotated(round, Names.PATCH)) {
             if (!(e instanceof TypeElement type) || generated.contains(outermost(type).getQualifiedName().toString())) {
@@ -138,7 +134,6 @@ public final class ZabricProcessor extends AbstractProcessor {
         return outer;
     }
 
-    /** Handler annotations outside hook classes, parameter annotations outside handlers. */
     private void checkStray(RoundEnvironment round) {
         for (String name : HANDLERS) {
             for (Element e : annotated(round, name)) {
@@ -158,8 +153,6 @@ public final class ZabricProcessor extends AbstractProcessor {
             }
         }
     }
-
-    // ---- hooks ----
 
     private void generate(List<TypeElement> hookClasses) {
         Map<String, String> options = processingEnv.getOptions();
@@ -231,7 +224,7 @@ public final class ZabricProcessor extends AbstractProcessor {
         return name.append("Glue").toString();
     }
 
-    /** The declaration of a hook class, or null after reporting what keeps it from being one. */
+    /** Null after an error. */
     private HookClass<TypeMirror> read(TypeElement hookClass) {
         String name = hookClass.getQualifiedName().toString();
         boolean ok = true;
@@ -321,7 +314,7 @@ public final class ZabricProcessor extends AbstractProcessor {
         return new HookDecls.Gate(gateName, processingEnv.getElementUtils().getBinaryName(type).toString());
     }
 
-    /** The handler declared by {@code method}, or null when it is none or after an error. */
+    /** Null when {@code method} is no handler, or after an error. */
     private Handler<TypeMirror> handler(TypeElement hookClass, ExecutableElement method) {
         List<String> kinds = HANDLERS.stream().filter(h -> mirror(method, h) != null).toList();
         String label = hookClass.getSimpleName() + "." + method.getSimpleName();
@@ -478,8 +471,6 @@ public final class ZabricProcessor extends AbstractProcessor {
         }
         return null;
     }
-
-    // ---- annotation helpers ----
 
     private Set<? extends Element> annotated(RoundEnvironment round, String annotation) {
         TypeElement type = processingEnv.getElementUtils().getTypeElement(annotation);

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** A hook the loader did not weave is reported to its gate (fixtures in {@code hook/check}). */
+/** Fixtures in {@code hook/check}. */
 class WeaveCheckTest {
     private static final ClassLoader LOADER = WeaveCheckTest.class.getClassLoader();
     private static final String CHECK = "com.pzlauncher.zabric.hook.check";
@@ -152,7 +152,7 @@ class WeaveCheckTest {
         assertEquals(List.of("info [Zabric] check-late: hooks ready (2 hook classes)"), log.lines());
     }
 
-    /** Logs its failures to the hook runtime's log, to show their order against its lines. */
+    // shows the order of gate failures among the runtime's lines
     public static final class LoggingGate implements HookGate {
         public static final LoggingGate INSTANCE = new LoggingGate();
 
@@ -167,7 +167,6 @@ class WeaveCheckTest {
         }
     }
 
-    // routes the hook runtime's lines to the captured log and notes whether mod was open at each
     private List<Boolean> noteOpen(ModHooks mod) {
         List<Boolean> openAtLines = new ArrayList<>();
         HookRuntime.logTo(new HookRuntime.Log() {
@@ -192,7 +191,6 @@ class WeaveCheckTest {
         return openAtLines;
     }
 
-    /** Notes whether a mod's hooks are open each time a class passes the transformers. */
     private static final class OpenProbe implements ClassFileTransformer, AutoCloseable {
         private final String internalName;
         private final ModHooks mod;
@@ -219,7 +217,7 @@ class WeaveCheckTest {
         }
     }
 
-    // a class with one method int name(int), defined in a child of the test's class loader
+    // int method(int), in a child of the test's class loader
     private static Class<?> define(String className, String method) {
         return new ByteBuddy().subclass(Object.class).name(className)
                 .defineMethod(method, int.class, Visibility.PUBLIC).withParameters(int.class)

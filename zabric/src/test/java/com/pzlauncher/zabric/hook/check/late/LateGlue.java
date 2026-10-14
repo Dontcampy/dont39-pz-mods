@@ -5,7 +5,7 @@ import com.pzlauncher.zabric.hook.ZabricHooks;
 import com.pzlauncher.zabric.hook.check.CheckGate;
 import me.zed_0xff.zombie_buddy.Patch;
 
-// Glue on classes WeaveCheckTest defines after the pass: one woven, one whose bound argument type matches no method.
+// Targets defined after the pass; the second binds an argument type no method has.
 public final class LateGlue {
     public static final ModHooks MOD = ZabricHooks.mod("check-late");
 

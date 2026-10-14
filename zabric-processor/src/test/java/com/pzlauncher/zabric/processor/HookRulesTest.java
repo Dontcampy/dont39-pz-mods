@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Every rule the processor checks, with the message it reports; each names the handler or class. */
 class HookRulesTest {
     private static final String TARGET = """
             package t;
@@ -117,8 +116,6 @@ class HookRulesTest {
     private String glue(Compiler.Result result) {
         return result.source("glue/TestModGlue.java");
     }
-
-    // ---- targets ----
 
     @Test
     void unresolvedTarget() {
@@ -247,8 +244,6 @@ class HookRulesTest {
                 """), "H.h: the glue in package glue must name t.Pkg, but t.Pkg is not public");
     }
 
-    // ---- injection points and annotations ----
-
     @Test
     void unsupportedAt() {
         assertError(hooks("""
@@ -374,8 +369,6 @@ class HookRulesTest {
         assertTrue(glue(result).contains("@Patch(className = \"t.Target\", methodName = \"<init>\", strictMatch ="
                 + " true)\n    public static final class Target_init {"));
     }
-
-    // ---- handler types ----
 
     @Test
     void targetParameterTypes() {
@@ -542,8 +535,6 @@ class HookRulesTest {
                 "@ModifyVariable cannot change an array argument other than Object[]");
     }
 
-    // ---- share, always, gates ----
-
     @Test
     void shareKeysHaveOneType() {
         assertError(hooks("""
@@ -644,8 +635,6 @@ class HookRulesTest {
                 hook t.Target compute (I)I glue.TestModGlue$Target_compute
                 """, result.resource("META-INF/zabric/hooks/h.H.txt"));
     }
-
-    // ---- options ----
 
     @Test
     void optionsAreRequired() {

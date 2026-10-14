@@ -5,7 +5,6 @@ import com.pzlauncher.zabric.hook.HookGate;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A named gate the test switches and whose failures it reads. */
 public final class TestGate implements HookGate {
     public static final TestGate INSTANCE = new TestGate();
 

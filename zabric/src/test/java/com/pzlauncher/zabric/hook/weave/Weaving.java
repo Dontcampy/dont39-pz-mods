@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-/** What ZombieBuddy has at game start, for the tests: its Instrumentation and the glue packages it wove. */
+/** Stands in for ZombieBuddy's game-start state. */
 public final class Weaving {
     public static final String GLUE_PACKAGE = "com.pzlauncher.zabric.hook.weave.glue";
 
@@ -22,7 +22,6 @@ public final class Weaving {
     private Weaving() {
     }
 
-    /** The Instrumentation ZombieBuddy and Zabric use, attached to the test JVM. */
     public static synchronized Instrumentation instrumentation() {
         if (instrumentation == null) {
             instrumentation = ByteBuddyAgent.install();
@@ -38,7 +37,7 @@ public final class Weaving {
         return instrumentation;
     }
 
-    /** Weaves the patch classes of {@code glue} once per JVM: weaving twice would nest the advice twice. */
+    // once per JVM: weaving twice would nest the advice twice
     public static synchronized void weave(String glue) {
         instrumentation();
         if (woven.add(glue)) {
@@ -46,12 +45,11 @@ public final class Weaving {
         }
     }
 
-    /** The reference glue, woven. */
     public static void weaveReference() {
         weave(GLUE_PACKAGE);
     }
 
-    /** Where the reference listings are: Gradle keeps test resources apart from test classes. */
+    // Gradle keeps test resources apart from test classes
     public static Path listings() {
         String name = HookListing.DIR + DefaultHooks.class.getName() + HookListing.SUFFIX;
         URL url = Weaving.class.getClassLoader().getResource(name);

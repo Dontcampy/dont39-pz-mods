@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The listing format, and the target check on it. */
 class HookListingTest {
     @Test
     void theReferenceListingsMatchTheirHookClasses() throws URISyntaxException {

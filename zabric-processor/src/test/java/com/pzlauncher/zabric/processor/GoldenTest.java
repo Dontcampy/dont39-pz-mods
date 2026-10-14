@@ -14,10 +14,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Compiles the hook classes of Zabric's weave test and compares the output with the glue and listings that test weaves
- * through ZombieBuddy ({@code zabric/src/test/.../weave/glue/WeaveGlue.java}, {@code META-INF/zabric/hooks/}).
- */
+/** The output for the weave test's hook classes must equal the glue and listings that test weaves. */
 class GoldenTest {
     private static final Path WEAVE = Path.of(System.getProperty("zabric.weaveSources"));
     private static final String PACKAGE = "com/pzlauncher/zabric/hook/weave/";
@@ -36,7 +33,7 @@ class GoldenTest {
         assertTrue(result.success());
 
         String reference = read(WEAVE.resolve("java/" + PACKAGE + "glue/WeaveGlue.java"));
-        // the reference starts with a comment on its rules
+        // the reference starts with a header comment
         String expected = reference.substring(reference.indexOf("\npackage ") + 1);
         assertEquals(expected, result.source(PACKAGE + "glue/WeaveGlue.java"));
 

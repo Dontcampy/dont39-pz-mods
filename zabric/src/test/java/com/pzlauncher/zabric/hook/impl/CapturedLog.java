@@ -3,11 +3,9 @@ package com.pzlauncher.zabric.hook.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Takes the hook runtime's log lines in place of the game's log. */
 public final class CapturedLog implements HookRuntime.Log {
     private final List<String> lines = new ArrayList<>();
 
-    /** Installs a fresh one. */
     public static CapturedLog install() {
         CapturedLog log = new CapturedLog();
         HookRuntime.logTo(log);

@@ -12,7 +12,7 @@ import com.pzlauncher.zabric.hook.Share;
 import com.pzlauncher.zabric.hook.Thrown;
 import zombie.GameTime;
 
-/** One handler of each kind on {@link GameTime}. With {@link SampleGate}'s defaults the game behaves as without them. */
+/** One handler of each kind; with {@link SampleGate}'s defaults the game behaves as without them. */
 @Hooks(value = GameTime.class, gate = SampleGate.class)
 public final class GameTimeHooks {
     private GameTimeHooks() {

@@ -5,10 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Zabric only: the target's receiver ({@code this}). Mixin handlers are instance methods merged into the target; these
- * handlers are static, so the receiver is a parameter. Not on static targets, nor at {@code HEAD} of a constructor.
- */
+/** Zabric only: the target's {@code this}, since handlers are static. */
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.PARAMETER)
 public @interface Self {

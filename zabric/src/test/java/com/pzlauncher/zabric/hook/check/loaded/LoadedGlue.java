@@ -5,7 +5,7 @@ import com.pzlauncher.zabric.hook.ModHooks;
 import com.pzlauncher.zabric.hook.ZabricHooks;
 import me.zed_0xff.zombie_buddy.Patch;
 
-// Glue that fails verification once inlined: a conditional among a constructor's arguments, the shape WeaveGlue avoids.
+// Fails verification once inlined: a conditional among a constructor's arguments, which WeaveGlue avoids.
 public final class LoadedGlue {
     public static final ModHooks MOD = ZabricHooks.mod("check-loaded");
 

@@ -8,12 +8,10 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-/** Builds mod jars that hold only hook listings. */
 final class Listings {
     private Listings() {
     }
 
-    /** A jar with one listing per pair of hook class and listing text. */
     static Path jar(Path dir, String name, String... hookClassAndText) throws IOException {
         Path jar = dir.resolve(name);
         try (OutputStream out = Files.newOutputStream(jar); ZipOutputStream zip = new ZipOutputStream(out)) {
@@ -26,7 +24,7 @@ final class Listings {
         return jar;
     }
 
-    /** {@code hooks}: owner, method and descriptor; {@code patch} hooks each. */
+    // hooks: "owner method descriptor"
     static String text(String modId, String gate, String patch, String... hooks) {
         StringBuilder text = new StringBuilder(HookListing.HEADER + "\nmod " + modId + "\ngate " + gate + "\npatch "
                 + patch + "\n");

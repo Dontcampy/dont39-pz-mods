@@ -28,9 +28,7 @@ import java.util.jar.Manifest;
  * keeps a mod with a preLaunch entrypoint preloaded. The mod id is the one the loader recorded for the jar, so a jar
  * cannot speak for another mod. Jars without these attributes are left alone. Order within a phase is undefined.
  * <p>
- * After each pass over the mod list it opens the hooks of the mods in that pass and checks that the loader wove them,
- * before their main entrypoints run, and closes the others ({@link HookRuntime}); a stopped lifecycle closes all of
- * them.
+ * A pass's hooks open before its main entrypoints run, so those see their gates' state ({@link HookRuntime}).
  */
 public final class Lifecycle {
     public static final String PRE_LAUNCH = "Zabric-PreLaunch";

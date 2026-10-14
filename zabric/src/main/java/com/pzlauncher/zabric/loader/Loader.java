@@ -87,8 +87,7 @@ public final class Loader {
 
     /**
      * Calls {@code callback} with the pass's mod ids each time the loader has loaded the mod list (normal return only).
-     * By then the loader has registered the transformers that weave the pass's patches; Zabric's weave check relies on
-     * that to come after them.
+     * The weave check relies on the loader having registered the pass's patch transformers by then.
      * Throws naming the loader version when the hook cannot be installed. The hook never throws into the loader:
      * what {@code callback} throws is kept for {@link #modsLoadedEscaped}.
      */

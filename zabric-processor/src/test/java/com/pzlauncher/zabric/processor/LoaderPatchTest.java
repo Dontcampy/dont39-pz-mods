@@ -13,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** D9: a hand-written ZombieBuddy @Patch is an error unless marked, and a marked one is a warning. */
 class LoaderPatchTest {
     private static final String PATCH = """
             package p;
