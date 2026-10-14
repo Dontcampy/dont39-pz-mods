@@ -30,8 +30,7 @@ The automated checks launch the real game (`smokeTest`, `dont39-all-in-one/build
 prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening list
 in any installed mod fails both.
 
-`smokeTest` fails on any mod's `hooks stopped` line. A feature with generated glue needs no edit to them; a Lua-only
-feature adds its line to `smokeTest`
+A feature with generated glue needs no edit to them; a Lua-only feature adds its line to `smokeTest`
 (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
@@ -61,7 +60,7 @@ New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and 
 | Pattern | Why |
 |---------|-----|
 | Glue generated outside the `javaPkgName` package | ZombieBuddy skips its patch classes |
-| A ZombieBuddy `@Patch` class, with or without `@UnsafeLoaderPatch` | Hooks go through Zabric ([Zabric Hooks](./zabric-hooks.md#hand-written-loader-patches)) |
+| A ZombieBuddy `@Patch` class, with or without `@UnsafeLoaderPatch` | Hooks go through Zabric ([Zabric Hooks](./zabric-hooks.md#rules)) |
 | ZombieBuddy types outside Zabric's loader package and generated glue | Breaks the [Loader Seam](./zombiebuddy-patching.md#loader-seam); `checkLoaderRefs` fails |
 | Reflection or method handles in feature code | See [Access Widening](./access-widening.md) |
 | The `active()` gate or a try/catch in a handler | The generated glue owns both ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |

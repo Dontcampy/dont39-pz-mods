@@ -11,8 +11,7 @@
 - A feature's facade extends `Feature` (`Feature.kt`), target-mod presence and version checks use `TargetMod.kt`, hooks
   use Zabric's annotations ([Zabric Hooks](./zabric-hooks.md)) and Lua functions `@LuaGlobal` in `glue/Glue.kt`
   ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
-- `Feature` is a Zabric `HookGate`: the default gate of the module's hook objects, so a failing handler disables only
-  that feature. It checks its hook targets itself before it turns active (`resolveOnce`).
+- `Feature` is the hook gate of the module's hook objects (`Feature.kt`), so a failing hook disables only its feature.
 - Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording, hook
   gate and target check, widening state.
 
@@ -23,7 +22,7 @@
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
 - The Lua bridge listing (`META-INF/zbkt/glue/`) is shared by `GlueProcessor.kt` and the checks in
   `dont39-all-in-one/build.gradle.kts`; change them together. Readers skip line kinds they do not use. Hook listings
-  are Zabric's ([Zabric Hooks](./zabric-hooks.md#listing-contract)).
+  are Zabric's ([Zabric Hooks](./zabric-hooks.md#rules)).
 - Add API only when a feature needs it; remove what no feature uses. Generic platform API (target-mod checks, mod
   options, Lua globals) stays when the feature that first used it is gone.
 

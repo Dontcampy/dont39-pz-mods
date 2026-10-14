@@ -36,8 +36,6 @@ Reference feature: `ime-keyboard-fix` (game fields).
 
 ## Zabric
 
-- Package `com.pzlauncher.zabric`, published as `com.pzlauncher:zabric`
-  ([Zabric Hooks](./zabric-hooks.md#publishing-and-compatibility)).
 - Java and Lua only, no patches of its own: its package loads at premain, before the Kotlin runtime. Its hook runtime
   only serves the glue other mods generate.
 - ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages

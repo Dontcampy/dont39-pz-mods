@@ -18,7 +18,7 @@
 
 Feature references are in the feature package of `ime-keyboard-fix`. The checking and gating rules are implemented in
 `TargetMod.kt`, `Widening.kt` and `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)), the hook side in
-Zabric's hook runtime ([Zabric Hooks](./zabric-hooks.md#gates-and-mod-state)).
+Zabric's hook runtime ([Zabric Hooks](./zabric-hooks.md#rules)).
 
 Disabling is final for the session: no retries. Where feature code disables itself, it uses the facade's
 `disable(...)` (`Feature.kt`) and phrases the description like the call in `ImeWindowProc.handle`. An error after the

@@ -55,7 +55,7 @@ What is not behind the seam and needs rework when switching loaders:
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `GlueWriter.java`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
-| Weave check: the loader inlines advice and registers its patch transformers during the pass, before Zabric's pass callback | `hook/impl/WeaveCheck.java`, `WeaveCheckTest` in `zabric` |
+| The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
@@ -86,9 +86,8 @@ What is not behind the seam and needs rework when switching loaders:
   feature package and not a subpackage; anything else is silently skipped. Enforced in `PatchEngine.collectPatches`;
   the ModdingGuide example's `.patches` subpackage would not load. The bundling mod sets the package through `pzGlue`
   (`pz-feature.gradle.kts`).
-- **Features never write patch classes.** Hooks are top-level objects annotated with Zabric's `@Hooks`, their handlers
-  `@Inject`, `@ModifyReturnValue` or `@ModifyVariable` ([Zabric Hooks](./zabric-hooks.md)); the glue is generated. When
-  in doubt, read it under `<module>/build/generated/ksp/main/`.
+- **Features never write patch classes.** Hooks are Zabric hook objects ([Zabric Hooks](./zabric-hooks.md)); the glue
+  is generated. When in doubt, read it under `<module>/build/generated/ksp/main/`.
 - Handlers bind the target only through Zabric's annotations, never ZombieBuddy's `Patch` ([Loader Seam](#loader-seam)).
 - Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` (`ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.

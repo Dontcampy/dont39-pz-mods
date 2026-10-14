@@ -58,7 +58,6 @@ All names derive from one kebab-case feature name. Follow the existing feature i
 | Feature package | `com.dont39.pz.imekeyboardfix` |
 | Facade object | `ImeKeyboardFix.kt` |
 | Hook glue class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixGlue`, generated from the module dir name (`pz-feature.gradle.kts`) |
-| Hook listings | `META-INF/zabric/hooks/<hook object binary name>.txt`, generated |
 | Lua bridge class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixLua`, generated likewise when the feature has `@LuaGlobal` functions |
 | Lua file, mod-options id | `Dont39AllInOne_<Name>` (`<Name>`: the module dir name in PascalCase), as in `Dont39AllInOne_ModOptionsSidebar.lua` |
 | Global Lua function names | `Dont39AllInOne_<verb><Name>...`, e.g. `Dont39AllInOne_set<Name>Force`; `GlueProcessor.kt` rejects a `@LuaGlobal` name without the prefix |
