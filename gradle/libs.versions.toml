@@ -11,6 +11,8 @@ kotlinxCoroutines = "1.11.0"
 ksp = "2.3.12"
 # build only: widens the jars features compile against (buildSrc)
 asm = "9.11"
+# tests only (zabric)
+junit = "5.14.0"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -22,6 +24,9 @@ kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "k
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
 
 # Libraries can be bundled together for easier import
 [bundles]

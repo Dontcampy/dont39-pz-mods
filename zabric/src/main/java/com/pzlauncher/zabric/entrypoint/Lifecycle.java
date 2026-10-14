@@ -1,5 +1,6 @@
 package com.pzlauncher.zabric.entrypoint;
 
+import com.pzlauncher.zabric.hook.impl.HookRuntime;
 import com.pzlauncher.zabric.loader.Loader;
 import zombie.core.Core;
 import zombie.debug.DebugType;
@@ -26,6 +27,10 @@ import java.util.jar.Manifest;
  * {@link #MAIN}); Zabric calls each in its phase whatever the mods' places in the mod list and the preload list, and
  * keeps a mod with a preLaunch entrypoint preloaded. The mod id is the one the loader recorded for the jar, so a jar
  * cannot speak for another mod. Jars without these attributes are left alone. Order within a phase is undefined.
+ * <p>
+ * After each pass over the mod list it opens the hooks of the mods in that pass and checks that the loader wove them,
+ * before their main entrypoints run, and closes the others ({@link HookRuntime}); a stopped lifecycle closes all of
+ * them.
  */
 public final class Lifecycle {
     public static final String PRE_LAUNCH = "Zabric-PreLaunch";
@@ -42,6 +47,7 @@ public final class Lifecycle {
 
     // premain and preLaunch cannot log; the main phase reports what they found
     private static boolean installed;
+    private static Instrumentation instrumentation;
     private static String failure;
     private static Throwable failureError;
     private static boolean preLaunchRan;
@@ -62,6 +68,7 @@ public final class Lifecycle {
         String hook = "its hooks";
         try {
             Instrumentation inst = Loader.instrumentation();
+            instrumentation = inst;
             hook = "its preLaunch hook (on the main method of " + String.join(" or ", PreLaunchHook.TARGETS) + ")";
             PreLaunchHook.install(inst);
             hook = "its main hook (on " + Loader.name() + "'s pass over the mod list)";
@@ -143,16 +150,20 @@ public final class Lifecycle {
             }
             start();
             if (stopped) {
+                HookRuntime.closeAll();
                 return;
             }
             if (!zabricLoaded) {
                 // the player denied Zabric, or the loader skipped it: its preloaded hooks must not act for it
                 stopped = true;
+                HookRuntime.closeAll();
                 DebugType.Mod.warn(PREFIX + "entrypoints: not run this session: %s did not approve and load Zabric",
                         Loader.name());
                 return;
             }
-            byMod(Loader.loadedThisPass(pass)).forEach(Lifecycle::load);
+            Map<String, List<Path>> loaded = byMod(Loader.loadedThisPass(pass));
+            HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
+            loaded.forEach(Lifecycle::load);
         } catch (Throwable t) {
             stop("the main phase failed: " + t, t);
         }
@@ -209,6 +220,7 @@ public final class Lifecycle {
             return;
         }
         stopped = true;
+        HookRuntime.closeAll();
         String versions = Loader.name() + " " + Loader.version() + ", game " + gameVersion();
         if (error != null) {
             DebugType.Mod.printException(error, PREFIX + "entrypoints: stopped for this session: " + why + " ("

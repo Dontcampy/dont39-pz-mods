@@ -21,6 +21,25 @@ val checkBootstrapClasses = tasks.register<CheckBootstrapClasses>("checkBootstra
 
 tasks.check { dependsOn(checkBootstrapClasses) }
 
+// The weave test applies glue through ZombieBuddy's own patch engine, which needs the game's classes to load.
+val zombieBuddy = configurations.named("zombieBuddy")
+configurations.testCompileClasspath { extendsFrom(zombieBuddy.get()) }
+configurations.testRuntimeClasspath { extendsFrom(zombieBuddy.get()) }
+val pzGameJar = extra["pzGameJar"] as RegularFileProperty
+
+dependencies {
+  testImplementation(platform(libs.junitBom))
+  testImplementation(libs.junitJupiter)
+  testRuntimeOnly(libs.junitPlatformLauncher)
+  testRuntimeOnly(files(pzGameJar))
+}
+
+tasks.test {
+  useJUnitPlatform()
+  // the weave test attaches ByteBuddy's agent to its own JVM for an Instrumentation, as ZombieBuddy has at game start
+  jvmArgs("-Djdk.attach.allowAttachSelf=true", "-XX:+EnableDynamicAgentLoading")
+}
+
 // the one hand-written place that uses ZombieBuddy's types
 tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
   excludes.add("com/pzlauncher/zabric/loader/**")

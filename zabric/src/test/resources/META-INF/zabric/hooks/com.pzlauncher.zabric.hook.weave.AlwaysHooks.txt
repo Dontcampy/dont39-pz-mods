@@ -1,0 +1,5 @@
+zabric-hooks v1
+mod weave
+gate com.pzlauncher.zabric.hook.weave.TestGate
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_ping
+hook com.pzlauncher.zabric.hook.weave.Target ping ()V com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_ping
