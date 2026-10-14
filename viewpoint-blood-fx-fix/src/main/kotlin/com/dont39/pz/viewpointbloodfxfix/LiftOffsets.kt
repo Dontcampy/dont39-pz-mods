@@ -26,45 +26,37 @@ internal object LiftOffsets {
 
   @Hook.Enter(className = "bloodfx.Gpu", methodName = "render")
   fun liftBlood() {
-    if (!ViewpointBloodFxFix.active()) {
-      return
-    }
     blood.restore() // never stack on a lift whose exit did not run
-    try {
-      val lift = Relief.current()
-      if (lift != null) {
-        BloodFx.drops.forEach { d ->
-          val dh = Relief.at(lift, d.x.toDouble(), d.y.toDouble())
-          if (dh != 0.0f) {
-            blood.save(d, DROP, d.h, dh)
-            d.h += dh
-          }
+    val lift = Relief.current()
+    if (lift != null) {
+      BloodFx.drops.forEach { d ->
+        val dh = Relief.at(lift, d.x.toDouble(), d.y.toDouble())
+        if (dh != 0.0f) {
+          blood.save(d, DROP, d.h, dh)
+          d.h += dh
         }
-        BloodFx.mists.forEach { m ->
-          val dh = Relief.at(lift, m.x.toDouble(), m.y.toDouble())
-          if (dh != 0.0f) {
-            blood.save(m, MIST, m.h, dh)
-            m.h += dh
-          }
+      }
+      BloodFx.mists.forEach { m ->
+        val dh = Relief.at(lift, m.x.toDouble(), m.y.toDouble())
+        if (dh != 0.0f) {
+          blood.save(m, MIST, m.h, dh)
+          m.h += dh
         }
-        val splats = BloodFx.splats
-        for (i in 0 until BloodFx.splatCount.coerceAtMost(splats.size)) {
-          val s = splats[i]
-          if (s != null) {
-            val dh = Relief.at(lift, s.ox.toDouble(), s.oy.toDouble())
-            if (dh != 0.0f) {
-              blood.save(s, SPLAT, s.oh, dh)
-              s.oh += dh
-            }
+      }
+      val splats = BloodFx.splats
+      for (i in 0 until BloodFx.splatCount.coerceAtMost(splats.size)) {
+        val s = splats[i]
+        if (s != null) {
+          val dh = Relief.at(lift, s.ox.toDouble(), s.oy.toDouble())
+          if (dh != 0.0f) {
+            blood.save(s, SPLAT, s.oh, dh)
+            s.oh += dh
           }
         }
       }
-      if (debug()) {
-        stats.frame(lift != null, blood)
-      }
-    } catch (t: Throwable) {
-      blood.restore()
-      ViewpointBloodFxFix.disable("raising blood onto the terrain", t)
+    }
+    if (debug()) {
+      stats.frame(lift != null, blood)
     }
   }
 
@@ -75,24 +67,16 @@ internal object LiftOffsets {
 
   @Hook.Enter(className = "bloodfx.GoreGpu", methodName = "render")
   fun liftGore() {
-    if (!ViewpointBloodFxFix.active()) {
-      return
-    }
     gore.restore()
-    try {
-      val lift = Relief.current()
-      if (lift != null) {
-        GoreGpu.pieces.forEach { p ->
-          val dh = Relief.at(lift, p.x.toDouble(), p.y.toDouble())
-          if (dh != 0.0f) {
-            gore.save(p, PIECE, p.h, dh)
-            p.h += dh
-          }
+    val lift = Relief.current()
+    if (lift != null) {
+      GoreGpu.pieces.forEach { p ->
+        val dh = Relief.at(lift, p.x.toDouble(), p.y.toDouble())
+        if (dh != 0.0f) {
+          gore.save(p, PIECE, p.h, dh)
+          p.h += dh
         }
       }
-    } catch (t: Throwable) {
-      gore.restore()
-      ViewpointBloodFxFix.disable("raising severed parts onto the terrain", t)
     }
   }
 
@@ -130,7 +114,7 @@ internal object LiftOffsets {
       highest = if (count == 1) dh else highest.coerceAtLeast(dh)
     }
 
-    /** Never throws: it runs in the exit hook, inside BloodFX's draw call. */
+    /** Goes on past a failed element, so one failure leaves nothing else raised. */
     fun restore() {
       var failure: Throwable? = null
       for (i in count - 1 downTo 0) {

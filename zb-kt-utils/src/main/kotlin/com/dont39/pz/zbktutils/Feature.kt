@@ -68,7 +68,7 @@ abstract class Feature(val name: String, private val modId: String, private val 
     log { if (detail == null) "ready" else "ready ($detail)" }
   }
 
-  /** Every hook checks this first. */
+  /** The generated glue checks this before every hook. */
   fun active(): Boolean {
     val s = state
     return if (s == State.UNDECIDED) decide() else s == State.ACTIVE

@@ -94,8 +94,11 @@ What is not behind the seam and needs rework when switching loaders:
   (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Already-loaded game classes can be hooked; ZombieBuddy retransforms them. Reference: `ImeWindow.kt`.
-- A hook function is feature code: it checks the facade's `active()` first and owns its error handling (see Gating).
-- A hook that changes state on enter restores it on exit, including when the target throws.
+- A hook function is public and contains neither the `active()` gate nor a try/catch: the generated glue gates it on
+  the module's facade and turns anything it throws into `disable` (`Glue.kt`, `GlueProcessor.kt`). `always = true` is
+  only for an unpaired hook that must run while inactive and checks `active()` itself (`ImeWindow.sync`).
+- A hook that changes state on enter restores it in a paired exit, which runs whenever that call's enter passed the
+  gate, including when the target or the enter threw.
 - Before using a `Patch.java` option the repo has not used, check its default there, in particular how matching
   behaves for overloaded methods. An option `Glue.kt` does not expose needs a processor change first.
 
@@ -146,7 +149,7 @@ For a feature that changes the game's own Lua UI. Reference:
   and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)); reference: `ViewpointBloodFxFix.kt`.
 - `Feature` checks the hook targets exist (`HookTargets.kt`); `resolve()` is only for what the compiler cannot check
   (`ImeContext.kt`).
-- Every patch entry point checks the facade's `active()` first.
+- Every hook is gated on the facade's `active()` by the generated glue (see [Patch Classes](#patch-classes)).
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
 - A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS).
   Reference: `ImeKeyboardFix.kt`.
@@ -159,7 +162,8 @@ When a feature changes another mod's state around a call (`LiftOffsets.kt`, `Aim
 
 - Save originals and write them back exactly; do not recompute.
 - Restore any leftover change before applying a new one, so changes never stack.
-- Restore must not throw and must not overwrite a value the target replaced in the meantime.
+- Restore must not overwrite a value the target replaced in the meantime, and keeps restoring the rest after one
+  element fails (`Saved.restore` in `LiftOffsets.kt`).
 - Adjust only what the draw call reads; leave the target's simulation state alone.
 
 ## Threading and Hot Paths

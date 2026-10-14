@@ -14,50 +14,38 @@ internal object AimShift {
 
   @Hook.Enter(className = "bloodfx.Aim", methodName = "target")
   fun lower(@Hook.Argument(0) character: Any?) {
-    if (!ViewpointBloodFxFix.active()) {
+    val ray = Aim.last
+    val lift = Relief.current()
+    if (ray == null || lift == null || character !is IsoMovingObject) {
       return
     }
-    try {
-      val ray = Aim.last
-      val lift = Relief.current()
-      if (ray == null || lift == null || character !is IsoMovingObject) {
-        return
+    val relief = Relief.at(lift, character.x.toDouble(), character.y.toDouble())
+    if (LiftOffsets.debug()) {
+      ViewpointBloodFxFix.log {
+        val h = ray.oh()
+        "aim: zombie at %.2f %.2f z=%.2f, relief %.3f, ray h %.3f -> %.3f".format(
+          character.x, character.y, character.z, relief, h, h - relief,
+        )
       }
-      val relief = Relief.at(lift, character.x.toDouble(), character.y.toDouble())
-      if (LiftOffsets.debug()) {
-        ViewpointBloodFxFix.log {
-          val h = ray.oh()
-          "aim: zombie at %.2f %.2f z=%.2f, relief %.3f, ray h %.3f -> %.3f".format(
-            character.x, character.y, character.z, relief, h, h - relief,
-          )
-        }
-      }
-      if (relief == 0.0f) {
-        return
-      }
-      val shifted = Aim.Ray(ray.ox(), ray.oy(), ray.oh() - relief, ray.dx(), ray.dy(), ray.dh(), ray.nanos())
-      original = ray
-      lowered = shifted
-      Aim.last = shifted
-    } catch (t: Throwable) {
-      restore()
-      ViewpointBloodFxFix.disable("lowering the aim ray onto the terrain", t)
     }
+    if (relief == 0.0f) {
+      return
+    }
+    val shifted = Aim.Ray(ray.ox(), ray.oy(), ray.oh() - relief, ray.dx(), ray.dy(), ray.dh(), ray.nanos())
+    original = ray
+    lowered = shifted
+    Aim.last = shifted
   }
 
   @Hook.Exit(className = "bloodfx.Aim", methodName = "target")
   fun restore() {
     val shifted = lowered ?: return
-    // never throws: it runs in the exit hook, inside BloodFX's Aim.target
-    try {
-      // the renderer may have saved a newer ray meanwhile
-      if (Aim.last === shifted) {
-        Aim.last = original
-      }
-    } catch (t: Throwable) {
-      ViewpointBloodFxFix.disable("restoring the aim ray", t)
-    }
+    val saved = original
     original = null
     lowered = null
+    // the renderer may have saved a newer ray meanwhile
+    if (Aim.last === shifted) {
+      Aim.last = saved
+    }
   }
 }

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "patch class, gating and Enter/Exit rules the generated glue and hooks must satisfy; sections to update"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Glue.kt and processor change together; glue listing contract"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate and the try/catch-in-patches rule to update"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "feature module layout and generated glue location"}

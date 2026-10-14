@@ -62,7 +62,7 @@ Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. Zo
 ## Quality Check
 
 1. Build gate passes ([Quality Guidelines](./quality-guidelines.md#build-gate)).
-2. Every patch entry is gated and every runtime path ends in restore + disable on failure.
+2. Hooks leave gating and catching to the generated glue; what an enter changes, its paired exit restores.
 3. Logging follows [Logging Guidelines](./logging-guidelines.md); nothing logs per frame by default.
 4. New target mods are declared in `dont39-all-in-one/mod/42/mod.info`; a Lua-only feature's `ready` line is in
    `smokeTest`.

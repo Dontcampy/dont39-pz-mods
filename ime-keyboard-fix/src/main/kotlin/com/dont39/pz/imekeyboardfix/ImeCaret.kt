@@ -21,41 +21,34 @@ internal object ImeCaret {
   // mirrors the caret UITextBox2.render draws
   @Hook.Exit(className = "zombie.ui.UITextBox2", methodName = "render", onThrow = false)
   fun publish(@Hook.This box: UITextBox2) {
-    if (!ImeKeyboardFix.active()) {
+    if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry()) {
       return
     }
-    try {
-      if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry()) {
-        return
-      }
-      val font = TextManager.instance.getFontFromEnum(box.font)
-      val lineHeight = font.lineHeight
-      val inset = box.inset
-      val top = if (box.centerVertically) {
-        ((box.getHeight() - TextManager.instance.MeasureStringY(box.font, box.internalText)) / 2.0).toInt()
-      } else {
-        inset
-      }
-      // render's own cursorLine is stale when it returned early, e.g. while hidden
-      val line = box.toDisplayLine(box.cursorPos)
-      val lines = box.lines
-      var width = 0
-      if (!lines.isEmpty()) {
-        val text = lines[line]
-        val offsets = box.textOffsetOfLineStart
-        val column = (box.cursorPos - offsets[line]).coerceAtMost(text.length)
-        width = font.getWidth(text, 0, column - 1, true)
-        if (width > 0) {
-          width--
-        }
-      }
-      val left = -box.xOffset + inset + width
-      val x = (left.toDouble() + box.absoluteX + box.xScroll).toInt()
-      val y = ((top + line * lineHeight).toDouble() + box.absoluteY + box.yScroll).toInt()
-      rect = pack(x, y, 1, lineHeight)
-    } catch (t: Throwable) {
-      ImeKeyboardFix.disable("locating the text caret for the IME windows", t)
+    val font = TextManager.instance.getFontFromEnum(box.font)
+    val lineHeight = font.lineHeight
+    val inset = box.inset
+    val top = if (box.centerVertically) {
+      ((box.getHeight() - TextManager.instance.MeasureStringY(box.font, box.internalText)) / 2.0).toInt()
+    } else {
+      inset
     }
+    // render's own cursorLine is stale when it returned early, e.g. while hidden
+    val line = box.toDisplayLine(box.cursorPos)
+    val lines = box.lines
+    var width = 0
+    if (!lines.isEmpty()) {
+      val text = lines[line]
+      val offsets = box.textOffsetOfLineStart
+      val column = (box.cursorPos - offsets[line]).coerceAtMost(text.length)
+      width = font.getWidth(text, 0, column - 1, true)
+      if (width > 0) {
+        width--
+      }
+    }
+    val left = -box.xOffset + inset + width
+    val x = (left.toDouble() + box.absoluteX + box.xScroll).toInt()
+    val y = ((top + line * lineHeight).toDouble() + box.absoluteY + box.yScroll).toInt()
+    rect = pack(x, y, 1, lineHeight)
   }
 
   private fun pack(x: Int, y: Int, width: Int, height: Int): Long {
