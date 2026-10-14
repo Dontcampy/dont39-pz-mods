@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.loader;
+package com.pzlauncher.zabric.loader;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

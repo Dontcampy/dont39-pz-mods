@@ -1,7 +1,7 @@
-package com.dont39.pz.zabric.entrypoint;
+package com.pzlauncher.zabric.entrypoint;
 
-import com.dont39.pz.zabric.loader.Loader;
-import com.dont39.pz.zabric.restart.RestartList;
+import com.pzlauncher.zabric.loader.Loader;
+import com.pzlauncher.zabric.restart.RestartList;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 import zombie.gameStates.ChooseGameInfo;

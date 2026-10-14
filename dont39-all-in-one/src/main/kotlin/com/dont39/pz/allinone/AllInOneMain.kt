@@ -1,8 +1,8 @@
 package com.dont39.pz.allinone
 
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
-import com.dont39.pz.zabric.entrypoint.MainEntrypoint
 import com.dont39.pz.zbktutils.reportWidening
+import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import zombie.debug.DebugType
 
 // not named Main: ZombieBuddy loads and initializes a class of that name in javaPkgName as its own entry point

@@ -1,6 +1,6 @@
-package com.dont39.pz.zabric.entrypoint;
+package com.pzlauncher.zabric.entrypoint;
 
-import com.dont39.pz.zabric.loader.Loader;
+import com.pzlauncher.zabric.loader.Loader;
 import zombie.core.Core;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;

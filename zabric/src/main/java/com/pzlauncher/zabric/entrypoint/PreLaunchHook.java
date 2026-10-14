@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.entrypoint;
+package com.pzlauncher.zabric.entrypoint;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;

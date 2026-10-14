@@ -1,6 +1,6 @@
 package com.dont39.pz.zbktutils
 
-import com.dont39.pz.zabric.widener.AccessWidener
+import com.pzlauncher.zabric.widener.AccessWidener
 
 /** Why the members in [modId]'s `.classtweaker` list, shipped in [host]'s jar, are not public, or null when they are. */
 fun wideningProblem(modId: String, host: Class<*>): String? = AccessWidener.problem(modId, host)

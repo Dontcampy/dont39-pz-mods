@@ -1,6 +1,6 @@
-package com.dont39.pz.zabric;
+package com.pzlauncher.zabric;
 
-import com.dont39.pz.zabric.restart.RestartList;
+import com.pzlauncher.zabric.restart.RestartList;
 import se.krka.kahlua.integration.annotations.LuaMethod;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.Lua.LuaManager;

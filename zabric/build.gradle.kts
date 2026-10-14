@@ -23,7 +23,7 @@ tasks.check { dependsOn(checkBootstrapClasses) }
 
 // the one hand-written place that uses ZombieBuddy's types
 tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
-  excludes.add("com/dont39/pz/zabric/loader/**")
+  excludes.add("com/pzlauncher/zabric/loader/**")
 }
 
 tasks.jar {

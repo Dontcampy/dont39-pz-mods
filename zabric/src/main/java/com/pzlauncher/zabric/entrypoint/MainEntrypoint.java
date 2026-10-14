@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.entrypoint;
+package com.pzlauncher.zabric.entrypoint;
 
 /**
  * Called once per session after the loader's pass over the mod list in which it approved and loaded the mod; the class

@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.entrypoint;
+package com.pzlauncher.zabric.entrypoint;
 
 /**
  * Called once per launch after the loader has preloaded every jar and before the game's main method runs; the class is

@@ -1,9 +1,9 @@
 package buildsrc.convention
 
-import com.dont39.pz.zabric.classtweaker.ClassTweaker
-import com.dont39.pz.zabric.classtweaker.ClassTweaker.Access
-import com.dont39.pz.zabric.classtweaker.ClassTweaker.Entry
-import com.dont39.pz.zabric.classtweaker.ClassTweaker.Kind
+import com.pzlauncher.zabric.classtweaker.ClassTweaker
+import com.pzlauncher.zabric.classtweaker.ClassTweaker.Access
+import com.pzlauncher.zabric.classtweaker.ClassTweaker.Entry
+import com.pzlauncher.zabric.classtweaker.ClassTweaker.Kind
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection

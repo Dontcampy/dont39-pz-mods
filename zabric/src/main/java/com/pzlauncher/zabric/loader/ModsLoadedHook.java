@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.loader;
+package com.pzlauncher.zabric.loader;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;

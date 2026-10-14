@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.restart;
+package com.pzlauncher.zabric.restart;
 
 import zombie.debug.DebugType;
 import zombie.gameStates.ChooseGameInfo;

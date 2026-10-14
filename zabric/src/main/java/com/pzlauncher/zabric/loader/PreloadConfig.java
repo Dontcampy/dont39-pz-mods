@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.loader;
+package com.pzlauncher.zabric.loader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

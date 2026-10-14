@@ -1,7 +1,7 @@
-package com.dont39.pz.zabric;
+package com.pzlauncher.zabric;
 
-import com.dont39.pz.zabric.entrypoint.Lifecycle;
-import com.dont39.pz.zabric.widener.AccessWidener;
+import com.pzlauncher.zabric.entrypoint.Lifecycle;
+import com.pzlauncher.zabric.widener.AccessWidener;
 
 /** Called by ZombieBuddy at game start, before the game classes the lists name and the game's main class are loaded. */
 public final class PreMain {

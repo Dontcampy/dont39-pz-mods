@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.loader;
+package com.pzlauncher.zabric.loader;
 
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;

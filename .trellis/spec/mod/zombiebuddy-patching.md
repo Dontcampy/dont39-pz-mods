@@ -34,7 +34,7 @@ Only two places use ZombieBuddy's API (`me.zed_0xff.*`), so that moving to anoth
 agent) rewrites those two and rebuilds:
 
 - Runtime services: Zabric's loader package
-  ([`Loader.java`](../../../zabric/src/main/java/com/dont39/pz/zabric/loader/Loader.java)). The rest of Zabric and
+  ([`Loader.java`](../../../zabric/src/main/java/com/pzlauncher/zabric/loader/Loader.java)). The rest of Zabric and
   `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
 - Hooks: the code
   [`GlueProcessor.kt`](../../../zb-kt-utils-processor/src/main/kotlin/com/dont39/pz/zbktutils/processor/GlueProcessor.kt)

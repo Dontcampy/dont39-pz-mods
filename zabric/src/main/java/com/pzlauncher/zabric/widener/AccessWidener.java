@@ -1,10 +1,10 @@
-package com.dont39.pz.zabric.widener;
+package com.pzlauncher.zabric.widener;
 
-import com.dont39.pz.zabric.classtweaker.ClassTweaker;
-import com.dont39.pz.zabric.classtweaker.ClassTweaker.Access;
-import com.dont39.pz.zabric.classtweaker.ClassTweaker.Entry;
-import com.dont39.pz.zabric.loader.Loader;
-import com.dont39.pz.zabric.restart.RestartList;
+import com.pzlauncher.zabric.classtweaker.ClassTweaker;
+import com.pzlauncher.zabric.classtweaker.ClassTweaker.Access;
+import com.pzlauncher.zabric.classtweaker.ClassTweaker.Entry;
+import com.pzlauncher.zabric.loader.Loader;
+import com.pzlauncher.zabric.restart.RestartList;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.ModifierAdjustment;
 import net.bytebuddy.description.modifier.ModifierContributor;

@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.classtweaker;
+package com.pzlauncher.zabric.classtweaker;
 
 import java.util.ArrayList;
 import java.util.List;

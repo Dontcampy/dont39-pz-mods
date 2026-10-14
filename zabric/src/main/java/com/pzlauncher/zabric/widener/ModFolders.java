@@ -1,4 +1,4 @@
-package com.dont39.pz.zabric.widener;
+package com.pzlauncher.zabric.widener;
 
 import java.io.IOException;
 import java.nio.file.Files;
