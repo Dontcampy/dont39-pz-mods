@@ -5,9 +5,20 @@ import buildsrc.convention.CheckLoaderRefs
 plugins {
   id("buildsrc.convention.pz-java")
   id("buildsrc.convention.pz-mod")
+  id("buildsrc.convention.pz-publish")
 }
 
-version = "0.3.0"
+version = libs.versions.zabric.get()
+
+// The published jar is the mod jar: authors compile against it, players get it from the Workshop item. The game and
+// ZombieBuddy jars stay off the POM; authors have both locally.
+mavenPublishing {
+  pom {
+    name = "Zabric"
+    description = "Loader layer for ZombieBuddy Java mods for Project Zomboid: hook API, entrypoints and access " +
+      "widening. Use it compileOnly with com.pzlauncher:zabric-processor as annotation processor."
+  }
+}
 
 // the .classtweaker parser, shared with buildSrc
 sourceSets.main {

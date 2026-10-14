@@ -1,0 +1,10 @@
+name=Zabric Java Hooks Sample
+id=ZabricJavaHooksSample
+author=Example
+modversion=1.0.0
+description=Reference for Java mods that hook through Zabric.
+require=\ZombieBuddy,\Zabric
+javaJarFile=media/java/ZabricJavaHooksSample.jar
+javaPkgName=com.example.zabricsample
+ZBVersionMin=2.3.4
+versionMin=42.21.0

@@ -2,6 +2,17 @@
 // and publishes on its own; it names Zabric's and ZombieBuddy's types as strings.
 plugins {
   `java-library`
+  id("buildsrc.convention.pz-publish")
+}
+
+version = libs.versions.zabric.get()
+
+mavenPublishing {
+  pom {
+    name = "Zabric Processor"
+    description = "Annotation processor for Zabric hooks: checks hook classes against the compile classpath and " +
+      "generates their loader glue and listings."
+  }
 }
 
 java {

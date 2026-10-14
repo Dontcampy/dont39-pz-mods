@@ -13,12 +13,17 @@ ksp = "2.3.12"
 asm = "9.11"
 # tests only (zabric)
 junit = "5.14.0"
+# build only: publishes zabric and zabric-processor (buildSrc pz-publish)
+mavenPublish = "0.37.0"
+# Zabric's mod version, also the version of its two Maven artifacts
+zabric = "0.4.0"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinSerializationGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 kspGradlePlugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+mavenPublishGradlePlugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublish" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
