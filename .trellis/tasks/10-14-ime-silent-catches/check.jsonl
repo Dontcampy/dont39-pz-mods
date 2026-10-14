@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/mod/error-handling.md", "reason": "verify no silent catch and undo rules"}
-{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate and smokeTest"}
