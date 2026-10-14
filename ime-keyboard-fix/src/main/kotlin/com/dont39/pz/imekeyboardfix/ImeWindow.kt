@@ -13,32 +13,28 @@ internal object ImeWindow {
   private var hwnd = 0L
   private var placed = 0L
 
-  @Hook.Exit(className = "org.lwjglx.opengl.Display", methodName = "processMessages")
+  // always: undoes the install once the feature is off, including after an error
+  @Hook.Exit(className = "org.lwjglx.opengl.Display", methodName = "processMessages", always = true)
   fun sync() {
     if (!ImeKeyboardFix.active()) {
       restore()
       return
     }
-    try {
-      // written on the main thread, so read once
-      val box = Core.currentTextEntryBox
-      val wanted = box != null && box.isEditable && box.isDoingTextEntry
-      val window = GLFWNativeWin32.glfwGetWin32Window(Display.getWindow())
-      check(window != 0L) { "GLFW has no Win32 window for the game window" }
-      if (window != hwnd) {
-        hwnd = window
-        placed = 0L
-      }
-      ImeWindowProc.install(window)
-      ImeContext.sync(window, wanted)
-      val rect = ImeCaret.rect
-      if (wanted && rect != 0L && rect != placed) {
-        ImeContext.place(window, rect)
-        placed = rect
-      }
-    } catch (t: Throwable) {
-      restore()
-      ImeKeyboardFix.disable("switching or placing the IME for the text box focus", t)
+    // written on the main thread, so read once
+    val box = Core.currentTextEntryBox
+    val wanted = box != null && box.isEditable && box.isDoingTextEntry
+    val window = GLFWNativeWin32.glfwGetWin32Window(Display.getWindow())
+    check(window != 0L) { "GLFW has no Win32 window for the game window" }
+    if (window != hwnd) {
+      hwnd = window
+      placed = 0L
+    }
+    ImeWindowProc.install(window)
+    ImeContext.sync(window, wanted)
+    val rect = ImeCaret.rect
+    if (wanted && rect != 0L && rect != placed) {
+      ImeContext.place(window, rect)
+      placed = rect
     }
   }
 

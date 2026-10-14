@@ -268,3 +268,25 @@ Zabric gets Fabric-style phased entrypoints (manifest Zabric-PreLaunch/Zabric-Ma
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: Move hook gate and catch into generated glue
+<!-- trellis-session: v=2 fp=2ff0976bdf5e235f -->
+
+**Date**: 2026-10-14
+**Task**: Move hook gate and catch into generated glue
+**Branch**: `main`
+
+### Summary
+
+GlueProcessor now generates Java patch classes: each advice gates on the facade's active() (paired exit via @Patch.Local, exact per call) and catches Throwable into Feature.disable; Hook.always for unpaired hooks that must run inactive (ImeWindow.sync); compile errors for non-public hooks, always on paired hooks, missing/duplicate facade. All hooks dropped their own gate and try/catch; specs updated. build + smokeTest pass; paired-hook path not exercised in game (BloodFX 1.5.2 idle). PR #8 open for review. Next: remove viewpoint-blood-fx-fix after merge.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ec4f25d` | Move the hook gate and catch into the generated glue |
+
+### Status
+
+[OK] **Completed**

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 11
+- **Total Sessions**: 12
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~270 | Active |
+| `journal-1.md` | ~292 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 12 | 2026-10-14 | Move hook gate and catch into generated glue | `ec4f25d` | `main` |
 | 11 | 2026-10-14 | Zabric phased entrypoints: load-order independence | `54b6e53`, `f90b1e3`, `5d593d2` | `zabric-load-order` |
 | 10 | 2026-10-13 | Zabric loader seam for ZombieBuddy | `ee284b5` | `zabric-loader-adapter` |
 | 9 | 2026-10-13 | Zabric as a standalone platform, ZombieBuddyKotlin built on it | `6264e41`, `54ccb04` | `zb-kt-on-zabric` |
