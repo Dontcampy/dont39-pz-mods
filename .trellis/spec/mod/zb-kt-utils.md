@@ -2,7 +2,7 @@
 
 > What every Kotlin feature shares, written once. Code and KDoc:
 > `zb-kt-utils/src/main/kotlin/com/dont39/pz/zbktutils/`. Reference user:
-> `viewpoint-blood-fx-fix`.
+> `ime-keyboard-fix`.
 
 ---
 
@@ -21,7 +21,8 @@
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
 - The glue listing (`META-INF/zbkt/glue/`) is shared by `GlueProcessor.kt`, `HookTargets.kt` and the checks in
   `dont39-all-in-one/build.gradle.kts`; change them together. Readers skip line kinds they do not use.
-- Add API only when a feature needs it; remove what no feature uses.
+- Add API only when a feature needs it; remove what no feature uses. Generic platform API (target-mod checks, mod
+  options, Lua globals, hook bindings) stays when the feature that first used it is gone.
 
 ## Packaging
 

@@ -18,8 +18,7 @@
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
 | Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
-Reference features: `viewpoint-blood-fx-fix` (target mods, nested classes, a constructor) and `ime-keyboard-fix`
-(game fields).
+Reference feature: `ime-keyboard-fix` (game fields).
 
 ---
 
@@ -32,8 +31,7 @@ Reference features: `viewpoint-blood-fx-fix` (target mods, nested classes, a con
   `Feature`. The aggregating mod ships the merged list in its own jar.
 - Widen only fields, classes and constructors; other methods are not widened (visibility can change dispatch).
 - Read a target mod's version by name (`TargetMod.kt`): a `static final` constant is inlined at build time.
-- Target-mod types only in classes that load after the feature is active, never in the facade
-  (`LiftOffsets.debug()`).
+- Target-mod types only in classes that load after the feature is active, never in the facade.
 
 ## Zabric
 

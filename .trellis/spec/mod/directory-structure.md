@@ -16,7 +16,7 @@ buildSrc/src/main/kotlin/
   pz-feature.gradle.kts              convention plugin every Kotlin feature module applies
   PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
   CheckLoaderRefs.kt, CheckBootstrapClasses.kt  class-reference checks (see zombiebuddy-patching.md, kotlin-runtime.md)
-<feature-module>/                    one per feature, e.g. viewpoint-blood-fx-fix/
+<feature-module>/                    one per feature, e.g. ime-keyboard-fix/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hook / @LuaGlobal annotations
   src/main/lua/client/                         Lua glue, e.g. mod options (if any)
@@ -45,24 +45,25 @@ Read those files rather than assuming; do not duplicate their settings in featur
 
 ## Naming
 
-All names derive from one kebab-case feature name. Follow the existing feature in `viewpoint-blood-fx-fix/`:
+All names derive from one kebab-case feature name. Follow the existing feature in `ime-keyboard-fix/`:
 
 | Thing | Example |
 |-------|---------|
-| Module dir and the facade's `name` | `viewpoint-blood-fx-fix` |
-| Feature package | `com.dont39.pz.viewpointbloodfxfix` |
-| Facade object | `ViewpointBloodFxFix.kt` |
-| Patches class (in `com.dont39.pz.allinone`) | `ViewpointBloodFxFixPatches`, generated from the module dir name |
-| Lua bridge class (in `com.dont39.pz.allinone`) | `ViewpointBloodFxFixLua`, generated likewise |
-| Lua file, mod-options id, global Lua function names | see `Dont39AllInOne_ViewpointBloodFxFix.lua` and `@LuaGlobal` in `ViewpointBloodFxFix.kt` |
+| Module dir and the facade's `name` | `ime-keyboard-fix` |
+| Feature package | `com.dont39.pz.imekeyboardfix` |
+| Facade object | `ImeKeyboardFix.kt` |
+| Patches class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixPatches`, generated from the module dir name |
+| Lua bridge class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixLua`, generated likewise when the feature has `@LuaGlobal` functions |
+| Lua file, mod-options id | `Dont39AllInOne_<Name>` (`<Name>`: the module dir name in PascalCase), as in `Dont39AllInOne_ModOptionsSidebar.lua` |
+| Global Lua function names | `Dont39AllInOne_<verb><Name>...`, e.g. `Dont39AllInOne_set<Name>Force`; `GlueProcessor.kt` rejects a `@LuaGlobal` name without the prefix |
 
-Lua-visible names are global across all mods, so keep the mod-id prefix used there.
+Lua-visible names are global across all mods, so they keep the mod-id prefix.
 
 ## Visibility
 
 Keep the facade's public surface to what `AllInOneMain` and the Lua bridge need, and keep the rest `internal` /
 `private`. Annotated hook and Lua functions and their objects are `internal` or `public`, never `private`. Compare the
-modifiers in the `viewpoint-blood-fx-fix` classes.
+modifiers in the `ime-keyboard-fix` classes.
 
 ---
 
@@ -72,7 +73,7 @@ modifiers in the `viewpoint-blood-fx-fix` classes.
    `pzTargets` ([Access Widening](./access-widening.md)).
 2. Register it in `settings.gradle.kts`.
 3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
-4. Facade + helpers in the feature package, modeled on `ViewpointBloodFxFix.kt`, built on `Feature`
+4. Facade + helpers in the feature package, modeled on `ImeKeyboardFix.kt`, built on `Feature`
    ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)); non-public members via
    [Access Widening](./access-widening.md).
 5. Annotate the hook functions (`@Hook.Enter` / `@Hook.Exit`) and Lua functions (`@LuaGlobal`) in the feature package

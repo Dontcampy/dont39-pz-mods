@@ -90,8 +90,8 @@ What is not behind the seam and needs rework when switching loaders:
   When in doubt, read the generated code under `<module>/build/generated/ksp/main/`.
 - Hook parameters use the bindings in `Glue.kt`, never ZombieBuddy's `Patch` annotations
   ([Loader Seam](#loader-seam)).
-- Reference hooks: the `@Hook` functions in `LiftOffsets.kt` and `AimShift.kt`
-  (`viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/`).
+- Reference hooks: the `@Hook` functions in `ImeCaret.kt` and `ImeWindow.kt`
+  (`ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Already-loaded game classes can be hooked; ZombieBuddy retransforms them. Reference: `ImeWindow.kt`.
 - A hook function is public and contains neither the `active()` gate nor a try/catch: the generated glue gates it on
@@ -107,10 +107,10 @@ What is not behind the seam and needs rework when switching loaders:
 ## Lua Bridge
 
 - Functions called from Lua are `@LuaGlobal` functions in the feature (`Glue.kt`); their names keep the mod-id prefix
-  and are unique across features. Reference: `setForce` in `ViewpointBloodFxFix.kt` (feature package of
-  `viewpoint-blood-fx-fix`). Other exposure options: ModdingGuide "Exposing Classes to Lua".
-- Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent
-  (see `viewpoint-blood-fx-fix/src/main/lua/client/Dont39AllInOne_ViewpointBloodFxFix.lua`).
+  and are unique across features. A facade exposes its mod option by overriding `setForce` (`Feature.kt`) with
+  `@LuaGlobal`. Other exposure options: ModdingGuide "Exposing Classes to Lua".
+- Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent:
+  check a global exists before calling it.
 - User-facing switches are mod options, not JVM flags.
 
 ---
@@ -146,7 +146,7 @@ For a feature that changes the game's own Lua UI. Reference:
 - Every feature decides on first use whether it runs: target mods loaded, target version known (or forced via a mod
   option), access widening in effect if the feature uses it. The decision is cached; an option change may re-open it, a
   runtime failure may not. Internals that do not match are an error, not a reason to stay idle. Build it on `Feature`
-  and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)); reference: `ViewpointBloodFxFix.kt`.
+  and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
 - `Feature` checks the hook targets exist (`HookTargets.kt`); `resolve()` is only for what the compiler cannot check
   (`ImeContext.kt`).
 - Every hook is gated on the facade's `active()` by the generated glue (see [Patch Classes](#patch-classes)).
@@ -158,19 +158,19 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ## Enter/Exit: Change Only for the Duration
 
-When a feature changes another mod's state around a call (`LiftOffsets.kt`, `AimShift.kt`):
+When a feature changes another mod's state around a call (a paired `@Hook.Enter` / `@Hook.Exit`, `Glue.kt`):
 
 - Save originals and write them back exactly; do not recompute.
 - Restore any leftover change before applying a new one, so changes never stack.
 - Restore must not overwrite a value the target replaced in the meantime, and keeps restoring the rest after one
-  element fails (`Saved.restore` in `LiftOffsets.kt`).
+  element fails.
 - Adjust only what the draw call reads; leave the target's simulation state alone.
 
 ## Threading and Hot Paths
 
-- Render patches run on the render thread; follow the reference feature's (lock-free) approach to shared state.
+- Render-thread patches share state with the main thread lock-free (`ImeCaret.rect`).
 - Read main-thread state once into a local on the render thread (`ImeWindow.kt`).
 - Win32 calls on the game window run on the thread that calls `Display.processMessages()`, including their undo
   (`ImeWindow.kt`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
-  is on (see `LiftOffsets.kt`). Know how often the patched method is called before adding work to it.
+  is on. Know how often the patched method is called before adding work to it.

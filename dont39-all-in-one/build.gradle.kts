@@ -9,12 +9,12 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.5.0"
+version = "0.6.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
-val features = listOf(":viewpoint-blood-fx-fix", ":mod-options-sidebar", ":ime-keyboard-fix")
+val features = listOf(":mod-options-sidebar", ":ime-keyboard-fix")
 // ZombieBuddyKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
 // makes what the features' .classtweaker lists name public at game start

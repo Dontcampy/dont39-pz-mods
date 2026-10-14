@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "reference implementation pointer to update"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "feature naming table and adding/removing a feature"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "shared API keep/remove rule to amend"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "references to the removed feature's hooks and Lua bridge"}

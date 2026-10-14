@@ -15,7 +15,7 @@
   `[Zabric]` prefix.
 - Every feature reports the same lifecycle moments so a player's `console.txt` shows its state: ready or idle at
   `init()`, active or inactive on first use, disabled on a runtime error. The wording is in `Feature.kt`;
-  reasons come from the facade's `problem()` (`ViewpointBloodFxFix.kt`).
+  reasons come from the facade's `problem()` (`ImeKeyboardFix.kt`).
 - Reasons are sentences a player can act on, including how to override when an override exists.
 - Never repeat a line per call or per frame. State lines are logged once per decision: when the decision is re-made
   (e.g. after a mod option changes, see `setForce()` in `Feature.kt`) the new state is logged again.
@@ -36,7 +36,7 @@ DebugType.Mod.println { "raised $count" }        // resolves to println(Object):
 Correct:
 
 ```kotlin
-ViewpointBloodFxFix.log { "raised $count" }                      // feature code: facade helper, adds the prefix
+MyFeature.log { "raised $count" }                                 // feature code: facade helper, adds the prefix
 DebugType.Mod.lzWarn { "[$modName] access widener: not applied" } // no facade: LoggerUtils.kt
 ```
 
@@ -60,12 +60,12 @@ A literal `%` in a pattern is written `%%`.
 
 ## Debug Output
 
-- Output about a target mod's behaviour is gated on **that mod's own debug option** and logged with `log { }`
-  (`debug()` in `LiftOffsets.kt`), so players can turn it on with the mod's logs.
+- Output about a target mod's behaviour is gated on **that mod's own debug option** and logged with `log { }`, so
+  players can turn it on with the mod's logs.
 - Other diagnostic output uses `debug { }`: the game's debug level, shown only in `-debug` mode.
-- Never log per frame: aggregate and emit a periodic summary (`Stats` in `LiftOffsets.kt`).
+- Never log per frame: aggregate and emit a periodic summary.
 
-Reference files are in `viewpoint-blood-fx-fix/src/main/kotlin/com/dont39/pz/viewpointbloodfxfix/` and
+Reference files are in `ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/` and
 `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`. The library's lines are in
 `Main.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`). Kotlin features get the
 prefix and lifecycle lines from `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
