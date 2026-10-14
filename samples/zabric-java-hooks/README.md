@@ -7,8 +7,10 @@ of `com.pzlauncher.zabric.hook`.
 
 ## Run
 
+From the repository root, with its Gradle wrapper:
+
 ```bash
-./gradlew check -PpzDir="C:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid"
+./gradlew -p samples/zabric-java-hooks check -PpzDir="C:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid"
 ```
 
 `pzDir` is the folder with `projectzomboid.jar` and `ZombieBuddy.jar`; it can also go in `~/.gradle/gradle.properties`.

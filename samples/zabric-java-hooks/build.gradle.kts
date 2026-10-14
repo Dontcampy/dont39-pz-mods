@@ -11,7 +11,7 @@ val zabricVersion = "0.4.0"
 val modId = "ZabricJavaHooksSample"
 val javaPkgName = "com.example.zabricsample"
 
-// checked when compiling, so tasks like wrapper run without it
+// checked when compiling, not when configuring
 val pzDir = providers.gradleProperty("pzDir").orElse(
   provider { throw GradleException("Set pzDir to your Project Zomboid folder (the one with projectzomboid.jar).") }
 )
