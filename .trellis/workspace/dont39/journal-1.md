@@ -290,3 +290,25 @@ GlueProcessor now generates Java patch classes: each advice gates on the facade'
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: Remove viewpoint-blood-fx-fix
+<!-- trellis-session: v=2 fp=76a44c24a01c4a3a -->
+
+**Date**: 2026-10-14
+**Task**: Remove viewpoint-blood-fx-fix
+**Branch**: `remove-viewpoint-blood-fx-fix`
+
+### Summary
+
+Removed the Blood FX for Viewpoint feature module and its wiring (settings, features list, AllInOneMain, loadModAfter); Workshop/mod.info text now covers only the vanilla-only features; All-in-One 0.6.0. Shared platform code kept (TargetMod, force, LuaGlobal + bridge, hook bindings, paired-hook Local gate, PzTargets) per user decision; specs repointed to ime-keyboard-fix and gained a rule that generic platform API is not removed with its first user. build + smokeTest pass (0.6.0 loaded, ime-keyboard-fix active).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `55908c8` | Remove the Blood FX for Viewpoint fix |
+
+### Status
+
+[OK] **Completed**
