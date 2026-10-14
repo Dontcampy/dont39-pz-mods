@@ -12,7 +12,7 @@
 |------|------|
 | Author API | `zabric/src/main/java/com/pzlauncher/zabric/hook/` |
 | Runtime | `zabric/src/main/java/com/pzlauncher/zabric/hook/impl/` |
-| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/` |
+| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/`; its FreeMarker templates under `src/main/resources` in the same package |
 | Front ends | `ZabricProcessor.java` (javac); `GlueProcessor.kt`, `HookReader.kt` in `zb-kt-utils-processor` (KSP) |
 | Reference glue | `zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java` |
 | Author build | `samples/zabric-java-hooks/` |

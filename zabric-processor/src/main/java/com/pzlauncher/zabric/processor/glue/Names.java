@@ -21,8 +21,6 @@ public final class Names {
     public static final String CALLBACK_INFO = HOOK_PACKAGE + ".CallbackInfo";
     public static final String CALLBACK_INFO_RETURNABLE = HOOK_PACKAGE + ".CallbackInfoReturnable";
     public static final String LOCAL_REF = HOOK_PACKAGE + ".LocalRef";
-    public static final String MOD_HOOKS = HOOK_PACKAGE + ".ModHooks";
-    public static final String ZABRIC_HOOKS = HOOK_PACKAGE + ".ZabricHooks";
 
     public static final String PATCH = "me.zed_0xff.zombie_buddy.Patch";
 
@@ -37,7 +35,6 @@ public final class Names {
     /** Listing format: {@code com.pzlauncher.zabric.hook.impl.HookListing}. */
     public static final String LISTING_DIR = "META-INF/zabric/hooks/";
     public static final String LISTING_SUFFIX = ".txt";
-    public static final String LISTING_HEADER = "zabric-hooks v1";
     public static final String LISTING_DEFAULT_GATE = "default";
 
     /** Primitive type names to their boxes and to the suffix of CallbackInfoReturnable's typed getter. */

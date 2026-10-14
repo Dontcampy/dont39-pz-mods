@@ -1,5 +1,5 @@
-// Zabric's annotation processor: authors use it as annotationProcessor. Plain Java with no dependencies, so it builds
-// and publishes on its own; it names Zabric's and ZombieBuddy's types as strings.
+// Zabric's annotation processor: authors use it as annotationProcessor. Plain Java whose only dependency is FreeMarker,
+// so it builds and publishes on its own; it names Zabric's and ZombieBuddy's types as strings.
 plugins {
   `java-library`
   id("buildsrc.convention.pz-publish")
@@ -29,6 +29,7 @@ tasks.withType<JavaCompile>().configureEach {
 val pzDir = providers.gradleProperty("pzDir")
 
 dependencies {
+  implementation(libs.freemarker)
   testImplementation(platform(libs.junitBom))
   testImplementation(libs.junitJupiter)
   testRuntimeOnly(libs.junitPlatformLauncher)

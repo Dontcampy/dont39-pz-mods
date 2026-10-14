@@ -11,6 +11,8 @@ kotlinxCoroutines = "1.11.0"
 ksp = "2.3.12"
 # build only: widens the jars features compile against (buildSrc)
 asm = "9.11"
+# zabric-processor: renders the generated glue
+freemarker = "2.3.35"
 # tests only (zabric)
 junit = "5.14.0"
 # build only: publishes zabric and zabric-processor (buildSrc pz-publish)
@@ -29,6 +31,7 @@ kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "k
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher" }

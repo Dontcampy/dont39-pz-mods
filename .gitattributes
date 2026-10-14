@@ -17,6 +17,9 @@
 # gradlew must work in clones without LFS
 gradle/wrapper/gradle-wrapper.jar -filter -diff -merge binary
 
+# the processor's templates write their line endings into generated sources
+*.ftl text eol=lf
+
 # Trellis: append-only developer journals should merge cleanly across
 # parallel sessions/worktrees — each session only appends a new block, so
 # there is nothing to actually conflict on.
