@@ -91,12 +91,11 @@ internal object ImeContext {
   }
 
   fun restore() {
-    try {
-      if (!attached && hwnd != 0L) {
-        JNI.callPPI(hwnd, 0L, IACE_DEFAULT, associate)
-      }
-    } catch (t: Throwable) {
+    if (attached || hwnd == 0L) {
+      return
     }
+    // set first: a failure is reported once, not retried every frame
     attached = true
+    check(JNI.callPPI(hwnd, 0L, IACE_DEFAULT, associate) != 0) { "ImmAssociateContextEx failed" }
   }
 }

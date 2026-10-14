@@ -13,7 +13,7 @@
 | Direct references to game or mod members | Leave a mismatch (`LinkageError`) to the generated glue's catch, which disables the feature | `ImeCaret.publish` |
 | Access widening not in effect | Stay idle with the reason | `Widening.kt` |
 | Hooks | No catch: the generated glue catches everything and disables the feature; the paired exit restores what the enter changed | `Glue.kt`, `ImeCaret.publish` |
-| Restore paths | Keep restoring the rest after one failure, then report it | — |
+| Restore paths | Keep restoring the rest after one failure, then throw it; an undo clears its state before acting, so a failure is never retried | `ImeWindow.restore` |
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |
 
 Feature references are in the feature package of `ime-keyboard-fix`. The checking
@@ -21,7 +21,8 @@ and gating rules are implemented in `HookTargets.kt`, `TargetMod.kt`, `Widening.
 ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
 
 Disabling is final for the session: no retries. Where feature code disables itself, it uses the facade's
-`disable(...)` (`Feature.kt`) and phrases the description like the call in `ImeWindowProc.handle`.
+`disable(...)` (`Feature.kt`) and phrases the description like the call in `ImeWindowProc.handle`. An error after the
+feature is disabled, e.g. from an `always` hook undoing it, is still reported through `disable(...)`.
 
 ---
 

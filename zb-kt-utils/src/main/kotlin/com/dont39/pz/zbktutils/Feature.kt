@@ -106,6 +106,10 @@ abstract class Feature(val name: String, private val modId: String, private val 
     if (resolved) {
       return true
     }
+    // init and the first hook may race here; a failure is final, not retried and reported again
+    if (state == State.DISABLED) {
+      return false
+    }
     try {
       checkHookTargets(name, javaClass)
     } catch (t: Throwable) {
@@ -132,12 +136,13 @@ abstract class Feature(val name: String, private val modId: String, private val 
     }
   }
 
-  /** Turns the feature off for the rest of the session. */
+  /**
+   * Turns the feature off for the rest of the session. Later errors, e.g. while undoing, are still reported, worded so
+   * the last status line still reads disabled.
+   */
   fun disable(what: String, t: Throwable) {
-    if (!moveToDisabled()) {
-      return
-    }
-    DebugType.Mod.printException(t, "${prefix}disabled after an error while $what", LogSeverity.Error)
+    val message = if (moveToDisabled()) "disabled after an error while $what" else "disabled; then an error while $what"
+    DebugType.Mod.printException(t, "$prefix$message", LogSeverity.Error)
   }
 
   inline fun log(message: () -> String) = DebugType.Mod.lzInfo { "$prefix${message()}" }

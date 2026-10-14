@@ -14,8 +14,8 @@
   prefix. Mod-level lines come only from the mod's main entrypoint (ZombieBuddyKotlin: its `Main`); Zabric uses its own
   `[Zabric]` prefix.
 - Every feature reports the same lifecycle moments so a player's `console.txt` shows its state: ready or idle at
-  `init()`, active or inactive on first use, disabled on a runtime error. The wording is in `Feature.kt`;
-  reasons come from the facade's `problem()` (`ImeKeyboardFix.kt`).
+  `init()`, active or inactive on first use, disabled on a runtime error, and each error after that. The wording is in
+  `Feature.kt`; reasons come from the facade's `problem()` (`ImeKeyboardFix.kt`).
 - Reasons are sentences a player can act on, including how to override when an override exists.
 - Never repeat a line per call or per frame. State lines are logged once per decision: when the decision is re-made
   (e.g. after a mod option changes, see `setForce()` in `Feature.kt`) the new state is logged again.
