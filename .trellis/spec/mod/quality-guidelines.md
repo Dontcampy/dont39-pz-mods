@@ -1,6 +1,6 @@
 # Quality Guidelines
 
-> Done means: it builds, it was tried in game, and it cannot hurt a game where the target mods differ.
+> Done means: it builds, it was tried in game, and it cannot hurt a game that differs from what it expects.
 
 ---
 
@@ -14,7 +14,7 @@
   the Gradle JVM, so set `JAVA_HOME` accordingly if the shell default is older.
 - `pzDir` in `gradle.properties` must point at a Project Zomboid install that contains the jars
   `buildSrc/src/main/kotlin/pz-java.gradle.kts` compiles against.
-- The features' target mods must be subscribed in Steam.
+- The features' target mods, if any, must be subscribed in Steam.
 - Check the assembled jar contains the new patches class (output location: `assembleMod` in
   `dont39-all-in-one/build.gradle.kts`).
 
@@ -35,10 +35,11 @@ A feature with generated glue needs no edit to them; a Lua-only feature adds its
 ## In-Game Verification
 
 1. Deploy with the `deployWorkshop` tasks (`buildSrc/src/main/kotlin/pz-mod.gradle.kts`).
-2. Run `smokeTest`, then play: with target mods enabled `console.txt` shows the feature ready, then active, and the
-   fix is visible.
-3. A target mod disabled or at another version: the feature reports idle/inactive, behavior unchanged, no errors.
-4. Target mod's debug option on: periodic summary lines, no per-frame spam.
+2. Run `smokeTest`, then play: with what the feature needs in place (its target mods enabled, if any)
+   `console.txt` shows the feature ready, then active, and the fix is visible.
+3. Without it (a target mod disabled or at another version, or what `problem()` checks unmet): the feature reports
+   idle/inactive, behavior unchanged, no errors.
+4. Debug output on (the target mod's debug option, or `-debug`): at most periodic summary lines, no per-frame spam.
 5. Patch not applying: raise ZombieBuddy's log verbosity
    ([CommandLine.md](../../../external-repos/ZombieBuddy/doc/CommandLine.md)) and check the patch class was found.
 

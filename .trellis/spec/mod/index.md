@@ -29,7 +29,8 @@ or database code; this `mod` layer is the only spec layer.
 **These specs state rules and point at code. The code is the source of truth for details** (names, constants, exact
 messages, signatures). When writing or updating a spec, link the file instead of restating what it does.
 
-Reference implementation for every rule: the `viewpoint-blood-fx-fix` module. ZombieBuddy's docs and source are in the
+Reference implementation: the `ime-keyboard-fix` module. Rules no feature currently shows (target mods, Lua globals,
+enter/exit restore) link the shared code that implements them. ZombieBuddy's docs and source are in the
 `external-repos/ZombieBuddy` submodule; see [ZombieBuddy Patching](./zombiebuddy-patching.md#zombiebuddy-reference).
 
 ---

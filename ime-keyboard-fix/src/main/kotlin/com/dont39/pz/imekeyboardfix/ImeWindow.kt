@@ -47,8 +47,14 @@ internal object ImeWindow {
     }
   }
 
+  // both, even when the first fails: each undoes its own install
   private fun restore() {
-    ImeWindowProc.restore()
-    ImeContext.restore()
+    val first = runCatching { ImeWindowProc.restore() }.exceptionOrNull()
+    val second = runCatching { ImeContext.restore() }.exceptionOrNull()
+    if (first != null) {
+      second?.let(first::addSuppressed)
+      throw first
+    }
+    second?.let { throw it }
   }
 }

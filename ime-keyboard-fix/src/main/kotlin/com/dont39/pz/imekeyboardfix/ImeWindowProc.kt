@@ -54,14 +54,16 @@ internal object ImeWindowProc {
     if (window == 0L) {
       return
     }
+    // cleared first: a failure is reported once, not retried every frame
     hwnd = 0L
-    try {
-      // a later subclass keeps calling ours, which then forwards everything to the original
-      if (User32.GetWindowLongPtr(window, GWLP_WNDPROC) == proc!!.address()) {
-        User32.SetWindowLongPtr(null, window, GWLP_WNDPROC, original)
-      }
-    } catch (t: Throwable) {
+    // a later subclass keeps calling ours, which then forwards everything to the original
+    if (User32.GetWindowLongPtr(window, GWLP_WNDPROC) != proc!!.address()) {
+      return
     }
+    val error = BufferUtils.createIntBuffer(1)
+    // the previous value is ours, never 0, so 0 is a failure whatever the last error says
+    val previous = User32.SetWindowLongPtr(error, window, GWLP_WNDPROC, original)
+    check(previous != 0L) { "SetWindowLongPtr failed with error ${error[0]}" }
   }
 
   fun handle(window: Long, message: Int, wParam: Long, lParam: Long): Long {

@@ -1,7 +1,6 @@
 package com.dont39.pz.allinone
 
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
-import com.dont39.pz.viewpointbloodfxfix.ViewpointBloodFxFix
 import com.dont39.pz.zabric.entrypoint.MainEntrypoint
 import com.dont39.pz.zbktutils.reportWidening
 import zombie.debug.DebugType
@@ -14,7 +13,6 @@ object AllInOneMain : MainEntrypoint {
     val version = AllInOneMain::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX%s loaded", version)
     reportWidening("Dont39AllInOne", AllInOneMain::class.java)
-    ViewpointBloodFxFix.init()
     ImeKeyboardFix.init()
   }
 }

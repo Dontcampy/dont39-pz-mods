@@ -290,3 +290,47 @@ GlueProcessor now generates Java patch classes: each advice gates on the facade'
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: Remove viewpoint-blood-fx-fix
+<!-- trellis-session: v=2 fp=76a44c24a01c4a3a -->
+
+**Date**: 2026-10-14
+**Task**: Remove viewpoint-blood-fx-fix
+**Branch**: `remove-viewpoint-blood-fx-fix`
+
+### Summary
+
+Removed the Blood FX for Viewpoint feature module and its wiring (settings, features list, AllInOneMain, loadModAfter); Workshop/mod.info text now covers only the vanilla-only features; All-in-One 0.6.0. Shared platform code kept (TargetMod, force, LuaGlobal + bridge, hook bindings, paired-hook Local gate, PzTargets) per user decision; specs repointed to ime-keyboard-fix and gained a rule that generic platform API is not removed with its first user. build + smokeTest pass (0.6.0 loaded, ime-keyboard-fix active).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `55908c8` | Remove the Blood FX for Viewpoint fix |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 14: Report IME undo failures and errors after a disable
+<!-- trellis-session: v=2 fp=bf07ed753cc4a5a6 -->
+
+**Date**: 2026-10-14
+**Task**: Report IME undo failures and errors after a disable
+**Branch**: `remove-viewpoint-blood-fx-fix`
+
+### Summary
+
+Feature.disable now logs errors after the feature is disabled as 'disabled; then an error while ...' (still read as disabled by smokeTest); resolveOnce no longer retries after a racing failure. ImeWindowProc/ImeContext restores drop their empty catches, check Win32 results and throw; each clears state first so a failure is reported once; ImeWindow.restore runs both and throws the first with the second suppressed. Specs updated. build + smokeTest pass; the after-disable path verified by code review only. Folded into PR #9 at the user's request.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `49faa7b` | Report errors after a disable and stop swallowing IME undo failures |
+
+### Status
+
+[OK] **Completed**
