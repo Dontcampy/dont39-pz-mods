@@ -14,8 +14,8 @@
   [`Loader.java`](../../../external-repos/ZombieBuddy/java/src/main/java/me/zed_0xff/zombie_buddy/Loader.java), and
   `collectPatches` in
   [`PatchEngine.java`](../../../external-repos/ZombieBuddy/java/src/main/java/me/zed_0xff/zombie_buddy/PatchEngine.java).
-- ZombieBuddy loads dependent mods and inlines their patches, and Zabric calls their main entrypoints, whether or not
-  the swap happened; without it they would run on 1.4.10.
+- ZombieBuddy loads dependent mods and inlines their hook glue, and Zabric opens their hooks and calls their main
+  entrypoints, whether or not the swap happened; without it they would run on 1.4.10.
 
 ## Library (`zb-kt`)
 

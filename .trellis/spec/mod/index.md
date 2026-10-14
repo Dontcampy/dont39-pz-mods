@@ -10,15 +10,16 @@
 One Gradle build ships three Workshop items, layered as a small platform for ZombieBuddy Java mods:
 
 - **Zabric** (`zabric`), the loader layer: access widening, phased entrypoints and preload registration
-  ([Access Widening](./access-widening.md)), and the only runtime code that uses ZombieBuddy
-  ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
+  ([Access Widening](./access-widening.md)), hooks ([Zabric Hooks](./zabric-hooks.md)), and the only runtime code
+  that uses ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
   ([Kotlin Runtime](./kotlin-runtime.md)).
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
   *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
 
-The runtime of the two lower layers is public for other mods; the build tooling (KSP processor, widening Gradle logic)
-stays in this repo.
+The runtime of the two lower layers is public for other mods. Zabric's jar and its annotation processor
+(`zabric-processor`) are published to Maven Central for authors; the other build tooling (KSP processor, widening
+Gradle logic) stays in this repo.
 
 Mod code is written in Kotlin. Features switch themselves off when the game or a target mod does not match what they
 expect.
@@ -41,12 +42,13 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
 | [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, patch classes, reaching other mods, gating, enter/exit restore |
+| [Zabric Hooks](./zabric-hooks.md) | Hook API, processors, generated glue and listing, gates, publishing |
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
-| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base, hook and widening checks |
+| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base and hook gate, widening checks |
 
 ---
 
@@ -54,6 +56,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 
 1. [Directory Structure](./directory-structure.md) — always; it holds the "Adding a Feature" checklist.
 2. [ZombieBuddy Patching](./zombiebuddy-patching.md) — for anything that hooks game or mod code.
+   [Zabric Hooks](./zabric-hooks.md) — for a change to the hook API, a processor or the hook runtime.
    [Access Widening](./access-widening.md) — for anything that reads or calls game or mod members.
    [Kotlin Runtime](./kotlin-runtime.md) — for any Kotlin code, version bump, or change to `zb-kt`.
    [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) — for a Kotlin feature or a change to that module.
@@ -63,7 +66,8 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 ## Quality Check
 
 1. Build gate passes ([Quality Guidelines](./quality-guidelines.md#build-gate)).
-2. Hooks leave gating and catching to the generated glue; what an enter changes, its paired exit restores.
+2. Hooks leave gating and catching to the generated glue; what a `HEAD` handler changes, a `FINALLY` handler
+   restores.
 3. Logging follows [Logging Guidelines](./logging-guidelines.md); nothing logs per frame by default.
 4. New target mods are declared in `dont39-all-in-one/mod/42/mod.info`; a Lua-only feature's `ready` line is in
    `smokeTest`.

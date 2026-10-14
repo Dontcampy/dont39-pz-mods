@@ -22,6 +22,12 @@ The shared build logic was extracted to a convention plugin located in `buildSrc
 This project uses a version catalog (see `gradle/libs.versions.toml`) to declare and version dependencies
 and both a build cache and a configuration cache (see `gradle.properties`).
 
+## Writing Java mods on Zabric
+
+Zabric hooks are published as `com.pzlauncher:zabric` (compileOnly) and `com.pzlauncher:zabric-processor`
+(annotationProcessor). [`samples/zabric-java-hooks`](samples/zabric-java-hooks) is a complete author build; the
+Workshop text in [`zabric/mod/workshop/workshop.txt`](zabric/mod/workshop/workshop.txt) is the author contract.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).

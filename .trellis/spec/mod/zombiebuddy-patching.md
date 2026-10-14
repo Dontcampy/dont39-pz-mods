@@ -31,15 +31,14 @@ When the docs and the source disagree, trust the source (see the package rule be
 ## Loader Seam
 
 Only two places use ZombieBuddy's API (`me.zed_0xff.*`), so that moving to another loader (a fork, or Zabric as its own
-agent) rewrites those two and rebuilds:
+agent) rewrites those two and rebuilds every mod on Zabric:
 
 - Runtime services: Zabric's loader package
   ([`Loader.java`](../../../zabric/src/main/java/com/pzlauncher/zabric/loader/Loader.java)). The rest of Zabric and
   `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
-- Hooks: the code
-  [`GlueProcessor.kt`](../../../zb-kt-utils-processor/src/main/kotlin/com/dont39/pz/zbktutils/processor/GlueProcessor.kt)
-  generates. Feature code uses only the annotations and bindings in
-  [`Glue.kt`](../../../zb-kt-utils/src/main/kotlin/com/dont39/pz/zbktutils/glue/Glue.kt).
+- Hooks: the glue `zabric-processor`'s generator writes, through javac or KSP ([Zabric Hooks](./zabric-hooks.md)).
+  Mod code uses only Zabric's hook API
+  ([`com.pzlauncher.zabric.hook`](../../../zabric/src/main/java/com/pzlauncher/zabric/hook/package-info.java)).
 
 `checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/CheckLoaderRefs.kt), registered in
 `pz-java.gradle.kts`) fails the build on any other reference. Do not widen its exclusions; extend the seam instead.
@@ -55,9 +54,12 @@ What is not behind the seam and needs rework when switching loaders:
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
+| The loader's names, annotation shape and method matching in generated glue | `Names.java`, `GlueWriter.java`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
+| Weave check: the loader inlines advice and registers its patch transformers during the pass, before Zabric's pass callback | `hook/impl/WeaveCheck.java`, `WeaveCheckTest` in `zabric` |
+| Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
-| Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts) |
+| Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths of `zabric` and `zabric-processor` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric, the ZombieBuddyKotlin name |
@@ -71,8 +73,8 @@ What is not behind the seam and needs rework when switching loaders:
 - Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
   calls each feature's `init()`; `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy
   runs one as its own entry point.
-- `loadModAfter` lists the mods a feature patches and the mods whose jars its classes link: ZombieBuddy loads each
-  jar's classes and applies its patches one jar after another, and drops failed loads silently. Direct dependencies
+- `loadModAfter` lists the mods a feature hooks and the mods whose jars its classes link: ZombieBuddy loads each
+  jar's classes and applies its hooks one jar after another, and drops failed loads silently. Direct dependencies
   only; the chain covers the rest. Zabric needs no entry from mods that use only its entrypoints: it is preloaded on
   every launch that runs them.
 
@@ -80,27 +82,24 @@ What is not behind the seam and needs rework when switching loaders:
 
 ## Patch Classes
 
-- **Patch classes must be in exactly the `javaPkgName` package** (`com.dont39.pz.allinone`), not the feature package
-  and not a subpackage; anything else is silently skipped. Enforced in `PatchEngine.collectPatches`; the ModdingGuide
-  example's `.patches` subpackage would not load.
-- **Kotlin features never write glue classes.** Hooks are annotated feature functions
-  ([`Glue.kt`](../../../zb-kt-utils/src/main/kotlin/com/dont39/pz/zbktutils/glue/Glue.kt));
-  the glue is generated by
-  [`GlueProcessor.kt`](../../../zb-kt-utils-processor/src/main/kotlin/com/dont39/pz/zbktutils/processor/GlueProcessor.kt).
-  When in doubt, read the generated code under `<module>/build/generated/ksp/main/`.
-- Hook parameters use the bindings in `Glue.kt`, never ZombieBuddy's `Patch` annotations
-  ([Loader Seam](#loader-seam)).
-- Reference hooks: the `@Hook` functions in `ImeCaret.kt` and `ImeWindow.kt`
-  (`ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/`).
+- **Generated patch classes must be in exactly the `javaPkgName` package** (`com.dont39.pz.allinone`), not the
+  feature package and not a subpackage; anything else is silently skipped. Enforced in `PatchEngine.collectPatches`;
+  the ModdingGuide example's `.patches` subpackage would not load. The bundling mod sets the package through `pzGlue`
+  (`pz-feature.gradle.kts`).
+- **Features never write patch classes.** Hooks are top-level objects annotated with Zabric's `@Hooks`, their handlers
+  `@Inject`, `@ModifyReturnValue` or `@ModifyVariable` ([Zabric Hooks](./zabric-hooks.md)); the glue is generated. When
+  in doubt, read it under `<module>/build/generated/ksp/main/`.
+- Handlers bind the target only through Zabric's annotations, never ZombieBuddy's `Patch` ([Loader Seam](#loader-seam)).
+- Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` (`ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/`).
 - ZombieBuddy inlines advice into the target mod's method, so a hook runs inside that mod's class.
 - Already-loaded game classes can be hooked; ZombieBuddy retransforms them. Reference: `ImeWindow.kt`.
-- A hook function is public and contains neither the `active()` gate nor a try/catch: the generated glue gates it on
-  the module's facade and turns anything it throws into `disable` (`Glue.kt`, `GlueProcessor.kt`). `always = true` is
-  only for an unpaired hook that must run while inactive and checks `active()` itself (`ImeWindow.sync`).
-- A hook that changes state on enter restores it in a paired exit, which runs whenever that call's enter passed the
-  gate, including when the target or the enter threw.
-- Before using a `Patch.java` option the repo has not used, check its default there, in particular how matching
-  behaves for overloaded methods. An option `Glue.kt` does not expose needs a processor change first.
+- A handler is public and contains neither the `active()` gate nor a try/catch: the generated glue gates it on the
+  module's facade (the default gate of a Kotlin hook object) and turns anything it throws into `disable`.
+  `always = true` is only for a handler that must run while inactive and checks `active()` itself (`ImeWindow.sync`).
+- A change made at `HEAD` is restored by a `FINALLY` handler of the same hook class, which runs whenever that call's
+  `HEAD` passed the gate, including when the target or a handler threw.
+- A capability the hook API lacks is added to Zabric's API and both processors first, never worked around with a
+  ZombieBuddy option.
 
 ---
 
@@ -147,8 +146,8 @@ For a feature that changes the game's own Lua UI. Reference:
   option), access widening in effect if the feature uses it. The decision is cached; an option change may re-open it, a
   runtime failure may not. Internals that do not match are an error, not a reason to stay idle. Build it on `Feature`
   and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
-- `Feature` checks the hook targets exist (`HookTargets.kt`); `resolve()` is only for what the compiler cannot check
-  (`ImeContext.kt`).
+- `Feature` checks its hook targets exist (`ZabricHooks.gateProblem`); `resolve()` is only for what the compiler cannot
+  check (`ImeContext.kt`).
 - Every hook is gated on the facade's `active()` by the generated glue (see [Patch Classes](#patch-classes)).
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
 - A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS).
@@ -158,7 +157,7 @@ For a feature that changes the game's own Lua UI. Reference:
 
 ## Enter/Exit: Change Only for the Duration
 
-When a feature changes another mod's state around a call (a paired `@Hook.Enter` / `@Hook.Exit`, `Glue.kt`):
+When a feature changes another mod's state around a call (a `HEAD` handler and a `FINALLY` handler that undoes it):
 
 - Save originals and write them back exactly; do not recompute.
 - Restore any leftover change before applying a new one, so changes never stack.
