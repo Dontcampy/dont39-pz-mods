@@ -26,7 +26,7 @@ internal object ImeCaret {
   // mirrors the caret UITextBox2.render draws
   @Inject(method = ["render"], at = [At("RETURN")])
   fun publish(@Self box: UITextBox2, ci: CallbackInfo) {
-    if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry()) {
+    if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry) {
       return
     }
     val font = TextManager.instance.getFontFromEnum(box.font)

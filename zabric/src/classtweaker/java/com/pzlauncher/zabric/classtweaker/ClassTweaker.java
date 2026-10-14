@@ -90,21 +90,7 @@ public final class ClassTweaker {
             default -> throw new IllegalArgumentException(where + "unknown access '" + t[0] + "'; expected"
                     + " 'accessible' or 'mutable'");
         };
-        Kind kind = t.length < 2 ? null : switch (t[1]) {
-            case "class" -> Kind.CLASS;
-            case "field" -> Kind.FIELD;
-            case "method" -> Kind.METHOD;
-            default -> null;
-        };
-        if (kind == null) {
-            throw new IllegalArgumentException(where + "expected 'class', 'field' or 'method' after '" + t[0] + "'");
-        }
-        int expected = kind == Kind.CLASS ? 3 : 5;
-        if (t.length != expected) {
-            throw new IllegalArgumentException(where + "'" + t[0] + " " + t[1] + "' takes " + (expected - 2)
-                    + (kind == Kind.CLASS ? " class name" : " values: owner, name, descriptor") + "; got '" + text
-                    + "'");
-        }
+        Kind kind = kind(t, text, where);
         if (access == Access.MUTABLE && kind != Kind.FIELD) {
             throw new IllegalArgumentException(where + "'mutable' applies to fields only");
         }
@@ -132,5 +118,24 @@ public final class ClassTweaker {
             }
         }
         return new Entry(source, line, access, kind, t[2], t[3], t[4]);
+    }
+
+    private static Kind kind(String[] t, String text, String where) {
+        Kind kind = t.length < 2 ? null : switch (t[1]) {
+            case "class" -> Kind.CLASS;
+            case "field" -> Kind.FIELD;
+            case "method" -> Kind.METHOD;
+            default -> null;
+        };
+        if (kind == null) {
+            throw new IllegalArgumentException(where + "expected 'class', 'field' or 'method' after '" + t[0] + "'");
+        }
+        int expected = kind == Kind.CLASS ? 3 : 5;
+        if (t.length != expected) {
+            throw new IllegalArgumentException(where + "'" + t[0] + " " + t[1] + "' takes " + (expected - 2)
+                    + (kind == Kind.CLASS ? " class name" : " values: owner, name, descriptor") + "; got '" + text
+                    + "'");
+        }
+        return kind;
     }
 }

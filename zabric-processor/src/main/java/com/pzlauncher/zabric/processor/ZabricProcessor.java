@@ -218,7 +218,7 @@ public final class ZabricProcessor extends AbstractProcessor {
                 name.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
             }
         }
-        if (name.length() == 0 || !Character.isJavaIdentifierStart(name.charAt(0))) {
+        if (name.isEmpty() || !Character.isJavaIdentifierStart(name.charAt(0))) {
             name.insert(0, '_');
         }
         return name.append("Glue").toString();
@@ -381,8 +381,8 @@ public final class ZabricProcessor extends AbstractProcessor {
                 }
             }
             if (e == hookClass) {
-                ElementFilter.methodsIn(hookClass.getEnclosedElements()).forEach(todo::add);
-                ElementFilter.fieldsIn(hookClass.getEnclosedElements()).forEach(todo::add);
+                todo.addAll(ElementFilter.methodsIn(hookClass.getEnclosedElements()));
+                todo.addAll(ElementFilter.fieldsIn(hookClass.getEnclosedElements()));
             } else if (e instanceof ExecutableElement method) {
                 todo.addAll(method.getParameters());
             }

@@ -1,6 +1,5 @@
 package com.dont39.pz.zbktutils.processor
 
-import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -39,7 +38,6 @@ private val OPTIONS =
   listOf(OPTION_FEATURE, OPTION_PACKAGE, OPTION_LUA_PREFIX, Names.OPTION_MOD_ID, Names.OPTION_GLUE_CLASS)
 
 /** Kotlin front end of Zabric's hook generator (the same glue as Java mods get), plus the Lua bridge. */
-@OptIn(KspExperimental::class)
 class GlueProcessor(
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
@@ -232,9 +230,9 @@ class GlueProcessor(
       error(fn, "$label: $problem")
       return null
     }
-    val owner = when {
-      parent == null -> fn.packageName.asString()
-      parent is KSClassDeclaration && parent.classKind == ClassKind.OBJECT && !parent.isCompanionObject &&
+    val owner = when (parent) {
+      null -> fn.packageName.asString()
+      is KSClassDeclaration if parent.classKind == ClassKind.OBJECT && !parent.isCompanionObject &&
         parent.parentDeclaration == null -> parent.qualifiedName!!.asString()
       else -> return fail(
         "@LuaGlobal needs a member of a top-level object or a top-level function (the generated bridge calls it " +

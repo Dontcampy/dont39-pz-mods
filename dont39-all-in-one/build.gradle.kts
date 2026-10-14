@@ -52,6 +52,7 @@ val luaDirs = features.associate {
 }
 
 val mergeClassTweakers = tasks.register<MergeClassTweakers>("mergeClassTweakers") {
+  description = "Merges the features' .classtweaker lists into one for this mod, so Zabric can read it at game start."
   lists.from(features.flatMap { project(it).tasks.withType<WidenJars>().map { task -> task.expanded } })
   merged = layout.buildDirectory.file("classtweaker/$modId.classtweaker")
 }

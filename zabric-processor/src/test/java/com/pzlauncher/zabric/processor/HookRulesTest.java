@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -104,7 +105,7 @@ class HookRulesTest {
 
     private static void assertError(Compiler.Result result, String... parts) {
         assertFalse(result.success());
-        boolean found = result.errors().stream().anyMatch(e -> List.of(parts).stream().allMatch(e::contains));
+        boolean found = result.errors().stream().anyMatch(e -> Stream.of(parts).allMatch(e::contains));
         assertTrue(found, "no error with " + List.of(parts) + " in " + result.errors());
     }
 
