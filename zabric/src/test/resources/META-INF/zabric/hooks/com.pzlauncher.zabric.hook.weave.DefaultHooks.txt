@@ -1,0 +1,7 @@
+zabric-hooks v1
+mod weave
+gate default
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_compute
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_greet
+hook com.pzlauncher.zabric.hook.weave.Target compute (I)I com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_compute
+hook com.pzlauncher.zabric.hook.weave.Target greet (Ljava/lang/String;)Ljava/lang/String; com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Target_greet

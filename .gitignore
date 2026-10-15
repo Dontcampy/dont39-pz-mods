@@ -1,5 +1,7 @@
 .gradle
 build/
+# heap dumps of an out-of-memory Gradle daemon
+*.hprof
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

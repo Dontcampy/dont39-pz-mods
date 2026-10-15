@@ -1,6 +1,6 @@
 package com.dont39.pz.zbkt;
 
-import com.dont39.pz.zabric.loader.Loader;
+import com.pzlauncher.zabric.loader.Loader;
 
 import java.io.InputStream;
 import java.lang.instrument.Instrumentation;

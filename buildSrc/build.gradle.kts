@@ -23,5 +23,7 @@ dependencies {
   implementation(libs.kspGradlePlugin)
   // Lets pz-feature widen the jars features compile against.
   implementation(libs.asm)
+  // Lets pz-publish publish Zabric's artifacts to Maven Central.
+  implementation(libs.mavenPublishGradlePlugin)
   implementation("io.github.zed-0xff.zb-gradle-plugin:io.github.zed-0xff.zb-gradle-plugin.gradle.plugin:1.0.3")
 }

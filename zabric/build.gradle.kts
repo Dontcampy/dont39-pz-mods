@@ -5,9 +5,20 @@ import buildsrc.convention.CheckLoaderRefs
 plugins {
   id("buildsrc.convention.pz-java")
   id("buildsrc.convention.pz-mod")
+  id("buildsrc.convention.pz-publish")
 }
 
-version = "0.3.0"
+version = libs.versions.zabric.get()
+
+// The published jar is the mod jar: authors compile against it, players get it from the Workshop item. The game and
+// ZombieBuddy jars stay off the POM; authors have both locally.
+mavenPublishing {
+  pom {
+    name = "Zabric"
+    description = "Loader layer for ZombieBuddy Java mods for Project Zomboid: hook API, entrypoints and access " +
+      "widening. Use it compileOnly with com.pzlauncher:zabric-processor as annotation processor."
+  }
+}
 
 // the .classtweaker parser, shared with buildSrc
 sourceSets.main {
@@ -21,9 +32,28 @@ val checkBootstrapClasses = tasks.register<CheckBootstrapClasses>("checkBootstra
 
 tasks.check { dependsOn(checkBootstrapClasses) }
 
+// The weave test applies glue through ZombieBuddy's own patch engine, which needs the game's classes to load.
+val zombieBuddy = configurations.named("zombieBuddy")
+configurations.testCompileClasspath { extendsFrom(zombieBuddy.get()) }
+configurations.testRuntimeClasspath { extendsFrom(zombieBuddy.get()) }
+val pzGameJar = extra["pzGameJar"] as RegularFileProperty
+
+dependencies {
+  testImplementation(platform(libs.junitBom))
+  testImplementation(libs.junitJupiter)
+  testRuntimeOnly(libs.junitPlatformLauncher)
+  testRuntimeOnly(files(pzGameJar))
+}
+
+tasks.test {
+  useJUnitPlatform()
+  // the weave test attaches ByteBuddy's agent to its own JVM for an Instrumentation, as ZombieBuddy has at game start
+  jvmArgs("-Djdk.attach.allowAttachSelf=true", "-XX:+EnableDynamicAgentLoading")
+}
+
 // the one hand-written place that uses ZombieBuddy's types
 tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
-  excludes.add("com/dont39/pz/zabric/loader/**")
+  excludes.add("com/pzlauncher/zabric/loader/**")
 }
 
 tasks.jar {

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 14
-- **Last Active**: 2026-10-14
+- **Total Sessions**: 15
+- **Last Active**: 2026-10-15
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~336 | Active |
+| `journal-1.md` | ~370 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 15 | 2026-10-15 | Zabric hooks: Java mod API, generated glue, weave check | `27c410f`, `72c5b1b`, `5cac403`, `f0c4719`, `56b8197`, `c0c3df5`, `201c0da`, `fcf510c`, `7a8b06f`, `58f3f02`, `10b7466`, `96c51a9`, `90ed4ca` | `zabric-hooks` |
 | 14 | 2026-10-14 | Report IME undo failures and errors after a disable | `49faa7b` | `remove-viewpoint-blood-fx-fix` |
 | 13 | 2026-10-14 | Remove viewpoint-blood-fx-fix | `55908c8` | `remove-viewpoint-blood-fx-fix` |
 | 12 | 2026-10-14 | Move hook gate and catch into generated glue | `ec4f25d` | `main` |

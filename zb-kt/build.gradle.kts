@@ -59,6 +59,7 @@ val archives = objects.newInstance<Injected>().archives
 
 // Read by KotlinSwap; inside the mod jar, so ZombieBuddy's approval of the jar covers the checksum.
 val runtimeProperties = tasks.register<WriteProperties>("runtimeProperties") {
+  description = "Writes a properties file with the Kotlin runtime version and checksum, so KotlinSwap can verify it."
   destinationFile = layout.buildDirectory.file("generated/runtime/$pkgDir/stdlib.properties")
   property("file", stdlib.get().elements.map { it.single().asFile.name })
   property("version", libs.versions.kotlin)

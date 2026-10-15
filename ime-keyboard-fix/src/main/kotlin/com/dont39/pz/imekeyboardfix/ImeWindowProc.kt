@@ -33,7 +33,7 @@ internal object ImeWindowProc {
 
   private class Proc : WindowProc() {
     override fun invoke(hwnd: Long, uMsg: Int, wParam: Long, lParam: Long): Long =
-      ImeWindowProc.handle(hwnd, uMsg, wParam, lParam)
+      handle(hwnd, uMsg, wParam, lParam)
   }
 
   fun install(window: Long) {

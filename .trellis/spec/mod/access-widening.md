@@ -15,6 +15,7 @@
 | Game-start scan and widening, per-mod status | `zabric/.../widener/AccessWidener.java`, `ModFolders.java` |
 | ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list hook) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java` |
 | Entrypoints, preload registration | `zabric/.../entrypoint/Lifecycle.java`, `Preload.java`, `PreLaunchHook.java` |
+| Hook runtime for other mods' glue | `zabric/.../hook/` ([Zabric Hooks](./zabric-hooks.md)) |
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
 | Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
@@ -35,7 +36,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 
 ## Zabric
 
-- Java and Lua only, no patches: its package loads at premain, before the Kotlin runtime.
+- Java and Lua only, no patches of its own: its package loads at premain, before the Kotlin runtime. Its hook runtime
+  only serves the glue other mods generate.
 - ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages
   elsewhere name it through `Loader.name()`.
 - Premain and preLaunch code touches no game class and logs nothing: the classes it widens are not loaded yet, and the

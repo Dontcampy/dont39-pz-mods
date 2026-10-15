@@ -1,6 +1,10 @@
 package com.dont39.pz.imekeyboardfix
 
-import com.dont39.pz.zbktutils.glue.Hook
+import com.pzlauncher.zabric.hook.At
+import com.pzlauncher.zabric.hook.CallbackInfo
+import com.pzlauncher.zabric.hook.Hooks
+import com.pzlauncher.zabric.hook.Inject
+import com.pzlauncher.zabric.hook.Self
 import zombie.core.Core
 import zombie.ui.TextManager
 import zombie.ui.UITextBox2
@@ -9,6 +13,7 @@ import zombie.ui.UITextBox2
  * Where the focused text box draws its caret, in window client pixels. Computed after the box renders, when its scroll
  * offset is up to date for the frame, and published for the window thread.
  */
+@Hooks(UITextBox2::class)
 internal object ImeCaret {
   private const val MIN = -32768
   private const val MAX = 32767
@@ -19,9 +24,9 @@ internal object ImeCaret {
     private set
 
   // mirrors the caret UITextBox2.render draws
-  @Hook.Exit(className = "zombie.ui.UITextBox2", methodName = "render", onThrow = false)
-  fun publish(@Hook.This box: UITextBox2) {
-    if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry()) {
+  @Inject(method = ["render"], at = [At("RETURN")])
+  fun publish(@Self box: UITextBox2, ci: CallbackInfo) {
+    if (box !== Core.currentTextEntryBox || !box.isEditable() || !box.isDoingTextEntry) {
       return
     }
     val font = TextManager.instance.getFontFromEnum(box.font)

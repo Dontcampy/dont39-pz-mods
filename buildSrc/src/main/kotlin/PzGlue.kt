@@ -12,4 +12,7 @@ interface PzGlue {
 
   /** Prefix of every global Lua function the feature declares. */
   val luaPrefix: Property<String>
+
+  /** The bundling mod's id: Zabric opens the feature's hooks while that mod is loaded. */
+  val modId: Property<String>
 }

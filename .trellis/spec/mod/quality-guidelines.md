@@ -15,14 +15,15 @@
 - `pzDir` in `gradle.properties` must point at a Project Zomboid install that contains the jars
   `buildSrc/src/main/kotlin/pz-java.gradle.kts` compiles against.
 - The features' target mods, if any, must be subscribed in Steam.
-- Check the assembled jar contains the new patches class (output location: `assembleMod` in
-  `dont39-all-in-one/build.gradle.kts`).
+- Check the assembled jar contains the feature's glue class and hook listings (output location: `assembleMod` in
+  `dont39-all-in-one/build.gradle.kts`; `checkGlue` checks the listings).
 
 ## Tests
 
-There are no unit tests and no test framework; `./gradlew check` compiles and runs the build checks. Feature code
-depends on other mods' classes that exist only in game. Do not add a test framework as part of a feature task; propose
-it separately.
+Feature modules have no unit tests: their code depends on other mods' classes that exist only in game. Do not add a
+test framework as part of a feature task; propose it separately. `./gradlew check` runs the build checks and the JUnit
+tests of Zabric's hook runtime and processor ([Zabric Hooks](./zabric-hooks.md#where-it-lives)), which need
+`ZombieBuddy.jar` under `pzDir`.
 
 The automated checks launch the real game (`smokeTest`, `dont39-all-in-one/build.gradle.kts`) or dedicated server
 (`serverSmokeTest`, `zb-kt/build.gradle.kts`) with ZombieBuddy until init and check the log. Read the task for its
@@ -40,8 +41,9 @@ A feature with generated glue needs no edit to them; a Lua-only feature adds its
 3. Without it (a target mod disabled or at another version, or what `problem()` checks unmet): the feature reports
    idle/inactive, behavior unchanged, no errors.
 4. Debug output on (the target mod's debug option, or `-debug`): at most periodic summary lines, no per-frame spam.
-5. Patch not applying: raise ZombieBuddy's log verbosity
-   ([CommandLine.md](../../../external-repos/ZombieBuddy/doc/CommandLine.md)) and check the patch class was found.
+5. Hook not applying: raise ZombieBuddy's log verbosity
+   ([CommandLine.md](../../../external-repos/ZombieBuddy/doc/CommandLine.md)) and check the glue's patch class was
+   found.
 
 If an in-game check was not done, say so in the task report.
 
@@ -50,17 +52,19 @@ If an in-game check was not done, say so in the task report.
 ## Code Style
 
 Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
-New code is Kotlin; Java only in `zabric` and where [Kotlin Runtime](./kotlin-runtime.md) requires it.
+New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and where
+[Kotlin Runtime](./kotlin-runtime.md) requires it.
 
 ## Forbidden Patterns
 
 | Pattern | Why |
 |---------|-----|
-| Patch classes outside the `javaPkgName` package | ZombieBuddy skips them |
+| Glue generated outside the `javaPkgName` package | ZombieBuddy skips its patch classes |
+| A ZombieBuddy `@Patch` class, with or without `@UnsafeLoaderPatch` | Hooks go through Zabric ([Zabric Hooks](./zabric-hooks.md#rules)) |
 | ZombieBuddy types outside Zabric's loader package and generated glue | Breaks the [Loader Seam](./zombiebuddy-patching.md#loader-seam); `checkLoaderRefs` fails |
 | Reflection or method handles in feature code | See [Access Widening](./access-widening.md) |
-| The `active()` gate or a try/catch in a `@Hook` function | The generated glue owns both ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
-| Hand-written patch or Lua bridge classes in a Kotlin feature | Generated from `@Hook` / `@LuaGlobal` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
+| The `active()` gate or a try/catch in a handler | The generated glue owns both ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
+| Hand-written glue or Lua bridge classes | Generated from `@Hooks` / `@LuaGlobal` ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)) |
 | Running against unchecked target versions | Internals may differ |
 | Changing another mod's state without guaranteed restore | Leaves the target corrupted |
 | `System.out`, unprefixed or per-frame logging | See [Logging Guidelines](./logging-guidelines.md) |
@@ -72,7 +76,9 @@ New code is Kotlin; Java only in `zabric` and where [Kotlin Runtime](./kotlin-ru
 
 ## Release Checklist
 
-- Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zabric` or
-  `zb-kt`).
+- Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zb-kt`); Zabric's, shared by
+  `zabric-processor`, in `gradle/libs.versions.toml`.
+- Zabric releases also go to Maven Central, only after the user confirms version and artifacts
+  ([Zabric Hooks](./zabric-hooks.md#publishing-and-compatibility)).
 - `mod.info` load order and `workshop.txt` updated for new target mods.
 - Upload order when a release spans layers: Zabric, then ZombieBuddyKotlin, then All-in-One.
