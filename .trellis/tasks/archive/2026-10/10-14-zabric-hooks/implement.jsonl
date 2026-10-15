@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Layering of Zabric / zb-kt / features; build tooling statement this task changes"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Module and package layout for the new zabric-processor module and the package rename"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader seam, patch class rules, gating, enter/exit restore that the generated glue must keep"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric runtime rules (premain, no game classes, never throw out, author contract)"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature, glue listing contract shared by processor, runtime checks and smokeTest"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Rules for Kotlin modules and version bumps"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Gate, report, disable: hook failure semantics"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log prefix and wording for refusal and hooks-stopped lines"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, forbidden patterns, in-game verification"}

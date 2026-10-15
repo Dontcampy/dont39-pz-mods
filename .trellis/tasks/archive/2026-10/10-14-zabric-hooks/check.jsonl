@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and review checklist"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Seam and hook rules the change must keep"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No crash, no hidden degrade in glue and runtime"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Listing contract kept consistent across processor, runtime, checkGlue, smokeTest"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log wording is a contract for smokeTest"}
