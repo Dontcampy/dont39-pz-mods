@@ -334,3 +334,37 @@ Feature.disable now logs errors after the feature is disabled as 'disabled; then
 ### Status
 
 [OK] **Completed**
+
+
+## Session 15: Zabric hooks: Java mod API, generated glue, weave check
+<!-- trellis-session: v=2 fp=3a58baa4b1dee357 -->
+
+**Date**: 2026-10-15
+**Task**: Zabric hooks: Java mod API, generated glue, weave check
+**Branch**: `zabric-hooks`
+
+### Summary
+
+Zabric hook API for third-party Java mods (MixinExtras-style @Hooks/@Inject/@ModifyReturnValue/@ModifyVariable/@Share, gates); zabric-processor generates ZombieBuddy glue (javac + KSP front ends, FreeMarker templates); hand-written @Patch rejected unless @UnsafeLoaderPatch; weave check reports silently dropped advice; IME hooks migrated; com.pzlauncher rename, MIT license, Maven Central publish setup, sample author build. PR Dontcampy/dont39-pz-mods#10. Open: in-game IME check, Maven Central release (account, DNS, GPG), KSP processor unit tests.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `27c410f` | Move Zabric to com.pzlauncher.zabric and license the repo under MIT |
+| `72c5b1b` | Give Zabric a hook API and runtime, with a check that hooks were woven |
+| `5cac403` | Add zabric-processor, which turns Zabric hook classes into loader glue |
+| `f0c4719` | Build the Kotlin glue on Zabric's hook API |
+| `56b8197` | Publish Zabric and zabric-processor as com.pzlauncher artifacts, with a sample author build |
+| `c0c3df5` | Document Zabric hooks for mod authors and in the specs |
+| `201c0da` | Trim the hook specs to rules and links |
+| `fcf510c` | Trim the comments to the reasons |
+| `7a8b06f` | Run the sample with the repository's Gradle wrapper |
+| `58f3f02` | Render the processor's glue and listings with FreeMarker templates |
+| `10b7466` | Fix IDE inspection warnings |
+| `96c51a9` | Update the Gradle wrapper to 9.8.0 |
+| `90ed4ca` | Give the Gradle daemon room for KSP and ignore heap dumps |
+
+### Status
+
+[OK] **Completed**
