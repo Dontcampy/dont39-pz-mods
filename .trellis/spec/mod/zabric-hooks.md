@@ -43,7 +43,7 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
 - No `priority`: a cross-mod order needs a runtime dispatcher that breaks on failed weaves, unsafe patches in between
   and recursion. Across mods, ZombieBuddy's load order decides.
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
-  tests, and bump the release and checksum in `.github/actions/pz-jars/action.yml`.
+  tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 
 ## Publishing and Compatibility
 
