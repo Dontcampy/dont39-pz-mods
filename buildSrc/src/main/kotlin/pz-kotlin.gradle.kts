@@ -3,7 +3,7 @@ package buildsrc.convention
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-// Kotlin mods run on the Kotlin runtime the ZombieBuddyKotlin mod installs at startup, so kotlin/kotlinx are compile-only
+// Kotlin mods run on the Kotlin runtime the ZabricKotlin mod installs at startup, so kotlin/kotlinx are compile-only
 // and never end up in a dependent mod's jar. kotlin.stdlib.default.dependency=false (root gradle.properties) stops the
 // Kotlin plugin from adding the stdlib as an implementation dependency.
 plugins {

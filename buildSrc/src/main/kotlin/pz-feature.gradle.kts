@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-  // ships in ZombieBuddyKotlin's jar
+  // ships in ZabricKotlin's jar
   compileOnly(project(":zb-kt-utils"))
   // hook annotations and the runtime the generated glue calls
   compileOnly(project(":zabric"))

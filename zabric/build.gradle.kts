@@ -1,7 +1,7 @@
 import buildsrc.convention.CheckBootstrapClasses
 import buildsrc.convention.CheckLoaderRefs
 
-// Java (and Lua) only: ZombieBuddy runs PreMain before ZombieBuddyKotlin has installed the Kotlin runtime.
+// Java (and Lua) only: ZombieBuddy runs PreMain before ZabricKotlin has installed the Kotlin runtime.
 plugins {
   id("buildsrc.convention.pz-java")
   id("buildsrc.convention.pz-mod")

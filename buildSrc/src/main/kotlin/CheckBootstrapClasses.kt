@@ -9,7 +9,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
-/** Fails if one of [classes] references a `kotlin/` type: they run before ZombieBuddyKotlin has installed Kotlin. */
+/** Fails if one of [classes] references a `kotlin/` type: they run before ZabricKotlin has installed Kotlin. */
 @DisableCachingByDefault(because = "a check without outputs")
 abstract class CheckBootstrapClasses : DefaultTask() {
   @get:InputFiles

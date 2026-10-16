@@ -62,7 +62,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths of `zabric` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
-| Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric, the ZombieBuddyKotlin name |
+| Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
 ---
 
@@ -144,7 +144,7 @@ For a feature that changes the game's own Lua UI. Reference:
 - Every feature decides on first use whether it runs: target mods loaded, target version known (or forced via a mod
   option), access widening in effect if the feature uses it. The decision is cached; an option change may re-open it, a
   runtime failure may not. Internals that do not match are an error, not a reason to stay idle. Build it on `Feature`
-  and `TargetMod.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
+  and `TargetMod.kt` ([ZabricKotlin Utils](./zb-kt-utils.md)).
 - `Feature` checks its hook targets exist (`ZabricHooks.gateProblem`); `resolve()` is only for what the compiler cannot
   check (`ImeContext.kt`).
 - Every hook is gated on the facade's `active()` by the generated glue (see [Patch Classes](#patch-classes)).

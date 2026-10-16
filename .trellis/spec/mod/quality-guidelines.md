@@ -69,9 +69,9 @@ New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and 
 | Changing another mod's state without guaranteed restore | Leaves the target corrupted |
 | `System.out`, unprefixed or per-frame logging | See [Logging Guidelines](./logging-guidelines.md) |
 | Bundling game, ZombieBuddy or target-mod jars | Provided at runtime |
-| `kotlin/` or `kotlinx/` classes in any jar but ZombieBuddyKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
-| `zb-kt-utils` classes in any jar but ZombieBuddyKotlin's | Duplicated on the shared classpath ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)) |
-| Relocating `kotlin.*` | Not needed; ZombieBuddyKotlin installs the current stdlib |
+| `kotlin/` or `kotlinx/` classes in any jar but ZabricKotlin's | Shadowed or duplicated on the shared classpath ([Kotlin Runtime](./kotlin-runtime.md)) |
+| `zb-kt-utils` classes in any jar but ZabricKotlin's | Duplicated on the shared classpath ([ZabricKotlin Utils](./zb-kt-utils.md)) |
+| Relocating `kotlin.*` | Not needed; ZabricKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
 
 ## Release Checklist
@@ -81,4 +81,4 @@ New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and 
 - Zabric releases also go to Maven Central, only after the user confirms version and artifacts
   ([Zabric Hooks](./zabric-hooks.md#publishing-and-compatibility)).
 - `mod.info` load order and `workshop.txt` updated for new target mods.
-- Upload order when a release spans layers: Zabric, then ZombieBuddyKotlin, then All-in-One.
+- Upload order when a release spans layers: Zabric, then ZabricKotlin, then All-in-One.

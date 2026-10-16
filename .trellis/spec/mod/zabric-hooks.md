@@ -36,7 +36,7 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
 - Hook listings (`HookListing.java`): change the writer and all readers together; a change old readers must understand
   takes a new header version.
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
-  the module's facade ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)).
+  the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.
 - A hand-written ZombieBuddy `@Patch` is rejected unless marked `@UnsafeLoaderPatch`, a disclaimer that Zabric does not
   support it. This repo uses none.
