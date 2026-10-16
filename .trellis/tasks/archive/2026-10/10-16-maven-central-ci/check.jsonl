@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Publishing and Compatibility rules the release workflow implements and updates"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "ZombieBuddy switch checklist that gains the workflow's pinned release"}
+{"file": ".trellis/spec/mod/index.md", "reason": "build tooling overview and spec conventions"}
