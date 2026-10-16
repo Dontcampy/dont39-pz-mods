@@ -368,3 +368,28 @@ Zabric hook API for third-party Java mods (MixinExtras-style @Hooks/@Inject/@Mod
 ### Status
 
 [OK] **Completed**
+
+
+## Session 16: Release Zabric to Maven Central from GitHub Actions
+<!-- trellis-session: v=2 fp=9bac0f9d32363976 -->
+
+**Date**: 2026-10-16
+**Task**: Release Zabric to Maven Central from GitHub Actions
+**Branch**: `ci-maven-central`
+
+### Summary
+
+Tag zabric-v<version> workflow: verify job (version check, :zabric/:zabric-processor checks) then publish job gated by the maven-central Environment, secrets on the publish step only. Game jar from the dedicated server (380870, unstable) via DepotDownloader, anonymously; DepotDownloader and ZombieBuddy.jar via gh release download, pinned by tag; Gradle caching off so the game jar never leaves the runner. gradlew made executable. Environment and secrets set up by the user. PR Dontcampy/dont39-pz-mods#11. Open: merge, verify namespace and GPG key, test tag zabric-v0.0.0, first release zabric-v0.4.0 (AC1-AC5 on GitHub), then switch the sample to mavenCentral only.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1360000` | Make gradlew executable |
+| `3209316` | Release Zabric to Maven Central from GitHub Actions |
+| `5063a9b` | Reference the release workflow's actions by version tag |
+| `3c1b3a4` | Fetch the release workflow's tools with gh release download |
+
+### Status
+
+[OK] **Completed**
