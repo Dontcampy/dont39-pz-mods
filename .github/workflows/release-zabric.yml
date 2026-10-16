@@ -1,0 +1,79 @@
+# Pushing tag zabric-v<version> publishes com.pzlauncher:zabric and com.pzlauncher:zabric-processor to Maven Central,
+# once approved in the maven-central Environment. A release is permanent.
+name: Release Zabric
+
+on:
+  push:
+    tags: ['zabric-v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-zabric
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Tag matches the catalog version
+        run: |
+          catalog=$(sed -n 's/^zabric = "\(.*\)"$/\1/p' gradle/libs.versions.toml)
+          tagged=${GITHUB_REF_NAME#zabric-v}
+          if [ "$tagged" != "$catalog" ]; then
+            echo "::error::tag $GITHUB_REF_NAME is version $tagged, but gradle/libs.versions.toml has zabric = \"$catalog\""
+            exit 1
+          fi
+
+      - id: jars
+        uses: ./.github/actions/pz-jars
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 25
+
+      # no cache: a release run should not leave the game's classes behind
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-disabled: true
+
+      - name: Check
+        env:
+          PZ_DIR: ${{ steps.jars.outputs.pz-dir }}
+        run: ./gradlew :zabric:check :zabric-processor:check --no-build-cache "-PpzDir=$PZ_DIR"
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    environment: maven-central
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: jars
+        uses: ./.github/actions/pz-jars
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-disabled: true
+
+      - name: Publish and release
+        env:
+          PZ_DIR: ${{ steps.jars.outputs.pz-dir }}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew publishAndReleaseToMavenCentral --no-build-cache "-PpzDir=$PZ_DIR"

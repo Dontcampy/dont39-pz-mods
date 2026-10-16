@@ -1,0 +1,39 @@
+name: Project Zomboid jars
+description: >-
+  Fetches projectzomboid.jar from the dedicated server and ZombieBuddy.jar from its release into a folder for -PpzDir.
+  The game jar is proprietary: it stays on the runner, never in an artifact or cache.
+outputs:
+  pz-dir:
+    description: Folder holding projectzomboid.jar and ZombieBuddy.jar
+    value: ${{ steps.fetch.outputs.pz-dir }}
+runs:
+  using: composite
+  steps:
+    - id: fetch
+      shell: bash
+      env:
+        DEPOT_DOWNLOADER_URL: https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip
+        DEPOT_DOWNLOADER_SHA256: a999dec66b4850fc961bd50366696d23c2d0fad7b18790e6a5647b2f19097a53
+        # bump with ZombieBuddy (.trellis/spec/mod/zabric-hooks.md)
+        ZOMBIE_BUDDY_URL: https://github.com/zed-0xff/ZombieBuddy/releases/download/v2.3.4/ZombieBuddy.jar
+        ZOMBIE_BUDDY_SHA256: eb79b9876332010733a8e0d7ce4fe0377846059a9e28859029e2a0fb449f6cf2
+      run: |
+        set -euo pipefail
+        tools="$RUNNER_TEMP/depot-downloader"
+        pz="$RUNNER_TEMP/pz"
+        mkdir -p "$tools" "$pz"
+
+        curl -fsSL -o "$tools/DepotDownloader.zip" "$DEPOT_DOWNLOADER_URL"
+        echo "$DEPOT_DOWNLOADER_SHA256  $tools/DepotDownloader.zip" | sha256sum -c -
+        unzip -q "$tools/DepotDownloader.zip" -d "$tools"
+        chmod +x "$tools/DepotDownloader"
+        echo 'regex:(^|/)projectzomboid\.jar$' > "$tools/files.txt"
+        # the dedicated server downloads anonymously; the unstable branch is Build 42, the same jar as the client's
+        (cd "$tools" && ./DepotDownloader -app 380870 -branch unstable -os linux -filelist "$tools/files.txt" \
+          -dir "$tools/server")
+        mv "$tools/server/java/projectzomboid.jar" "$pz/"
+
+        curl -fsSL -o "$pz/ZombieBuddy.jar" "$ZOMBIE_BUDDY_URL"
+        echo "$ZOMBIE_BUDDY_SHA256  $pz/ZombieBuddy.jar" | sha256sum -c -
+
+        echo "pz-dir=$pz" >> "$GITHUB_OUTPUT"

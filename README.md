@@ -28,6 +28,16 @@ Zabric hooks are published as `com.pzlauncher:zabric` (compileOnly) and `com.pzl
 (annotationProcessor). [`samples/zabric-java-hooks`](samples/zabric-java-hooks) is a complete author build; the
 Workshop text in [`zabric/mod/workshop/workshop.txt`](zabric/mod/workshop/workshop.txt) is the author contract.
 
+## Releasing Zabric
+
+Bump `zabric` in `gradle/libs.versions.toml`, merge, then push a tag `zabric-v<version>` on that commit. The
+[release workflow](.github/workflows/release-zabric.yml) checks the tag against the catalog, runs the checks and waits
+for approval in the `maven-central` Environment before publishing; a Maven Central release cannot be replaced.
+
+One-time setup: a Central Portal account with the `com.pzlauncher` namespace verified, a GPG key published to a
+keyserver, and the Environment `maven-central` with required reviewers and the secrets `MAVEN_CENTRAL_USERNAME`,
+`MAVEN_CENTRAL_PASSWORD` (a Central user token), `SIGNING_KEY` (ASCII-armored private key) and `SIGNING_KEY_PASSWORD`.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
