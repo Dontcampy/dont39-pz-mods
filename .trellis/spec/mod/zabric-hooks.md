@@ -42,13 +42,15 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   support it. This repo uses none.
 - No `priority`: a cross-mod order needs a runtime dispatcher that breaks on failed weaves, unsafe patches in between
   and recursion. Across mods, ZombieBuddy's load order decides.
-- After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java` and run the weave
-  tests.
+- After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
+  tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 
 ## Publishing and Compatibility
 
-- `zabric` and `zabric-processor` are published to Maven Central (`pz-publish.gradle.kts`). Release only after the
-  user confirms version and artifacts: a release is permanent.
+- `zabric` and `zabric-processor` are published to Maven Central (`pz-publish.gradle.kts`) only by
+  `.github/workflows/release-zabric.yml`, on tag `zabric-v<version>`. Approving the run in the `maven-central`
+  Environment is the user's confirmation: a release is permanent.
+- The game jar the workflow fetches is proprietary: never in a workflow artifact, cache or the repo.
 - Once released, the runtime API the glue calls and the listing header only grow: players' Zabric updates itself,
   while mods keep the glue they were compiled with.
 - Each package's `package-info.java` says whether it is API; a new package says so too.

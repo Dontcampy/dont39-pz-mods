@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
-- **Last Active**: 2026-10-15
+- **Total Sessions**: 16
+- **Last Active**: 2026-10-16
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~370 | Active |
+| `journal-1.md` | ~395 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 16 | 2026-10-16 | Release Zabric to Maven Central from GitHub Actions | `1360000`, `3209316`, `5063a9b`, `3c1b3a4` | `ci-maven-central` |
 | 15 | 2026-10-15 | Zabric hooks: Java mod API, generated glue, weave check | `27c410f`, `72c5b1b`, `5cac403`, `f0c4719`, `56b8197`, `c0c3df5`, `201c0da`, `fcf510c`, `7a8b06f`, `58f3f02`, `10b7466`, `96c51a9`, `90ed4ca` | `zabric-hooks` |
 | 14 | 2026-10-14 | Report IME undo failures and errors after a disable | `49faa7b` | `remove-viewpoint-blood-fx-fix` |
 | 13 | 2026-10-14 | Remove viewpoint-blood-fx-fix | `55908c8` | `remove-viewpoint-blood-fx-fix` |
