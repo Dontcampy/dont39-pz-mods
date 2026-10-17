@@ -17,6 +17,9 @@ One Gradle build ships three Workshop items, layered as a small platform for Zom
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
   *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
 
+It also builds `zb-skip-online-checks`, a Java mod whose target is ZombieBuddy itself, outside these layers and not on
+the Workshop ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
+
 The runtime of the two lower layers is public for other mods. Zabric's jar and its annotation processor
 (`zabric-processor`) are published to Maven Central for authors; the other build tooling (KSP processor, widening
 Gradle logic) stays in this repo.

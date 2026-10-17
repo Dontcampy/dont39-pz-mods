@@ -34,6 +34,7 @@ samples/zabric-java-hooks/           standalone author build against the publish
 zb-kt/                               shipped mod: Kotlin runtime library (see kotlin-runtime.md)
 zb-kt-utils/                         shared Kotlin runtime, shipped in zb-kt's jar (see zb-kt-utils.md)
 zb-kt-utils-processor/               KSP front end on zabric-processor's generator, plus the Lua bridge; compile time only
+zb-skip-online-checks/               Java mod that skips ZombieBuddy's network requests; targets the loader itself (see zombiebuddy-patching.md#loader-seam)
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua

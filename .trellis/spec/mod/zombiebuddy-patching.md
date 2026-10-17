@@ -43,6 +43,13 @@ agent) rewrites those two and rebuilds every mod on Zabric:
 `checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/CheckLoaderRefs.kt), registered in
 `pz-java.gradle.kts`) fails the build on any other reference. Do not widen its exclusions; extend the seam instead.
 
+The one exception is a mod whose target *is* the loader: `zb-skip-online-checks`
+([README](../../../zb-skip-online-checks/README.md)) advises ZombieBuddy's own methods and excludes its top-level
+package in its build script. It also has a `PreMain`, for ZombieBuddy's `patches_jar` option: that runs before Zabric
+is loaded, so the package uses no Zabric or game types and logs nothing (stdout at that point never reaches
+`console.txt`); its Zabric main entrypoint reports for both ways. Its Zabric entrypoints live in a subpackage, which
+stays checked.
+
 No runtime loader detection or fallback: one loader per build.
 
 ### Switch Checklist
@@ -61,6 +68,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths of `zabric` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
+| A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
 | Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
