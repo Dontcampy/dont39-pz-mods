@@ -9,12 +9,12 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.6.0"
+version = "0.7.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
-val features = listOf(":mod-options-sidebar", ":ime-keyboard-fix")
+val features = listOf(":mod-options-sidebar", ":ime-keyboard-fix", ":missing-anim-folders")
 // ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
 // makes what the features' .classtweaker lists name public at game start

@@ -21,6 +21,7 @@ plugins {
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html
 include(":mod-options-sidebar")
 include(":ime-keyboard-fix")
+include(":missing-anim-folders")
 include(":zb-kt")
 include(":zb-kt-utils")
 include(":zb-kt-utils-processor")

@@ -1,6 +1,7 @@
 package com.dont39.pz.allinone
 
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
+import com.dont39.pz.missinganimfolders.MissingAnimFolders
 import com.dont39.pz.zbktutils.reportWidening
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import zombie.debug.DebugType
@@ -14,5 +15,6 @@ object AllInOneMain : MainEntrypoint {
     DebugType.Mod.println("$PREFIX%s loaded", version)
     reportWidening("Dont39AllInOne", AllInOneMain::class.java)
     ImeKeyboardFix.init()
+    MissingAnimFolders.init()
   }
 }
