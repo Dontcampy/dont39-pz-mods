@@ -22,6 +22,7 @@ plugins {
 include(":mod-options-sidebar")
 include(":ime-keyboard-fix")
 include(":missing-anim-folders")
+include(":anim-extends-case")
 include(":zb-kt")
 include(":zb-kt-utils")
 include(":zb-kt-utils-processor")
