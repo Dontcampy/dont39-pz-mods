@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature, Lua-only module rules"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Wrapping Vanilla Lua UI, Lua bridge, gating, loadModAfter"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable; no silent degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Lua logger and lifecycle lines"}
