@@ -2,7 +2,7 @@ version=1
 id=3818388200
 title=Dont39 All-in-One
 description=[h1]Dont39 All-in-One[/h1]
-description=A collection of fixes and tweaks for Build 42. They change only the game itself and need no mods besides the requirements below.
+description=A collection of fixes and tweaks for Build 42. They need no mods besides the requirements below; the one fix for another mod does nothing without that mod.
 description=
 description=[h2]Requirements[/h2]
 description=[list]
@@ -36,6 +36,13 @@ description=While loading animations the game looks into every mod's media/AnimS
 description=
 description=[h2]Mod animations on Linux dedicated servers[/h2]
 description=On a Linux dedicated server whose Workshop folder is inside the server folder (the usual steamcmd setup), animation files that extend another file fail to load: the game looks for the other file with its path in lowercase, and Linux file names are case-sensitive. The log then fills with FileNotFoundException errors and the server is missing those animations. This makes the game open the file with the name the mod gives. Windows, and players' games, are not affected.
+description=
+description=[h2]Shadow Cat Tactics: Dispatch error spam in multiplayer (temporary)[/h2]
+description=Since its 2026-10-17 update, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3689462578]Shadow Cat Tactics: Dispatch[/url] makes multiplayer clients log "Object tried to call nil in Flush" on every tick after the first outfit (transmog) change, thousands of times per session, with stutter; waiting outfit updates are then only retried when the next one arrives. Players cannot patch it themselves because servers check the mod's Lua files. This replaces the one broken function while the game runs, without touching the mod's files.
+description=[list]
+description=[*]It replaces the function only while the mod's code is exactly the broken version. Once the mod's author fixes it, this turns itself off (console.txt says so) and will be removed in a later update.
+description=[*]Without Shadow Cat Tactics: Dispatch it does nothing.
+description=[/list]
 description=
 description=[h2]Source and feedback[/h2]
 description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]

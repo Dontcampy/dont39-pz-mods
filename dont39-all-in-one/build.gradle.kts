@@ -9,12 +9,18 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.8.0"
+version = "0.9.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
-val features = listOf(":mod-options-sidebar", ":ime-keyboard-fix", ":missing-anim-folders", ":anim-extends-case")
+val features = listOf(
+  ":mod-options-sidebar",
+  ":ime-keyboard-fix",
+  ":missing-anim-folders",
+  ":anim-extends-case",
+  ":sctd-transmog-flush-fix",
+)
 // ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
 // makes what the features' .classtweaker lists name public at game start
@@ -161,15 +167,19 @@ tasks.register("smokeTest") {
       dir.listFiles { file -> file.extension == "txt" }.orEmpty().sorted().flatMap { it.readLines() }
 
     val disabled = mutableListOf<String>()
-    val generated = hooks.keys.flatMap { name ->
-      val lines = lines(hooks.getValue(name)) + lines(lua.getValue(name))
-      if (lines.isEmpty()) return@flatMap emptyList()
+    fun status(name: String): String? {
       val statusPrefix = "$logPrefix$name: "
       val status = log.lines().lastOrNull { statusPrefix in it }?.substringAfter(statusPrefix)
       logger.lifecycle("$name: ${status ?: "no status line"}")
       // idle is fine (a target mod is not enabled)
       if (status?.startsWith("disabled") == true) disabled += "$statusPrefix$status"
-      listOf(statusPrefix) + lines.mapNotNull { line ->
+      return status
+    }
+    val generated = hooks.keys.flatMap { name ->
+      val lines = lines(hooks.getValue(name)) + lines(lua.getValue(name))
+      if (lines.isEmpty()) return@flatMap emptyList()
+      val status = status(name)
+      listOf("$logPrefix$name: ") + lines.mapNotNull { line ->
         val value = line.substringAfter(' ')
         when (line.substringBefore(' ')) {
           "patch" -> "Found patch class: $value"
@@ -185,8 +195,13 @@ tasks.register("smokeTest") {
       }
     }
     val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
+    // Lua-only features with a target mod
+    val luaTargeted = listOf("sctd-transmog-flush-fix").map { name ->
+      status(name)
+      "$logPrefix$name: "
+    }
     val ready = listOf(hooksReady).filter { hooks.values.any { dir -> lines(dir).isNotEmpty() } }
-    val missing = (ordered + generated + luaOnly + ready).distinct().filterNot { it in log }
+    val missing = (ordered + generated + luaOnly + luaTargeted + ready).distinct().filterNot { it in log }
     if (missing.isNotEmpty()) {
       throw GradleException("$console is missing:\n" + missing.joinToString("\n") { "  $it" })
     }

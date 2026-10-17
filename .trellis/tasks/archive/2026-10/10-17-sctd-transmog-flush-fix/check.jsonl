@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, in-game verification"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua replacement rules and gating"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "mismatch is an error"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "status lines once per decision"}

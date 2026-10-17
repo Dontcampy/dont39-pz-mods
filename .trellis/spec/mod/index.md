@@ -72,8 +72,8 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 2. Hooks leave gating and catching to the generated glue; what a `HEAD` handler changes, a `FINALLY` handler
    restores.
 3. Logging follows [Logging Guidelines](./logging-guidelines.md); nothing logs per frame by default.
-4. New target mods are declared in `dont39-all-in-one/mod/42/mod.info`; a Lua-only feature's `ready` line is in
-   `smokeTest`.
+4. New target mods of Java features are declared in `dont39-all-in-one/mod/42/mod.info`; a Lua-only feature's status
+   line is in `smokeTest` ([Directory Structure](./directory-structure.md#adding-a-feature)).
 5. Kotlin code follows [Kotlin Runtime](./kotlin-runtime.md).
 6. In-game check done, or explicitly reported as not done.
 
