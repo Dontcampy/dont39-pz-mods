@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Failures reported with context, no hidden fallback"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader seam rule and its recorded exception for D1"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook and entrypoint contract the two deliverables rely on"}
