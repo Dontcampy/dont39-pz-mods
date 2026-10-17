@@ -34,6 +34,9 @@ description=
 description=[h2]Faster loading with many mods[/h2]
 description=While loading animations the game looks into every mod's media/AnimSets and media/actiongroups folders, also when a mod has none, and writes a full error to the log for each missing one. With a few hundred mods that is hundreds of errors and tens of thousands of log lines, mostly while joining a server, and the loading screen waits for them. This skips the folders that do not exist; mods that have them load their animations as before.
 description=
+description=[h2]Mod animations on Linux dedicated servers[/h2]
+description=On a Linux dedicated server whose Workshop folder is inside the server folder (the usual steamcmd setup), animation files that extend another file fail to load: the game looks for the other file with its path in lowercase, and Linux file names are case-sensitive. The log then fills with FileNotFoundException errors and the server is missing those animations. This makes the game open the file with the name the mod gives. Windows, and players' games, are not affected.
+description=
 description=[h2]Source and feedback[/h2]
 description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
 description=Problems and suggestions: comments below or GitHub issues.

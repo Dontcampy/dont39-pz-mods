@@ -416,3 +416,26 @@ Measured startup and server join from DebugLog timestamps (65 s to menu, 89 s jo
 ### Status
 
 [OK] **Completed**
+
+
+## Session 18: Fix lowercased x_extends animation paths on Linux servers
+<!-- trellis-session: v=2 fp=5af35e32c2979834 -->
+
+**Date**: 2026-10-17
+**Task**: Fix lowercased x_extends animation paths on Linux servers
+**Branch**: `anim-extends-case`
+
+### Summary
+
+Read the Linux dedicated server log and picked one fix. ZomboidFileSystem.resolveRelativePath lowercases x_extends paths for mod files under the server folder, so 175 animation nodes from six mods failed to load (350 FileNotFoundException). Added the All-in-One feature anim-extends-case, which uses the original-case path when only that one exists, plus a Zabric weave test for a ModifyReturnValue hook with @Self. Build and client smokeTest pass. On the server after the Workshop release: FileNotFoundException 350 -> 0, AnimNode.Parse traces 175 -> 0, no new error types. PR #14. The published jar reports 0.7.0 although the branch is at 0.8.0.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1abcf43` | Weave-test a return-value hook that reads the receiver |
+| `361a9cc` | Keep the case of animation files that an XML extends |
+
+### Status
+
+[OK] **Completed**

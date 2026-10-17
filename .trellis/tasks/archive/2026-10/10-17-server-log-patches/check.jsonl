@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Feature checklist steps all done"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook rules for the ModifyReturnValue handler"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No hidden degrade"}

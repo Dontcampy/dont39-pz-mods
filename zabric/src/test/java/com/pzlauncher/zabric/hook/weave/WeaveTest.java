@@ -157,6 +157,14 @@ class WeaveTest {
     }
 
     @Test
+    void modifyReturnValueSeesTheReceiver() {
+        Shapes shapes = new Shapes("s");
+        Events.take();
+        assertEquals("s-x@s", shapes.label("-x"));
+        assertEquals(List.of("label body -x"), Events.take());
+    }
+
+    @Test
     void exitPairsWithItsCallsEnter() {
         Target target = new Target();
         target.run(() -> TestGate.INSTANCE.active = false);

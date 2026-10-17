@@ -5,6 +5,7 @@ import com.pzlauncher.zabric.hook.CallbackInfo;
 import com.pzlauncher.zabric.hook.CallbackInfoReturnable;
 import com.pzlauncher.zabric.hook.Hooks;
 import com.pzlauncher.zabric.hook.Inject;
+import com.pzlauncher.zabric.hook.ModifyReturnValue;
 import com.pzlauncher.zabric.hook.ModifyVariable;
 import com.pzlauncher.zabric.hook.Self;
 import com.pzlauncher.zabric.hook.Thrown;
@@ -47,5 +48,10 @@ public final class ShapeHooks {
     @ModifyVariable(method = "pick", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     public static String trimFirst(String first) {
         return first.strip();
+    }
+
+    @ModifyReturnValue(method = "label")
+    public static String tagged(String original, @Self Shapes self, String suffix) {
+        return original + "@" + self.name;
     }
 }

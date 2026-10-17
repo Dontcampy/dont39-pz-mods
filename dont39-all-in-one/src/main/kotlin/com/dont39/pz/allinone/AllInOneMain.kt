@@ -1,5 +1,6 @@
 package com.dont39.pz.allinone
 
+import com.dont39.pz.animextendscase.AnimExtendsCase
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.missinganimfolders.MissingAnimFolders
 import com.dont39.pz.zbktutils.reportWidening
@@ -16,5 +17,6 @@ object AllInOneMain : MainEntrypoint {
     reportWidening("Dont39AllInOne", AllInOneMain::class.java)
     ImeKeyboardFix.init()
     MissingAnimFolders.init()
+    AnimExtendsCase.init()
   }
 }

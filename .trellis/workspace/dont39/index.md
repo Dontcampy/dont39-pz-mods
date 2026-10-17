@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
+- **Total Sessions**: 18
 - **Last Active**: 2026-10-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~418 | Active |
+| `journal-1.md` | ~441 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-10-17 | Fix lowercased x_extends animation paths on Linux servers | `1abcf43`, `361a9cc` | `anim-extends-case` |
 | 17 | 2026-10-17 | Cut mod load time: skip ZombieBuddy's network requests and missing animation folders | `38db17d`, `a2b0a31` | `reduce-load-time` |
 | 16 | 2026-10-16 | Release Zabric to Maven Central from GitHub Actions | `1360000`, `3209316`, `5063a9b`, `3c1b3a4` | `ci-maven-central` |
 | 15 | 2026-10-15 | Zabric hooks: Java mod API, generated glue, weave check | `27c410f`, `72c5b1b`, `5cac403`, `f0c4719`, `56b8197`, `c0c3df5`, `201c0da`, `fcf510c`, `7a8b06f`, `58f3f02`, `10b7466`, `96c51a9`, `90ed4ca` | `zabric-hooks` |

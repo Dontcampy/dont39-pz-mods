@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a feature module to All-in-One"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API: @ModifyReturnValue, @Self, gating"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature base for the facade"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Disable with a reason on mismatch, no silent fallback"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Prefix and status lines"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin rules for the feature module"}
