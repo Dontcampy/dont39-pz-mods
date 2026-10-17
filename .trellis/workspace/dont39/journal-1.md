@@ -439,3 +439,25 @@ Read the Linux dedicated server log and picked one fix. ZomboidFileSystem.resolv
 ### Status
 
 [OK] **Completed**
+
+
+## Session 19: Temporary fix for SCTD TransmogSync.Flush next() error
+<!-- trellis-session: v=2 fp=cee76d56d9f8ae51 -->
+
+**Date**: 2026-10-17
+**Task**: Temporary fix for SCTD TransmogSync.Flush next() error
+**Branch**: `sctd-transmog-flush-fix`
+
+### Summary
+
+New Lua-only All-in-One feature sctd-transmog-flush-fix replaces Shadow Cat Tactics: Dispatch's SCTD_TransmogSync.Flush (calls next(), missing in Kahlua) at runtime, gated on its exact source; idle once upstream drops next(). No loadModAfter (mod selector auto-sort leaves a hole for absent mods); spec updated. All-in-One 0.9.0, PR #15. Build + smokeTest ready; disabled/idle paths checked; multiplayer check pending the Workshop release.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fdec349` | Replace Shadow Cat Tactics: Dispatch's TransmogSync.Flush, which calls next() |
+
+### Status
+
+[OK] **Completed**
