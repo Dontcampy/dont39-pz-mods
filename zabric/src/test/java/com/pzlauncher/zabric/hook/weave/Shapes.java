@@ -1,6 +1,9 @@
 package com.pzlauncher.zabric.hook.weave;
 
-/** A second weave target, for the shapes {@link Target} lacks: a constructor, an array, a long, a non-void throw. */
+/**
+ * A second weave target, for the shapes {@link Target} lacks: a constructor, an array, a long, a non-void throw, the
+ * receiver beside a modified return value.
+ */
 public class Shapes {
     public final String name;
 
@@ -22,5 +25,10 @@ public class Shapes {
     public String pick(String first, long gap, String second) {
         Events.add("pick body " + first + " " + gap + " " + second);
         return first + gap + second;
+    }
+
+    public String label(String suffix) {
+        Events.add("label body " + suffix);
+        return name + suffix;
     }
 }

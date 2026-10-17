@@ -142,6 +142,36 @@ public final class WeaveGlue {
         }
     }
 
+    @Patch(className = "com.pzlauncher.zabric.hook.weave.Shapes", methodName = "label", strictMatch = true)
+    public static final class Shapes_label {
+        private Shapes_label() {
+        }
+
+        @Patch.OnEnter
+        public static void enter(
+                @Patch.Argument(0) java.lang.String arg0,
+                @Patch.Local("h0$active") boolean h0$active) {
+            h0$active = MOD.active(MOD.defaultGate());
+        }
+
+        @Patch.OnExit
+        public static void exit(
+                @Patch.This com.pzlauncher.zabric.hook.weave.Shapes self,
+                @Patch.Argument(0) java.lang.String arg0,
+                @Patch.Return(readOnly = false) java.lang.String ret,
+                @Patch.Local("h0$active") boolean h0$active) {
+            boolean done = false;
+            if (h0$active && !done) {
+                try {
+                    ret = com.pzlauncher.zabric.hook.weave.ShapeHooks.tagged(ret, self, arg0);
+                } catch (Throwable t) {
+                    MOD.failed(MOD.defaultGate(),
+                            "running ShapeHooks.tagged on com.pzlauncher.zabric.hook.weave.Shapes.label", t);
+                }
+            }
+        }
+    }
+
     @Patch(className = "com.pzlauncher.zabric.hook.weave.Target", methodName = "compute", strictMatch = true)
     public static final class Target_compute {
         private Target_compute() {
