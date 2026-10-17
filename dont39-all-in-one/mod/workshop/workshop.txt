@@ -31,6 +31,9 @@ description=[*]While you type, the IME's input (e.g. the pinyin) and its candida
 description=[*]Other programs' IME is not affected.
 description=[/list]
 description=
+description=[h2]Faster loading with many mods[/h2]
+description=While loading animations the game looks into every mod's media/AnimSets and media/actiongroups folders, also when a mod has none, and writes a full error to the log for each missing one. With a few hundred mods that is hundreds of errors and tens of thousands of log lines, mostly while joining a server, and the loading screen waits for them. This skips the folders that do not exist; mods that have them load their animations as before.
+description=
 description=[h2]Source and feedback[/h2]
 description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
 description=Problems and suggestions: comments below or GitHub issues.

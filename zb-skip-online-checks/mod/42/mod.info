@@ -1,0 +1,13 @@
+name=ZB Skip Online Checks
+id=ZBSkipOnlineChecks
+author=Dont39
+modversion=@VERSION@
+poster=poster.png
+description=Makes ZombieBuddy skip its online checks (Steam ban status, known authors list, Steam profile keys), which can hold up every mod list load for seconds. For ZombieBuddy's allow-all policy only; Workshop jars that Steam banned are no longer skipped.
+require=\ZombieBuddy,\Zabric
+loadModAfter=\Zabric
+javaJarFile=media/java/ZBSkipOnlineChecks.jar
+javaPkgName=com.dont39.pz.zbskiponlinechecks
+javaPreload=true
+ZBVersionMin=2.3.4
+versionMin=42.21.0

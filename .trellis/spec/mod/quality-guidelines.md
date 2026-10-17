@@ -52,7 +52,7 @@ If an in-game check was not done, say so in the task report.
 ## Code Style
 
 Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
-New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and where
+New code is Kotlin; Java only in `zabric`, `zabric-processor`, `zb-skip-online-checks`, the samples, and where
 [Kotlin Runtime](./kotlin-runtime.md) requires it.
 
 ## Forbidden Patterns
@@ -76,8 +76,8 @@ New code is Kotlin; Java only in `zabric`, `zabric-processor`, the samples, and 
 
 ## Release Checklist
 
-- Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zb-kt`); Zabric's, shared by
-  `zabric-processor`, in `gradle/libs.versions.toml`.
+- Version bumped in the shipped module's `build.gradle.kts` (`dont39-all-in-one`, `zb-kt`, `zb-skip-online-checks`);
+  Zabric's, shared by `zabric-processor`, in `gradle/libs.versions.toml`.
 - Zabric releases also go to Maven Central, only after the user confirms version and artifacts
   ([Zabric Hooks](./zabric-hooks.md#publishing-and-compatibility)).
 - `mod.info` load order and `workshop.txt` updated for new target mods.

@@ -1,0 +1,33 @@
+version=1
+title=ZB Skip Online Checks
+description=[h1]ZB Skip Online Checks[/h1]
+description=A mod by Dont39 that makes ZombieBuddy skip its online checks. It is not made by ZombieBuddy's author.
+description=
+description=[h2]What it does[/h2]
+description=Every time the game loads the mod list (main menu, joining a server), ZombieBuddy asks Steam whether its Workshop jars are banned and downloads its list of known mod authors. When Steam or GitHub do not answer, each load waits for seconds, up to nearly a minute. This mod skips both, and the Steam profile lookup ZombieBuddy makes when it verifies signed mods.
+description=
+description=[h2]Read this first[/h2]
+description=[list]
+description=[*]Only for ZombieBuddy's allow-all policy. Under prompt or deny-new, signed mods fail verification and the approval dialog shows no author names. Disable this mod before you switch policy.
+description=[*]ZombieBuddy no longer skips a Workshop jar that Steam has banned.
+description=[*]After a ZombieBuddy update that changes what this mod skips, console.txt shows an error and the checks run as before.
+description=[/list]
+description=
+description=[h2]Setup[/h2]
+description=Enable the mod. On the first launch Zabric registers it to run at game start and asks you to restart once. From then on it covers every mod list load.
+description=
+description=Optional, to also skip ZombieBuddy's checks at game start: copy media/java/ZBSkipOnlineChecks.jar from this mod's 42 folder into the game folder, and add this to ZombieBuddy's agent options (in ProjectZomboid64.json or your Steam launch options), after a comma: patches_jar=ZBSkipOnlineChecks.jar:com.dont39.pz.zbskiponlinechecks
+description=The path must stay relative to the game folder. Steam updates and file verification remove the entry from ProjectZomboid64.json; copy the jar again after this mod updates (console.txt tells you when the copies differ).
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 with the allow-all policy
+description=[*]Zabric
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=
+description=[h2]Source and feedback[/h2]
+description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
+description=Problems and suggestions: comments below or GitHub issues.
+tags=Build 42;Framework
+visibility=private
