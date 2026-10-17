@@ -393,3 +393,26 @@ Tag zabric-v<version> workflow: verify job (version check, :zabric/:zabric-proce
 ### Status
 
 [OK] **Completed**
+
+
+## Session 17: Cut mod load time: skip ZombieBuddy's network requests and missing animation folders
+<!-- trellis-session: v=2 fp=29053c3845cac1f1 -->
+
+**Date**: 2026-10-17
+**Task**: Cut mod load time: skip ZombieBuddy's network requests and missing animation folders
+**Branch**: `reduce-load-time`
+
+### Summary
+
+Measured startup and server join from DebugLog timestamps (65 s to menu, 89 s join). ZombieBuddy's Steam ban check and authors.json download blocked every mod list load on 10-50 s timeouts; new Java mod ZBSkipOnlineChecks advises all three ZombieBuddy requests, starting as a mod (Zabric preLaunch) or via patches_jar (also covers ZombieBuddy's premain request). All-in-One 0.7.0 adds missing-anim-folders, which skips AdvancedAnimator walks of nonexistent AnimSets/actiongroups (918 stack traces at join). In game: ZB join pass 25.9 s -> <1 s, join 89 -> 67-70 s, traces 0. Server-join ResetLua (B2) left as vanilla: 166 mod Lua files branch on isClient at load. No allow-all policy guard by user decision; PR #13.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `38db17d` | Add ZBSkipOnlineChecks, which skips ZombieBuddy's network requests |
+| `a2b0a31` | Skip missing animation folders when loading mods |
+
+### Status
+
+[OK] **Completed**
