@@ -79,7 +79,7 @@ handlers are `public` (`HookReader.kt`). Compare the modifiers in the `ime-keybo
 2. Register it in `settings.gradle.kts`.
 3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
 4. Facade + helpers in the feature package, modeled on `ImeKeyboardFix.kt`, built on `Feature`
-   ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)); non-public members via
+   ([ZabricKotlin Utils](./zb-kt-utils.md)); non-public members via
    [Access Widening](./access-widening.md).
 5. Write hook objects with Zabric's annotations (`@Hooks`, `@Inject`, ...) and annotate Lua functions (`@LuaGlobal`)
    in the feature package ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are

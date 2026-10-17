@@ -15,7 +15,7 @@ val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
 val pzUserDir = extra["pzUserDir"] as Provider<String>
 val features = listOf(":mod-options-sidebar", ":ime-keyboard-fix")
-// ZombieBuddyKotlin, which also ships zb-kt-utils
+// ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
 // makes what the features' .classtweaker lists name public at game start
 val zabric = ":zabric"
@@ -148,12 +148,12 @@ tasks.register("smokeTest") {
     if (notice != "not needed") {
       throw GradleException("$console: restart notice is '${notice ?: "missing"}', not 'not needed'")
     }
-    // in this order: ZombieBuddyKotlin's Main logs Kotlin's state before ZombieBuddy reaches the mods that require it,
+    // in this order: ZabricKotlin's Main logs Kotlin's state before ZombieBuddy reaches the mods that require it,
     // and the main entrypoints run after the pass
     val ordered = listOf(
       "[$zabricMod] access widener: ok (",
-      "[ZombieBuddyKotlin] $kotlinLibVersion loaded",
-      "[ZombieBuddyKotlin] ready: $kotlinVersions",
+      "[ZabricKotlin] $kotlinLibVersion loaded",
+      "[ZabricKotlin] ready: $kotlinVersions",
       mainLine,
       "[Dont39AllInOne] $version loaded",
     )

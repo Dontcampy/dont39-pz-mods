@@ -8,10 +8,10 @@ description=[h2]Requirements[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
 description=[*]Zabric, the loader layer for ZombieBuddy mods (also by Dont39). It opens up game internals the fixes read, at game start.
-description=[*]ZombieBuddyKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
+description=[*]ZabricKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, Zabric, ZombieBuddyKotlin, then Dont39 All-in-One.
+description=Load order: ZombieBuddy, Zabric, ZabricKotlin, then Dont39 All-in-One.
 description=On the first launch Zabric registers itself with ZombieBuddy to load at game start, and a message on the main menu asks you to restart the game once. Until then the fixes stay off; console.txt says why.
 description=
 description=[h2]Mod Options sidebar[/h2]

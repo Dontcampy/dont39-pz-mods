@@ -43,8 +43,8 @@ fun runPzUntilInit(
 }
 
 /**
- * Fails unless Zabric and ZombieBuddyKotlin are fully in effect in [log]: no preload registration this launch (that
- * needs another run, named by [rerun]), Zabric's widening summary ok, no entrypoint problem, ZombieBuddyKotlin ready.
+ * Fails unless Zabric and ZabricKotlin are fully in effect in [log]: no preload registration this launch (that
+ * needs another run, named by [rerun]), Zabric's widening summary ok, no entrypoint problem, ZabricKotlin ready.
  */
 fun checkPlatformLog(log: String, console: File, rerun: String) {
   val lines = log.lines()
@@ -63,5 +63,5 @@ fun checkPlatformLog(log: String, console: File, rerun: String) {
   }
   // every entrypoint error line of Zabric names them; the lines of entrypoints called do not
   lines.firstOrNull { "[Zabric] " in it && "entrypoint" in it }?.let { throw GradleException("$console: $it") }
-  lines.firstOrNull { "[ZombieBuddyKotlin] not ready" in it }?.let { throw GradleException("$console: $it") }
+  lines.firstOrNull { "[ZabricKotlin] not ready" in it }?.let { throw GradleException("$console: $it") }
 }

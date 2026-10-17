@@ -12,7 +12,7 @@ One Gradle build ships three Workshop items, layered as a small platform for Zom
 - **Zabric** (`zabric`), the loader layer: access widening, phased entrypoints and preload registration
   ([Access Widening](./access-widening.md)), hooks ([Zabric Hooks](./zabric-hooks.md)), and the only runtime code
   that uses ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
-- **ZombieBuddyKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
+- **ZabricKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`
   ([Kotlin Runtime](./kotlin-runtime.md)).
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
   *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
@@ -48,7 +48,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
 | [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
-| [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base and hook gate, widening checks |
+| [ZabricKotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base and hook gate, widening checks |
 
 ---
 
@@ -59,7 +59,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
    [Zabric Hooks](./zabric-hooks.md) — for a change to the hook API, a processor or the hook runtime.
    [Access Widening](./access-widening.md) — for anything that reads or calls game or mod members.
    [Kotlin Runtime](./kotlin-runtime.md) — for any Kotlin code, version bump, or change to `zb-kt`.
-   [ZombieBuddy Kotlin Utils](./zb-kt-utils.md) — for a Kotlin feature or a change to that module.
+   [ZabricKotlin Utils](./zb-kt-utils.md) — for a Kotlin feature or a change to that module.
 3. [Error Handling](./error-handling.md) and [Logging Guidelines](./logging-guidelines.md) — for any runtime code.
 4. Read the reference files those guides link before copying a pattern.
 

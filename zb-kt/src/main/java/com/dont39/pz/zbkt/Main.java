@@ -12,7 +12,7 @@ import java.util.Properties;
  * kotlin.* type: it runs before the swap (checkBootstrapClasses).
  */
 public final class Main {
-    private static final String PREFIX = "[ZombieBuddyKotlin] ";
+    private static final String PREFIX = "[ZabricKotlin] ";
 
     private Main() {
     }

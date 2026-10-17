@@ -17,7 +17,7 @@
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |
 
 Feature references are in the feature package of `ime-keyboard-fix`. The checking and gating rules are implemented in
-`TargetMod.kt`, `Widening.kt` and `Feature.kt` ([ZombieBuddy Kotlin Utils](./zb-kt-utils.md)), the hook side in
+`TargetMod.kt`, `Widening.kt` and `Feature.kt` ([ZabricKotlin Utils](./zb-kt-utils.md)), the hook side in
 Zabric's hook runtime ([Zabric Hooks](./zabric-hooks.md#rules)).
 
 Disabling is final for the session: no retries. Where feature code disables itself, it uses the facade's

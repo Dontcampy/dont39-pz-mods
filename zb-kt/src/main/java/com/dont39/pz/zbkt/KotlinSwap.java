@@ -18,7 +18,7 @@ import java.util.jar.JarFile;
  * current Kotlin. kotlinx comes from the mod jar. Works only while no kotlin.* class is loaded.
  */
 final class KotlinSwap {
-    private static final String REINSTALL = "reinstall ZombieBuddyKotlin (unsubscribe and subscribe again)";
+    private static final String REINSTALL = "reinstall ZabricKotlin (unsubscribe and subscribe again)";
 
     private KotlinSwap() {
     }
@@ -39,7 +39,7 @@ final class KotlinSwap {
         Properties p = new Properties();
         try (InputStream in = KotlinSwap.class.getResourceAsStream("stdlib.properties")) {
             if (in == null) {
-                throw new Failure("stdlib.properties is missing from ZombieBuddyKotlin.jar; " + REINSTALL);
+                throw new Failure("stdlib.properties is missing from ZabricKotlin.jar; " + REINSTALL);
             }
             p.load(in);
         }
@@ -50,13 +50,13 @@ final class KotlinSwap {
         } catch (NoClassDefFoundError e) {
             // Zabric's jar is not on the classpath yet: ZombieBuddy has not loaded Zabric before this jar
             throw new Failure("Zabric's Java code is not loaded; enable Zabric, approve it in ZombieBuddy and keep it"
-                    + " above ZombieBuddyKotlin in the mod list", e);
+                    + " above ZabricKotlin in the mod list", e);
         } catch (IllegalStateException e) {
             throw new Failure(e.getMessage() + "; check for a Zabric update that supports this ZombieBuddy", e);
         }
         for (Class<?> c : inst.getAllLoadedClasses()) {
             if (c.getName().startsWith("kotlin.")) {
-                throw new Failure("Kotlin was already loaded (" + c.getName() + ") before ZombieBuddyKotlin could"
+                throw new Failure("Kotlin was already loaded (" + c.getName() + ") before ZabricKotlin could"
                         + " install the current one, by ZombieBuddy or another mod");
             }
         }
@@ -64,7 +64,7 @@ final class KotlinSwap {
         String file = p.getProperty("file");
         CodeSource source = KotlinSwap.class.getProtectionDomain().getCodeSource();
         if (source == null || source.getLocation() == null) {
-            throw new Failure("cannot tell where ZombieBuddyKotlin.jar is, so " + file + " cannot be found");
+            throw new Failure("cannot tell where ZabricKotlin.jar is, so " + file + " cannot be found");
         }
         Path stdlib = Path.of(source.getLocation().toURI()).resolveSibling("lib").resolve(file);
         if (!Files.isRegularFile(stdlib)) {

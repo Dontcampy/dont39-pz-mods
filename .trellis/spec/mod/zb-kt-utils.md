@@ -1,4 +1,4 @@
-# ZombieBuddy Kotlin Utils (shared runtime)
+# ZabricKotlin Utils (shared runtime)
 
 > What every Kotlin feature shares, written once. Code and KDoc:
 > `zb-kt-utils/src/main/kotlin/com/dont39/pz/zbktutils/`. Reference user:
@@ -17,7 +17,7 @@
 
 ## Rules for Changing It
 
-- It is public runtime API for any Kotlin mod on ZombieBuddyKotlin: nothing mod-specific in it.
+- It is public runtime API for any Kotlin mod on ZabricKotlin: nothing mod-specific in it.
 - Read a mod's own resources from the jar of its class, not through the class loader: all mod jars share it.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
 - The Lua bridge listing (`META-INF/zbkt/glue/`) is shared by `GlueProcessor.kt` and the checks in
@@ -28,7 +28,7 @@
 
 ## Packaging
 
-- Shipped once, inside ZombieBuddyKotlin's jar (`zb-kt/build.gradle.kts`). Every other module has it compile-only;
+- Shipped once, inside ZabricKotlin's jar (`zb-kt/build.gradle.kts`). Every other module has it compile-only;
   never bundle it into another jar: its classes are unrelocated on the shared classloader.
 - The glue processor (`zb-kt-utils-processor`) runs only in the compiler and is never shipped or published. Change an
   annotation and the processor together; for hooks it is a front end on `zabric-processor`'s generator.
