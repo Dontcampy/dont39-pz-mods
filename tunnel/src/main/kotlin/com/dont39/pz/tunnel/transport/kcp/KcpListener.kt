@@ -151,17 +151,23 @@ internal class KcpListener(
     } while (conv == 0 || sessions.containsKey(Key(from, conv)))
     val key = Key(from, conv)
     val helloKey = Key(from, nonce)
-    val session = KcpSession(
-      label,
-      conv,
-      params,
-      local,
-      { datagram, length -> socket.send(DatagramPacket(datagram, length, from)) },
-      log,
-    ) {
-      sessions.remove(key)
-      byHello.remove(helloKey)
-      scheduler.remove(it)
+    // the session closes the local sockets only once it exists
+    val session = try {
+      KcpSession(
+        label,
+        conv,
+        params,
+        local,
+        { datagram, length -> socket.send(DatagramPacket(datagram, length, from)) },
+        log,
+      ) {
+        sessions.remove(key)
+        byHello.remove(helloKey)
+        scheduler.remove(it)
+      }
+    } catch (e: Throwable) {
+      local.close()
+      throw e
     }
     val opened = Opened(session, KcpWire.welcome(nonce, conv, udpPort, params))
     sessions[key] = session

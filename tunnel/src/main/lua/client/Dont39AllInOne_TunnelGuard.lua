@@ -41,7 +41,11 @@ serverConnect = function(userName, password, ip, localIP, port, ...)
         refused = getText("UI_Dont39AllInOne_Tunnel_Failed_Check", tostring(refused))
     end
     if refused then
-        Shared.log(PREFIX, "refused the join to " .. tostring(ip) .. ":" .. tostring(port) .. ": " .. refused)
+        -- not Shared.log: the refusal must reach the join screen even when the shared module did not load
+        pcall(function()
+            DebugType.Mod:println(PREFIX .. "refused the join to " .. tostring(ip) .. ":" .. tostring(port) .. ": "
+                .. refused)
+        end)
         -- as vanilla's unknown host: the join screen shows the text and a Back button
         triggerEvent("OnConnectFailed", refused)
         return
