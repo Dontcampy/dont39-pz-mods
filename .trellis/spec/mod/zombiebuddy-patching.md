@@ -122,7 +122,8 @@ What is not behind the seam and needs rework when switching loaders:
   check a global exists before calling it.
 - Features do not depend on each other in Kotlin (facades are `internal`). One feature uses another's data through
   that feature's Lua global, read from its own Lua, and still works when the global is absent or returns nil:
-  `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus` (`TunnelClient.kt`).
+  `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus`, whose keys `TunnelStatus.kt` lists. A
+  table shared this way has its keys written down once, at the writer.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 

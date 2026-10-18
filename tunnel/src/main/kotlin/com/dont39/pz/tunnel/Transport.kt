@@ -40,10 +40,13 @@ internal data class LinkStats(
   val segmentsSent: Long,
   val retransmitsTimeout: Long,
   val retransmitsFast: Long,
+  /** Datagrams the other end has sent: FEC sequence numbers, data and parity alike, also with FEC off. */
   val seqExpected: Long,
+  /** Of [seqExpected], those that never arrived: their ratio is the inbound datagram loss. */
   val seqMissing: Long,
   val fecRecovered: Long,
   val fecUnrecoverable: Long,
+  /** KCP's smoothed round-trip time; 0 before the first acknowledgement. */
   val srttMillis: Int,
 )
 

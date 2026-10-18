@@ -6,7 +6,6 @@ import com.dont39.pz.tunnel.transport.tcp.TcpTransport
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import se.krka.kahlua.vm.KahluaTable
 import zombie.Lua.LuaEventManager
-import zombie.Lua.LuaManager
 import zombie.core.Translator
 import zombie.core.raknet.UdpEngine
 import zombie.core.znet.SteamUtils
@@ -112,8 +111,8 @@ internal object TunnelClient : TunnelLog {
   }
 
   /**
-   * For the network status display: the open tunnel's mode, port and, for KCP, its cumulative counters; nil when none
-   * is open or the feature is off, as a disabled feature no longer sees the tunnel close.
+   * For the network status display: the open tunnel's [TunnelStatus]; nil when none is open or the feature is off, as
+   * a disabled feature no longer sees the tunnel close.
    */
   @LuaGlobal("Dont39AllInOne_getTunnelStatus")
   @Synchronized
@@ -130,20 +129,7 @@ internal object TunnelClient : TunnelLog {
   private fun status(): KahluaTable? {
     val tunnel = tunnel ?: return null
     val entry = checkNotNull(entry) { "a tunnel is open without its entry" }
-    val table = LuaManager.platform.newTable()
-    table.rawset("mode", entry.mode.id)
-    table.rawset("port", entry.port.toDouble())
-    tunnel.stats()?.let {
-      table.rawset("segmentsSent", it.segmentsSent.toDouble())
-      table.rawset("retransmitsTimeout", it.retransmitsTimeout.toDouble())
-      table.rawset("retransmitsFast", it.retransmitsFast.toDouble())
-      table.rawset("fecExpected", it.seqExpected.toDouble())
-      table.rawset("fecMissing", it.seqMissing.toDouble())
-      table.rawset("fecRecovered", it.fecRecovered.toDouble())
-      table.rawset("fecUnrecoverable", it.fecUnrecoverable.toDouble())
-      table.rawset("srtt", it.srttMillis.toDouble())
-    }
-    return table
+    return TunnelStatus.table(entry, tunnel.stats())
   }
 
   override fun info(message: () -> String) = Tunnel.log(message)
