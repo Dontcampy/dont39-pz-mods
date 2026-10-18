@@ -11,7 +11,8 @@ import zombie.ZomboidFileSystem
 /**
  * The tunnel of each server address, as `<host>:<game port>=<mode>,<TCP port>,<KCP port>` lines in Zomboid/Lua; a port
  * is 0 when never set. Keyed by address, as typed: the join only sees the address, and a new server entry has no id
- * yet. The add/edit server dialog writes it; `Dont39AllInOne_Tunnel.lua` parses it too, so change both together.
+ * yet. The add/edit server dialog writes it; `Dont39AllInOne_TunnelShared.lua` parses it too, so change both
+ * together; the test fixtures under `store/` pin the format.
  */
 internal object TunnelStore {
   private const val FILE_NAME = "Dont39AllInOne_Tunnel.txt"

@@ -14,8 +14,8 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 
 /**
- * The store's format, pinned by the fixtures under `store/` that `Dont39AllInOne_Tunnel.lua` parses the same way: a
- * valid store, lines both parsers refuse, and the released TCP-only store.
+ * The store's format, pinned by the fixtures under `store/` that `Dont39AllInOne_TunnelShared.lua` parses the same
+ * way: a valid store, lines both parsers refuse, and the released TCP-only store.
  */
 class TunnelStoreTest {
   private companion object {
