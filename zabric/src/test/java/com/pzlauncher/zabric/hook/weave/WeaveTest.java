@@ -165,6 +165,16 @@ class WeaveTest {
     }
 
     @Test
+    void modifyVariableSeesTheReceiverAndEveryArgument() {
+        Shapes shapes = new Shapes("s");
+        Events.take();
+        assertEquals("s-h-7-pw:7", shapes.connect("h", 7, "pw", true));
+        assertEquals(List.of("connect body s-h-7-pw 7 pw true"), Events.take());
+        assertEquals("h:7", shapes.connect("h", 7, "pw", false));
+        assertEquals(List.of("connect body h 7 pw false"), Events.take());
+    }
+
+    @Test
     void exitPairsWithItsCallsEnter() {
         Target target = new Target();
         target.run(() -> TestGate.INSTANCE.active = false);

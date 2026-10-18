@@ -2,7 +2,7 @@ package com.pzlauncher.zabric.hook.weave;
 
 /**
  * A second weave target, for the shapes {@link Target} lacks: a constructor, an array, a long, a non-void throw, the
- * receiver beside a modified return value.
+ * receiver beside a modified return value, the receiver and all arguments beside a modified argument.
  */
 public class Shapes {
     public final String name;
@@ -30,5 +30,10 @@ public class Shapes {
     public String label(String suffix) {
         Events.add("label body " + suffix);
         return name + suffix;
+    }
+
+    public String connect(String host, int port, String password, boolean relay) {
+        Events.add("connect body " + host + " " + port + " " + password + " " + relay);
+        return host + ":" + port;
     }
 }

@@ -54,4 +54,11 @@ public final class ShapeHooks {
     public static String tagged(String original, @Self Shapes self, String suffix) {
         return original + "@" + self.name;
     }
+
+    // the shape of a host rewrite that decides from the receiver and every argument
+    @ModifyVariable(method = "connect", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    public static String redirect(String original, @Self Shapes self, String host, int port, String password,
+                                  boolean relay) {
+        return relay ? self.name + "-" + host + "-" + port + "-" + password : original;
+    }
 }
