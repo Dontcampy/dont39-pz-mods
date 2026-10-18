@@ -43,7 +43,7 @@ tasks.named<WriteProperties>("featureDescriptor") {
   property(FeatureInfo.FACADE, "com.dont39.pz.${project.name.replace("-", "")}.$featureName")
 }
 tasks.named<Sync>("stageFeatureInfo") {
-  from(tasks.processResources) { include("${FeatureInfo.HOOKS}/**", "${FeatureInfo.LUA}/**") }
+  from(tasks.processResources) { include("${FeatureInfo.HOOKS}**", "${FeatureInfo.LUA}/**") }
 }
 
 val pzGame = the<PzGame>()

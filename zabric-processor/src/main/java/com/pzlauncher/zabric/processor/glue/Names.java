@@ -32,11 +32,6 @@ public final class Names {
     public static final String OPTION_JAVA_PKG_NAME = "zabric.javaPkgName";
     public static final String OPTION_GLUE_CLASS = "zabric.glueClass";
 
-    /** Listing format: {@code com.pzlauncher.zabric.hook.impl.HookListing}. */
-    public static final String LISTING_DIR = "META-INF/zabric/hooks/";
-    public static final String LISTING_SUFFIX = ".txt";
-    public static final String LISTING_DEFAULT_GATE = "default";
-
     /** Primitive type names to their boxes and to the suffix of CallbackInfoReturnable's typed getter. */
     static final Map<String, String> BOXES = Map.of("boolean", "java.lang.Boolean", "byte", "java.lang.Byte",
             "char", "java.lang.Character", "short", "java.lang.Short", "int", "java.lang.Integer", "long",

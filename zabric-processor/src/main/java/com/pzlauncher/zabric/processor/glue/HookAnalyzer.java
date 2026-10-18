@@ -1,5 +1,6 @@
 package com.pzlauncher.zabric.processor.glue;
 
+import com.pzlauncher.zabric.listing.HookListingFormat;
 import com.pzlauncher.zabric.processor.glue.HandlerBinder.Resolved;
 import com.pzlauncher.zabric.processor.glue.HandlerBinder.Shape;
 import com.pzlauncher.zabric.processor.glue.HookDecls.Handler;
@@ -71,7 +72,7 @@ public final class HookAnalyzer<T> {
         for (HookClass<T> hookClass : sorted) {
             List<GlueModel.Patch> own = byHookClass.get(hookClass.binaryName());
             if (own != null) {
-                String gate = hookClass.gate() == null ? Names.LISTING_DEFAULT_GATE : hookClass.gate().binaryName();
+                String gate = hookClass.gate() == null ? HookListingFormat.DEFAULT_GATE : hookClass.gate().binaryName();
                 listings.add(new GlueModel.Listing(hookClass.binaryName(), gate, own));
             }
         }

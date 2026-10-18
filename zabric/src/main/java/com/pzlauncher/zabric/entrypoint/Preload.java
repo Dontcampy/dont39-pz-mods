@@ -9,14 +9,14 @@ import zombie.gameStates.ChooseGameInfo;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static com.pzlauncher.zabric.internal.Log.PREFIX;
+
 /**
  * Keeps a mod running at game start through the loader ({@link Loader#keepPreloaded}): Zabric itself, and every mod that
  * declares a preLaunch entrypoint. Only for mods the loader approved and loaded, so registration only ever follows code
  * the loader approved.
  */
 final class Preload {
-    private static final String PREFIX = "[Zabric] ";
-
     private Preload() {
     }
 

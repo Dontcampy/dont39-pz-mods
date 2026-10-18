@@ -6,9 +6,10 @@ kotlin {
   jvmToolchain(25)
 }
 
-// the .classtweaker parser, shared with the game-start widening
+// the .classtweaker parser, shared with the game-start widening; the hook listing format, shared with Zabric
 sourceSets.main {
   java.srcDir("../zabric/src/classtweaker/java")
+  java.srcDir("../zabric/src/listingformat/java")
 }
 
 dependencies {

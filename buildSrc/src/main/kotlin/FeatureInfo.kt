@@ -1,5 +1,6 @@
 package buildsrc.convention
 
+import com.pzlauncher.zabric.listing.HookListingFormat
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -25,7 +26,7 @@ class FeatureInfo(val name: String, val facade: String?, val hookLines: List<Str
     const val DESCRIPTOR = "feature.properties"
     const val NAME = "name"
     const val FACADE = "facade"
-    const val HOOKS = "META-INF/zabric/hooks"
+    const val HOOKS = HookListingFormat.DIR
     const val LUA = "META-INF/zbkt/glue"
 
     fun read(dir: File): FeatureInfo {
@@ -33,11 +34,16 @@ class FeatureInfo(val name: String, val facade: String?, val hookLines: List<Str
       if (!file.isFile) throw GradleException("$dir has no $DESCRIPTOR")
       val properties = Properties().apply { file.reader().use { load(it) } }
       val name = properties.getProperty(NAME) ?: throw GradleException("$file has no $NAME")
-      return FeatureInfo(name, properties.getProperty(FACADE), lines(dir.resolve(HOOKS)), lines(dir.resolve(LUA)))
+      return FeatureInfo(
+        name,
+        properties.getProperty(FACADE),
+        lines(dir.resolve(HOOKS), HookListingFormat.SUFFIX),
+        lines(dir.resolve(LUA), ".txt"),
+      )
     }
 
-    private fun lines(dir: File) =
-      dir.listFiles { file -> file.extension == "txt" }.orEmpty().sorted().flatMap { it.readLines() }
+    private fun lines(dir: File, suffix: String) =
+      dir.listFiles { file -> file.name.endsWith(suffix) }.orEmpty().sorted().flatMap { it.readLines() }
   }
 }
 

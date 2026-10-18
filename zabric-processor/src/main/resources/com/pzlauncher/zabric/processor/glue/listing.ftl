@@ -1,5 +1,5 @@
 <#-- Read by Zabric's HookListing: a change its readers must understand takes a new header version. -->
-zabric-hooks v1
+${header}
 mod ${unit.modId}
 gate ${listing.gate}
 <#list listing.patches as p>

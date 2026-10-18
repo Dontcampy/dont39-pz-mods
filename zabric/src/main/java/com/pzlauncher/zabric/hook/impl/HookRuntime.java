@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class HookRuntime {
-    static final String PREFIX = "[Zabric] ";
+import static com.pzlauncher.zabric.internal.Log.PREFIX;
 
+public final class HookRuntime {
     private static final Map<String, ModState> mods = new ConcurrentHashMap<>();
     private static final WeaveCheck weave = new WeaveCheck();
     private static volatile Log log = new GameLog();
@@ -116,7 +116,7 @@ public final class HookRuntime {
                         problems.add(listing.source() + " names the mod " + listing.modId() + ", but " + Loader.name()
                                 + " loaded the jar for " + modId);
                     } else if (listing.defaultGate()) {
-                        String problem = listing.problem(loader);
+                        String problem = TargetCheck.problem(listing, loader);
                         if (problem != null) {
                             problems.add(problem);
                         }

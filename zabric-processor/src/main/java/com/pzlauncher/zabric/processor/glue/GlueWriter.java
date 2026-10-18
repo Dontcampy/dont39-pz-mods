@@ -1,5 +1,6 @@
 package com.pzlauncher.zabric.processor.glue;
 
+import com.pzlauncher.zabric.listing.HookListingFormat;
 import com.pzlauncher.zabric.processor.glue.GlueModel.At;
 import com.pzlauncher.zabric.processor.glue.GlueModel.Block;
 import com.pzlauncher.zabric.processor.glue.GlueModel.Call;
@@ -37,15 +38,15 @@ public final class GlueWriter {
     }
 
     private static String listingPath(String hookClassBinaryName) {
-        return Names.LISTING_DIR + hookClassBinaryName + Names.LISTING_SUFFIX;
+        return HookListingFormat.DIR + hookClassBinaryName + HookListingFormat.SUFFIX;
     }
 
     /** By resource path. */
     public static Map<String, String> listings(GlueModel.Unit unit) {
         Map<String, String> listings = new LinkedHashMap<>();
         for (GlueModel.Listing listing : unit.listings()) {
-            listings.put(listingPath(listing.hookClass()),
-                    render("listing.ftl", Map.of("unit", unit, "listing", listing)));
+            listings.put(listingPath(listing.hookClass()), render("listing.ftl",
+                    Map.of("unit", unit, "listing", listing, "header", HookListingFormat.HEADER)));
         }
         return listings;
     }

@@ -20,6 +20,11 @@ mavenPublishing {
   }
 }
 
+// the hook listing format, shared with Zabric's reader
+sourceSets.main {
+  java.srcDir(layout.settingsDirectory.dir("zabric/src/listingformat/java"))
+}
+
 dependencies {
   implementation(libs.freemarker)
   // what the in-process compilations compile against: Zabric's hook API and ZombieBuddy's @Patch

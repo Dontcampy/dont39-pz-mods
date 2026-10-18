@@ -21,9 +21,10 @@ mavenPublishing {
   }
 }
 
-// the .classtweaker parser, shared with buildSrc
+// the .classtweaker parser, shared with buildSrc; the hook listing format, shared with zabric-processor
 sourceSets.main {
   java.srcDir("src/classtweaker/java")
+  java.srcDir("src/listingformat/java")
 }
 
 dependencies {
