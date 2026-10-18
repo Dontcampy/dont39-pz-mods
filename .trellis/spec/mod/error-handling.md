@@ -13,9 +13,10 @@
 | Direct references to game or mod members | Leave a mismatch (`LinkageError`) to the generated glue's catch, which disables the feature | `ImeCaret.publish` |
 | Access widening not in effect | Stay idle with the reason | `Widening.kt` |
 | Hooks | No catch: the generated glue catches everything and reports it to the gate, which disables the feature; a `FINALLY` handler restores what `HEAD` changed | `HookGate.java`, `ImeCaret.publish` |
+| Fail closed (a hook whose only safe failure is to cancel the target) | The code the handler calls catches everything, disables the feature and cancels: the glue's catch would let the target run, here a UDP join the user ruled out. A Lua guard in front of the same action refuses it on its own error too, and when the feature is disabled or its Java is missing | `TunnelClient.connect`, the `serverConnect` guard in `Dont39AllInOne_Tunnel.lua` (`tunnel`) |
 | Restore paths | Keep restoring the rest after one failure, then throw it; an undo clears its state before acting, so a failure is never retried | `ImeWindow.restore` |
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |
-| Network I/O (peers closing, resets, timeouts) | A runtime event, not a mismatch: close only what it affects and log one line; only non-`IOException` throwables disable the feature. A fallback on such an event exists only where the user chose it (the tunnel's UDP fallback) | `Relay.kt`, `TunnelListener.kt`, `TunnelClient.kt` in `tcp-tunnel` |
+| Network I/O (peers closing, resets, timeouts) | A runtime event, not a mismatch: close only what it affects and log one line; only non-`IOException` throwables disable the feature. No fallback the user did not choose: a tunnel join that cannot open stops with the reason on the join screen | `transport/tcp/Relay.kt`, `transport/kcp/KcpSession.kt`, `TunnelClient.kt` in `tunnel` |
 
 Feature references are in the feature package of `ime-keyboard-fix`. The checking and gating rules are implemented in
 `TargetMod.kt`, `Widening.kt` and `Feature.kt` ([ZabricKotlin Utils](./zb-kt-utils.md)), the hook side in
@@ -33,4 +34,5 @@ feature is disabled, e.g. from an `always` hook undoing it, is still reported th
 - Throwing from a static initializer: the failure surfaces inside the patched game method on first call.
 - Changing state at `HEAD` without a `FINALLY` handler that restores it: the target stays half-modified.
 - Reporting the same failure more than once.
-- A try/catch or `active()` gate in a handler; the generated glue owns both.
+- A try/catch or `active()` gate in a handler; the generated glue owns both (the fail-closed row is about code the
+  handler calls, not the handler).

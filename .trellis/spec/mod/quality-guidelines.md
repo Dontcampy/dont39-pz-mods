@@ -21,7 +21,9 @@
 ## Tests
 
 Feature modules have no unit tests: their code depends on other mods' classes that exist only in game. Do not add a
-test framework as part of a feature task; propose it separately. `./gradlew check` runs the build checks and the JUnit
+test framework as part of a feature task; propose it separately. Game-free code (e.g. `tunnel`'s `kcp`/`fec`) is
+exercised by a harness outside the repo, with its results in the task's research
+(`10-18-kcp-tunnel/research/kcp-harness.md`). `./gradlew check` runs the build checks and the JUnit
 tests of Zabric's hook runtime and processor ([Zabric Hooks](./zabric-hooks.md#where-it-lives)), which need
 `ZombieBuddy.jar` under `pzDir`.
 
@@ -53,7 +55,9 @@ If an in-game check was not done, say so in the task report.
 
 Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
 New code is Kotlin; Java only in `zabric`, `zabric-processor`, `zb-skip-online-checks`, the samples, and where
-[Kotlin Runtime](./kotlin-runtime.md) requires it.
+[Kotlin Runtime](./kotlin-runtime.md) requires it. Copied third-party code keeps its language, license header and
+source commit, lives in a subpackage of the feature (all mod jars share one class loader), and its license text goes
+into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for bugs, not style.
 
 ## Forbidden Patterns
 

@@ -1,0 +1,23 @@
+{
+    "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
+    "Sandbox_Dont39AllInOne_TunnelTcpPort": "TCP tunnel port",
+    "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "TCP port on which the server accepts players whose network drops UDP. They choose TCP under \"Tunnel\" in their server entry and enter this port. 0 turns the tunnel off. Open this TCP port in the firewall. Takes effect when the server starts.",
+    "Sandbox_Dont39AllInOne_TunnelKcpPort": "KCP tunnel port",
+    "Sandbox_Dont39AllInOne_TunnelKcpPort_tooltip": "UDP port on which the server accepts players whose network loses packets. They choose KCP under \"Tunnel\" in their server entry and enter this port. 0 turns the KCP tunnel off. Open this UDP port in the firewall. Takes effect when the server starts; the KCP settings below go to each player when they join.",
+    "Sandbox_Dont39AllInOne_TunnelKcpInterval": "KCP interval (ms)",
+    "Sandbox_Dont39AllInOne_TunnelKcpInterval_tooltip": "How often the KCP tunnel checks for acknowledgements and resends. Lower reacts faster to loss and uses a little more CPU. Recommended: 10.",
+    "Sandbox_Dont39AllInOne_TunnelKcpResend": "KCP fast resend",
+    "Sandbox_Dont39AllInOne_TunnelKcpResend_tooltip": "Resend a packet as soon as this many later packets were acknowledged before it, without waiting for its timeout. 0 turns fast resend off. Recommended: 2.",
+    "Sandbox_Dont39AllInOne_TunnelKcpNoCongestion": "KCP: no congestion window",
+    "Sandbox_Dont39AllInOne_TunnelKcpNoCongestion_tooltip": "On: the KCP tunnel does not slow down when packets are lost, which is what keeps it fast on a lossy network. Off: it backs off like TCP, which can help a link that is simply too slow for the game. Recommended: on.",
+    "Sandbox_Dont39AllInOne_TunnelKcpWindow": "KCP window (packets)",
+    "Sandbox_Dont39AllInOne_TunnelKcpWindow_tooltip": "How many packets may be on the way unacknowledged, each direction. Too small stalls map downloads on a distant server. Recommended: 1024.",
+    "Sandbox_Dont39AllInOne_TunnelKcpMtu": "KCP packet size (bytes)",
+    "Sandbox_Dont39AllInOne_TunnelKcpMtu_tooltip": "Largest UDP packet the KCP tunnel sends. Lower it if players on some networks connect but stall. Recommended: 1350.",
+    "Sandbox_Dont39AllInOne_TunnelFecDataShards": "FEC data packets per group",
+    "Sandbox_Dont39AllInOne_TunnelFecDataShards_tooltip": "The KCP tunnel adds repair packets for each group of this many packets. Recommended: 10.",
+    "Sandbox_Dont39AllInOne_TunnelFecParityShards": "FEC repair packets per group",
+    "Sandbox_Dont39AllInOne_TunnelFecParityShards_tooltip": "Repair packets sent with each group: up to this many lost packets of a group are rebuilt at once, without waiting for a resend. 0 turns FEC off. On a quiet connection most groups are small, so FEC can roughly double the bandwidth. Recommended: 3.",
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis": "FEC group wait (ms)",
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "Longest wait before a group that is not full gets its repair packets, so packets sent slowly are protected too. Lower recovers sooner and sends more repair packets. Recommended: 20."
+}

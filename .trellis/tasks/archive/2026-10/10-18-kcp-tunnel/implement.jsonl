@@ -1,0 +1,12 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Renaming a feature module: layout, naming, registration steps"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Server configuration, wrapping vanilla Lua UI (ISMPEditServer, serverConnect), Lua bridge, threading"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Cancellable @Inject on UdpEngine.Connect, gates, generated glue"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade, hook gate, @LuaGlobal glue"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Mismatch disables the feature; network failures are logged; fail-closed guard"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Status and lifecycle lines; counters instead of per-datagram logs"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Rules for Kotlin feature code"}
+{"file": ".trellis/tasks/archive/2026-10/10-17-tcp-connection/design.md", "reason": "TCP tunnel design the KCP tunnel builds on: channels, relays, store, dialog"}
+{"file": ".trellis/tasks/archive/2026-10/10-17-tcp-connection/research/game-internals.md", "reason": "Cited game facts: connect path, ISMPEditServer, server ports, sandbox timing"}
+{"file": ".trellis/tasks/archive/2026-10/10-17-tcp-connection/research/steam-mode-spike.md", "reason": "Why the tunnel relays both DefaultPort and UDPPort"}
+{"file": ".trellis/tasks/10-18-kcp-tunnel/research/connect-failure.md", "reason": "How to stop a join with OnConnectFailed; serverConnect paths"}
+{"file": ".trellis/tasks/10-18-kcp-tunnel/research/kcp-fec-libraries.md", "reason": "KCP/FEC library choice, kcp-go FEC layout, kcptun defaults"}

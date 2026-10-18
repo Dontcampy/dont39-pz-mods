@@ -1,0 +1,22 @@
+{
+    "UI_Dont39AllInOne_Tunnel_Tunnel": "Tunnel:",
+    "UI_Dont39AllInOne_Tunnel_Off": "Off",
+    "UI_Dont39AllInOne_Tunnel_OffTooltip": "Join over UDP as usual.",
+    "UI_Dont39AllInOne_Tunnel_Tcp": "TCP",
+    "UI_Dont39AllInOne_Tunnel_TcpTooltip": "Join through the server's TCP tunnel, set up by its owner with Dont39 All-in-One. Helps when your network drops UDP.",
+    "UI_Dont39AllInOne_Tunnel_Kcp": "KCP",
+    "UI_Dont39AllInOne_Tunnel_KcpTooltip": "Join through the server's KCP tunnel, set up by its owner with Dont39 All-in-One. Recovers lost packets faster than TCP on a lossy network, at the cost of more bandwidth.",
+    "UI_Dont39AllInOne_Tunnel_Port": "Tunnel port:",
+    "UI_Dont39AllInOne_Tunnel_PortTooltip": "The port of the server's tunnel, from its owner. If the tunnel cannot be opened, the join stops and shows why; it does not fall back to UDP. Choose Off to join over UDP.",
+    "UI_Dont39AllInOne_Tunnel_Failed_NoAnswer": "No answer from the %1 tunnel at %2.\nCheck the tunnel port, or ask the server owner whether the tunnel is on.",
+    "UI_Dont39AllInOne_Tunnel_Failed_Refused": "No %1 tunnel at %2: the connection was refused.\nCheck the tunnel port, or ask the server owner whether the tunnel is on.",
+    "UI_Dont39AllInOne_Tunnel_Failed_NotTunnel": "%2 is not a %1 tunnel of Dont39 All-in-One.\nCheck the tunnel port.",
+    "UI_Dont39AllInOne_Tunnel_Failed_Version": "The %1 tunnel at %2 speaks protocol version %3, this mod version %4.\nThe server and you need the same version of Dont39 All-in-One.",
+    "UI_Dont39AllInOne_Tunnel_Failed_ThisMachine": "The server at %1 runs on this computer, where a tunnel cannot work.\nSet Tunnel to Off for this server.",
+    "UI_Dont39AllInOne_Tunnel_Failed_LocalPort": "The tunnel cannot listen on 127.0.0.1:%1 (%2).\nClose the program that uses this port and try again.",
+    "UI_Dont39AllInOne_Tunnel_Failed_Network": "Cannot open the %1 tunnel at %2:\n%3",
+    "UI_Dont39AllInOne_Tunnel_Failed_Error": "The tunnel of Dont39 All-in-One stopped after an error (details in console.txt).\nSet Tunnel to Off for this server to join over UDP.",
+    "UI_Dont39AllInOne_Tunnel_Failed_Inactive": "This server is set to join through a tunnel, but the tunnel of Dont39 All-in-One is off: %1\nSet Tunnel to Off for this server to join over UDP.",
+    "UI_Dont39AllInOne_Tunnel_Failed_NoJava": "This server is set to join through a tunnel, but the Java part of Dont39 All-in-One is not loaded (allow it in ZombieBuddy).\nSet Tunnel to Off for this server to join over UDP.",
+    "UI_Dont39AllInOne_Tunnel_Failed_Check": "The tunnel check of Dont39 All-in-One failed (details in console.txt): %1"
+}

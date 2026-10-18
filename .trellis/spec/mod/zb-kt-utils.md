@@ -12,6 +12,9 @@
   use Zabric's annotations ([Zabric Hooks](./zabric-hooks.md)) and Lua functions `@LuaGlobal` in `glue/Glue.kt`
   ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
 - `Feature` is the hook gate of the module's hook objects (`Feature.kt`), so a failing hook disables only its feature.
+- `Feature.whyNotActive()` gives the player-facing reason a feature does not run (null when active), e.g. for a Lua
+  check that refuses an action (`Tunnel.luaProblem`). New in ZabricKotlin after 0.4.0: release ZabricKotlin before a
+  mod that calls it.
 - Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording, hook
   gate and target check, widening state.
 

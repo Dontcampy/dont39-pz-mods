@@ -507,3 +507,26 @@ Follow-ups on PR #16. workshop.txt shortened from 68 to 40 lines: each feature i
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: KCP tunnel with FEC; tunnel feature without UDP fallback
+<!-- trellis-session: v=2 fp=d71b0d4d5c5796cc -->
+
+**Date**: 2026-10-18
+**Task**: KCP tunnel with FEC; tunnel feature without UDP fallback
+**Branch**: `claude/trellis-kcp-design-78eb49`
+
+### Summary
+
+tcp-tunnel renamed to tunnel with a Transport seam (TCP, KCP). KCP: own Kotlin port of ikcp.c b1a7a21 (caller clock in input/flush), Backblaze RS d3c481d in fec/rs, FEC layer kind-first header with a flush timer for part-filled groups; one UDP socket per server, sessions by address+conv, HELLO/WELCOME with params, CLOSE x3, idle 60 s, backpressure 4x window. Sandbox options Dont39AllInOne_Tunnel.KcpPort + 8 KCP/FEC params (defaults fast mode, 1024, MTU 1350, FEC 10+3, flush 20 ms), sent to the client; Dont39AllInOne_TcpTunnel.Port kept. Client: Tunnel dropdown Off/TCP/KCP + tunnel port row, per-transport ports per address in Dont39AllInOne_Tunnel.txt migrated read-only from the released file; server list tag. No UDP fallback: cancellable @Inject on UdpEngine.Connect with re-entrant Connect, OnConnectFailed texts; Lua serverConnect guard refuses tunnel joins when the feature is disabled/Java missing, fail closed. zb-kt-utils Feature.whyNotActive (release ZabricKotlin first). Harness: 10% loss p99 62 vs 243 ms. In game on Linux myserver2 test instance (48261/48262, TCP 48300, KCP 48301): KCP/TCP joins, sandbox override, migration, wrong port and server down stop with reason, no-Java refused; instance stopped, ini/sandbox restored. Not tested: simulated loss in game, two clients, feature-disabled refusal. User feedback fixed: cramped port row, server-list tag.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3777b48` | Add Feature.whyNotActive for player-facing reasons |
+| `369ea9c` | Add a KCP tunnel with FEC next to the TCP tunnel; no UDP fallback |
+
+### Status
+
+[OK] **Completed**

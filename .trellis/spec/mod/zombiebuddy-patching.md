@@ -126,7 +126,7 @@ What is not behind the seam and needs rework when switching loaders:
 
 ## Server Configuration
 
-For what a server owner sets. Reference: `tcp-tunnel` (`ServerStart.kt`, `src/main/media/sandbox-options.txt`).
+For what a server owner sets. Reference: `tunnel` (`ServerStart.kt`, `TunnelServer.kt`, `src/main/media/sandbox-options.txt`).
 
 - A sandbox option of the feature (`sandbox-options.txt`, option `Dont39AllInOne_<Name>.<Option>`), translated in
   `Sandbox.json`. No other config files or JVM flags.

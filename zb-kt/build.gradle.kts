@@ -13,7 +13,7 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.4.0"
+version = "0.5.0"
 
 // the runtime every Kotlin mod builds on, shipped in this jar
 val utils = ":zb-kt-utils"

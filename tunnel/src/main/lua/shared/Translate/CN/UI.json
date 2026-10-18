@@ -1,0 +1,22 @@
+{
+    "UI_Dont39AllInOne_Tunnel_Tunnel": "隧道:",
+    "UI_Dont39AllInOne_Tunnel_Off": "关闭",
+    "UI_Dont39AllInOne_Tunnel_OffTooltip": "照常通过 UDP 加入。",
+    "UI_Dont39AllInOne_Tunnel_Tcp": "TCP",
+    "UI_Dont39AllInOne_Tunnel_TcpTooltip": "通过服务器所有者用 Dont39 All-in-One 设置的 TCP 隧道加入。适合会丢弃 UDP 的网络。",
+    "UI_Dont39AllInOne_Tunnel_Kcp": "KCP",
+    "UI_Dont39AllInOne_Tunnel_KcpTooltip": "通过服务器所有者用 Dont39 All-in-One 设置的 KCP 隧道加入。在丢包的网络上比 TCP 更快恢复丢失的数据包，但占用更多带宽。",
+    "UI_Dont39AllInOne_Tunnel_Port": "隧道端口:",
+    "UI_Dont39AllInOne_Tunnel_PortTooltip": "服务器隧道的端口，向服务器所有者获取。隧道无法打开时，加入会停止并显示原因，不会改用 UDP。选择“关闭”则通过 UDP 加入。",
+    "UI_Dont39AllInOne_Tunnel_Failed_NoAnswer": "%2 的 %1 隧道没有响应。\n请检查隧道端口，或询问服务器所有者隧道是否已开启。",
+    "UI_Dont39AllInOne_Tunnel_Failed_Refused": "%2 没有 %1 隧道：连接被拒绝。\n请检查隧道端口，或询问服务器所有者隧道是否已开启。",
+    "UI_Dont39AllInOne_Tunnel_Failed_NotTunnel": "%2 不是 Dont39 All-in-One 的 %1 隧道。\n请检查隧道端口。",
+    "UI_Dont39AllInOne_Tunnel_Failed_Version": "%2 的 %1 隧道使用协议版本 %3，本模组为版本 %4。\n服务器和你需要使用相同版本的 Dont39 All-in-One。",
+    "UI_Dont39AllInOne_Tunnel_Failed_ThisMachine": "%1 的服务器运行在本机上，隧道无法在此工作。\n请将此服务器的隧道设为“关闭”。",
+    "UI_Dont39AllInOne_Tunnel_Failed_LocalPort": "隧道无法监听 127.0.0.1:%1（%2）。\n请关闭占用此端口的程序后重试。",
+    "UI_Dont39AllInOne_Tunnel_Failed_Network": "无法打开 %2 的 %1 隧道：\n%3",
+    "UI_Dont39AllInOne_Tunnel_Failed_Error": "Dont39 All-in-One 的隧道出错后已停止（详情见 console.txt）。\n将此服务器的隧道设为“关闭”即可通过 UDP 加入。",
+    "UI_Dont39AllInOne_Tunnel_Failed_Inactive": "此服务器设置为通过隧道加入，但 Dont39 All-in-One 的隧道未运行：%1\n将此服务器的隧道设为“关闭”即可通过 UDP 加入。",
+    "UI_Dont39AllInOne_Tunnel_Failed_NoJava": "此服务器设置为通过隧道加入，但 Dont39 All-in-One 的 Java 部分未加载（请在 ZombieBuddy 中允许）。\n将此服务器的隧道设为“关闭”即可通过 UDP 加入。",
+    "UI_Dont39AllInOne_Tunnel_Failed_Check": "Dont39 All-in-One 的隧道检查失败（详情见 console.txt）：%1"
+}

@@ -27,6 +27,10 @@ abstract class Feature(val name: String, private val modId: String, private val 
   @Volatile
   private var resolved = false
 
+  // written before the state it explains
+  @Volatile
+  private var reason: String? = null
+
   /** The feature's mod option to accept untested target versions. */
   protected val force: Boolean
     get() = forced
@@ -75,6 +79,9 @@ abstract class Feature(val name: String, private val modId: String, private val 
     log { if (detail == null) "ready" else "ready ($detail)" }
   }
 
+  /** Null when the feature runs, else why not, as a sentence for the player. Decides like [active]. */
+  fun whyNotActive(): String? = if (active()) null else checkNotNull(reason) { "${prefix}not active, no reason kept" }
+
   /** The generated glue checks this before every hook. */
   override fun active(): Boolean {
     val s = state
@@ -91,7 +98,7 @@ abstract class Feature(val name: String, private val modId: String, private val 
     if (why == null && !resolveOnce()) {
       return false
     }
-    if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE)) {
+    if (!move(State.UNDECIDED, if (why == null) State.ACTIVE else State.INACTIVE, why)) {
       return state == State.ACTIVE // another thread got there first
     }
     log { if (why == null) "active" else "inactive: $why" }
@@ -148,7 +155,8 @@ abstract class Feature(val name: String, private val modId: String, private val 
    * the last status line still reads disabled.
    */
   fun disable(what: String, t: Throwable) {
-    val message = if (moveToDisabled()) "disabled after an error while $what" else "disabled; then an error while $what"
+    val first = moveToDisabled(what)
+    val message = if (first) "disabled after an error while $what" else "disabled; then an error while $what"
     DebugType.Mod.printException(t, "$prefix$message", LogSeverity.Error)
   }
 
@@ -160,19 +168,21 @@ abstract class Feature(val name: String, private val modId: String, private val 
   inline fun debug(message: () -> String) = DebugType.Mod.lzDebug { "$prefix${message()}" }
 
   @Synchronized
-  private fun move(from: State, to: State): Boolean {
+  private fun move(from: State, to: State, why: String? = null): Boolean {
     if (state != from) {
       return false
     }
+    why?.let { reason = it }
     state = to
     return true
   }
 
   @Synchronized
-  private fun moveToDisabled(): Boolean {
+  private fun moveToDisabled(what: String): Boolean {
     if (state == State.DISABLED) {
       return false
     }
+    reason = "it was disabled after an error while $what (details in console.txt)"
     state = State.DISABLED
     return true
   }

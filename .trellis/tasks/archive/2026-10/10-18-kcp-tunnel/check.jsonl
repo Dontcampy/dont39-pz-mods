@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smoke tests, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Check gating, no UDP fallback anywhere, fail-closed guard"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "No per-datagram log lines"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Rename complete: settings, feature list, AllInOneMain, Workshop section"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hooks leave catching and gating to the glue"}
+{"file": ".trellis/tasks/10-18-kcp-tunnel/research/connect-failure.md", "reason": "Verify the join stop leaves no stuck state"}

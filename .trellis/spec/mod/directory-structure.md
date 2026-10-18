@@ -69,6 +69,10 @@ All names derive from one kebab-case feature name. Follow the existing feature i
 
 Lua-visible names are global across all mods, so they keep the mod-id prefix.
 
+Names that players or server owners store are kept once released, even when the feature is renamed: sandbox options
+(`Dont39AllInOne_TcpTunnel.Port` in `tunnel`, released as `tcp-tunnel`) and files in `Zomboid/Lua/`. A new format gets
+a new file, migrated by reading the released one, which is never written or deleted (`TunnelStore.kt`).
+
 ## Visibility
 
 Keep the facade's public surface to what `AllInOneMain` and the Lua bridge need, and keep the rest `internal` /
