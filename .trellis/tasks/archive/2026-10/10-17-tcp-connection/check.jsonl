@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smoke tests, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Check gating, no hidden degrade beyond the user-chosen UDP fallback"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Check log lines and no per-datagram spam"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Check feature registration, naming, Workshop section"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Check hooks leave catching and gating to the glue"}
+{"file": ".trellis/tasks/10-17-tcp-connection/research/game-internals.md", "reason": "Verify hook targets and assumptions against cited game facts"}

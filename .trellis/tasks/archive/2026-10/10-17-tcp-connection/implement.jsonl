@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a feature module to All-in-One: layout, naming, registration steps"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Patch classes, Lua bridge, wrapping vanilla Lua UI (ISMPEditServer), threading"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API: @ModifyVariable/@Inject on UdpEngine.Connect and GameServer.startServer"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade, hook gate, @LuaGlobal glue"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Reaching game members (SandboxOptions, GameServer ports, UdpEngine)"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Mismatch disables the feature; network failures are logged runtime conditions"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Status and lifecycle lines; no per-datagram logging"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Rules for Kotlin feature code"}
+{"file": ".trellis/tasks/10-17-tcp-connection/research/game-internals.md", "reason": "Cited game facts: connect path, ISMPEditServer, server ports, sandbox timing, file storage"}
