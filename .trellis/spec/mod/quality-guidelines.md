@@ -26,9 +26,10 @@ Feature modules have no unit tests: their code depends on other mods' classes th
 test framework as part of a feature task; propose it separately. Game-free code (e.g. `tunnel`'s `kcp`/`fec`) is
 exercised by a harness outside the repo, with its results in the task's research
 (`10-18-kcp-tunnel/research/kcp-harness.md`). `./gradlew check` runs the build checks and the JUnit
-tests of Zabric's hook runtime and processor ([Zabric Hooks](./zabric-hooks.md#where-it-lives)), which need
-`ZombieBuddy.jar` under `pzDir`. A module with JUnit tests applies `buildsrc.convention.pz-junit`, plus
-`pz-loader-test` when its tests run against ZombieBuddy's classes; it adds no JUnit setup of its own.
+tests of Zabric's hook runtime and both processor front ends
+([Zabric Hooks](./zabric-hooks.md#where-it-lives)), which need `ZombieBuddy.jar` under `pzDir`. A module with JUnit
+tests applies `buildsrc.convention.pz-junit`, plus `pz-loader-test` when its tests run against ZombieBuddy's classes;
+it adds no JUnit setup of its own.
 
 The automated checks launch the real game (`smokeTest` of `dont39-all-in-one`, `GameSmokeTest.kt`) or dedicated
 server (`serverSmokeTest` of `zb-kt`, `ServerSmokeTest.kt`) with ZombieBuddy until init and check the log. Read the task

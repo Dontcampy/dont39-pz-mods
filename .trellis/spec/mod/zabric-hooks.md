@@ -12,8 +12,9 @@
 |------|------|
 | Author API | `zabric/src/main/java/com/pzlauncher/zabric/hook/` |
 | Runtime | `zabric/src/main/java/com/pzlauncher/zabric/hook/impl/` |
-| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/`; its FreeMarker templates under `src/main/resources` in the same package |
-| Front ends | `ZabricProcessor.java` (javac); `GlueProcessor.kt`, `HookReader.kt` in `zb-kt-utils-processor` (KSP) |
+| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/`: entry `HookAnalyzer.java`, handler checks `HandlerBinder.java` / `HandlerBinding.java`, patches `PatchBuilder.java`, output `GlueWriter.java`; its FreeMarker templates under `src/main/resources` in the same package |
+| Front ends | `ZabricProcessor.java`, `JavacHookReader.java` (javac); `GlueProcessor.kt`, `HookReader.kt` in `zb-kt-utils-processor` (KSP) |
+| Tests | javac side and generator: `zabric-processor/src/test/`; KSP side: `zb-kt-utils-processor/src/test/`, its golden glue under `src/test/resources/golden/` |
 | Reference glue | `zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java` |
 | Author build | `samples/zabric-java-hooks/` |
 

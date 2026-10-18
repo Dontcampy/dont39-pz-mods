@@ -42,6 +42,23 @@ public final class Messages {
         return handler + ": a handler has exactly one of @Inject, @ModifyReturnValue and @ModifyVariable";
     }
 
+    public static String laterRound(String hookClass) {
+        return hookClass + ": @Hooks classes generated in a later processing round are not supported";
+    }
+
+    public static String gateNotFound(String hookClass, String gate) {
+        return hookClass + ": the gate class " + gate + " cannot be resolved";
+    }
+
+    public static String badGate(String hookClass, String gate) {
+        return hookClass + ": the gate " + gate + " must be a public HookGate with a public static final INSTANCE of a"
+                + " HookGate type (or a Kotlin object)";
+    }
+
+    public static String handlerTypeParameters(String handler) {
+        return handler + ": a handler cannot have type parameters";
+    }
+
     public static String targetNotFound(String hookClass, String target) {
         return hookClass + ": target class " + target + " is not on the compile classpath";
     }

@@ -104,7 +104,7 @@ internal class HookReader(
   private fun gate(hooks: KSClassDeclaration, name: String, gate: KSType?): HookDecls.Gate? {
     val declaration = gate?.takeUnless { it.isError }?.let { types.classOf(it.declaration) }
     if (gate != null && declaration == null) {
-      error(hooks, "$name: the gate class $gate cannot be resolved")
+      error(hooks, Messages.gateNotFound(name, gate.toString()))
       return null
     }
     val chosen = if (declaration == null || declaration.qualifiedName?.asString() == Names.HOOK_GATE) {
@@ -119,11 +119,7 @@ internal class HookReader(
       val public = generateSequence(declaration) { it.parentDeclaration as? KSClassDeclaration }
         .all { Modifier.PUBLIC in resolver.effectiveJavaModifiers(it) }
       if (!isGate || !instance || !public) {
-        error(
-          hooks,
-          "$name: the gate ${declaration.qualifiedName?.asString()} must be a public HookGate with a public static " +
-            "final INSTANCE of a HookGate type (or a Kotlin object)",
-        )
+        error(hooks, Messages.badGate(name, declaration.qualifiedName?.asString().toString()))
         return null
       }
       declaration
@@ -145,16 +141,16 @@ internal class HookReader(
     val signature = resolver.mapToJvmSignature(function)
     val problem = when {
       function.getVisibility() != Visibility.PUBLIC ->
-        "a handler must be public (the generated Java glue calls it; internal names are mangled)"
-      function.extensionReceiver != null -> "a handler cannot be an extension function"
-      function.typeParameters.isNotEmpty() -> "a handler cannot have type parameters"
-      Modifier.SUSPEND in function.modifiers -> "a handler cannot be a suspend function"
-      function.parameters.any { it.isVararg } -> "a handler cannot take vararg parameters"
-      jvmName == null || signature == null -> "cannot tell the handler's JVM name or signature"
+        "$label: a handler must be public (the generated Java glue calls it; internal names are mangled)"
+      function.extensionReceiver != null -> "$label: a handler cannot be an extension function"
+      function.typeParameters.isNotEmpty() -> Messages.handlerTypeParameters(label)
+      Modifier.SUSPEND in function.modifiers -> "$label: a handler cannot be a suspend function"
+      function.parameters.any { it.isVararg } -> "$label: a handler cannot take vararg parameters"
+      jvmName == null || signature == null -> "$label: cannot tell the handler's JVM name or signature"
       else -> null
     }
     if (problem != null) {
-      error(function, "$label: $problem")
+      error(function, problem)
       return null
     }
     val (paramDescriptors, returnDescriptor) = parseMethodDescriptor(signature!!)

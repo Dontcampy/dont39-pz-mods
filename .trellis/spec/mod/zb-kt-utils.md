@@ -23,7 +23,7 @@
 - It is public runtime API for any Kotlin mod on ZabricKotlin: nothing mod-specific in it.
 - Read a mod's own resources from the jar of its class, not through the class loader: all mod jars share it.
 - Log wording is a contract: smokeTest and players' `console.txt` read it.
-- The Lua bridge listing (`META-INF/zbkt/glue/`) is shared by `GlueProcessor.kt` and the build's readers
+- The Lua bridge listing (`META-INF/zbkt/glue/`) is shared by `LuaBridge.kt` and the build's readers
   (`FeatureInfo.kt`, `CheckGlue.kt`, `GameSmokeTest.kt` in `buildSrc`); change them together. Readers skip line kinds
   they do not use. Hook listings are Zabric's ([Zabric Hooks](./zabric-hooks.md#rules)).
 - Add API only when a feature needs it; remove what no feature uses. Generic platform API (target-mod checks, mod

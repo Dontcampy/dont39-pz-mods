@@ -202,6 +202,27 @@ internal class KspTypes(private val resolver: Resolver) : TypeSystem<JType> {
   private fun binary(descriptor: String) = descriptor.substring(1, descriptor.length - 1).replace('/', '.')
 }
 
+internal fun KSType?.isType(qualifiedName: String) =
+  this != null && !isMarkedNullable && declaration.qualifiedName?.asString() == qualifiedName
+
+/** The type as Kotlin source, fully qualified. */
+internal fun render(type: KSType): String {
+  val base = type.declaration.qualifiedName?.asString() ?: type.declaration.simpleName.asString()
+  val args = if (type.arguments.isEmpty()) {
+    ""
+  } else {
+    type.arguments.joinToString(", ", "<", ">") {
+      when (it.variance) {
+        Variance.STAR -> "*"
+        Variance.COVARIANT -> "out ${render(it.type!!.resolve())}"
+        Variance.CONTRAVARIANT -> "in ${render(it.type!!.resolve())}"
+        Variance.INVARIANT -> render(it.type!!.resolve())
+      }
+    }
+  }
+  return base + args + if (type.isMarkedNullable) "?" else ""
+}
+
 /** A Java canonical name as a binary name: `java.util.Map.Entry` -> `java.util.Map$Entry`. */
 private fun javaBinaryName(canonical: String): String {
   val parts = canonical.split('.')

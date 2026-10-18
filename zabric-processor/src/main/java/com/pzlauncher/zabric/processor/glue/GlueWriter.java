@@ -36,7 +36,7 @@ public final class GlueWriter {
     private GlueWriter() {
     }
 
-    public static String listingPath(String hookClassBinaryName) {
+    private static String listingPath(String hookClassBinaryName) {
         return Names.LISTING_DIR + hookClassBinaryName + Names.LISTING_SUFFIX;
     }
 

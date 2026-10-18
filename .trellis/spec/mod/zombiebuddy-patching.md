@@ -60,7 +60,7 @@ What is not behind the seam and needs rework when switching loaders:
 |------------|-------|
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
-| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
+| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |

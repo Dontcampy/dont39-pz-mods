@@ -70,7 +70,7 @@ All names derive from one kebab-case feature name. Follow the existing feature i
 | Hook glue class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixGlue`, generated from the module dir name (`pz-feature.gradle.kts`) |
 | Lua bridge class (in `com.dont39.pz.allinone`) | `ImeKeyboardFixLua`, generated likewise when the feature has `@LuaGlobal` functions |
 | Lua file, mod-options id | `Dont39AllInOne_<Name>` (`<Name>`: the module dir name in PascalCase), as in `Dont39AllInOne_ModOptionsSidebar.lua` |
-| Global Lua function names | `Dont39AllInOne_<verb><Name>...`, e.g. `Dont39AllInOne_set<Name>Force`; `GlueProcessor.kt` rejects a `@LuaGlobal` name without the prefix |
+| Global Lua function names | `Dont39AllInOne_<verb><Name>...`, e.g. `Dont39AllInOne_set<Name>Force`; `LuaBridge.kt` rejects a `@LuaGlobal` name without the prefix |
 
 Lua-visible names are global across all mods, so they keep the mod-id prefix.
 

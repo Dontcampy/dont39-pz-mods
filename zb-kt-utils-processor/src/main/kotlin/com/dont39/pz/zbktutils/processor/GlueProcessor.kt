@@ -1,7 +1,6 @@
 package com.dont39.pz.zbktutils.processor
 
 import com.google.devtools.ksp.getAllSuperTypes
-import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -11,24 +10,16 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
-import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSNode
-import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSValueParameter
-import com.google.devtools.ksp.symbol.Modifier
-import com.google.devtools.ksp.symbol.Variance
 import com.pzlauncher.zabric.processor.glue.GlueWriter
 import com.pzlauncher.zabric.processor.glue.HookAnalyzer
 import com.pzlauncher.zabric.processor.glue.Messages
 import com.pzlauncher.zabric.processor.glue.Names
 import com.pzlauncher.zabric.processor.glue.Reporter
 
-private const val LUA_GLOBAL = "com.dont39.pz.zbktutils.glue.LuaGlobal"
-private const val LUA_METHOD = "se.krka.kahlua.integration.annotations.LuaMethod"
 private const val FEATURE = "com.dont39.pz.zbktutils.Feature"
-
-private val LUA_NAME = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 /** Set by pz-feature.gradle.kts. */
 private const val OPTION_FEATURE = "dont39.feature"
@@ -56,8 +47,7 @@ class GlueProcessor(
     if (!firstRound) {
       // one glue class per compilation
       hookObjects.forEach {
-        val name = it.qualifiedName?.asString()
-        error(it, "$name: @Hooks classes generated in a later processing round are not supported")
+        error(it, Messages.laterRound(it.qualifiedName?.asString().toString()))
       }
       return emptyList()
     }
@@ -118,12 +108,6 @@ class GlueProcessor(
     }
   }
 
-  private fun label(function: KSFunctionDeclaration): String {
-    val parent = function.parentDeclaration
-    val simple = function.simpleName.asString()
-    return if (parent == null) simple else "${parent.simpleName.asString()}.$simple"
-  }
-
   // ---- hooks ----
 
   private fun hooks(resolver: Resolver, hookObjects: List<KSClassDeclaration>, pkg: String) {
@@ -132,11 +116,7 @@ class GlueProcessor(
     val reader = HookReader(resolver, types, { facade }, ::error)
     // the others are still analyzed, so one compilation reports every problem
     val decls = hookObjects.mapNotNull(reader::read)
-    val reporter = object : Reporter {
-      override fun error(node: Any?, message: String) = this@GlueProcessor.error(node as? KSNode, message)
-
-      override fun warning(node: Any?, message: String) = logger.warn(message, node as? KSNode)
-    }
+    val reporter = Reporter { node, message -> error(node as? KSNode, message) }
     val unit = HookAnalyzer(types, reporter)
       .analyze(options.getValue(Names.OPTION_MOD_ID), pkg, options.getValue(Names.OPTION_GLUE_CLASS), decls)
     if (unit == null || failed) return
@@ -171,110 +151,15 @@ class GlueProcessor(
 
   // ---- Lua ----
 
-  private class LuaParam(val name: String, val type: String)
-
-  private class LuaFunction(
-    val name: String,
-    val call: String,
-    val label: String,
-    val file: KSFile?,
-    val params: List<LuaParam>,
-    val returnType: String?,
-  )
-
   private fun lua(resolver: Resolver, pkg: String) {
-    val prefix = options.getValue(OPTION_LUA_PREFIX)
-    val functions = collectLua(resolver, prefix)
+    val functions = LuaBridge(options.getValue(OPTION_LUA_PREFIX), ::error).collect(resolver)
     if (failed || functions.isEmpty()) return
     val feature = options.getValue(OPTION_FEATURE)
     val bridge = "${feature}Lua"
     val files = functions.mapNotNull { it.file }.distinct()
     write(Dependencies(true, *files.toTypedArray()), pkg, bridge, "kt", luaSource(pkg, bridge, functions))
-    val lines = listOf("lua $pkg.$bridge") + functions.map { "luaGlobal ${it.name}" }
     codeGenerator.createNewFileByPath(Dependencies(true, *files.toTypedArray()), "META-INF/zbkt/glue/$feature", "txt")
-      .use { it.write(lines.joinToString("") { line -> "$line\n" }.toByteArray()) }
-  }
-
-  private fun collectLua(resolver: Resolver, prefix: String): List<LuaFunction> {
-    val byName = linkedMapOf<String, LuaFunction>()
-    val functions =
-      resolver.getSymbolsWithAnnotation(LUA_GLOBAL, inDepth = true).filterIsInstance<KSFunctionDeclaration>()
-    for (fn in functions) {
-      val label = label(fn)
-      val call = luaCall(fn, label) ?: continue
-      val name = fn.annotation(LUA_GLOBAL)!!.arg("name") as String
-      val problem = when {
-        !LUA_NAME.matches(name) -> "Lua name \"$name\" is not a Lua identifier"
-        !name.startsWith(prefix) || name == prefix ->
-          "Lua name \"$name\" must start with \"$prefix\" (Lua globals are shared by all mods)"
-        name in byName -> "Lua name \"$name\" is already used by ${byName.getValue(name).label}"
-        fn.parameters.any { it.isVararg } -> "vararg parameters are not supported"
-        else -> null
-      }
-      if (problem != null) {
-        error(fn, "$label: $problem")
-        continue
-      }
-      val params = fn.parameters.map { LuaParam(it.name?.asString() ?: "p", render(it.type.resolve())) }
-      val returnType = fn.returnType?.resolve()?.takeUnless { it.isType("kotlin.Unit") }?.let(::render)
-      byName[name] = LuaFunction(name, call, label, fn.containingFile, params, returnType)
-    }
-    return byName.values.sortedBy { it.name }
-  }
-
-  /** The function as a Kotlin expression without arguments, or null after an error. */
-  private fun luaCall(fn: KSFunctionDeclaration, label: String): String? {
-    val parent = fn.parentDeclaration
-    val simple = fn.simpleName.asString()
-    fun fail(problem: String): String? {
-      error(fn, "$label: $problem")
-      return null
-    }
-    val owner = when (parent) {
-      null -> fn.packageName.asString()
-      is KSClassDeclaration if parent.classKind == ClassKind.OBJECT && !parent.isCompanionObject &&
-        parent.parentDeclaration == null -> parent.qualifiedName!!.asString()
-      else -> return fail(
-        "@LuaGlobal needs a member of a top-level object or a top-level function (the generated bridge calls it " +
-          "without a receiver); not a class or companion member, nested or local function",
-      )
-    }
-    if (fn.extensionReceiver != null) return fail("@LuaGlobal cannot be on an extension function")
-    if (fn.typeParameters.isNotEmpty()) return fail("@LuaGlobal cannot be on a generic function")
-    if (Modifier.SUSPEND in fn.modifiers) return fail("@LuaGlobal cannot be on a suspend function")
-    if (fn.getVisibility().hidden()) {
-      return fail("@LuaGlobal needs a public or internal function (the generated bridge calls it)")
-    }
-    if (parent != null && parent.getVisibility().hidden()) {
-      return fail("@LuaGlobal needs a public or internal object (the generated bridge calls it)")
-    }
-    return if (owner.isEmpty()) simple else "$owner.$simple"
-  }
-
-  private fun luaSource(pkg: String, bridge: String, functions: List<LuaFunction>) = buildString {
-    appendLine("// Generated by zb-kt-utils-processor from @LuaGlobal. Do not edit.")
-    appendLine("package $pkg")
-    appendLine()
-    appendLine("import $LUA_METHOD")
-    appendLine()
-    appendLine("// ZombieBuddy exposes global Lua functions only from classes in exactly javaPkgName; Kahlua calls")
-    appendLine("// them on an instance ZombieBuddy creates through the private constructor.")
-    appendLine("object $bridge {")
-    functions.forEachIndexed { i, function ->
-      if (i > 0) appendLine()
-      val params = function.params.joinToString(", ") { "${it.name}: ${it.type}" }
-      val call = "${function.call}(${function.params.joinToString(", ") { it.name }})"
-      appendLine("  @LuaMethod(name = ${kotlinString(function.name)}, global = true)")
-      if (function.returnType == null) {
-        appendLine("  fun ${function.name}($params) {")
-        appendLine("    $call")
-      } else {
-        appendLine("  fun ${function.name}($params): ${function.returnType} {")
-        appendLine("    return $call")
-      }
-      appendLine("  }")
-    }
-    appendLine("}")
+      .use { it.write(luaListing(pkg, bridge, functions).toByteArray()) }
   }
 
   // ---- shared ----
@@ -289,37 +174,9 @@ class GlueProcessor(
   }
 }
 
-private fun KSType?.isType(qualifiedName: String) =
-  this != null && !isMarkedNullable && declaration.qualifiedName?.asString() == qualifiedName
-
-/** The type as Kotlin source, fully qualified. */
-internal fun render(type: KSType): String {
-  val base = type.declaration.qualifiedName?.asString() ?: type.declaration.simpleName.asString()
-  val args = if (type.arguments.isEmpty()) {
-    ""
-  } else {
-    type.arguments.joinToString(", ", "<", ">") {
-      when (it.variance) {
-        Variance.STAR -> "*"
-        Variance.COVARIANT -> "out ${render(it.type!!.resolve())}"
-        Variance.CONTRAVARIANT -> "in ${render(it.type!!.resolve())}"
-        Variance.INVARIANT -> render(it.type!!.resolve())
-      }
-    }
-  }
-  return base + args + if (type.isMarkedNullable) "?" else ""
-}
-
-private fun kotlinString(text: String) = buildString {
-  append('"')
-  text.forEach {
-    when (it) {
-      '\\' -> append("\\\\")
-      '"' -> append("\\\"")
-      '$' -> append("\\$")
-      '\n' -> append("\\n")
-      else -> append(it)
-    }
-  }
-  append('"')
+/** `Owner.function`, as messages name a function. */
+internal fun label(function: KSFunctionDeclaration): String {
+  val parent = function.parentDeclaration
+  val simple = function.simpleName.asString()
+  return if (parent == null) simple else "${parent.simpleName.asString()}.$simple"
 }

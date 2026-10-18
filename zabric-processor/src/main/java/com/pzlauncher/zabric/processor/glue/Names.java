@@ -43,8 +43,4 @@ public final class Names {
             "java.lang.Long", "float", "java.lang.Float", "double", "java.lang.Double");
     static final Map<String, String> GETTER_SUFFIXES = Map.of("boolean", "Z", "byte", "B", "char", "C", "short", "S",
             "int", "I", "long", "J", "float", "F", "double", "D");
-
-    static boolean isPrimitive(String erasedName) {
-        return BOXES.containsKey(erasedName);
-    }
 }

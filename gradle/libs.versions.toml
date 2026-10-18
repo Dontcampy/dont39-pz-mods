@@ -10,6 +10,8 @@ asm = "9.11"
 freemarker = "2.3.35"
 # tests only (pz-junit)
 junit = "5.14.0"
+# tests only: runs KSP in zb-kt-utils-processor's tests; needs a release built on the ksp version above
+kctfork = "0.14.0"
 # build only: publishes zabric and zabric-processor (buildSrc pz-publish)
 mavenPublish = "0.37.0"
 # Zabric's mod version, also the version of its two Maven artifacts
@@ -29,3 +31,4 @@ freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" 
 junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
+kctforkKsp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
