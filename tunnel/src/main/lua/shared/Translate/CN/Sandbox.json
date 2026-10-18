@@ -1,5 +1,23 @@
 {
     "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
     "Sandbox_Dont39AllInOne_TunnelTcpPort": "TCP 隧道端口",
-    "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "服务器在此 TCP 端口接受 UDP 丢包严重的玩家，玩家在服务器条目的“TCP 端口”中填写它。0 表示关闭隧道。需要在防火墙中放行此 TCP 端口。服务器启动时生效。"
+    "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "服务器在此 TCP 端口接受 UDP 丢包严重的玩家，玩家在服务器条目的“隧道”中选择 TCP 并填写此端口。0 表示关闭隧道。需要在防火墙中放行此 TCP 端口。服务器启动时生效。",
+    "Sandbox_Dont39AllInOne_TunnelKcpPort": "KCP 隧道端口",
+    "Sandbox_Dont39AllInOne_TunnelKcpPort_tooltip": "服务器在此 UDP 端口接受网络丢包的玩家，玩家在服务器条目的“隧道”中选择 KCP 并填写此端口。0 表示关闭 KCP 隧道。需要在防火墙中放行此 UDP 端口。服务器启动时生效；下面的 KCP 设置会在玩家加入时发送给玩家。",
+    "Sandbox_Dont39AllInOne_TunnelKcpInterval": "KCP 间隔（毫秒）",
+    "Sandbox_Dont39AllInOne_TunnelKcpInterval_tooltip": "KCP 隧道检查确认和重发的频率。越低对丢包反应越快，CPU 占用略高。推荐：10。",
+    "Sandbox_Dont39AllInOne_TunnelKcpResend": "KCP 快速重传",
+    "Sandbox_Dont39AllInOne_TunnelKcpResend_tooltip": "某个数据包之后已有这么多个数据包被确认时立即重发它，不等超时。0 表示关闭快速重传。推荐：2。",
+    "Sandbox_Dont39AllInOne_TunnelKcpNoCongestion": "KCP：关闭拥塞窗口",
+    "Sandbox_Dont39AllInOne_TunnelKcpNoCongestion_tooltip": "开启：KCP 隧道在丢包时不降速，这正是它在丢包网络上保持快速的原因。关闭：像 TCP 一样退让，适合带宽本身不够游戏使用的线路。推荐：开启。",
+    "Sandbox_Dont39AllInOne_TunnelKcpWindow": "KCP 窗口（数据包）",
+    "Sandbox_Dont39AllInOne_TunnelKcpWindow_tooltip": "每个方向上最多可有多少个未确认的数据包在途。太小会让远距离服务器的地图下载卡住。推荐：1024。",
+    "Sandbox_Dont39AllInOne_TunnelKcpMtu": "KCP 数据包大小（字节）",
+    "Sandbox_Dont39AllInOne_TunnelKcpMtu_tooltip": "KCP 隧道发送的最大 UDP 数据包。如果某些网络的玩家能连上但随后卡住，请调低。推荐：1350。",
+    "Sandbox_Dont39AllInOne_TunnelFecDataShards": "FEC 每组数据包数",
+    "Sandbox_Dont39AllInOne_TunnelFecDataShards_tooltip": "KCP 隧道为每组这么多个数据包添加修复包。推荐：10。",
+    "Sandbox_Dont39AllInOne_TunnelFecParityShards": "FEC 每组修复包数",
+    "Sandbox_Dont39AllInOne_TunnelFecParityShards_tooltip": "每组附带的修复包：一组中最多这么多个丢失的数据包可以立即重建，无需等待重发。0 表示关闭 FEC。在流量少的连接上大多数组都很小，FEC 可能使带宽大约翻倍。推荐：3。",
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis": "FEC 组等待（毫秒）",
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "未满的组最多等待这么久就发送修复包，让发送缓慢的数据包也受保护。越低恢复越快，发送的修复包越多。推荐：20。"
 }

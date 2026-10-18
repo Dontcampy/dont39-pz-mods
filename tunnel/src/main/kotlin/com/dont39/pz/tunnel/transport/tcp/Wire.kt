@@ -1,8 +1,9 @@
 package com.dont39.pz.tunnel.transport.tcp
 
+import com.dont39.pz.tunnel.NotATunnel
+import com.dont39.pz.tunnel.OtherVersion
 import java.io.DataInputStream
 import java.io.DataOutputStream
-import java.net.ProtocolException
 import java.net.Socket
 
 /**
@@ -53,11 +54,11 @@ internal object Wire {
 
   private fun check(hello: ByteArray, peer: String) {
     if (!hello.copyOf(MAGIC.size).contentEquals(MAGIC)) {
-      throw ProtocolException("$peer is not a TCP tunnel of this mod")
+      throw NotATunnel("$peer is not a TCP tunnel of this mod")
     }
     val version = hello[MAGIC.size].toInt() and 0xFF
     if (version != VERSION) {
-      throw ProtocolException("$peer speaks tunnel protocol version $version, this mod version $VERSION")
+      throw OtherVersion("$peer speaks tunnel protocol version $version, this mod version $VERSION", version, VERSION)
     }
   }
 }

@@ -19,7 +19,7 @@ val features = listOf(
   ":ime-keyboard-fix",
   ":missing-anim-folders",
   ":anim-extends-case",
-  ":tcp-tunnel",
+  ":tunnel",
 )
 // ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"

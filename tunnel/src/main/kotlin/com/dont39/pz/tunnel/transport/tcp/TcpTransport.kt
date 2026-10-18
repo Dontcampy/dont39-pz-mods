@@ -4,6 +4,7 @@ import com.dont39.pz.tunnel.OpenListener
 import com.dont39.pz.tunnel.OpenTunnel
 import com.dont39.pz.tunnel.Transport
 import com.dont39.pz.tunnel.TunnelLog
+import com.dont39.pz.tunnel.TunnelOptions
 
 /** Datagrams framed on one TCP connection per player, for networks that drop UDP. */
 internal object TcpTransport : Transport {
@@ -13,9 +14,12 @@ internal object TcpTransport : Transport {
 
   override val name = "TCP"
 
+  // released before the KCP tunnel, so not Dont39AllInOne_Tunnel.<Option>
+  override val portOption = "Dont39AllInOne_TcpTunnel.Port"
+
   override fun open(host: String, port: Int, gamePort: Int, log: TunnelLog): OpenTunnel =
     ClientTunnel.open(host, port, gamePort, CONNECT_MILLIS, HELLO_MILLIS, log)
 
-  override fun listen(port: Int, gamePort: Int, udpPort: Int, log: TunnelLog): OpenListener =
+  override fun listen(port: Int, gamePort: Int, udpPort: Int, options: TunnelOptions, log: TunnelLog): OpenListener =
     TunnelListener(port, gamePort, udpPort, log).apply { start() }
 }

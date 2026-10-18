@@ -2,3 +2,30 @@ VERSION = 1,
 
 option Dont39AllInOne_TcpTunnel.Port
 {type = integer, min = 0, max = 65535, default = 0, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelTcpPort,}
+
+option Dont39AllInOne_Tunnel.KcpPort
+{type = integer, min = 0, max = 65535, default = 0, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpPort,}
+
+option Dont39AllInOne_Tunnel.KcpInterval
+{type = integer, min = 10, max = 100, default = 10, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpInterval,}
+
+option Dont39AllInOne_Tunnel.KcpResend
+{type = integer, min = 0, max = 10, default = 2, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpResend,}
+
+option Dont39AllInOne_Tunnel.KcpNoCongestion
+{type = boolean, default = true, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpNoCongestion,}
+
+option Dont39AllInOne_Tunnel.KcpWindow
+{type = integer, min = 32, max = 8192, default = 1024, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpWindow,}
+
+option Dont39AllInOne_Tunnel.KcpMtu
+{type = integer, min = 576, max = 1450, default = 1350, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelKcpMtu,}
+
+option Dont39AllInOne_Tunnel.FecDataShards
+{type = integer, min = 1, max = 64, default = 10, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelFecDataShards,}
+
+option Dont39AllInOne_Tunnel.FecParityShards
+{type = integer, min = 0, max = 32, default = 3, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelFecParityShards,}
+
+option Dont39AllInOne_Tunnel.FecFlushMillis
+{type = integer, min = 1, max = 1000, default = 20, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelFecFlushMillis,}

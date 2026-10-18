@@ -24,11 +24,14 @@ description=
 description=[h2]Mod animations on Linux dedicated servers[/h2]
 description=Fixes animation files that extend another file failing to load because of lowercased file names.
 description=
-description=[h2]TCP tunnel[/h2]
-description=For players whose network drops UDP: the game connection can run through TCP. Other players keep using UDP.
+description=[h2]TCP and KCP tunnel[/h2]
+description=For players whose network drops UDP or loses packets: the game connection can run through a TCP or KCP tunnel, chosen per server. Other players keep using UDP.
 description=[list]
-description=[*]Server: set the sandbox option "TCP tunnel port" (0 = off), restart, and open that TCP port in the firewall. Tunnelled players show as 127.0.0.1, so ban them by name or Steam ID, not IP.
-description=[*]Players: enable this mod in the main menu, then fill in "TCP port" when adding or editing the server. If the tunnel does not answer within 2 seconds, you join over UDP.
+description=[*]Server: set the sandbox option "TCP tunnel port" (a TCP port) and/or "KCP tunnel port" (a UDP port), 0 = off, restart, and open that port in the firewall for the right protocol. The KCP and FEC options below them have recommended defaults; players get them when they join.
+description=[*]Players: enable this mod in the main menu, then pick "Tunnel:" (Off, TCP or KCP) and "Tunnel port:" when adding or editing the server. The server list shows the tunnel next to the address.
+description=[*]No fallback to UDP: if the tunnel does not open, the join stops and shows why. Choose Off to join over UDP.
+description=[*]KCP recovers lost packets faster than TCP, but with FEC it can roughly double the bandwidth.
+description=[*]Tunnelled players show as 127.0.0.1, so ban them by name or Steam ID, not IP.
 description=[*]Only for joins by address, not via Steam friends, and not from the server's own machine.
 description=[/list]
 description=

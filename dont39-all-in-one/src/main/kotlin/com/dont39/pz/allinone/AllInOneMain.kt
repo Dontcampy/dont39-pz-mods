@@ -3,7 +3,7 @@ package com.dont39.pz.allinone
 import com.dont39.pz.animextendscase.AnimExtendsCase
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.missinganimfolders.MissingAnimFolders
-import com.dont39.pz.tcptunnel.TcpTunnel
+import com.dont39.pz.tunnel.Tunnel
 import com.dont39.pz.zbktutils.reportWidening
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import zombie.debug.DebugType
@@ -19,6 +19,6 @@ object AllInOneMain : MainEntrypoint {
     ImeKeyboardFix.init()
     MissingAnimFolders.init()
     AnimExtendsCase.init()
-    TcpTunnel.init()
+    Tunnel.init()
   }
 }
