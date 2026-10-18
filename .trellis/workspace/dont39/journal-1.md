@@ -530,3 +530,24 @@ tcp-tunnel renamed to tunnel with a Transport seam (TCP, KCP). KCP: own Kotlin p
 ### Status
 
 [OK] **Completed**
+
+
+## Session 23: Multiplayer network status icon
+<!-- trellis-session: v=2 fp=b48e960b2180c0aa -->
+
+**Date**: 2026-10-18
+**Task**: Multiplayer network status icon
+
+### Summary
+
+Bottom-left signal icon in multiplayer: bars show ping tier, warning badge shows loss; tooltip with method, ping, loss, traffic, server and RakNet debug. Loss source per method (RakNet / KCP FEC gaps + retransmits / none for TCP); tunnel now exposes KCP counters via Dont39AllInOne_getTunnelStatus. Verified in game on UDP/TCP/KCP with a user-space impairment proxy; packetlossTotal from native is 0, so session loss comes from byte totals.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a85c7a9` | Add a network status icon for multiplayer (#18) |
+
+### Status
+
+[OK] **Completed**
