@@ -1,9 +1,11 @@
 package com.dont39.pz.tunnel.transport.kcp
 
 import com.dont39.pz.tunnel.LinkStats
+import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenTunnel
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
+import com.dont39.pz.tunnel.closeQuietly
 import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -23,8 +25,6 @@ internal class KcpClient private constructor(private val session: KcpSession, pa
   override fun close(reason: String) = session.close(reason)
 
   companion object {
-    private const val UDP_BUFFER = 1 shl 20
-
     /**
      * Sends HELLOs to [host]:[port] every [attemptMillis] until the server answers or [totalMillis] pass, then listens
      * locally on [gamePort] and the server's UDPPort.
@@ -43,11 +43,11 @@ internal class KcpClient private constructor(private val session: KcpSession, pa
       } catch (e: IOException) {
         throw TunnelIo.probeFailed(transport, target, e)
       }
-      val opened = mutableListOf<DatagramSocket>()
+      var local: LocalChannels? = null
       try {
         val welcome = try {
-          socket.receiveBufferSize = UDP_BUFFER
-          socket.sendBufferSize = UDP_BUFFER
+          socket.receiveBufferSize = TunnelIo.UDP_BUFFER
+          socket.sendBufferSize = TunnelIo.UDP_BUFFER
           // a closed port then fails the receive at once instead of timing out
           socket.connect(address, port)
           KcpWire.handshake(socket, Random.nextInt(), attemptMillis, totalMillis)
@@ -55,15 +55,14 @@ internal class KcpClient private constructor(private val session: KcpSession, pa
           throw TunnelIo.probeFailed(transport, target, e)
         }
         socket.soTimeout = 0
-        opened += TunnelIo.listenLocally(listOf(gamePort, welcome.udpPort), transport, target)
+        val channels = LocalChannels.listen(gamePort, welcome.udpPort, transport, target).also { local = it }
         val label = "KCP tunnel to $target"
         val scheduler = KcpScheduler("$label, ticks", KcpScheduler.period(welcome.params), log)
         val session = KcpSession(
           label,
           welcome.conv,
           welcome.params,
-          opened,
-          listOf(null, null),
+          channels,
           { datagram, length -> socket.send(DatagramPacket(datagram, length)) },
           log,
         ) {
@@ -76,8 +75,8 @@ internal class KcpClient private constructor(private val session: KcpSession, pa
         scheduler.start()
         return KcpClient(session, welcome.params)
       } catch (t: Throwable) {
-        runCatching { socket.close() }
-        opened.forEach { runCatching { it.close() } }
+        socket.closeQuietly()
+        local?.close()
         throw t
       }
     }

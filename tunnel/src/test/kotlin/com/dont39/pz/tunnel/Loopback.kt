@@ -46,14 +46,20 @@ internal class LoopbackGame : AutoCloseable {
   val client = socket()
   val server = List(TunnelIo.CHANNELS) { socket() }
 
-  /** Where the server-side tunnel relays to, per channel. */
-  val targets: List<InetSocketAddress> = server.map { it.localSocketAddress as InetSocketAddress }
+  /** The client end, on free ports. */
+  fun clientEnd(): LocalChannels = LocalChannels.listen(0, 0, "test", "test")
+
+  /** The server end, relaying to [server]. */
+  fun serverEnd(): LocalChannels = LocalChannels.toGame(server[0].localPort, server[1].localPort)
+
+  /** Sends and checks datagrams through a tunnel whose client end is [clientEnd]. */
+  fun exchange(clientEnd: LocalChannels) = exchange(List(TunnelIo.CHANNELS) { clientEnd.localPort(it) })
 
   /**
    * Sends datagrams of several sizes from the client to [clientPorts] (the client end, per channel) and replies from
    * the server, on each channel, and checks they arrive in order, intact and from the client end's port.
    */
-  fun exchange(clientPorts: List<Int>) {
+  private fun exchange(clientPorts: List<Int>) {
     for (channel in 0 until TunnelIo.CHANNELS) {
       val requests = messages(channel)
       requests.forEach { client.send(DatagramPacket(it, it.size, TunnelIo.LOOPBACK, clientPorts[channel])) }
@@ -76,6 +82,13 @@ internal class LoopbackGame : AutoCloseable {
   override fun close() {
     client.close()
     server.forEach { it.close() }
+  }
+
+  companion object {
+    fun assertClosed(vararg ends: LocalChannels) {
+      // a closed socket has no port
+      ends.forEach { end -> repeat(TunnelIo.CHANNELS) { assertEquals(-1, end.localPort(it), "an open local socket") } }
+    }
   }
 
   private fun socket() = DatagramSocket(InetSocketAddress(TunnelIo.LOOPBACK, 0)).apply {

@@ -26,8 +26,8 @@ class KcpSessionTest {
   private val serverLog = RecordingLog()
   private val clientNet = DatagramSocket(InetSocketAddress(TunnelIo.LOOPBACK, 0))
   private val serverNet = DatagramSocket(InetSocketAddress(TunnelIo.LOOPBACK, 0))
-  private val clientUdp = List(TunnelIo.CHANNELS) { TunnelIo.datagramSocket(0) }
-  private val serverUdp = game.targets.map { TunnelIo.datagramSocket(0).apply { connect(it) } }
+  private val clientEnd = game.clientEnd()
+  private val serverEnd = game.serverEnd()
   private val scheduler = KcpScheduler("test ticks", KcpScheduler.period(PARAMS), clientLog)
   private val closed = CountDownLatch(2)
 
@@ -35,8 +35,7 @@ class KcpSessionTest {
     "KCP tunnel to test",
     CONV,
     PARAMS,
-    clientUdp,
-    listOf(null, null),
+    clientEnd,
     { datagram, length -> clientNet.send(DatagramPacket(datagram, length, serverNet.localSocketAddress)) },
     clientLog,
   ) { closed.countDown() }
@@ -45,8 +44,7 @@ class KcpSessionTest {
     "KCP tunnel from test",
     CONV,
     PARAMS,
-    serverUdp,
-    game.targets,
+    serverEnd,
     { datagram, length -> serverNet.send(DatagramPacket(datagram, length, clientNet.localSocketAddress)) },
     serverLog,
   ) { closed.countDown() }
@@ -73,19 +71,19 @@ class KcpSessionTest {
 
   @Test
   fun `datagrams cross on both channels, both ways`() {
-    game.exchange(clientUdp.map { it.localPort })
+    game.exchange(clientEnd)
     clientLog.assertNoErrors()
     serverLog.assertNoErrors()
   }
 
   @Test
   fun `closing one end closes the other`() {
-    game.exchange(clientUdp.map { it.localPort })
+    game.exchange(clientEnd)
     client.close("the player left")
     clientLog.await("KCP tunnel to test closed: the player left (")
     serverLog.await("KCP tunnel from test closed: closed by the other end (")
     assertTrue(closed.await(5, TimeUnit.SECONDS), "both sessions ran their close action")
-    assertTrue((clientUdp + serverUdp).all(DatagramSocket::isClosed), "local sockets closed")
+    LoopbackGame.assertClosed(clientEnd, serverEnd)
     clientLog.assertNoErrors()
     serverLog.assertNoErrors()
   }
