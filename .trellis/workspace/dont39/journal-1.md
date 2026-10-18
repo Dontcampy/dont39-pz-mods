@@ -551,3 +551,34 @@ Bottom-left signal icon in multiplayer: bars show ping tier, warning badge shows
 ### Status
 
 [OK] **Completed**
+
+
+## Session 24: Codebase structure review and four-part refactor
+<!-- trellis-session: v=2 fp=a5442ece5987d670 -->
+
+**Date**: 2026-10-19
+**Task**: Codebase structure review and four-part refactor
+**Branch**: `refactor/tunnel-refactor`
+
+### Summary
+
+Surveyed the repo (no true god class; hook package is all public API). Build: typed buildSrc conventions, variants instead of cross-project access, generated initFeatures, pzDir moved to user properties. Processors: KSP tests on kctfork, JavacHookReader, HookAnalyzer split, LuaBridge, shared Messages. Zabric runtime: AccessWidener/HookListing/Lifecycle splits, internal Log/Jars, one HookListingFormat. Tunnel: 42 in-repo tests, LocalChannels, TunnelStatus keys renamed seq*/srttMillis, Tunnel.lua split in four. Output diffs and Zabric console lines matched baseline; smokeTest/serverSmokeTest passed after each part. In-game tunnel joins (TCP/KCP), dialog, server list and tooltip not tested.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c118cf1` | Move shared build wiring into typed buildSrc conventions |
+| `070f607` | Test the KSP processor and give each processor class one job |
+| `8585ace` | Split Zabric's large runtime classes and define the listing format once |
+| `65d88b0` | Prepare tunnel for JUnit tests |
+| `37a0270` | Add tunnel tests: loss, wire, loopback, store |
+| `e334146` | Share the tunnel's local end between TCP and KCP |
+| `b0fcd00` | Build the tunnel status table outside TunnelClient |
+| `742b586` | Split the tunnel's Lua into guard, dialog and server list |
+| `000246d` | Describe the in-repo tunnel tests in the specs |
+| `8454f3a` | Keep the tunnel join refusal and session setup safe on failure |
+
+### Status
+
+[OK] **Completed**

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 23
-- **Last Active**: 2026-10-18
+- **Total Sessions**: 24
+- **Last Active**: 2026-10-19
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~553 | Active |
+| `journal-1.md` | ~584 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 24 | 2026-10-19 | Codebase structure review and four-part refactor | `c118cf1`, `070f607`, `8585ace`, `65d88b0`, `37a0270`, `e334146`, `b0fcd00`, `742b586`, `000246d`, `8454f3a` | `refactor/tunnel-refactor` |
 | 23 | 2026-10-18 | Multiplayer network status icon | `a85c7a9` | `-` |
 | 22 | 2026-10-18 | KCP tunnel with FEC; tunnel feature without UDP fallback | `3777b48`, `369ea9c` | `claude/trellis-kcp-design-78eb49` |
 | 21 | 2026-10-18 | Shorter Workshop text; remove sctd-transmog-flush-fix | `53daffe`, `99e1b67` | `claude/tcp-connection-setup-c5fda8` |
