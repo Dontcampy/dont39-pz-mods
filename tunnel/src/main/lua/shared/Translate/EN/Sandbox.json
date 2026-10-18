@@ -1,0 +1,5 @@
+{
+    "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
+    "Sandbox_Dont39AllInOne_TunnelTcpPort": "TCP tunnel port",
+    "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "TCP port on which the server accepts players whose network drops UDP. They enter it as \"TCP port\" in their server entry. 0 turns the tunnel off. Open this TCP port in the firewall. Takes effect when the server starts."
+}
