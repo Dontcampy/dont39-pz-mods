@@ -15,6 +15,7 @@
 | Hooks | No catch: the generated glue catches everything and reports it to the gate, which disables the feature; a `FINALLY` handler restores what `HEAD` changed | `HookGate.java`, `ImeCaret.publish` |
 | Restore paths | Keep restoring the rest after one failure, then throw it; an undo clears its state before acting, so a failure is never retried | `ImeWindow.restore` |
 | Probes whether a target mod is there | "Not loaded" only when the class is absent; anything else is an error | `TargetMod.kt` |
+| Network I/O (peers closing, resets, timeouts) | A runtime event, not a mismatch: close only what it affects and log one line; only non-`IOException` throwables disable the feature. A fallback on such an event exists only where the user chose it (the tunnel's UDP fallback) | `Relay.kt`, `TunnelListener.kt`, `TunnelClient.kt` in `tcp-tunnel` |
 
 Feature references are in the feature package of `ime-keyboard-fix`. The checking and gating rules are implemented in
 `TargetMod.kt`, `Widening.kt` and `Feature.kt` ([ZabricKotlin Utils](./zb-kt-utils.md)), the hook side in

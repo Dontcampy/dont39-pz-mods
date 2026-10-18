@@ -461,3 +461,49 @@ New Lua-only All-in-One feature sctd-transmog-flush-fix replaces Shadow Cat Tact
 ### Status
 
 [OK] **Completed**
+
+
+## Session 20: TCP tunnel for players whose network drops UDP
+<!-- trellis-session: v=2 fp=d821e745be91d3cf -->
+
+**Date**: 2026-10-18
+**Task**: TCP tunnel for players whose network drops UDP
+**Branch**: `claude/tcp-connection-setup-c5fda8`
+
+### Summary
+
+New All-in-One feature tcp-tunnel: carries the whole RakNet connection over one TCP connection per player, UDP and TCP side by side. Server: sandbox option Dont39AllInOne_TcpTunnel.Port (0 = off), listener started at GameServer.startServer RETURN, relays to 127.0.0.1 DefaultPort (ch 0) and UDPPort (ch 1). Client: per-address TCP port field in the add/edit server dialog (Zomboid/Lua store), probe 1 s + 1 s, rewrites only the host of UdpEngine.Connect, UDP fallback with one log line; a server on the same machine is not tunnelled. Spike: Steam-mode clients try RakNet UDP to host:UDPPort before Steam networking (measured against the Linux server), so the tunnel relays both ports. All-in-One jar moved to media/java/ (loads on both sides; ZB 2.3.4 loaded client/ too), ime-keyboard-fix idle on servers. In game on a temporary Steam-mode instance (myserver2_Data, ports 48261/48262/48300, stopped, ini restored): tunnelled join and 8 min play, wrong port fell back to UDP in 1 s, dialog stored/prefilled, killed client closed only its tunnel; dedicated servers write no map_sand.bin, so SandboxVars.lua edits apply on restart. smokeTest fails only on sctd-transmog-flush-fix after an SCTD update (separate follow-up). Not tested: concurrent UDP client, real packet loss. No version bump.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `755b694` | Weave-test a variable hook that reads the receiver and every argument |
+| `109c54c` | Add a TCP tunnel for players whose network drops UDP |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 21: Shorter Workshop text; remove sctd-transmog-flush-fix
+<!-- trellis-session: v=2 fp=b0cca674226c93e4 -->
+
+**Date**: 2026-10-18
+**Task**: Shorter Workshop text; remove sctd-transmog-flush-fix
+**Branch**: `claude/tcp-connection-setup-c5fda8`
+
+### Summary
+
+Follow-ups on PR #16. workshop.txt shortened from 68 to 40 lines: each feature in one or two sentences, the TCP tunnel as three bullets (server, players, limits). Removed sctd-transmog-flush-fix: Shadow Cat Tactics: Dispatch changed SCTD_TransmogSync.Flush, so the fix reported itself disabled and failed smokeTest; module, feature list entry, Workshop section and smokeTest entry gone, smokeTest keeps an empty luaTargeted list for the next Lua-only fix of another mod, spec paragraph points to git history. Build and :dont39-all-in-one:smokeTest pass. PR description updated; the SCTD follow-up card withdrawn.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `53daffe` | Shorten the All-in-One Workshop description |
+| `99e1b67` | Remove sctd-transmog-flush-fix |
+
+### Status
+
+[OK] **Completed**

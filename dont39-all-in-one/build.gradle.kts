@@ -19,7 +19,7 @@ val features = listOf(
   ":ime-keyboard-fix",
   ":missing-anim-folders",
   ":anim-extends-case",
-  ":sctd-transmog-flush-fix",
+  ":tcp-tunnel",
 )
 // ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"
@@ -112,8 +112,11 @@ val checkGlue = tasks.register("checkGlue") {
 tasks.named("check") { dependsOn(checkGlue) }
 
 tasks.named<Sync>("assembleMod") {
-  from(tasks.jar) { into("42/media/java/client") }
+  // no client/ or server/ in the path: loads on both (ZombieBuddy ModdingGuide, "Client/server JAR paths")
+  from(tasks.jar) { into("42/media/java") }
   features.forEach { from(project(it).file("src/main/lua")) { into("42/media/lua") } }
+  // other media files, e.g. sandbox-options.txt
+  features.forEach { from(project(it).file("src/main/media")) { into("42/media") } }
 }
 
 val pzDir = providers.gradleProperty("pzDir")
@@ -196,7 +199,7 @@ tasks.register("smokeTest") {
     }
     val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
     // Lua-only features with a target mod
-    val luaTargeted = listOf("sctd-transmog-flush-fix").map { name ->
+    val luaTargeted = listOf<String>().map { name ->
       status(name)
       "$logPrefix$name: "
     }

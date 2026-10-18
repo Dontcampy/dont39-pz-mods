@@ -2,50 +2,37 @@ version=1
 id=3818388200
 title=Dont39 All-in-One
 description=[h1]Dont39 All-in-One[/h1]
-description=A collection of fixes and tweaks for Build 42. They need no mods besides the requirements below; the one fix for another mod does nothing without that mod.
+description=Fixes and tweaks for Build 42.
 description=
 description=[h2]Requirements[/h2]
 description=[list]
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
-description=[*]Zabric, the loader layer for ZombieBuddy mods (also by Dont39). It opens up game internals the fixes read, at game start.
-description=[*]ZabricKotlin, the Kotlin runtime for ZombieBuddy mods (also by Dont39).
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
+description=[*]Zabric and ZabricKotlin (also by Dont39)
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, Zabric, ZabricKotlin, then Dont39 All-in-One.
-description=On the first launch Zabric registers itself with ZombieBuddy to load at game start, and a message on the main menu asks you to restart the game once. Until then the fixes stay off; console.txt says why.
+description=Load order: ZombieBuddy, Zabric, ZabricKotlin, Dont39 All-in-One. On first launch, restart the game once when the main menu asks.
 description=
 description=[h2]Mod Options sidebar[/h2]
-description=Options > Mods shows every mod's options on one long page. This adds a list of those mods on the right: click a mod to jump to its options. The list highlights the mod you are looking at while you scroll.
-description=[list]
-description=[*]Remembers the mod you last picked and opens the page there, also after a restart (saved in Zomboid/Lua/Dont39AllInOne_ModOptionsSidebar.txt).
-description=[*]Only adds the list; option values, Apply, Accept and Back work as before.
-description=[*]If another mod changes that page in a way it does not expect, the page still works, just without the list.
-description=[/list]
+description=Options > Mods gets a list of mods on the right: click one to jump to its options. Remembers your last pick.
 description=
 description=[h2]Keyboard controls with an IME on[/h2]
-description=With an input method (IME) such as Chinese Pinyin switched on, your keys go into the IME instead of the game, so movement and hotkeys stop working. This keeps the IME out of the game window, so keys control the game whatever the IME state, and brings it back while you type in a text box (chat, search, names), where it works as before.
-description=[list]
-description=[*]Windows only; elsewhere it stays idle.
-description=[*]The IME keeps the mode (e.g. Chinese or English) you last used in a text box.
-description=[*]While you type, the IME's input (e.g. the pinyin) and its candidate list show at the text cursor; without this you type blind. Windowed mode only: in borderless or fullscreen mode the game covers the whole screen, and IMEs such as WeChat IME then hide their windows.
-description=[*]Other programs' IME is not affected.
-description=[/list]
+description=With an IME (e.g. Chinese Pinyin) on, keys control the game instead of going into the IME; it comes back while you type in a text box, with its candidates shown at the cursor (windowed mode). Windows only.
 description=
 description=[h2]Faster loading with many mods[/h2]
-description=While loading animations the game looks into every mod's media/AnimSets and media/actiongroups folders, also when a mod has none, and writes a full error to the log for each missing one. With a few hundred mods that is hundreds of errors and tens of thousands of log lines, mostly while joining a server, and the loading screen waits for them. This skips the folders that do not exist; mods that have them load their animations as before.
+description=Skips animation folders that mods do not have, instead of logging an error for each one.
 description=
 description=[h2]Mod animations on Linux dedicated servers[/h2]
-description=On a Linux dedicated server whose Workshop folder is inside the server folder (the usual steamcmd setup), animation files that extend another file fail to load: the game looks for the other file with its path in lowercase, and Linux file names are case-sensitive. The log then fills with FileNotFoundException errors and the server is missing those animations. This makes the game open the file with the name the mod gives. Windows, and players' games, are not affected.
+description=Fixes animation files that extend another file failing to load because of lowercased file names.
 description=
-description=[h2]Shadow Cat Tactics: Dispatch error spam in multiplayer (temporary)[/h2]
-description=Since its 2026-10-17 update, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3689462578]Shadow Cat Tactics: Dispatch[/url] makes multiplayer clients log "Object tried to call nil in Flush" on every tick after the first outfit (transmog) change, thousands of times per session, with stutter; waiting outfit updates are then only retried when the next one arrives. Players cannot patch it themselves because servers check the mod's Lua files. This replaces the one broken function while the game runs, without touching the mod's files.
+description=[h2]TCP tunnel[/h2]
+description=For players whose network drops UDP: the game connection can run through TCP. Other players keep using UDP.
 description=[list]
-description=[*]It replaces the function only while the mod's code is exactly the broken version. Once the mod's author fixes it, this turns itself off (console.txt says so) and will be removed in a later update.
-description=[*]Without Shadow Cat Tactics: Dispatch it does nothing.
+description=[*]Server: set the sandbox option "TCP tunnel port" (0 = off), restart, and open that TCP port in the firewall. Tunnelled players show as 127.0.0.1, so ban them by name or Steam ID, not IP.
+description=[*]Players: enable this mod in the main menu, then fill in "TCP port" when adding or editing the server. If the tunnel does not answer within 2 seconds, you join over UDP.
+description=[*]Only for joins by address, not via Steam friends, and not from the server's own machine.
 description=[/list]
 description=
 description=[h2]Source and feedback[/h2]
-description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
-description=Problems and suggestions: comments below or GitHub issues.
+description=[url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url], or comment below.
 tags=Build 42;Misc
 visibility=public

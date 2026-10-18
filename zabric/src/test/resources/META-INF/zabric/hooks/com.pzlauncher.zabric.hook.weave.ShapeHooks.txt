@@ -6,8 +6,10 @@ patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_count
 patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_parse
 patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_pick
 patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_label
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_connect
 hook com.pzlauncher.zabric.hook.weave.Shapes <init> (Ljava/lang/String;)V com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_init
 hook com.pzlauncher.zabric.hook.weave.Shapes count ([Ljava/lang/String;)I com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_count
 hook com.pzlauncher.zabric.hook.weave.Shapes parse (Ljava/lang/String;)I com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_parse
 hook com.pzlauncher.zabric.hook.weave.Shapes pick (Ljava/lang/String;JLjava/lang/String;)Ljava/lang/String; com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_pick
 hook com.pzlauncher.zabric.hook.weave.Shapes label (Ljava/lang/String;)Ljava/lang/String; com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_label
+hook com.pzlauncher.zabric.hook.weave.Shapes connect (Ljava/lang/String;ILjava/lang/String;Z)Ljava/lang/String; com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Shapes_connect

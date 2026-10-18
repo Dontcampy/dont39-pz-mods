@@ -1,0 +1,4 @@
+{
+    "UI_Dont39AllInOne_TcpTunnel_Port": "TCP port:",
+    "UI_Dont39AllInOne_TcpTunnel_PortTooltip": "Optional. The server's TCP tunnel port, if its owner set one up with Dont39 All-in-One. Joins then go over TCP, which helps when your network drops UDP; if the tunnel does not answer, the join goes over UDP as usual. Leave empty for UDP only."
+}
