@@ -8,13 +8,21 @@
 
 ```
 settings.gradle.kts                  module list
-gradle.properties                    local paths (pzDir, pzServerDir)
+gradle.properties                    build settings; machine paths (pzDir, pzServerDir) go in ~/.gradle/gradle.properties
 buildSrc/src/main/kotlin/
-  pz-java.gradle.kts                 convention plugin every module applies, except the processors
-  pz-kotlin.gradle.kts               convention plugin every Kotlin module applies
-  pz-mod.gradle.kts                  convention plugin every shipped mod applies
-  pz-feature.gradle.kts              convention plugin every Kotlin feature module applies
-  pz-publish.gradle.kts              convention plugin of the Maven Central artifacts (zabric, zabric-processor)
+  pz-jvm.gradle.kts                  toolchain and bytecode level (PzJvm.kt); zabric-processor applies it without pz-java
+  pz-java.gradle.kts                 every game module: pz-jvm, zb-gradle-plugin, game and ZombieBuddy jars
+  pz-kotlin.gradle.kts               every Kotlin module
+  pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
+  pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, descriptor variants
+  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled, KSP glue
+  pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
+  pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
+  pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
+  PzPaths.kt, ModInfo.kt             machine paths, mod.info
+  PzArtifacts.kt                     the variants projects exchange data through
+  FeatureInfo.kt, CheckGlue.kt       feature descriptors, generated initFeatures(), checkGlue
+  PzSmoke.kt, GameSmokeTest.kt, ServerSmokeTest.kt  smoke tests
   PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
   CheckLoaderRefs.kt, CheckBootstrapClasses.kt  class-reference checks (see zombiebuddy-patching.md, kotlin-runtime.md)
 <feature-module>/                    one per feature, e.g. ime-keyboard-fix/
@@ -28,8 +36,8 @@ buildSrc/src/main/kotlin/
   src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
   build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features
-  build.gradle.kts                   version, feature list, packaging, smokeTest
-  src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt   the mod's main entrypoint
+  build.gradle.kts                   version, feature list (init order), packaging, smokeTest
+  src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt   the mod's main entrypoint; calls the generated initFeatures()
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview
 zabric/                              shipped mod: loader layer, hook API and runtime (see access-widening.md, zabric-hooks.md)
@@ -42,14 +50,11 @@ zb-skip-online-checks/               Java mod that skips ZombieBuddy's network r
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua
-are merged into the mod folder, deploy guards, smoke test) is defined in:
-
-- `buildSrc/src/main/kotlin/pz-java.gradle.kts`, `pz-kotlin.gradle.kts`, `pz-mod.gradle.kts`, `pz-feature.gradle.kts`,
-  `pz-publish.gradle.kts`
-- `dont39-all-in-one/build.gradle.kts`, `zb-kt/build.gradle.kts`, `zabric/build.gradle.kts`,
-  `zabric-processor/build.gradle.kts`
-
-Read those files rather than assuming; do not duplicate their settings in feature modules.
+are merged into the mod folder, deploy guards, smoke test) is defined in the convention plugins and task classes above
+and in the shipped modules' build scripts. Read those files rather than assuming; do not duplicate their settings in
+module scripts. A module script holds only what is specific to the module and never reads or configures another
+project (`project(x).tasks`, `.extra`, `evaluationDependsOn`, ...): data crosses projects as a dependency on a variant
+(`PzArtifacts.kt`), or as a repo file read by path (`modInfoOf` in `ModInfo.kt`).
 
 ---
 
@@ -86,25 +91,26 @@ handlers are `public` (`HookReader.kt`). Compare the modifiers in the `ime-keybo
 1. New module dir whose `build.gradle.kts` applies `buildsrc.convention.pz-feature` and declares its target mods with
    `pzTargets` ([Access Widening](./access-widening.md)).
 2. Register it in `settings.gradle.kts`.
-3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`.
+3. Add it to the feature list in `dont39-all-in-one/build.gradle.kts`, at its place in the init order.
 4. Facade + helpers in the feature package, modeled on `ImeKeyboardFix.kt`, built on `Feature`
    ([ZabricKotlin Utils](./zb-kt-utils.md)); non-public members via
-   [Access Widening](./access-widening.md).
+   [Access Widening](./access-widening.md). The module name fixes the facade's name (`pz-feature.gradle.kts`); the
+   generated `initFeatures()` calls its `init()`.
 5. Write hook objects with Zabric's annotations (`@Hooks`, `@Inject`, ...) and annotate Lua functions (`@LuaGlobal`)
    in the feature package ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)); the glue classes are
    generated. Add a Lua file in
    `src/main/lua/` if the feature has options.
-6. Call the facade's `init()` from `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`.
-7. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
-8. Add a section for the feature to `dont39-all-in-one/mod/workshop/workshop.txt`, following the existing one.
-9. Bump the version in `dont39-all-in-one/build.gradle.kts` when releasing.
+6. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
+7. Add a section for the feature to `dont39-all-in-one/mod/workshop/workshop.txt`, following the existing one.
+8. Bump the version in `dont39-all-in-one/build.gradle.kts` when releasing.
 
-A feature with generated glue needs no `smokeTest` edit.
+`AllInOneMain.kt` and `smokeTest` need no edit.
 
 Do not put feature code inside `dont39-all-in-one`; each feature is its own module.
 
-A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 8 and 9 as above, a module that applies
-`pz-kotlin` instead of `pz-feature`, no facade, hooks or `init()`. Add its `ready` line to `smokeTest` by hand.
+A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 7 and 8 as above, a module that applies
+`pz-bundled` instead of `pz-feature`, no facade, hooks or `init()`. Its Lua logs `<module>: ready`, which `smokeTest`
+expects of every Lua-only feature.
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 

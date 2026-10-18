@@ -63,3 +63,50 @@ Attributes: one custom `Usage`-like attribute (`pz.artifact`: `mod-files`, `clas
 - Variant-aware resolution can pull transitive features' classes twice; `duplicatesStrategy = FAIL` on the jar
   catches it.
 - Each requirement is a separate commit; revert per commit.
+
+## Implementation notes
+
+Deviations from the design above, and why:
+
+- **Plugins.** `pz-bootstrap` holds only the `checkBootstrapClasses` wiring; the ZombieBuddy test classpath and
+  self-attach `jvmArgs` are `pz-loader-test` (applies `pz-java` + `pz-junit`), used by `zabric` and
+  `zb-skip-online-checks`. `pz-junit` is applied only where tests exist (`zabric`, `zabric-processor`,
+  `zb-skip-online-checks`); `tunnel` / `zb-kt-utils-processor` add the one plugin line with their first tests (the
+  spec forbids adding a test framework as a side effect).
+- **`zb-kt-utils-processor` does not apply `pz-jvm`:** KGP's JVM-target validation fails on Java release 17 vs Kotlin
+  target 25 in a Kotlin-only module. It uses `kotlin { jvmToolchain(PZ_TOOLCHAIN) }`, so the bytecode stays at 25 as
+  before. `buildSrc/build.gradle.kts` keeps the literal 25 (buildSrc cannot use its own constants).
+- **Paths.** `pzUserDir` is not on `PzMod`; `PzPaths.kt` has `pzDir()`, `pzServerDir()`, `pzUserDir()`,
+  `pzWorkshopContent()`. `PzMod` holds `modId` and `javaPkgName`. A missing or blank `pzDir`/`pzServerDir` fails with
+  a hint when read, via `orElse("")` + a blank check in `map`: a throwing `orElse` is evaluated by the configuration
+  cache store even when the property is set.
+- **Game and target-mod jars moved off `compileOnly`** to a `pzCompileOnly` dependency scope that `compileClasspath`
+  extends: zb-gradle-plugin 1.0.3 iterates `compileOnly` in `afterEvaluate`, which resolved `pzDir` at configuration
+  time (R8 is impossible otherwise).
+- **One `feature` variant instead of `feature-init` + a Lua-only ready line.** Each bundled module publishes a folder
+  with `feature.properties` (`name`; `facade` for `pz-feature` modules) and, for `pz-feature`, the hook/Lua listings
+  copied from `processResources`. `GenerateFeatureInit`, `CheckGlue` and `GameSmokeTest` read it; the listings no
+  longer come from the features' `resources` variant (that one is used only for the jar). The facade FQN comes from the
+  existing naming convention in `pz-feature`, not from KSP, so KSP outputs stay byte-identical; a wrong name fails
+  `:dont39-all-in-one:compileKotlin`. `GenerateFeatureInit` fails unless the descriptors match the `features` list.
+- **Lua-only modules apply `pz-bundled`** (the base of `pz-feature`, on `pz-jvm` for the JVM 17 attribute), not
+  `pz-kotlin`; no `pzLuaOnly` extension: `smokeTest` expects `<module>: ready` of every Lua-only feature not in
+  `luaTargeted`. `luaTargeted` is a `GameSmokeTest` property (empty), validated to name Lua-only features only.
+- **Attributes.** Besides `pz.artifact`, the pz variants and requests carry `Category=pz-build`: an attribute missing on
+  one side matches anything, so without it the java plugin's `compileClasspath` found the pz variants ambiguous.
+- **`FEATURE_BUNDLE`** (`PzGlue.kt`) is a constant, not overridable by a Gradle property: there is one bundler.
+- **Smoke tests are typed tasks** (`GameSmokeTest.kt`, `ServerSmokeTest.kt`) with shared helpers in `PzSmoke.kt`
+  (`requireLines`, `requireOrder`) and `kotlinVersions()` in `Catalog.kt`; needed for AC5 and declared inputs. The
+  ZabricKotlin version comes from `zb-kt`'s `mod-folder` variant (`modversion=`), Zabric's id from its `mod.info` by
+  path.
+- **`pz-kotlin` reorder** is kept; a `doFirst` check fails if any entry after the game jar contains `kotlin/` classes.
+  A strict "game jar last" check failed on KSP's generated classes dir, which KSP appends after the reorder.
+
+Outputs vs baseline (the four `assembleMod` folders that `deployWorkshop` stages, jars expanded): identical except the `Dont39AllInOne.jar`
+entries `AllInOneMain.class` (calls `initFeatures()`), the new `GeneratedFeaturesKt.class`, and
+`META-INF/dont39-pz-mods_dont39-all-in-one.kotlin_module` (lists the new file facade). No manifest differences; KSP
+outputs and Zabric's public API identical.
+
+Isolated Projects (`-Dorg.gradle.unsafe.isolated-projects=true`): `build assembleMod`, `tasks --all` and a
+`smokeTest serverSmokeTest --dry-run` pass with no violations reported, KGP/KSP included. Only remaining deprecation:
+KSP's `Configuration.setVisible` (third-party).

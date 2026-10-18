@@ -12,11 +12,13 @@
 
 - Gradle must run on the JDK version `buildSrc` requires (see `buildSrc/build.gradle.kts`). Nothing in the repo pins
   the Gradle JVM, so set `JAVA_HOME` accordingly if the shell default is older.
-- `pzDir` in `gradle.properties` must point at a Project Zomboid install that contains the jars
-  `buildSrc/src/main/kotlin/pz-java.gradle.kts` compiles against.
+- `pzDir` must point at a Project Zomboid install that contains the jars `buildSrc/src/main/kotlin/pz-java.gradle.kts`
+  compiles against, and `pzServerDir` at the dedicated server (`serverSmokeTest` only). Both are machine paths: they
+  go in `~/.gradle/gradle.properties`, never in the repo's `gradle.properties` (`README.md`). A project configures
+  without them; a task that needs one fails with a hint (`PzPaths.kt`).
 - The features' target mods, if any, must be subscribed in Steam.
 - Check the assembled jar contains the feature's glue class and hook listings (output location: `assembleMod` in
-  `dont39-all-in-one/build.gradle.kts`; `checkGlue` checks the listings).
+  `pz-mod.gradle.kts`; `checkGlue` checks the listings).
 
 ## Tests
 
@@ -25,15 +27,16 @@ test framework as part of a feature task; propose it separately. Game-free code 
 exercised by a harness outside the repo, with its results in the task's research
 (`10-18-kcp-tunnel/research/kcp-harness.md`). `./gradlew check` runs the build checks and the JUnit
 tests of Zabric's hook runtime and processor ([Zabric Hooks](./zabric-hooks.md#where-it-lives)), which need
-`ZombieBuddy.jar` under `pzDir`.
+`ZombieBuddy.jar` under `pzDir`. A module with JUnit tests applies `buildsrc.convention.pz-junit`, plus
+`pz-loader-test` when its tests run against ZombieBuddy's classes; it adds no JUnit setup of its own.
 
-The automated checks launch the real game (`smokeTest`, `dont39-all-in-one/build.gradle.kts`) or dedicated server
-(`serverSmokeTest`, `zb-kt/build.gradle.kts`) with ZombieBuddy until init and check the log. Read the task for its
-prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening list
-in any installed mod fails both.
+The automated checks launch the real game (`smokeTest` of `dont39-all-in-one`, `GameSmokeTest.kt`) or dedicated
+server (`serverSmokeTest` of `zb-kt`, `ServerSmokeTest.kt`) with ZombieBuddy until init and check the log. Read the task
+for its prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening
+list in any installed mod fails both.
 
-A feature with generated glue needs no edit to them; a Lua-only feature adds its line to `smokeTest`
-(see [Adding a Feature](./directory-structure.md#adding-a-feature)).
+A new feature needs no edit to them, except a Lua-only feature with a target mod, which goes in `smokeTest`'s
+`luaTargeted` (see [Adding a Feature](./directory-structure.md#adding-a-feature)).
 
 ## In-Game Verification
 
@@ -60,7 +63,7 @@ If an in-game check was not done, say so in the task report.
 
 ## Code Style
 
-Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `pz-java.gradle.kts` and `pz-kotlin.gradle.kts`.
+Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `PzJvm.kt`.
 New code is Kotlin; Java only in `zabric`, `zabric-processor`, `zb-skip-online-checks`, the samples, and where
 [Kotlin Runtime](./kotlin-runtime.md) requires it. Copied third-party code keeps its language, license header and
 source commit, lives in a subpackage of the feature (all mod jars share one class loader), and its license text goes

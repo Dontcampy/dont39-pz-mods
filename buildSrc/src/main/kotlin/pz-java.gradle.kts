@@ -1,6 +1,7 @@
 package buildsrc.convention
 
 plugins {
+  id("buildsrc.convention.pz-jvm")
   `java-library`
   id("io.github.zed-0xff.zb-gradle-plugin")
 }
@@ -10,31 +11,20 @@ zbSigning {
   enabled = false
 }
 
-java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(25)
-  }
-}
+val pzGame = extensions.create<PzGame>("pzGame")
+pzGame.gameJar.convention(pzDir().map { it.file(PZ_GAME_JAR) })
 
-tasks.withType<JavaCompile>().configureEach {
-  options.release = 17
-  options.encoding = "UTF-8"
-}
-
-val pzDir = providers.gradleProperty("pzDir")
-
-// pz-feature swaps in a widened copy
-val pzGameJar = objects.fileProperty().convention(layout.file(pzDir.map { file("$it/projectzomboid.jar") }))
-extra["pzGameJar"] = pzGameJar
-
-// Not on compileOnly: there zb-gradle-plugin 1.0.3 would add ZombieBuddy.jar as annotation processor (it has none) and a
-// compileJava doFirst that holds the Project, which the configuration cache cannot store.
+// Not on compileOnly, which zb-gradle-plugin 1.0.3 reads at configuration time: it would add ZombieBuddy.jar as
+// annotation processor (it has none) and a compileJava doFirst that holds the Project, which the configuration cache
+// cannot store, and it would need pzDir to configure.
 val zombieBuddy = configurations.dependencyScope("zombieBuddy")
-configurations.compileClasspath { extendsFrom(zombieBuddy.get()) }
+// the game jar and target-mod jars (pz-feature), provided at runtime
+val pzCompileOnly = configurations.dependencyScope("pzCompileOnly")
+configurations.compileClasspath { extendsFrom(zombieBuddy.get(), pzCompileOnly.get()) }
 
 dependencies {
-  zombieBuddy(files(pzDir.map { "$it/ZombieBuddy.jar" }))
-  compileOnly(files(pzGameJar))
+  zombieBuddy(files(pzDir().map { it.file(ZOMBIEBUDDY_JAR) }))
+  pzCompileOnly(files(pzGame.gameJar))
 }
 
 // Keeps loader types (ZombieBuddy) in Zabric's loader package and generated glue, which exclude themselves.

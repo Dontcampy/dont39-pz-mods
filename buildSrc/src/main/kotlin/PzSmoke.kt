@@ -65,3 +65,19 @@ fun checkPlatformLog(log: String, console: File, rerun: String) {
   lines.firstOrNull { "[Zabric] " in it && "entrypoint" in it }?.let { throw GradleException("$console: $it") }
   lines.firstOrNull { "[ZabricKotlin] not ready" in it }?.let { throw GradleException("$console: $it") }
 }
+
+/** Fails unless each of [lines] is in [log]; [where] names the log. */
+fun requireLines(log: String, where: String, lines: List<String>) {
+  val missing = lines.filterNot { it in log }
+  if (missing.isNotEmpty()) {
+    throw GradleException("$where is missing:\n" + missing.joinToString("\n") { "  $it" })
+  }
+}
+
+/** Fails unless [lines] appear in [log] in this order. */
+fun requireOrder(log: String, where: String, lines: List<String>) {
+  val positions = lines.map { log.indexOf(it) }
+  if (positions != positions.sorted()) {
+    throw GradleException("$where has these lines out of order:\n" + lines.joinToString("\n") { "  $it" })
+  }
+}

@@ -12,30 +12,34 @@ plugins {
   kotlin("plugin.serialization")
 }
 
+// the toolchain comes from pz-jvm's java extension
 kotlin {
-  jvmToolchain(25)
   compilerOptions {
-    // same level as pz-java's options.release
-    jvmTarget = JvmTarget.JVM_17
-    freeCompilerArgs.add("-Xjdk-release=17")
+    jvmTarget = JvmTarget.fromTarget("$PZ_RELEASE")
+    freeCompilerArgs.add("-Xjdk-release=$PZ_RELEASE")
   }
 }
 
-val libs = the<VersionCatalogsExtension>().named("libs")
-
 dependencies {
   listOf("kotlinStdlib", "kotlinxCoroutines", "kotlinxSerialization").forEach {
-    compileOnly(libs.findLibrary(it).get())
+    compileOnly(catalogLibrary(it))
   }
 }
 
 // projectzomboid.jar also contains the game's kotlin-stdlib 1.4.10 and the first copy on the classpath wins, so it goes
 // last
-@Suppress("UNCHECKED_CAST")
-val gameJar = (extra["pzGameJar"] as RegularFileProperty).map { it.asFile }
+val gameJar = the<PzGame>().gameJar.map { it.asFile }
 
 tasks.withType<KotlinCompile>().configureEach {
   val game = gameJar
-  val classpath = files(libraries.from.toList())
-  libraries.setFrom(classpath.filter { it != game.get() }, game)
+  val classpath = libraries
+  libraries.setFrom(files(libraries.from.toList()).filter { it != game.get() }, game)
+  // another plugin may append after the reorder (KSP does, harmlessly)
+  doFirst {
+    val entries = classpath.files.toList()
+    val shadowed = entries.drop(entries.indexOf(game.get()) + 1).filter(::hasKotlinClasses)
+    if (shadowed.isNotEmpty()) {
+      throw GradleException("$path: the game's Kotlin in ${game.get().name} would shadow Kotlin classes of $shadowed")
+    }
+  }
 }

@@ -2,9 +2,12 @@ package buildsrc.convention
 
 import org.gradle.api.provider.Property
 
+/** The project dir of the mod that bundles every feature. */
+const val FEATURE_BUNDLE = "dont39-all-in-one"
+
 /**
- * Where a feature's generated glue goes, set by the mod that bundles the feature (`pzGlue` in pz-feature): ZombieBuddy
- * looks for patch and Lua classes only in that mod's javaPkgName, and Lua globals are shared by all mods.
+ * Where a feature's generated glue goes (`pzGlue` in pz-feature), by default from [FEATURE_BUNDLE]'s mod.info:
+ * ZombieBuddy looks for patch and Lua classes only in that mod's javaPkgName, and Lua globals are shared by all mods.
  */
 interface PzGlue {
   /** The bundling mod's javaPkgName. */
