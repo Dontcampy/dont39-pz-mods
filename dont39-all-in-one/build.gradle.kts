@@ -19,7 +19,6 @@ val features = listOf(
   ":ime-keyboard-fix",
   ":missing-anim-folders",
   ":anim-extends-case",
-  ":sctd-transmog-flush-fix",
   ":tcp-tunnel",
 )
 // ZabricKotlin, which also ships zb-kt-utils
@@ -200,7 +199,7 @@ tasks.register("smokeTest") {
     }
     val luaOnly = listOf("${logPrefix}mod-options-sidebar: ready")
     // Lua-only features with a target mod
-    val luaTargeted = listOf("sctd-transmog-flush-fix").map { name ->
+    val luaTargeted = listOf<String>().map { name ->
       status(name)
       "$logPrefix$name: "
     }

@@ -104,8 +104,9 @@ A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 8 and 9 
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 
-A Lua-only feature may fix another mod's Lua (reference: `sctd-transmog-flush-fix/`): it gates on that mod's exact
-source text and goes idle once the text changes without the bug. Its target is not added to `loadModAfter`: the mod
+A Lua-only feature may fix another mod's Lua (the first one, `sctd-transmog-flush-fix`, is removed; see git
+history): it gates on that mod's exact source text and goes idle once the text changes without the bug. Its target
+is not added to `loadModAfter`: the mod
 selector's auto-sort (`ModLoadOrderPanel:sortMods`) leaves a hole for a listed mod that is not enabled, and client Lua
 already runs after every mod's shared Lua. Its status line goes in `smokeTest`'s `luaTargeted` list, where idle passes.
 

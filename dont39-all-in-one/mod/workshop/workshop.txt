@@ -24,9 +24,6 @@ description=
 description=[h2]Mod animations on Linux dedicated servers[/h2]
 description=Fixes animation files that extend another file failing to load because of lowercased file names.
 description=
-description=[h2]Shadow Cat Tactics: Dispatch error spam (temporary)[/h2]
-description=Fixes "Object tried to call nil in Flush" spam in multiplayer from [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3689462578]Shadow Cat Tactics: Dispatch[/url]. Turns itself off once the mod is fixed.
-description=
 description=[h2]TCP tunnel[/h2]
 description=For players whose network drops UDP: the game connection can run through TCP. Other players keep using UDP.
 description=[list]
