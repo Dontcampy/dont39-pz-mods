@@ -1,0 +1,4 @@
+{
+    "UI_Dont39AllInOne_TcpTunnel_Port": "TCP 端口:",
+    "UI_Dont39AllInOne_TcpTunnel_PortTooltip": "可选。服务器所有者用 Dont39 All-in-One 设置的 TCP 隧道端口。填写后通过 TCP 加入，适合 UDP 丢包严重的网络；隧道无响应时照常通过 UDP 加入。留空则只用 UDP。"
+}

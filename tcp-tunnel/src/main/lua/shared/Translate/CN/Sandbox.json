@@ -1,0 +1,5 @@
+{
+    "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
+    "Sandbox_Dont39AllInOne_TcpTunnelPort": "TCP 隧道端口",
+    "Sandbox_Dont39AllInOne_TcpTunnelPort_tooltip": "服务器在此 TCP 端口接受 UDP 丢包严重的玩家，玩家在服务器条目的“TCP 端口”中填写它。0 表示关闭隧道。需要在防火墙中放行此 TCP 端口。服务器启动时生效。"
+}

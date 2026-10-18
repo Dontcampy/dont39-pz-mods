@@ -21,6 +21,10 @@ buildSrc/src/main/kotlin/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hooks objects and @LuaGlobal functions
   src/main/lua/client/                         Lua glue, e.g. mod options (if any)
+  src/main/lua/shared/Translate/<LANG>/        translations (UI.json, Sandbox.json); merged into one mod folder,
+                                               where a second feature's file of the same name fails assembleMod:
+                                               merge the entries into the existing file instead
+  src/main/media/                              other media files, e.g. sandbox-options.txt (copied into 42/media)
   src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
   build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features

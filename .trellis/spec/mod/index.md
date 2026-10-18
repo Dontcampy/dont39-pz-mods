@@ -27,8 +27,9 @@ Gradle logic) stays in this repo.
 Mod code is written in Kotlin. Features switch themselves off when the game or a target mod does not match what they
 expect.
 
-Lua is used only for small client-side glue such as mod options (each feature's `src/main/lua/`). There is no server
-or database code; this `mod` layer is the only spec layer.
+Lua is used only for small client-side glue such as mod options (each feature's `src/main/lua/`). The same jar runs in
+the game client and the dedicated server; there is no separate backend or database code, so this `mod` layer is the
+only spec layer.
 
 **These specs state rules and point at code. The code is the source of truth for details** (names, constants, exact
 messages, signatures). When writing or updating a spec, link the file instead of restating what it does.
@@ -44,7 +45,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 | Guide | Description |
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
-| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, patch classes, reaching other mods, gating, enter/exit restore |
+| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, loading on client and server, patch classes, Lua UI wrapping, server configuration, gating, enter/exit restore |
 | [Zabric Hooks](./zabric-hooks.md) | Hook API, processors, generated glue and listing, gates, publishing |
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |

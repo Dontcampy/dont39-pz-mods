@@ -76,8 +76,11 @@ What is not behind the seam and needs rework when switching loaders:
 
 ## Loading
 
-- Mod declaration: `dont39-all-in-one/mod/42/mod.info`. Check its jar path against the ModdingGuide
-  "Client/server JAR paths" section before adding a feature that must run on a dedicated server.
+- Mod declaration: `dont39-all-in-one/mod/42/mod.info`. The jar is under `media/java/` with no `client/` or
+  `server/`, so it loads on clients and dedicated servers (ModdingGuide "Client/server JAR paths";
+  `JavaModInfo.validateAndCreate` has the check, though ZombieBuddy 2.3.4 on the user's Linux server loaded a
+  `client/` jar anyway: do not rely on either behavior). A client-only feature therefore goes idle on a server in
+  `problem()` (`ImeKeyboardFix.kt`).
 - Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
   calls each feature's `init()`; `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy
   runs one as its own entry point.
@@ -118,6 +121,20 @@ What is not behind the seam and needs rework when switching loaders:
 - Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent:
   check a global exists before calling it.
 - User-facing switches are mod options, not JVM flags.
+
+---
+
+## Server Configuration
+
+For what a server owner sets. Reference: `tcp-tunnel` (`ServerStart.kt`, `src/main/media/sandbox-options.txt`).
+
+- A sandbox option of the feature (`sandbox-options.txt`, option `Dont39AllInOne_<Name>.<Option>`), translated in
+  `Sandbox.json`. No other config files or JVM flags.
+- Read it on the server at a `RETURN` hook of `GameServer.startServer`: earlier (`OnGameBoot`) the save's sandbox
+  values are not loaded yet. An option `getOptionByName` cannot find is a mismatch: throw.
+- A dedicated server writes no `map_sand.bin`; it reads `<server>_SandboxVars.lua` on every start, so "edit the file and
+  restart" is the documented way to change it (measured in task `10-17-tcp-connection`, `research/in-game-test.md`).
+- Skip co-op host processes (`GameServer.coop`) unless the feature is meant for them.
 
 ---
 

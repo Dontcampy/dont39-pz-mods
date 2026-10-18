@@ -1,0 +1,4 @@
+VERSION = 1,
+
+option Dont39AllInOne_TcpTunnel.Port
+{type = integer, min = 0, max = 65535, default = 0, page = Dont39AllInOne, translation = Dont39AllInOne_TcpTunnelPort,}
