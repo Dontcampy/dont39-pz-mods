@@ -1,6 +1,7 @@
 package com.dont39.pz.tunnel.fec
 
 import com.dont39.pz.tunnel.fec.rs.ReedSolomon
+import kotlin.math.min
 
 /**
  * Receiver side of the FEC layer. Not thread-safe: driven under the session's lock.
@@ -37,6 +38,23 @@ internal class FecDecoder(
   var malformed = 0L
     private set
 
+  /** Sequence numbers the other end has used so far, data and parity alike: the base of inbound loss. */
+  var seqExpected = 0L
+    private set
+
+  /** Sequence numbers skipped and not arrived since; rebuilt packets stay counted, as the link lost them. */
+  var seqMissing = 0L
+    private set
+
+  // the other end's encoder starts at 0
+  private var highestSeq = -1
+
+  // skipped sequence numbers, oldest first, so a late arrival is taken back out of seqMissing
+  private val gaps = LinkedHashSet<Int>()
+
+  // a datagram this far behind is past any recovery, and late enough to count as lost
+  private val maxGaps = maxReceived
+
   /** Takes one datagram (after the transport's header); false, and counted, when it is not valid FEC. */
   fun decode(datagram: ByteArray, offset: Int, length: Int, nowMillis: Long): Boolean {
     prune(nowMillis)
@@ -44,6 +62,7 @@ internal class FecDecoder(
     val seq = Fec.readInt(datagram, offset + 1)
     return when (datagram[offset].toInt()) {
       Fec.KIND_DATA -> {
+        track(seq)
         val start = offset + Fec.DATA_HEADER
         val size = length - Fec.DATA_HEADER
         if (parityShards == 0) {
@@ -69,6 +88,7 @@ internal class FecDecoder(
     if (k !in 1..dataShards || index >= parityShards || seq - first != k + index) return bad()
     val group = groups.getOrPut(first) { Group(first, k, shardLen, parityShards, nowMillis) }
     if (group.k != k || group.shardLen != shardLen) return bad()
+    track(seq)
     if (group.done) return true
     if (group.parity[index] != null) return true
     val start = offset + Fec.PARITY_HEADER
@@ -124,6 +144,24 @@ internal class FecDecoder(
       received[group.first + i] = Received(packet, nowMillis)
       recovered++
       sink(packet, 0, size)
+    }
+  }
+
+  private fun track(seq: Int) {
+    val ahead = seq - highestSeq
+    if (ahead <= 0) {
+      if (gaps.remove(seq)) seqMissing--
+      return
+    }
+    seqExpected += ahead
+    seqMissing += ahead - 1
+    val kept = min(ahead - 1, maxGaps)
+    repeat(kept) { gaps += seq - kept + it }
+    highestSeq = seq
+    val oldest = gaps.iterator()
+    while (gaps.size > maxGaps) {
+      oldest.next()
+      oldest.remove()
     }
   }
 

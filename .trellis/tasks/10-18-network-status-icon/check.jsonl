@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, in-game verification, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Lua/Kotlin failure paths of the 1 Hz polling"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "nothing logs per frame or per sample"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "feature registered everywhere the checklist requires"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Kotlin table contract vs Lua consumer across two modules"}

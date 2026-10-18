@@ -3,6 +3,7 @@ package com.dont39.pz.allinone
 import com.dont39.pz.animextendscase.AnimExtendsCase
 import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
 import com.dont39.pz.missinganimfolders.MissingAnimFolders
+import com.dont39.pz.networkstatus.NetworkStatus
 import com.dont39.pz.tunnel.Tunnel
 import com.dont39.pz.zbktutils.reportWidening
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint
@@ -20,5 +21,6 @@ object AllInOneMain : MainEntrypoint {
     MissingAnimFolders.init()
     AnimExtendsCase.init()
     Tunnel.init()
+    NetworkStatus.init()
   }
 }

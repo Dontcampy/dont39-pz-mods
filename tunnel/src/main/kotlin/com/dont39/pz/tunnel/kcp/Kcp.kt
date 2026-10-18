@@ -72,6 +72,10 @@ internal class Kcp(val conv: Int, private val output: (ByteArray, Int) -> Unit) 
   private var nocwnd = false
   private var deadLink = DEADLINK
 
+  /** Segments sent for the first time; the base of the retransmit rate. */
+  var segmentsSent = 0L
+    private set
+
   /** Retransmits after a timeout (`kcp->xmit` in ikcp.c). */
   var timeoutRetransmits = 0L
     private set
@@ -79,6 +83,9 @@ internal class Kcp(val conv: Int, private val output: (ByteArray, Int) -> Unit) 
   /** Retransmits triggered by skipped acks; not counted by ikcp.c. */
   var fastRetransmits = 0L
     private set
+
+  /** Smoothed round-trip time in milliseconds; 0 before the first ack. */
+  val srtt: Int get() = rxSrtt
 
   /** A segment was sent [DEADLINK] times without an ack. */
   val isDead: Boolean get() = state == -1
@@ -388,6 +395,7 @@ internal class Kcp(val conv: Int, private val output: (ByteArray, Int) -> Unit) 
       if (segment.xmit == 0) {
         needsend = true
         segment.xmit++
+        segmentsSent++
         segment.rto = rxRto
         segment.resendts = current + segment.rto + rtomin
       } else if (diff(current, segment.resendts) >= 0) {

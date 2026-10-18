@@ -20,6 +20,7 @@ val features = listOf(
   ":missing-anim-folders",
   ":anim-extends-case",
   ":tunnel",
+  ":network-status",
 )
 // ZabricKotlin, which also ships zb-kt-utils
 val kotlinLib = ":zb-kt"

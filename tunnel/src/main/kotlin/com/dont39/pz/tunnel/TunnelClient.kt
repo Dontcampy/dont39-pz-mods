@@ -3,7 +3,10 @@ package com.dont39.pz.tunnel
 import com.dont39.pz.tunnel.TunnelStore.Mode
 import com.dont39.pz.tunnel.transport.kcp.KcpTransport
 import com.dont39.pz.tunnel.transport.tcp.TcpTransport
+import com.dont39.pz.zbktutils.glue.LuaGlobal
+import se.krka.kahlua.vm.KahluaTable
 import zombie.Lua.LuaEventManager
+import zombie.Lua.LuaManager
 import zombie.core.Translator
 import zombie.core.raknet.UdpEngine
 import zombie.core.znet.SteamUtils
@@ -18,6 +21,9 @@ internal object TunnelClient : TunnelLog {
 
   private var engine: UdpEngine? = null
   private var tunnel: OpenTunnel? = null
+
+  // the store's entry the open tunnel was made from, for its mode and port in the status
+  private var entry: TunnelStore.Entry? = null
 
   // set while this object calls Connect itself, so that call runs vanilla
   private val reentered = ThreadLocal.withInitial { false }
@@ -60,6 +66,7 @@ internal object TunnelClient : TunnelLog {
     val opened = transport.open(address, entry.port, port, this)
     this.engine = engine
     tunnel = opened
+    this.entry = entry
     Tunnel.log {
       val details = opened.details.let { if (it.isEmpty()) "" else " ($it)" }
       "connecting to $address:$port through the ${transport.name} tunnel on port ${entry.port}$details"
@@ -100,7 +107,43 @@ internal object TunnelClient : TunnelLog {
   private fun close(reason: String) {
     tunnel?.close(reason)
     tunnel = null
+    entry = null
     engine = null
+  }
+
+  /**
+   * For the network status display: the open tunnel's mode, port and, for KCP, its cumulative counters; nil when none
+   * is open or the feature is off, as a disabled feature no longer sees the tunnel close.
+   */
+  @LuaGlobal("Dont39AllInOne_getTunnelStatus")
+  @Synchronized
+  fun luaStatus(): KahluaTable? {
+    if (!Tunnel.active()) return null
+    return try {
+      status()
+    } catch (t: Throwable) {
+      Tunnel.disable("reading the tunnel's status", t)
+      null
+    }
+  }
+
+  private fun status(): KahluaTable? {
+    val tunnel = tunnel ?: return null
+    val entry = checkNotNull(entry) { "a tunnel is open without its entry" }
+    val table = LuaManager.platform.newTable()
+    table.rawset("mode", entry.mode.id)
+    table.rawset("port", entry.port.toDouble())
+    tunnel.stats()?.let {
+      table.rawset("segmentsSent", it.segmentsSent.toDouble())
+      table.rawset("retransmitsTimeout", it.retransmitsTimeout.toDouble())
+      table.rawset("retransmitsFast", it.retransmitsFast.toDouble())
+      table.rawset("fecExpected", it.seqExpected.toDouble())
+      table.rawset("fecMissing", it.seqMissing.toDouble())
+      table.rawset("fecRecovered", it.fecRecovered.toDouble())
+      table.rawset("fecUnrecoverable", it.fecUnrecoverable.toDouble())
+      table.rawset("srtt", it.srttMillis.toDouble())
+    }
+    return table
   }
 
   override fun info(message: () -> String) = Tunnel.log(message)

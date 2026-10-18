@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature checklist, naming, Lua file and global prefixes"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua bridge rules, mod options, tolerating absent globals"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade, disable on error, LuaGlobal"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable; no silent degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "no per-frame logging; lifecycle lines"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "only if a non-public game member turns out to be needed"}

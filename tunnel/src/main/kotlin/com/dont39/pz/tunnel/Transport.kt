@@ -29,8 +29,23 @@ internal interface OpenTunnel {
   /** For the join's log line, e.g. the settings the server sent; empty when there is nothing to add. */
   val details: String get() = ""
 
+  /** Counters since the tunnel opened; null when the transport cannot see the link's loss (TCP resends in the OS). */
+  fun stats(): LinkStats? = null
+
   fun close(reason: String)
 }
+
+/** Cumulative link counters of a tunnel, for the network status display, which takes rates from their deltas. */
+internal data class LinkStats(
+  val segmentsSent: Long,
+  val retransmitsTimeout: Long,
+  val retransmitsFast: Long,
+  val seqExpected: Long,
+  val seqMissing: Long,
+  val fecRecovered: Long,
+  val fecUnrecoverable: Long,
+  val srttMillis: Int,
+)
 
 internal interface OpenListener {
   /** For the listener's log line; empty when there is nothing to add. */

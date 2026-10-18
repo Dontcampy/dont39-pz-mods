@@ -47,6 +47,13 @@ A feature with generated glue needs no edit to them; a Lua-only feature adds its
    ([CommandLine.md](../../../external-repos/ZombieBuddy/doc/CommandLine.md)) and check the glue's patch class was
    found.
 
+6. Network features (tunnel, network status): loss and latency are injected with a user-space UDP/TCP proxy, since
+   the test server has no root for `tc netem`. Direct UDP is proxied on the client: run the proxy on 127.0.0.1 at both
+   the game port and the server's UDPPort, and join 127.0.0.1. RakNet's main traffic goes to the UDPPort the server
+   announces, so a server-side proxy in front of the game port alone sees none of it. Tunnels are proxied on the
+   server in front of the tunnel port. The proxy must not hold the local ports a tunnel client listens on.
+7. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.
+
 If an in-game check was not done, say so in the task report.
 
 ---
