@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/10-19-codebase-structure-review/research/build.md", "reason": "B1-B5 evidence with file:line"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "modules, Adding a Feature checklist to update"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, tests, smoke tests"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "pz-kotlin classpath and Kotlin module rules"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "WidenJars / classtweaker wiring moved to variants"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "glue package, listings, checkGlue meaning"}

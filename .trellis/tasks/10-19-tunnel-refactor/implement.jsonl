@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/10-19-codebase-structure-review/research/tunnel.md", "reason": "T1-T4 evidence"}
+{"file": ".trellis/tasks/archive/2026-10/10-18-kcp-tunnel/research/kcp-harness.md", "reason": "out-of-repo loss harness to port"}
+{"file": ".trellis/tasks/archive/2026-10/10-18-network-status-icon/design.md", "reason": "tunnel status table contract with network-status"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua UI wrapping and Lua globals"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "disable on error per Lua part"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "tests section, network in-game verification"}

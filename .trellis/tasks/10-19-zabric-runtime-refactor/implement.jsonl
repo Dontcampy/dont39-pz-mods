@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/10-19-codebase-structure-review/research/zabric-processors.md", "reason": "P6-P8 evidence"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "AccessWidener behavior and contracts"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "HookListing, runtime, listing format"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "loader seam: ZombieBuddy types only in the loader package"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "report and disable; no silent degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "prefix and lifecycle lines"}
