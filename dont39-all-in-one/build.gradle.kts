@@ -9,7 +9,7 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.9.0"
+version = "0.10.0"
 
 val modId = extra["modId"] as String
 @Suppress("UNCHECKED_CAST")
