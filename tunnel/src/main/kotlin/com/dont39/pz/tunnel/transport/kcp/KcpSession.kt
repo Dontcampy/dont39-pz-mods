@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.tunnel.LinkStats
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
 import com.dont39.pz.tunnel.fec.Fec
@@ -152,6 +153,20 @@ internal class KcpSession(
     } else {
       log.error("$reason ($counts)", error)
     }
+  }
+
+  /** The link counters so far; any thread may call it. */
+  fun stats(): LinkStats = synchronized(lock) {
+    LinkStats(
+      segmentsSent = kcp.segmentsSent,
+      retransmitsTimeout = kcp.timeoutRetransmits,
+      retransmitsFast = kcp.fastRetransmits,
+      seqExpected = decoder.seqExpected,
+      seqMissing = decoder.seqMissing,
+      fecRecovered = decoder.recovered,
+      fecUnrecoverable = decoder.unrecoverable,
+      srttMillis = kcp.srtt,
+    )
   }
 
   private fun counts(): String {

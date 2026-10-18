@@ -35,6 +35,9 @@ description=[*]Tunnelled players show as 127.0.0.1, so ban them by name or Steam
 description=[*]Only for joins by address, not via Steam friends, and not from the server's own machine.
 description=[/list]
 description=
+description=[h2]Network status icon[/h2]
+description=In multiplayer, a signal icon in the bottom-left corner shows your connection to the server: the bars show the ping, a warning triangle shows packet loss. Hover it for ping, loss, traffic, how you are connected (UDP, Steam, or the TCP / KCP tunnel above) and debug numbers. Turn it off in Options > Mods.
+description=
 description=[h2]Source and feedback[/h2]
 description=[url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url], or comment below.
 tags=Build 42;Misc

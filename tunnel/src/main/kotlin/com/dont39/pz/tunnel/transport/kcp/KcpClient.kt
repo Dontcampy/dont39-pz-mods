@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.tunnel.LinkStats
 import com.dont39.pz.tunnel.OpenTunnel
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
@@ -16,6 +17,8 @@ import kotlin.random.Random
  */
 internal class KcpClient private constructor(private val session: KcpSession, params: KcpParams) : OpenTunnel {
   override val details = params.toString()
+
+  override fun stats(): LinkStats = session.stats()
 
   override fun close(reason: String) = session.close(reason)
 

@@ -120,7 +120,11 @@ What is not behind the seam and needs rework when switching loaders:
   `@LuaGlobal`. Other exposure options: ModdingGuide "Exposing Classes to Lua".
 - Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent:
   check a global exists before calling it.
-- User-facing switches are mod options, not JVM flags.
+- Features do not depend on each other in Kotlin (facades are `internal`). One feature uses another's data through
+  that feature's Lua global, read from its own Lua, and still works when the global is absent or returns nil:
+  `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus` (`TunnelClient.kt`).
+- User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
+  `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 
 ---
 
