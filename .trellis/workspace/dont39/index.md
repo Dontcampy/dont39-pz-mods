@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 19
-- **Last Active**: 2026-10-17
+- **Total Sessions**: 20
+- **Last Active**: 2026-10-18
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~463 | Active |
+| `journal-1.md` | ~486 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 20 | 2026-10-18 | TCP tunnel for players whose network drops UDP | `755b694`, `109c54c` | `claude/tcp-connection-setup-c5fda8` |
 | 19 | 2026-10-17 | Temporary fix for SCTD TransmogSync.Flush next() error | `fdec349` | `sctd-transmog-flush-fix` |
 | 18 | 2026-10-17 | Fix lowercased x_extends animation paths on Linux servers | `1abcf43`, `361a9cc` | `anim-extends-case` |
 | 17 | 2026-10-17 | Cut mod load time: skip ZombieBuddy's network requests and missing animation folders | `38db17d`, `a2b0a31` | `reduce-load-time` |
