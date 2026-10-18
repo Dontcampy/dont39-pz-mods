@@ -484,3 +484,26 @@ New All-in-One feature tcp-tunnel: carries the whole RakNet connection over one 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 21: Shorter Workshop text; remove sctd-transmog-flush-fix
+<!-- trellis-session: v=2 fp=b0cca674226c93e4 -->
+
+**Date**: 2026-10-18
+**Task**: Shorter Workshop text; remove sctd-transmog-flush-fix
+**Branch**: `claude/tcp-connection-setup-c5fda8`
+
+### Summary
+
+Follow-ups on PR #16. workshop.txt shortened from 68 to 40 lines: each feature in one or two sentences, the TCP tunnel as three bullets (server, players, limits). Removed sctd-transmog-flush-fix: Shadow Cat Tactics: Dispatch changed SCTD_TransmogSync.Flush, so the fix reported itself disabled and failed smokeTest; module, feature list entry, Workshop section and smokeTest entry gone, smokeTest keeps an empty luaTargeted list for the next Lua-only fix of another mod, spec paragraph points to git history. Build and :dont39-all-in-one:smokeTest pass. PR description updated; the SCTD follow-up card withdrawn.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `53daffe` | Shorten the All-in-One Workshop description |
+| `99e1b67` | Remove sctd-transmog-flush-fix |
+
+### Status
+
+[OK] **Completed**
