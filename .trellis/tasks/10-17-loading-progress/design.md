@@ -30,6 +30,12 @@ unchanged.
   registered at premain, DI A2) with a watched table built as `afterPass` builds it. The reflective target check
   (`TargetCheck.problem(listing, loader)`: `Class.forName` + `getDeclaredMethods`) is not used for these mods: it
   would load game classes before the game does (`access-widening.md` Zabric rules).
+- Targets already loaded at preLaunch (ZombieBuddy loads some at premain, e.g. `LuaManager`, `ZomboidFileSystem`) are
+  checked from their class files there, not retransformed: ZombieBuddy describes a retransformed class by reflection
+  and so loads the types in its signatures, inside its transformation, where no transformer of the agent sees them
+  (measured 2026-10-19: retransforming `LuaManager$GlobalObject` at preLaunch loaded 123 game classes, `ScriptManager`
+  among them, which the access widener never saw). Their weaving is checked at the first pass, where `WeaveCheck`
+  first loads a target's member types, then retransforms it; it also retransforms every target it has not seen load.
 - Byte-based target check: a bytes overload in `TargetCheck` that produces the reflective check's messages. For a mod
   opened at preLaunch, `WeaveCheck.transform` calls it on the class's first load (ASM `ClassReader`, ByteBuddy's
   shaded copy as `WeaveCheck` already uses), next to its woven-advice check. A finding stops the mod through its gate

@@ -5,13 +5,19 @@ import com.pzlauncher.zabric.hook.ModHooks;
 import com.pzlauncher.zabric.hook.ZabricHooks;
 import com.pzlauncher.zabric.hook.check.CheckGate;
 import com.pzlauncher.zabric.hook.check.Loaded;
+import com.pzlauncher.zabric.hook.check.NestedAnchor;
+import com.pzlauncher.zabric.hook.check.NestedHits;
 import com.pzlauncher.zabric.hook.check.PreLaunchHits;
 import com.pzlauncher.zabric.hook.check.PreLoaded;
 import com.pzlauncher.zabric.hook.weave.Weaving;
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.ResettableClassFileTransformer;
 import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.FixedValue;
+import net.bytebuddy.matcher.ElementMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,10 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Fixtures in {@code hook/check}. */
@@ -61,6 +69,9 @@ class WeaveCheckTest {
         Weaving.weave(CHECK + ".rejected");
         Weaving.weave(CHECK + ".late");
         Weaving.weave(CHECK + ".prelaunch");
+        Weaving.weave(CHECK + ".signature");
+        new NestedAnchor().value(0);
+        Weaving.weave(CHECK + ".nested");
         new PreLoaded().value(0);
     }
 
@@ -214,21 +225,67 @@ class WeaveCheckTest {
     }
 
     @Test
-    void aTargetLoadedBeforePreLaunchIsCheckedWhileTheModIsHeld() throws IOException {
+    void aTargetLoadedBeforePreLaunchIsCheckedFromItsClassFile() throws IOException {
         String preLoaded = PreLoaded.class.getName();
         Path jar = Listings.jar(dir, "preloaded.jar", "a.PreLoadedHooks", Listings.text("check-pre-loaded",
                 "default", PRE_LAUNCH_PATCH, preLoaded + " nope (I)I"));
         try (OpenProbe probe = new OpenProbe(preLoaded, "check-pre-loaded")) {
             HookRuntime.preLaunch(Map.of("check-pre-loaded", List.of(jar)), Set.of(), LOADER,
                     Weaving.instrumentation());
-            assertEquals(List.of(false), probe.seen, "closed while its loaded target is checked");
+            assertEquals(List.of(), probe.seen, "not retransformed, which would load the types in its signatures");
         }
         assertFalse(ZabricHooks.mod("check-pre-loaded").open(), "never opened");
         HookRuntime.releaseLog(log);
-        assertEquals(List.of("error [Zabric] check-pre-loaded: hooks stopped after an error while checking the targets"
-                + " of PreLoadedHooks in " + preLoaded + " | java.lang.IllegalStateException: the targets of"
-                + " a.PreLoadedHooks (" + jar + "!/META-INF/zabric/hooks/a.PreLoadedHooks.txt) do not match: "
-                + preLoaded + " has no method nope"), log.lines());
+        assertEquals(List.of("error [Zabric] check-pre-loaded: hooks stopped: the targets of a.PreLoadedHooks (" + jar
+                + "!/META-INF/zabric/hooks/a.PreLoadedHooks.txt) do not match: " + preLoaded + " has no method nope"),
+                log.lines());
+    }
+
+    @Test
+    void aTargetLoadedBeforePreLaunchIsRetransformedAtTheFirstPassAfterItsSignatureTypes() throws Exception {
+        String target = CHECK + ".SignatureTarget";
+        String type = CHECK + ".SignatureType";
+        Path jar = Listings.jar(dir, "signature.jar", "a.SignatureHooks", Listings.text("check-signature", "default",
+                CHECK + ".signature.SignatureGlue$SignatureTarget_twice", target + " twice (I)I"));
+        try (URLClassLoader targets = signatureLoader(target, type)) {
+            targets.loadClass(target);
+            HookRuntime.preLaunch(Map.of("check-signature", List.of(jar)), Set.of(), targets,
+                    Weaving.instrumentation());
+            assertFalse(loaded(type), "preLaunch loads no class the target names");
+            try (OpenProbe probe = new OpenProbe(type, "check-signature")) {
+                HookRuntime.passProcessed(Map.of("check-signature", List.of(jar)), targets,
+                        Weaving.instrumentation());
+                assertTrue(loaded(type), "the loader describes a retransformed class by reflection");
+                assertEquals(1, probe.seen.size(), "loaded outside the loader's transformation, where transformers"
+                        + " see it");
+            }
+        }
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("info [Zabric] check-signature: hooks ready (1 hook class)"), log.lines());
+    }
+
+    @Test
+    void aTargetLoadedWhereNoTransformerRunsIsWovenAndCheckedAtTheNextPass() throws Exception {
+        String target = CHECK + ".NestedTarget";
+        String trigger = CHECK + ".NestedTrigger";
+        Path jar = Listings.jar(dir, "nested.jar", "a.NestedHooks", Listings.text("check-nested", "default",
+                CHECK + ".nested.NestedGlue$NestedTarget_twice", target + " twice (I)I"));
+        try (URLClassLoader targets = targetLoader(target, "twice")) {
+            // opened without loading its target
+            HookRuntime.preLaunch(Map.of("check-nested", List.of(jar)), Set.of(), targets, Weaving.instrumentation());
+            Class<?> targetClass = loadInsideATransformation(targets, trigger, target);
+            Object instance = targetClass.getConstructor().newInstance();
+            int hits = NestedHits.HITS.get();
+            targetClass.getMethod("twice", int.class).invoke(instance, 1);
+            assertEquals(hits, NestedHits.HITS.get(), "the loader did not see it load");
+
+            HookRuntime.passProcessed(Map.of("check-nested", List.of(jar)), targets, Weaving.instrumentation());
+            targetClass.getMethod("twice", int.class).invoke(instance, 1);
+            assertEquals(hits + 1, NestedHits.HITS.get(), "woven at the pass");
+        }
+        assertTrue(ZabricHooks.mod("check-nested").open());
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("info [Zabric] check-nested: hooks ready (1 hook class)"), log.lines());
     }
 
     // shows the order of gate failures among the runtime's lines
@@ -314,6 +371,49 @@ class WeaveCheckTest {
         Path file = classes.resolve(className.replace('.', '/') + ".class");
         Files.createDirectories(file.getParent());
         Files.write(file, bytes);
+        return new URLClassLoader(new URL[] {classes.toUri().toURL()}, LOADER);
+    }
+
+    // as the loader's ByteBuddy loads the types of a class it retransforms
+    private static Class<?> loadInsideATransformation(URLClassLoader targets, String trigger, String target)
+            throws Exception {
+        Path file = Path.of(targets.getURLs()[0].toURI()).resolve(trigger.replace('.', '/') + ".class");
+        Files.write(file, new ByteBuddy().subclass(Object.class).name(trigger).make().getBytes());
+        targets.loadClass(trigger);
+        AtomicReference<Class<?>> loadedInside = new AtomicReference<>();
+        ResettableClassFileTransformer other = new AgentBuilder.Default()
+                .disableClassFormatChanges()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .type(ElementMatchers.named(trigger))
+                .transform((builder, type, cl, module, domain) -> {
+                    try {
+                        loadedInside.set(Class.forName(target, false, cl));
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalStateException(e);
+                    }
+                    return builder;
+                })
+                .installOn(Weaving.instrumentation());
+        other.reset(Weaving.instrumentation(), AgentBuilder.RedefinitionStrategy.DISABLED);
+        assertNotNull(loadedInside.get(), target + " did not load inside the retransformation of " + trigger);
+        return loadedInside.get();
+    }
+
+    // a target with int twice(int) and a method returning type
+    private URLClassLoader signatureLoader(String target, String type) throws IOException {
+        DynamicType.Unloaded<Object> typeClass = new ByteBuddy().subclass(Object.class).name(type).make();
+        byte[] targetBytes = new ByteBuddy().subclass(Object.class).name(target)
+                .defineMethod("twice", int.class, Visibility.PUBLIC).withParameters(int.class)
+                .intercept(FixedValue.value(0))
+                .defineMethod("type", typeClass.getTypeDescription(), Visibility.PUBLIC)
+                .intercept(FixedValue.nullValue())
+                .make().getBytes();
+        Path classes = dir.resolve("classes");
+        for (Map.Entry<String, byte[]> e : Map.of(target, targetBytes, type, typeClass.getBytes()).entrySet()) {
+            Path file = classes.resolve(e.getKey().replace('.', '/') + ".class");
+            Files.createDirectories(file.getParent());
+            Files.write(file, e.getValue());
+        }
         return new URLClassLoader(new URL[] {classes.toUri().toURL()}, LOADER);
     }
 

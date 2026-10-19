@@ -49,26 +49,32 @@ public final class HookRuntime {
 
     /**
      * At preLaunch, for the mods whose jars the loader preloaded: opens their hooks before the first pass, and keeps
-     * the {@code launchWide} ones open on every pass. Their target methods are checked from class bytes as each
-     * target loads, since loading the targets here would come before the game loads them; their target classes are
-     * looked up at the first pass. What the runtime logs from here on is held until {@link #releaseLog()}. Call after
-     * the loader registered its premain patch transformers.
+     * the {@code launchWide} ones open on every pass. Their target methods are checked from class bytes: from the
+     * class files of targets already loaded, and as each other target loads, since loading the targets here would
+     * come before the game loads them. Their target classes are looked up, and the weaving of the loaded ones checked,
+     * at the first pass. What the runtime logs from here on is held until {@link #releaseLog()}. Call after the loader
+     * registered its premain patch transformers.
      */
     public static synchronized void preLaunch(Map<String, List<Path>> jarsByMod, Set<String> launchWide,
                                               ClassLoader loader, Instrumentation inst) {
         if (!(log instanceof HeldLog)) {
             log = new HeldLog();
         }
+        Set<String> loaded = new HashSet<>();
+        for (Class<?> c : inst.getAllLoadedClasses()) {
+            loaded.add(c.getName());
+        }
         Set<ModState> entering = new HashSet<>();
         jarsByMod.forEach((modId, jars) -> {
             ModState state = state(modId);
-            if (state.firstPass() && check(state, jars, listing -> null)) {
+            if (state.firstPass()
+                    && check(state, jars, listing -> TargetCheck.loadedProblem(listing, loaded, loader))) {
                 state.openAtPreLaunch(launchWide.contains(modId));
                 entering.add(state);
                 presenceDue.add(state);
             }
         });
-        weaveAndOpen(loader, inst, entering, List.of());
+        weaveAndOpen(loader, inst, entering, List.of(), true);
     }
 
     /** Call after the loader registered the pass's patch transformers: the weave check must come after them. */
@@ -96,15 +102,19 @@ public final class HookRuntime {
                 entering.add(state);
             }
         });
-        weaveAndOpen(loader, inst, entering, checked);
+        weaveAndOpen(loader, inst, entering, checked, false);
     }
 
     // entering: held until the weave check has seen their loaded targets
     private static void weaveAndOpen(ClassLoader loader, Instrumentation inst, Set<ModState> entering,
-                                     List<ModState> checked) {
+                                     List<ModState> checked, boolean preLaunch) {
         List<ModState> live = mods.values().stream().filter(ModState::live).toList();
         try {
-            weave.afterPass(inst, loader, live, entering);
+            if (preLaunch) {
+                weave.preLaunch(inst, loader, live);
+            } else {
+                weave.afterPass(inst, loader, live, entering);
+            }
         } catch (Throwable t) {
             // unchecked hooks could be missing without anyone noticing
             for (ModState state : live) {

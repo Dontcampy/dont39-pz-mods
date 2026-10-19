@@ -33,6 +33,10 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   drops advice that fails verification without an error, so before release only a weave test catches it.
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
+- A class that loads while a transformer of the agent runs on the same thread passes every transformer of the agent by:
+  ZombieBuddy's patches, the access widener and the weave check. ZombieBuddy loads such classes when it describes a
+  retransformed class by reflection, so before Zabric retransforms a target it loads the target's member types, and at
+  each pass it retransforms the targets the weave check has not seen load (`WeaveCheck.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers

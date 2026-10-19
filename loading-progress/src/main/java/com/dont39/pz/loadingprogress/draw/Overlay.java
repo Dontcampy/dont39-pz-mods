@@ -40,10 +40,11 @@ public final class Overlay {
         if (view == null || Thread.currentThread() != GameWindow.gameThread) {
             return;
         }
+        // before drawing: a drawing error must not also read as a frame without this hook
+        progress.frameHandedOver(System.nanoTime());
         if (drawn) {
             draw(view);
         }
-        progress.frameHandedOver(System.nanoTime());
     }
 
     private static void draw(Progress.View view) {

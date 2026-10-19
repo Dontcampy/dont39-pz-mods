@@ -81,11 +81,14 @@ public final class Progress {
         begin(Flow.LAUNCH, Step.MODS, now);
     }
 
-    /** No flow runs for the rest of the session; a running one ends. */
+    /**
+     * No flow runs for the rest of the session; a running one ends. The time since its last frame is not a gap: the
+     * stop came from outside, in the middle of it.
+     */
     public synchronized void stop(String why, long now) {
         stopped = true;
         if (flow != null) {
-            end(Outcome.STOPPED, why, now);
+            finish(Outcome.STOPPED, why, now);
         }
     }
 
@@ -348,6 +351,11 @@ public final class Progress {
         }
     }
 
+    /** Whether a frame was handed over at or after {@code since}, while frames are counted. */
+    public boolean frameSince(long since) {
+        return !showing || lastFrame - since >= 0;
+    }
+
     /** A frame was handed to the render thread. */
     public void frameHandedOver(long now) {
         if (!showing) {
@@ -478,6 +486,10 @@ public final class Progress {
         if (!paused) {
             gap(now);
         }
+        finish(outcome, why, now);
+    }
+
+    private void finish(Outcome outcome, String why, long now) {
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount, largestGap,
                 largestGapStep);
         flow = null;

@@ -4,6 +4,7 @@ import com.dont39.pz.loadingprogress.progress.Progress;
 import zombie.GameWindow;
 import zombie.core.Core;
 import zombie.core.SpriteRenderer;
+import zombie.ui.TextManager;
 import zombie.ui.UIManager;
 
 /**
@@ -38,7 +39,8 @@ public final class FramePump {
         UIManager.useUiFbo = false;
         try {
             progress.ownFrame();
-            if (warningShown) {
+            // without a font it returns before its frame
+            if (warningShown && TextManager.instance.font != null) {
                 GameWindow.doEpilepsyWarningText();
             } else {
                 core.StartFrame();
@@ -47,6 +49,11 @@ public final class FramePump {
                 SpriteRenderer.instance.renderi(null, 0, 0, core.getScreenWidth(), core.getScreenHeight(), 0f, 0f, 0f,
                         1f, null);
                 core.EndFrameUI();
+            }
+            // that hook draws the bar and times the frames, so without it own frames would come bare and unthrottled
+            if (!progress.frameSince(now)) {
+                throw new IllegalStateException("an own frame was handed over without running the hook on"
+                        + " Core.EndFrameUI");
             }
         } finally {
             UIManager.useUiFbo = uiFbo;

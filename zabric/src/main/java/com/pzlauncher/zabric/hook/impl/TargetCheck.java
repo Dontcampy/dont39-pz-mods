@@ -8,6 +8,7 @@ import net.bytebuddy.jar.asm.MethodVisitor;
 import net.bytebuddy.utility.OpenedClassReader;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -15,8 +16,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Whether the classes and methods a listing names are there at runtime as the hook class was compiled against. */
 final class TargetCheck {
@@ -120,6 +123,10 @@ final class TargetCheck {
 
     /** The methods of {@link #problem(HookListing, ClassLoader)} for the hooks on {@code owner}, from its bytes. */
     static String problem(HookListing listing, String owner, byte[] bytes) {
+        return mismatch(listing, missingMethods(listing, owner, bytes));
+    }
+
+    private static List<String> missingMethods(HookListing listing, String owner, byte[] bytes) {
         Map<String, List<String>> byName = new HashMap<>();
         OpenedClassReader.of(bytes).accept(new ClassVisitor(OpenedClassReader.ASM_API) {
             @Override
@@ -139,6 +146,33 @@ final class TargetCheck {
                 if (why != null) {
                     wrong.add(why);
                 }
+            }
+        }
+        return wrong;
+    }
+
+    /**
+     * The methods of {@link #problem(HookListing, ClassLoader)} for the hooks on classes already {@code loaded}, from
+     * their class files: retransforming a loaded class to see its bytes would make the loader load the types in its
+     * signatures. Hooks on other classes are checked as those load.
+     */
+    static String loadedProblem(HookListing listing, Set<String> loaded, ClassLoader loader) {
+        Set<String> owners = new LinkedHashSet<>();
+        for (Hook hook : listing.hooks()) {
+            if (loaded.contains(hook.owner())) {
+                owners.add(hook.owner());
+            }
+        }
+        List<String> wrong = new ArrayList<>();
+        for (String owner : owners) {
+            try (InputStream in = loader.getResourceAsStream(owner.replace('.', '/') + ".class")) {
+                if (in == null) {
+                    wrong.add("the class file of the loaded class " + owner + " is not there");
+                } else {
+                    wrong.addAll(missingMethods(listing, owner, in.readAllBytes()));
+                }
+            } catch (IOException e) {
+                wrong.add("cannot read the class file of " + owner + ": " + e);
             }
         }
         return mismatch(listing, wrong);

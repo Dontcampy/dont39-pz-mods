@@ -255,4 +255,22 @@ class ProgressTest {
         assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), end.largestGap());
         assertEquals(Step.MODS, end.largestGapStep());
     }
+
+    @Test
+    void aFrameIsSeenOnlyOnceHandedOver() {
+        progress.fontsReady(at(0));
+        assertFalse(progress.frameSince(at(50)));
+        progress.frameHandedOver(at(60));
+        assertTrue(progress.frameSince(at(50)));
+        progress.stop("why", at(70));
+        assertTrue(progress.frameSince(at(80)), "no flow shows");
+    }
+
+    @Test
+    void aStopIsNotAFrameGap() {
+        progress.fontsReady(at(0));
+        progress.frameHandedOver(at(300));
+        progress.stop("why", at(10_000));
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(300), ends.get(0).largestGap());
+    }
 }

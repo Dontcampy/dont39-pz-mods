@@ -63,6 +63,14 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - D9 (2026-10-19): the generated glue declares advice parameters with the target's own types, which ZombieBuddy loads
   at premain for a preloaded jar. The progress mod therefore binds only JDK-typed arguments and never `@Self`; the
   generator is not changed. A second-line item that would need a game-typed argument shows its count without a name.
+- D10 (2026-10-19, measured): a class that loads while a transformer of the same agent runs is shown to none of that
+  agent's transformers, so Zabric never retransforms at preLaunch. Consequences accepted: ZombieBuddy's own premain
+  weaving of already-loaded targets (`LuaManager`, `KahluaThread`, `ZomboidFileSystem`) loads ~50 game classes, and
+  each mod's access-widener report is the guard for what a list names; hooks on targets ZombieBuddy loaded at premain
+  without weaving (`ChooseGameInfo`, `LuaManager$GlobalObject`) are woven at the end of the first pass, so mod
+  discovery (~3.4 s with ~245 mods) has no frame trigger and the bar stands still there (the window keeps pumping).
+- D11 (open, 2026-10-19): ZombieBuddy's Java-mod pass (~6.4 s with ~245 mods) has no hookable point on `MainThread`;
+  the user wants it covered. Options in `research/zb-pass-gap.md`.
 
 ## Requirements
 
@@ -98,6 +106,7 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   post-reset events, `GameLoadingState.enter` and `IngameState.enter`). Frames come only from `MainThread`, never from
   inside another frame, at most ~20 per second. Known exception (D8): a blocking call of another mod with no hook of
   this mod inside, today Dont39 All-in-One's tunnel open (≤2 s); the frame-gap report names the step it fell in.
+  Also excepted: launch mod discovery (D10), and ZombieBuddy's Java-mod pass until D11 is settled.
 - R9 (D5): English and Chinese text from the mod's own strings, not the game's translation files (those load late and
   vanish on servers that do not list the mod). Chinese shows when the game language is Chinese (CN); every other
   language shows English.
@@ -114,10 +123,10 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - AC1 (R1–R3): Zabric unit tests cover opening at preLaunch, launch-wide vs. plain mods across a pass that lacks them,
   `closeAll` closing launch-wide mods, the attribute on a non-preloaded mod, the byte-based target check (missing
   member → stopped), and held log lines emitted once in order; all existing Zabric tests pass.
-- AC2 (R1, D9): a build check fails if the mod's glue names a non-JDK type in an advice signature; and no game class
-  is loaded at premain or preLaunch because of the progress mod (its targets first load where
-  vanilla loads them, per ZombieBuddy's `Transformed: … (new load)` lines), and its `hooks ready` line appears at the
-  first pass.
+- AC2 (R1, D9, D10): a build check fails if the mod's glue names a non-JDK type in an advice signature; neither Zabric
+  nor the mod's own code loads a game class at preLaunch (class-load log: 0 game classes loaded from Zabric or mod
+  frames there), ZombieBuddy's premain weaving of already-loaded targets excepted; the mod's `access widener: ok` and
+  `hooks ready` lines appear at the first pass.
 - AC3 (R5–R7): on a launch with ~245 mods, the bar appears once fonts are ready and advances through every launch step
   to the main menu, with mod, script and Lua counts on the second line. A screen recording shows it moving at least
   once per second.

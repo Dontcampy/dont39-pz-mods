@@ -60,9 +60,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
   Class-path dependencies are a separate matter ([Loading](./zombiebuddy-patching.md#loading)).
 - Mods without entrypoints are left alone: mods that use only ZombieBuddy load as without Zabric.
 - The hooks of a mod Zabric keeps preloaded open at preLaunch (`HookRuntime.preLaunch`), so their targets are checked
-  from class bytes as each loads (`WeaveCheck`, `TargetCheck`), never by loading them. From the first pass they follow
-  the mod list, unless the manifest's `Zabric-Hooks: launch` keeps them open on every pass: for client-side UI only
-  (`Lifecycle`, author contract in `zabric/mod/workshop/workshop.txt`).
+  from class bytes (`WeaveCheck`, `TargetCheck`): loaded ones from their class files, the others as each loads, never by
+  loading or retransforming them; the weaving of the loaded ones is checked at the first pass. From the first pass
+  they follow the mod list, unless the manifest's `Zabric-Hooks: launch` keeps them open on every pass: for
+  client-side UI only (`Lifecycle`, author contract in `zabric/mod/workshop/workshop.txt`).
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

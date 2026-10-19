@@ -15,15 +15,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * The loader drops a target's patches without an error when ByteBuddy or the JVM rejects them, so this read-only
  * transformer, last in the chain, looks for the {@code GETSTATIC <glue>.MOD} every inlined advice contains. For mods
  * opened at preLaunch it also checks the targets' methods, which the pass-time target check could not.
+ * <p>
+ * A class that loads while a transformer of the agent runs on the same thread passes every transformer of the agent
+ * by: the loader's patches, the access widener and this check. The loader loads such classes when it describes a
+ * retransformed class by reflection, so a target this check has not seen load is retransformed at the next pass.
  */
 final class WeaveCheck implements ClassFileTransformer {
     private static final String MOD_FIELD = "MOD";
@@ -53,9 +59,47 @@ final class WeaveCheck implements ClassFileTransformer {
     private volatile Map<String, List<Watched>> watched = Map.of();
     private volatile ClassLoader loader;
     private final Set<String> reported = ConcurrentHashMap.newKeySet();
+    // watched classes this check saw load or retransform, by internal name
+    private final Set<String> seen = ConcurrentHashMap.newKeySet();
     private final ThreadLocal<Retransform> retransforming = new ThreadLocal<>();
 
+    /**
+     * At preLaunch: watches the live mods' targets as they load. Loaded ones wait for the first pass: retransforming
+     * one makes the loader load the types in its signatures, game classes the game has not loaded yet.
+     */
+    void preLaunch(Instrumentation inst, ClassLoader loader, Collection<ModState> live) {
+        watch(inst, loader, live, Set.of());
+    }
+
     void afterPass(Instrumentation inst, ClassLoader loader, Collection<ModState> live, Set<ModState> entering) {
+        Set<String> enteringTargets = watch(inst, loader, live, entering);
+        Set<String> done = new HashSet<>();
+        // a retransformation can load further targets where no transformer sees them
+        while (true) {
+            Map<Class<?>, Boolean> due = new LinkedHashMap<>();
+            for (Class<?> c : inst.getAllLoadedClasses()) {
+                String internalName = internalName(c.getName());
+                if (watched.containsKey(internalName) && !done.contains(internalName)) {
+                    boolean entered = enteringTargets.contains(c.getName());
+                    if (entered || !seen.contains(internalName)) {
+                        due.put(c, entered);
+                    }
+                }
+            }
+            if (due.isEmpty()) {
+                return;
+            }
+            due.forEach((c, entered) -> {
+                done.add(internalName(c.getName()));
+                // an unseen target has not been checked for any mod
+                retransform(inst, c, entered ? entering::contains : mod -> true);
+            });
+        }
+    }
+
+    // the entering mods' targets
+    private Set<String> watch(Instrumentation inst, ClassLoader loader, Collection<ModState> live,
+                              Set<ModState> entering) {
         this.loader = loader;
         Map<String, List<Watched>> table = new HashMap<>();
         Set<String> enteringTargets = new HashSet<>();
@@ -77,26 +121,25 @@ final class WeaveCheck implements ClassFileTransformer {
         watched = Map.copyOf(table);
         inst.removeTransformer(this);
         inst.addTransformer(this, true);
-        if (enteringTargets.isEmpty()) {
-            return;
-        }
-        for (Class<?> c : inst.getAllLoadedClasses()) {
-            if (enteringTargets.contains(c.getName())) {
-                retransform(inst, c, entering);
-            }
-        }
+        return enteringTargets;
     }
 
     void clear() {
         watched = Map.of();
     }
 
-    private void retransform(Instrumentation inst, Class<?> target, Set<ModState> entering) {
+    // checked: the mods whose hooks in the target this retransformation checks
+    private void retransform(Instrumentation inst, Class<?> target, Predicate<ModState> checked) {
         String internalName = internalName(target.getName());
         Retransform check = new Retransform(internalName);
         Throwable failed = null;
         retransforming.set(check);
         try {
+            // the loader reads these by reflection inside the transformation; loaded here, every transformer sees them
+            target.getDeclaredMethods();
+            target.getDeclaredConstructors();
+            target.getDeclaredFields();
+            target.getNestMembers();
             inst.retransformClasses(target);
         } catch (Throwable t) {
             failed = t;
@@ -111,7 +154,7 @@ final class WeaveCheck implements ClassFileTransformer {
         Throwable cause = failed != null ? failed : new IllegalStateException("the weave check did not see "
                 + target.getName() + " while it was retransformed");
         for (Watched w : watched.getOrDefault(internalName, List.of())) {
-            if (entering.contains(w.mod()) && w.mod().live()) {
+            if (checked.test(w.mod()) && w.mod().live()) {
                 report(w, weaving(w), cause);
             }
         }
@@ -127,6 +170,7 @@ final class WeaveCheck implements ClassFileTransformer {
         if (hooks == null) {
             return null;
         }
+        seen.add(className);
         // never throws into the class's load
         try {
             List<Finding> findings = check(className, hooks, classfileBuffer);
