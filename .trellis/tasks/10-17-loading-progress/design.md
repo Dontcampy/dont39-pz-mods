@@ -142,8 +142,8 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 - Layout: centered, below ZombieBuddy's watermark and above the world-loading screen's centered tips, bottom text and
   figure (DI B6): line 1 "n / N: step", the bar `min(640, 40 % of width)` wide (step n / N, D2), line 2 the item, and
   under it a thin sub-bar with the item's i / total for counted items (Java mods, mods, script files, Lua files; D13),
-  hidden otherwise. Text needs `TextManager.instance.font` and no font still loading (`isAnyFontLoading`, DI risk 4);
-  while fonts load, only the bars draw. Fonts are fetched per frame (`ResetLua` replaces them).
+  hidden otherwise. Text needs the Small font it draws with loaded (`TextManager.instance.font`, DI risk 4); while it
+  loads, only the bars draw. Fonts are fetched per frame (`ResetLua` replaces them).
 - Watermark rule (R7): ZombieBuddy 2.3.4's watermark (`Watermark.draw`, at `EndFrameUI` HEAD in every frame until
   the world) is an icon (128 px on screens over 2000 px, else 64) with lines right of it: the version, a notice after a
   preload change, and "N active Java mods: ..." wrapped at the screen's width, so at 4K with 14 Java mods it is three
@@ -160,6 +160,26 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   is `doEpilepsyWarningText` itself, so the warning stays. `UIManager.useUiFbo` is forced off for the frame and
   restored, as `GameLoadingState.render` does (DI risk 6). No Lua, no `UIManager.render`, no `GameWindow.render`
   (mid-reset).
+- No own frame while the Small font's pages load and the render thread pumps the window on its own
+  (`waitForRenderState` false): ZombieBuddy's watermark draws with that font in every frame, and unloaded glyphs draw
+  as blocks (`AngelCodeFont$CharDef.draw` with no page texture). Within a flow that happens only at the launch's
+  second `initFonts` (a language other than English loads its fonts; measured CN at 4K: under 0.4 s of the ~3 s wait,
+  after which own frames resume with text while the other fonts load); a Lua reset gets its pages from the shared
+  texture table (`Texture.getSharedTexture`), loaded. The window keeps pumping meanwhile: with `waitForRenderState`
+  false the render loop calls `Display.processMessages` whenever no frame is ready (`RenderThread.lockStepRenderStep`).
+  Were a font to load while the game waits for frames, own frames go on, blocks and all, since pumping comes first.
+- Locks: own frames are pushed while the game thread holds a monitor at some triggers, e.g. `ZomboidFileSystem`'s
+  (synchronized `getAllModFolders`, around discovery's `getAllModFoldersAux`, `setModIdToDir` and
+  `DebugFileWatcher.registerDir`), and `pushFrameDown` waits for the render thread. That is safe because nothing the
+  render thread runs for these frames takes such a monitor (javap of 42.21, call graph from `RenderThread.renderLoop`):
+  its only ways into a synchronized `ZomboidFileSystem` method (`getString` and the rest) are world and model drawing,
+  generic drawers of the world, the map and UI 3D views, option changes and a shader's first compile
+  (`Shader.initShaderProgram` → `ShaderProgram.registerFileWatchers`). An own frame draws only rectangles and
+  `TextManager` text with the default shader, which `GameWindow.init` compiles before the first trigger (and the
+  weather shader `Core.StartFrame` sets once the world's buffers exist is compiled in `SceneShaderStore.initShaders`);
+  the render thread's idle path (`processMessages`, input, focus listeners) reaches none. `DebugFileWatcher`,
+  `LuaManager`, `TextManager` and `ScriptManager` have no synchronized members. Other mods' drawing in these frames is
+  outside this check.
 - Triggers that keep gaps under 1 s: `loadMod`, `Core.DoFrameReady`, `RunLua(String, boolean)`, `LoadTexturePack`,
   `checkEvent`, `KahluaThread.pcall(int)` (per Lua call from Java), `ChooseGameInfo.getAvailableModDetails` (per mod
   in every manager loop; on the launch woven only at the end of the first pass, D10, so it does not act in discovery
@@ -174,15 +194,15 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   `DebugFileWatcher.registerDir(Path)` (discovery registers every directory of each mod's media folder with the file
   watcher; one mod with 12,673 directories took 1.8 s, which the research had put on the Steam query, 9 ms when warm)
   and `LuaManager$Exposer.setExposed(Class)` (per class `LuaManager.init` exposes; many load and are patched there).
-  The font loop's own frames show ZombieBuddy's watermark drawn with font pages still loading (white blocks) for
-  about a second.
+  The font loop's own frames come once the Small font loaded (Drawing, above).
 - Known calls (D12, `Known`): `ScriptParser.stripComments` and `ZomboidFileSystem.getInstalledItemModsFolders` are
   bracketed by HEAD/FINALLY on the game thread; the frame-gap report says how much of a gap they took. Only JDK or
   native code runs inside them, so nothing can hand over a frame there.
 - Known gap (D8): Dont39 All-in-One's tunnel opens its connection inside `UdpEngine.Connect` with blocking socket
   calls (TCP ≤1 s + ≤1 s, KCP ≤2 s), where no trigger above runs. The progress mod adds no hook for it and does not
   know the tunnel; the gap falls in the connecting step.
-- Frame-gap report: per flow end, one log line with the flow's duration, own and interim frame counts, and four gaps,
+- Frame-gap report: per flow end, one log line with the flow's duration, own and interim frame counts (and interim
+  skips for the game's pending GL errors, if any), and four gaps,
   each with its step, item and known-call share: the largest between handed-over frames, the largest visible one
   (interim frames count), the largest visible one the Java mod jars showed at (AC3b), and the one with the most time
   outside known calls (AC3b: under 1 s means every longer gap is a known call) (AC4, AC4b, AC7 evidence).
@@ -210,10 +230,10 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   `JarLoadHookTest` (the real `loadJar` with the hook installed), `JarListenersTest`.
 - The progress mod registers `hooks.JavaMods` at preLaunch. The Java-mod pass is an item of the launch's (and a
   reset's) "Loading mods" step, not a step of its own (D4, D11 wording): line 2 "Java mod i / n: id"
-  (`Item.JAVA_MOD`), an own frame at each jar's start and a tick after the last. The jar's frame skips the 50 ms
-  interval only when the pass's previous jar took 50 ms or longer (`Progress.jarFrameDue`): jars that return at once
-  (later passes) get no frame each. A short jar followed by a long one can leave the long one without an own frame and
-  so without interim frames. A call off the game thread while a flow runs, or out of order (`Progress.javaMod`),
+  (`Item.JAVA_MOD`), an own frame at each jar's start and a tick after the last. Jar frames come two at once, then
+  one per 50 ms (`Progress.takeJarFrame`): a long jar right after a short one gets its own frame and so its interim
+  frames, and jars that return at once (later passes) get no frame each. A long jar after two short ones within 50 ms
+  can still go without. A call off the game thread while a flow runs, or out of order (`Progress.javaMod`),
   throws, which stops the mod. The bar stays at its step (D2); the sub-bar shows jars done / total.
 - C, interim frames from the render thread, only while the Java-mod step shows and only for a gap between own frames:
   - heartbeat: a Zabric counter bumped per transformation during the pass (a retransform-capable transformer that
@@ -236,8 +256,10 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
     The game's cached state (`GLStateRenderThread`, `Texture.lastTextureID`) is never changed. Size: the
     framebuffer's, not `Core`'s screen.
   - no capability switches interim frames off; a context without OpenGL 3.0 (whose missing entry points would crash
-    in native code) is a mismatch. `glGetError` after the copy and after each interim frame: an error is a
-    mismatch and stops the mod (the message says it may have been left pending by the game). Measured on the 4K
+    in native code) is a mismatch. `glGetError` before the copy and before each interim frame: an error already
+    pending is the game's; it skips that copy or frame, not the mod. The first skip is logged with every flag it
+    cleared, later ones are counted in the frame-gap line. After them, an error is the mod's own calls' and stops the
+    mod. Measured on the 4K
     NVIDIA window: the triangle path forced for one launch drew its interim frames without error and with the picture
     intact; a multisampled window itself was not available.
   - errors on the render thread go to the mod's stop (default gate's report), never to the queue's log-and-continue.

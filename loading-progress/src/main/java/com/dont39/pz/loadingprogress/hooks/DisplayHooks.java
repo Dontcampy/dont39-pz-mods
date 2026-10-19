@@ -18,7 +18,7 @@ public final class DisplayHooks {
     // the render thread's swap of a frame the game thread handed over
     @Inject(method = "update(Z)V", at = @At("HEAD"))
     public static void frameSwaps(CallbackInfo ci) {
-        Interim.frameSwaps();
+        Interim.frameSwaps(PROGRESS);
     }
 
     // the render loop's idle path while it does not wait for the game thread's frames, and the end of each swap

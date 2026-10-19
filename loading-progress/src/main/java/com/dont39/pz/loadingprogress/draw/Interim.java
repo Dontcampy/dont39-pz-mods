@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjglx.LWJGLException;
 import org.lwjglx.opengl.Display;
+import zombie.debug.DebugType;
 import zombie.core.SpriteRenderer;
 import zombie.core.opengl.RenderThread;
 import zombie.core.textures.TextureDraw;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.dont39.pz.loadingprogress.hooks.Loading.PREFIX;
 import static org.lwjgl.opengl.GL11.GL_ALPHA_TEST;
 import static org.lwjgl.opengl.GL11.GL_POLYGON_STIPPLE;
 import static org.lwjgl.opengl.GL33C.*;
@@ -25,7 +27,8 @@ import static org.lwjgl.opengl.GL33C.*;
  * the jar's own frame, copied from the back buffer before its swap, with the sub-bar filled further into the jar's
  * share each time while Zabric's heartbeat moves, so that it stands still when the loader hangs. The text stays as
  * captured. Raw GL without direct state access (the game's drawing belongs to the game thread's frame); every state it
- * touches is read back and restored, and the game's cached state is left alone. A GL error stops the mod.
+ * touches is read back and restored, and the game's cached state is left alone. A GL error of its calls stops the
+ * mod; one the game left pending skips the frame.
  * Render thread only, except {@link #mark}; a throw stops the mod's hooks, so no frame follows.
  */
 public final class Interim {
@@ -50,6 +53,7 @@ public final class Interim {
     private static long lastShown;
     private static Capture capture;
     private static Quad quad;
+    private static boolean pendingLogged;
     private static final int[] framebufferWidth = new int[1];
     private static final int[] framebufferHeight = new int[1];
 
@@ -62,7 +66,7 @@ public final class Interim {
     }
 
     /** At the head of {@code Display.update(boolean)}: the back buffer holds a whole frame of the game thread's. */
-    public static void frameSwaps() {
+    public static void frameSwaps(Progress progress) {
         if (Thread.currentThread() != RenderThread.renderThread) {
             return;
         }
@@ -78,7 +82,7 @@ public final class Interim {
         lastShown = System.nanoTime();
         shown = null;
         if (bar.jar() != 0) {
-            capture(bar);
+            capture(bar, progress);
         }
     }
 
@@ -109,6 +113,9 @@ public final class Interim {
             shown = null;
             return;
         }
+        if (gameErrorPending(progress)) {
+            return;
+        }
         present(bar, fill);
         lastShown = now;
         lastBeat = beat;
@@ -116,7 +123,7 @@ public final class Interim {
         progress.interimFrame(System.nanoTime());
     }
 
-    private static void capture(Bar bar) {
+    private static void capture(Bar bar, Progress progress) {
         // the window's own size, which the screen size of the game's UI need not be
         GLFW.glfwGetFramebufferSize(Display.getWindow(), framebufferWidth, framebufferHeight);
         int w = framebufferWidth[0];
@@ -131,6 +138,9 @@ public final class Interim {
         // a missing entry point would crash in native code rather than throw
         if (!GL.getCapabilities().OpenGL30) {
             throw new IllegalStateException("interim frames need OpenGL 3.0, which the game's context lacks");
+        }
+        if (gameErrorPending(progress)) {
+            return;
         }
         Saved saved = Saved.read();
         try {
@@ -204,13 +214,35 @@ public final class Interim {
         }
     }
 
-    // also takes an error the game left pending: the message says so
+    // after gameErrorPending, so an error is our calls'
     private static void check(String what) {
         int error = glGetError();
         if (error != GL_NO_ERROR) {
-            throw new IllegalStateException("OpenGL error 0x" + Integer.toHexString(error) + " after " + what
-                    + " (or left pending by the game before it)");
+            throw new IllegalStateException("OpenGL error 0x" + Integer.toHexString(error) + " after " + what);
         }
+    }
+
+    /**
+     * Before any GL call of ours: an error already pending is the game's. It skips this frame or copy, not the mod; the
+     * first is logged with every flag it cleared, the rest are counted in the flow's line.
+     */
+    private static boolean gameErrorPending(Progress progress) {
+        int error = glGetError();
+        if (error == GL_NO_ERROR) {
+            return false;
+        }
+        StringBuilder errors = new StringBuilder("0x").append(Integer.toHexString(error));
+        // one flag per kind of error; bounded, as a lost context keeps reporting one
+        for (int i = 0; i < 8 && (error = glGetError()) != GL_NO_ERROR; i++) {
+            errors.append(", 0x").append(Integer.toHexString(error));
+        }
+        progress.interimSkipped();
+        if (!pendingLogged) {
+            pendingLogged = true;
+            DebugType.Mod.println(PREFIX + "OpenGL errors left pending by the game before an interim frame, cleared"
+                    + " and skipped: %s; the flow's line counts later skips", errors.toString());
+        }
+        return true;
     }
 
     /** A frame-sized texture in the window's color format, with a frame buffer to copy into it. */

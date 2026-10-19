@@ -26,6 +26,9 @@ The docs do not cover every annotation option or loader rule. The source is auth
 
 When the docs and the source disagree, trust the source (see the package rule below).
 
+After a ZombieBuddy update, recheck its `Watermark.java` against what `loading-progress` assumes of it: the layout
+`Overlay.watermarkBottom` replays, and the Small font it draws with, which `FramePump` waits for.
+
 ---
 
 ## Loader Seam

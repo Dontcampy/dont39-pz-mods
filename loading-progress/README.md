@@ -11,19 +11,20 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
 - The flows and their steps are in `progress/Flow.java`; `progress/Progress.java` is the game-free state the hooks
   feed, tested in `src/test/`.
 - ZombieBuddy's Java mod pass runs no game method between its jars: Zabric's loader progress, registered at preLaunch
-  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar that follows a jar of 50 ms or more.
+  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar: two at once, then one per 50 ms.
 - Patching one jar can hold the game thread for seconds. Meanwhile the render thread shows interim frames
   (`draw/Interim.java`, hooks on `Display` in `hooks/DisplayHooks.java`): the jar's own frame, copied before its swap,
   with the sub-bar moved further into the jar's share every 250 ms while Zabric's heartbeat moves, in shrinking steps
   that stop short of the jar's end. Bind-based GL with every binding and state restored, also for a multisampled
-  window; a GL error stops the mod.
+  window; a GL error of its own calls stops the mod, one the game left pending skips the frame.
 - `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over: the step line,
   the bar by step, the item line and a sub-bar by the item's count, below ZombieBuddy's watermark (its wrapping is
   replayed from the Java mods the loader progress named); `draw/FramePump.java` hands over its own frames from the
-  hooks inside the loading code.
+  hooks inside the loading code, but none while the watermark's font loads and the render thread pumps on its own.
 - Calls that hold the game thread with no hookable point inside (comment stripping of script files, Steam's installed
   items query) are bracketed as known calls (`progress/Known.java`).
-- One `console.txt` line per flow: outcome, duration, own and interim frames; the largest gap between frames the game
+- One `console.txt` line per flow: outcome, duration, own and interim frames (and interim frames skipped for the
+  game's pending OpenGL errors); the largest gap between frames the game
   thread handed over, the largest counting interim frames, the largest while the Java mod jars showed, and the one
   with the most time outside known calls, each with its step, item and known-call share.
 

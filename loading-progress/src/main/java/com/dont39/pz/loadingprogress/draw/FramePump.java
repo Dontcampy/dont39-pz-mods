@@ -4,6 +4,8 @@ import com.dont39.pz.loadingprogress.progress.Progress;
 import zombie.GameWindow;
 import zombie.core.Core;
 import zombie.core.SpriteRenderer;
+import zombie.core.fonts.AngelCodeFont;
+import zombie.core.opengl.RenderThread;
 import zombie.ui.TextManager;
 import zombie.ui.UIManager;
 
@@ -31,12 +33,12 @@ public final class FramePump {
 
     /**
      * A Java mod jar starts loading: its frame is the one the render thread's interim frames start from while
-     * ZombieBuddy patches the jar ({@link Progress#jarFrameDue}).
+     * ZombieBuddy patches the jar ({@link Progress#takeJarFrame}).
      */
     public static void jarStarts(Progress progress) {
         if (progress.ownFrames()) {
             long now = System.nanoTime();
-            if (progress.jarFrameDue(now)) {
+            if (progress.takeJarFrame(now)) {
                 push(progress, now);
             }
         }
@@ -51,6 +53,12 @@ public final class FramePump {
         if (core.frameStage != 0) {
             return;
         }
+        // ZombieBuddy's watermark draws with the Small font in every frame, as blocks while its pages load; skipped
+        // only while the render thread pumps the window without frames, as in the launch's font wait
+        AngelCodeFont small = TextManager.instance.font;
+        if (small != null && small.isLoading() && !RenderThread.isWaitForRenderState()) {
+            return;
+        }
         pushing = true;
         // a frame of the UI frame buffer would show its stale contents, as GameLoadingState.render knows
         boolean uiFbo = UIManager.useUiFbo;
@@ -58,7 +66,7 @@ public final class FramePump {
         try {
             progress.ownFrame();
             // without a font it returns before its frame
-            if (warningShown && TextManager.instance.font != null) {
+            if (warningShown && small != null) {
                 GameWindow.doEpilepsyWarningText();
             } else {
                 core.StartFrame();

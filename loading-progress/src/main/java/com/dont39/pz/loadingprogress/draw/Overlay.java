@@ -77,8 +77,8 @@ public final class Overlay {
         int x = (screenWidth - width) / 2;
         double center = screenWidth / 2.0;
         TextManager text = TextManager.instance;
-        // a Lua reset recreates the fonts and does not wait for them
-        boolean fonts = text.font != null && !text.isAnyFontLoading();
+        // the Small font, the only one it draws with; a Lua reset recreates the fonts and does not wait for them
+        boolean fonts = text.font != null && !text.font.isLoading();
         // the game's fonts have Chinese glyphs only when it runs in Chinese
         boolean chinese = "CN".equals(Translator.getLanguage().name());
         String first = Strings.stepLine(view.step(), view.flow().steps().size(), view.current(), chinese);

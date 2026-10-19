@@ -67,11 +67,13 @@ public final class Loading {
     }
 
     private static void ended(Progress.End end) {
-        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, %d interim frames;"
+        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, %d interim frames%s;"
                         + " largest frame gap %s; largest visible gap %s; in the Java mods %s; outside known calls %s",
                 end.flow().label(), end.outcome().name().toLowerCase(Locale.ROOT),
                 end.why() == null ? "" : " (" + end.why() + ")", end.nanos() / 1e9, end.step(),
                 end.flow().steps().size(), Strings.step(end.at(), false), end.ownFrames(), end.interimFrames(),
+                end.interimSkips() == 0 ? "" : " (" + end.interimSkips() + " skipped for OpenGL errors the game left"
+                        + " pending)",
                 gap(end.largestGap()), gap(end.largestVisibleGap()),
                 end.javaModGap() == null ? "none" : gap(end.javaModGap()), gap(end.unknownGap()));
     }

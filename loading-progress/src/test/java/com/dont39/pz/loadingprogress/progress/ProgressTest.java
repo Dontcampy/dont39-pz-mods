@@ -367,20 +367,31 @@ class ProgressTest {
     }
 
     @Test
-    void aJarGetsAnOwnFrameAfterALongJarOnly() {
+    void jarFramesComeTwoAtOnceThenOnePerInterval() {
         progress.fontsReady(at(0));
         progress.modsLoading(at(0));
         progress.frameHandedOver(at(10));
-        assertFalse(progress.jarFrameDue(at(20)), "the first jar waits for the interval");
-        progress.javaMod(1, 3, "Long", false, at(20));
-        progress.frameHandedOver(at(70));
-        progress.javaMod(1, 3, "Long", true, at(90));
-        assertTrue(progress.jarFrameDue(at(91)), "after a jar of 70 ms");
-        progress.javaMod(2, 3, "Quick", false, at(91));
-        progress.frameHandedOver(at(91));
-        progress.javaMod(2, 3, "Quick", true, at(92));
-        assertFalse(progress.jarFrameDue(at(93)), "after a jar that returned at once");
-        assertTrue(progress.jarFrameDue(at(141)), "the interval passed anyway");
+        assertTrue(progress.takeJarFrame(at(20)), "right after another frame");
+        assertTrue(progress.takeJarFrame(at(25)), "a long jar right after a short one");
+        assertFalse(progress.takeJarFrame(at(30)), "a third at once");
+        assertTrue(progress.takeJarFrame(at(70)), "an interval after the first");
+        // a run of jars that return at once
+        int frames = 0;
+        for (int t = 71; t < 300; t++) {
+            if (progress.takeJarFrame(at(t))) {
+                frames++;
+            }
+        }
+        assertEquals(4, frames, "one per interval: at 120, 170, 220 and 270 ms");
+        assertTrue(progress.takeJarFrame(at(1000)), "after a pause");
+        assertTrue(progress.takeJarFrame(at(1001)), "two at once again");
+        assertFalse(progress.takeJarFrame(at(1002)));
+    }
+
+    @Test
+    void noJarFrameWhereTheGameDrawsItsOwn() {
+        progress.connect(at(0));
+        assertFalse(progress.takeJarFrame(at(100)), "the connect screen draws its frames");
     }
 
     @Test
@@ -475,5 +486,16 @@ class ProgressTest {
         // the render thread checked the jar before the flow ended
         progress.interimFrame(at(1400));
         assertEquals(1, ends.size());
+    }
+
+    @Test
+    void interimSkipsAreCountedPerFlow() {
+        progress.interimSkipped();
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.interimSkipped();
+        progress.interimSkipped();
+        progress.stop("why", at(10));
+        assertEquals(2, ends.get(0).interimSkips(), "none counted before the flow");
     }
 }

@@ -27,10 +27,12 @@ public final class Progress {
      * What the log says when a flow ends. {@code largestGap}: between frames the game thread handed over; the others
      * between those and interim frames together: {@code largestVisibleGap} of all, {@code javaModGap} of those the
      * Java mod jars showed at (null when none showed), {@code unknownGap} the one with the most time outside
-     * {@link Known} calls.
+     * {@link Known} calls. {@code interimSkips}: interim frames or their copies skipped for an OpenGL error the game
+     * left pending.
      */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
-                      int interimFrames, Gap largestGap, Gap largestVisibleGap, Gap javaModGap, Gap unknownGap) {
+                      int interimFrames, int interimSkips, Gap largestGap, Gap largestVisibleGap, Gap javaModGap,
+                      Gap unknownGap) {
     }
 
     /**
@@ -78,6 +80,7 @@ public final class Progress {
     private String name;
     private int ownFrameCount;
     private int interimFrameCount;
+    private int interimSkipCount;
     private long lastVisible;
     // whether the last visible frame showed a Java mod jar: the gap after it is the Java mod pass's
     private boolean javaModVisible;
@@ -101,9 +104,9 @@ public final class Progress {
     private int javaModTotal;
     private boolean javaModLoading;
     private long jarCount;
-    private long jarStarted;
-    // how long the pass's previous jar took, 0 before its first
-    private long lastJarNanos;
+    // the earliest time the next jar's own frame may come, once one came
+    private boolean jarFrameTaken;
+    private long jarFrameNext;
     private volatile boolean scriptsLoading;
     private int scriptsLoaded;
     private String scriptPath;
@@ -302,23 +305,23 @@ public final class Progress {
         javaMod = index;
         javaModTotal = total;
         javaModLoading = !loaded;
-        if (loaded) {
-            lastJarNanos = now - jarStarted;
-        } else {
-            jarStarted = now;
-        }
         if (item(Item.JAVA_MOD, index, total, id) && !loaded) {
             loadingJar = ++jarCount;
         }
     }
 
     /**
-     * Whether a Java mod jar that starts loading now gets an own frame, which its interim frames start from: when the
-     * pass's previous jar took the frame interval or longer, as by the interval itself. A run of jars that return at
-     * once gets no frame per jar.
+     * Whether a Java mod jar that starts loading now gets an own frame, which its interim frames start from; if so, the
+     * frame is taken. Two may come at once, so that a long jar right after a short one has its own; after that one per
+     * frame interval, so that a run of jars that return at once gets no frame per jar.
      */
-    public synchronized boolean jarFrameDue(long now) {
-        return ownFrames && (lastJarNanos >= FRAME_INTERVAL || now - lastFrame >= FRAME_INTERVAL);
+    public synchronized boolean takeJarFrame(long now) {
+        if (!ownFrames || (jarFrameTaken && now - jarFrameNext < 0)) {
+            return false;
+        }
+        jarFrameNext = jarFrameTaken ? Math.max(jarFrameNext + FRAME_INTERVAL, now) : now;
+        jarFrameTaken = true;
+        return true;
     }
 
     /** A {@link Known} call begins on the game thread. */
@@ -502,6 +505,13 @@ public final class Progress {
         visible(now);
     }
 
+    /** The render thread skipped an interim frame or its copy for an OpenGL error the game left pending. */
+    public synchronized void interimSkipped() {
+        if (showing) {
+            interimSkipCount++;
+        }
+    }
+
     /** What to draw, or null when no flow shows. */
     public View view() {
         if (!showing) {
@@ -547,6 +557,7 @@ public final class Progress {
         clearJavaMods();
         ownFrameCount = 0;
         interimFrameCount = 0;
+        interimSkipCount = 0;
         javaModVisible = false;
         known = null;
         clearKnownGap();
@@ -633,7 +644,6 @@ public final class Progress {
         javaMod = 0;
         javaModTotal = 0;
         javaModLoading = false;
-        lastJarNanos = 0;
     }
 
     // the counted item's fraction: a loading jar counts from the previous one's end
@@ -707,7 +717,7 @@ public final class Progress {
 
     private void finish(Outcome outcome, String why, long now) {
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount,
-                interimFrameCount, largestGap, largestVisibleGap, javaModGap, unknownGap);
+                interimFrameCount, interimSkipCount, largestGap, largestVisibleGap, javaModGap, unknownGap);
         flow = null;
         paused = false;
         known = null;
