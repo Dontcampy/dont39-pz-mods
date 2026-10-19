@@ -40,7 +40,10 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
 - Hooks open with the first pass that lists the mod; a mod Zabric keeps preloaded opens at preLaunch, before the game
   loads its targets, with the byte-based target check and held log lines
   ([Access Widening](./access-widening.md#entrypoints-and-preload-registration)). For such a mod ZombieBuddy loads the
-  types in the glue's advice signatures at premain (target argument and return types, the target with `@Self`).
+  types in the glue's advice signatures at premain (target argument and return types, the target with `@Self`). The
+  glue binds every argument of a hooked method, whatever its handlers bind, so a preloaded mod that leaves game classes
+  to the game hooks only methods whose signatures name JDK types; `checkJdkGlue` (`CheckJdkGlue.kt`) enforces it
+  (`loading-progress`).
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.

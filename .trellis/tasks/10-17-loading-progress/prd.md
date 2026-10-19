@@ -85,8 +85,10 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - R5 (D2, D3): two flows with fixed, named step lists: launch (from fonts ready to the main menu) and game start (from
   a server join's connect, or a single-player `ResetLua` / world load, to the first in-world frame). Each frame shows
   a bar filled by step n / N and the line "n / N: <step name>". A step that does not run in a given start (e.g. no
-  `ResetLua` in single player) is skipped and the bar jumps. A join that stops before the world (connect failure,
-  including a tunnel that cannot open) ends the flow without an error and leaves no bar on the menu.
+  `ResetLua` in single player) is skipped and the bar jumps. After its Lua reset a game start's bar is hidden over
+  the menu's interactive screens (character creation, spawn selection) and resumes at the login queue or the world
+  load. A join that stops before the world (connect failure, including a tunnel that cannot open) ends the flow
+  without an error and leaves no bar on the menu.
 - R6 (D4): a second line names the current item with "i / total" for mods, Lua files and script files; other steps
   show the item the game names (texture pack, world-loading text) or nothing.
 - R7 (D3): drawn on top of every frame `MainThread` hands over while a flow runs, including the vanilla world-loading
@@ -104,7 +106,8 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - R11 (D5): any mismatch with the game (missing target, unexpected state) is reported with context and stops the
   mod's hooks; loading continues as vanilla. No partial or silent degrade.
 - R12 (D5): Workshop item: `mod.info` (`require=\ZombieBuddy,\Zabric`, `javaPreload=true`, `javaPkgName`, client jar path), poster,
-  preview, `workshop.txt` in English and Chinese, module README, spec layout entry.
+  preview, `workshop.txt` in English and Chinese, module README, spec layout entry. `poster.png` and `preview.png` are
+  placeholders; real art is the user's step before upload.
 
 ## Acceptance Criteria
 
@@ -119,9 +122,11 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   to the main menu, with mod, script and Lua counts on the second line. A screen recording shows it moving at least
   once per second.
 - AC4 (R5–R8): joining `myserver1`, once with the mod in the server's `Mods=` and once without, the bar runs from
-  connect to the first in-world frame, over the world-loading screen without overlapping vanilla text, the figure or
-  the watermark; Windows never shows "Not Responding" (recording); a debug line's frame gaps stay under 1 s in
-  `ResetLua`, `GameLoadingState.enter` and `IngameState.enter`.
+  connect to the first in-world frame, hidden only over character creation and spawn selection after the Lua reset
+  and back at the login queue or world load, over the world-loading screen without overlapping vanilla text, the
+  figure or the watermark; Windows never shows "Not Responding" (recording); a debug line's frame gaps stay under 1 s
+  in `ResetLua`, `GameLoadingState.enter` and `IngameState.enter`. A join with a client/server version mismatch ends
+  the flow: Back leaves no bar on the menu.
 - AC4b (R5, R8, D8): with Dont39 All-in-One enabled, joining the `myserver2` test instance through its TCP tunnel and
   through its KCP tunnel, the bar runs to the first in-world frame; the only gap over 1 s is the tunnel open in the
   connecting step, under 2.5 s, named in the frame-gap line. A tunnel that cannot open (wrong tunnel port) ends the
@@ -145,5 +150,7 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   Zabric mod; Zabric's restart notice asks for a restart.
 - Publishing: the Maven Central tag, the `maven-central` approval and both Workshop uploads are the user's steps after
   merge.
+- Final poster and preview art: the committed `poster.png` and `preview.png` are placeholders; the user replaces them
+  before upload.
 - Languages other than English and Chinese (CN).
 - Moving Dont39 All-in-One's tunnel open off the game thread (D8).

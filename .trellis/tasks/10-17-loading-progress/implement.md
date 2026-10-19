@@ -53,8 +53,8 @@ refactor; go by the symbols in `design.md`.
   types in the glue's advice signatures (AC2, also enforced by the build check of step 8).
 - In game (deploy Zabric and the mod locally, launch twice: the first registers the preload):
   - launch → menu with a screen recording (AC3), language CN and EN (AC6);
-  - join `myserver1` with and without the mod in `Mods=` (AC4), single player with and without a mod-list change
-    (AC5);
+  - join `myserver1` with and without the mod in `Mods=`, and once with a client/server version mismatch (AC4),
+    single player with and without a mod-list change (AC5);
   - with Dont39 All-in-One: join the `myserver2` test instance on the Linux server through TCP and KCP tunnels, and
     once with a wrong tunnel port (AC4b; recipe in the linux test server notes, restore its ini afterwards);
   - forced mismatch build (AC8);

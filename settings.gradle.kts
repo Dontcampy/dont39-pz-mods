@@ -23,5 +23,6 @@ include(":dont39-all-in-one")
 include(":zabric")
 include(":zabric-processor")
 include(":zb-skip-online-checks")
+include(":loading-progress")
 
 rootProject.name = "dont39-pz-mods"

@@ -1,0 +1,63 @@
+version=1
+title=Loading Progress
+description=[h1]Loading Progress[/h1]
+description=Shows what the game is loading, and keeps its window responding while it loads. By Dont39. 中文说明在下方。
+description=
+description=[h2]What it does[/h2]
+description=[list]
+description=[*]A progress bar at the top of the screen while the game starts up to the main menu, and from joining a server or starting a single-player game to the first frame in the world: the step ("7 / 10: Loading Lua") and what it is working on, with counts for mods, script files and Lua files.
+description=[*]Where the game loads for seconds without drawing (reloading mods, preparing and entering the world), it draws a frame of its own a few times per second, so the bar moves and Windows does not mark the game "Not Responding".
+description=[*]The vanilla loading screen, its tips and its animation stay; the bar sits above them.
+description=[*]English, or Chinese when the game is in Chinese.
+description=[*]Client only: it does nothing on a dedicated server. A server does not need it in its mod list, and it works whether or not the server lists it.
+description=[/list]
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=Enable the mod. On the first launch Zabric registers it to run at game start and asks you to restart the game once; from then on the bar shows from the moment the game's fonts are loaded, a few seconds after the window opens.
+description=
+description=[h2]Good to know[/h2]
+description=[list]
+description=[*]Nothing can be drawn before the game window and its fonts exist, so the first seconds of a launch stay blank.
+description=[*]A few loading stretches have no point where the mod can step in; the bar can pause there for a moment, e.g. while Dont39 All-in-One opens a tunnel to a server.
+description=[*]console.txt gets one line per load: how long it took and the longest time without a new frame.
+description=[*]After a game update that changes the code it watches, console.txt shows an error and loading carries on as without this mod.
+description=[/list]
+description=
+description=[h1]加载进度条[/h1]
+description=显示游戏正在加载的内容，并在加载时保持窗口响应。作者 Dont39。
+description=
+description=[h2]功能[/h2]
+description=[list]
+description=[*]游戏启动到主菜单、以及加入服务器或开始单人游戏直到进入世界的过程中，在屏幕顶部显示进度条：当前步骤（如"7 / 10：加载 Lua"）和正在处理的内容，模组、脚本文件和 Lua 文件带有计数。
+description=[*]游戏长时间加载而不绘制画面时（重新加载模组、准备和进入世界），本模组每秒自行绘制几帧，进度条保持更新，Windows 也不会把游戏标为"未响应"。
+description=[*]原版加载画面、提示和动画都保留，进度条显示在它们上方。
+description=[*]游戏语言为中文时显示中文，否则显示英文。
+description=[*]仅客户端：在专用服务器上不起作用。服务器无需在模组列表中加入它，无论服务器是否列出它都能使用。
+description=[/list]
+description=
+description=[h2]前置要求[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 或更新版本，并已安装其 Java 加载器（首次会请你批准本模组的 Java 代码）。
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=启用本模组即可。首次启动时 Zabric 会把它注册为随游戏启动运行，并请你重启一次游戏；此后进度条会在游戏字体加载完成后（窗口打开几秒后）出现。
+description=
+description=[h2]须知[/h2]
+description=[list]
+description=[*]游戏窗口和字体就绪之前无法绘制任何内容，所以启动的最初几秒仍是空白。
+description=[*]少数加载阶段没有可介入的位置，进度条可能在那里短暂停顿，例如 Dont39 All-in-One 正在打开到服务器的隧道时。
+description=[*]每次加载会在 console.txt 写入一行：耗时以及最长无新画面的时间。
+description=[*]如果游戏更新改变了它所监视的代码，console.txt 会显示错误，加载照常继续，如同没有安装本模组。
+description=[/list]
+description=
+description=[h2]Source and feedback / 源代码与反馈[/h2]
+description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
+description=Problems and suggestions: comments below or GitHub issues. 问题和建议：请在下方评论或提交 GitHub issue。
+tags=Build 42;Interface
+visibility=public

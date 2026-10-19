@@ -14,7 +14,9 @@ plugins {
 
 val modInfo = readModInfo(layout.projectDirectory.file("mod/42/mod.info"))
 val modId = modInfo.id
-extensions.create<PzMod>("pzMod", modId, modInfo.javaPkgName)
+val pzMod = extensions.create<PzMod>("pzMod", modId, modInfo.javaPkgName)
+// no client/ or server/ in the path: loads on both (ZombieBuddy ModdingGuide, "Client/server JAR paths")
+pzMod.jarFolder.convention("media/java")
 
 tasks.jar {
   archiveFileName = "$modId.jar"
@@ -31,8 +33,16 @@ val assembleMod = tasks.register<Sync>("assembleMod") {
   val version = project.version.toString()
   into(modFolder)
   from("mod/42") { into("42") }
-  // no client/ or server/ in the path: loads on both (ZombieBuddy ModdingGuide, "Client/server JAR paths")
-  from(tasks.jar) { into("42/media/java") }
+  val jarFolder = pzMod.jarFolder
+  from(tasks.jar) { into(jarFolder.map { "42/$it" }) }
+  val declared = modInfo.javaJarFile
+  val jarName = "$modId.jar"
+  doFirst {
+    val shipped = "${jarFolder.get()}/$jarName"
+    if (declared != shipped) {
+      throw GradleException("mod/42/mod.info has javaJarFile=$declared, but the jar goes to $shipped (pzMod.jarFolder)")
+    }
+  }
   duplicatesStrategy = DuplicatesStrategy.FAIL
   // expand() would treat the backslashes in require=\ZombieBuddy as escapes
   filesMatching("**/mod.info") { filter { it.replace("@VERSION@", version) } }

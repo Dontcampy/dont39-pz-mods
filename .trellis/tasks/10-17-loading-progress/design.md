@@ -76,12 +76,15 @@ unchanged.
 - Only the generated glue lives in the root package (ZombieBuddy loads every class there at premain); code in
   subpackages: `entrypoint` (preLaunch: keeps the preload, does nothing else; main: one report line), `hooks`,
   `progress` (flow state), `draw` (overlay, own frames), `text` (strings).
-- JDK-only glue (D9, AC2): no handler uses `@Self`, and a handler binds a target's arguments only when all of them are
-  JDK types (`String`, primitives, `Object`); otherwise it binds none. State comes from statics in method bodies
-  (`Core.getInstance()`, `GameWindow` fields, the managers' `instance`), which run after the targets loaded. Where a
-  per-item name needs a game-typed argument, line 2 shows the count without the name, or a JDK-only overload or
-  callee is hooked instead (e.g. `LuaEventManager.triggerEvent(String, …)` for event names). A build check reads the
-  generated glue classes and fails on any non-JDK type in an advice signature.
+- JDK-only glue (D9, AC2): the glue binds every argument of a hooked method (and its return value for RETURN and
+  FINALLY handlers), whatever the handler binds, so only methods whose whole descriptor names JDK types are hooked,
+  never with `@Self`. State comes from statics in method bodies (`Core.getInstance()`, `GameWindow` fields, the
+  managers' `instance`), which run after the targets loaded. Where the per-item method takes a game type, a JDK-only
+  callee or caller is hooked instead: `Core.DoFrameReady` with `ScriptManager.getCurrentLoadFileAbsPath`/`Name` for
+  script files, `LuaEventManager.checkEvent(String)` for event names, `RunLua(String, boolean)` for Lua files,
+  `KahluaThread.pcall(int)` for Lua calls. Overloads ZombieBuddy's matcher cannot tell apart (the `triggerEvent`
+  family) cannot be hooked; the processor rejects them. `checkJdkGlue` (`CheckJdkGlue.kt`) reads the generated glue
+  classes and fails on a method or field type outside the JDK and Zabric.
 - Private members it reads (`ScriptManager.tempFileToModMap` for the script total, DI B5) go through a
   `.classtweaker`. The `widenCompileJars` wiring moves from `pz-feature.gradle.kts` into a convention plugin that
   `pz-feature` and this module both apply (`widening/WidenJars` already holds the task); the mod jar ships the list
@@ -99,21 +102,28 @@ by hooks on any thread, read by the drawing code on `MainThread`; fields are vol
 
 | Flow | Starts | Ends |
 |---|---|---|
-| launch | fonts ready (`GameWindow.initFonts` exit, first call) | first `TISLogoState`/`MainScreenState` frame after `GameWindow.mainThreadStart` sets `waitForRenderState` |
-| start | `serverConnect` / `serverConnectCoop` (join); `Core.ResetLua("currentGame", …)` or `GameLoadingState.enter` (single player) | first `IngameState.render`; a join that returns to the menu (`ConnectToServerState.exit` without a reset, `OnConnectFailed`) ends it; Dont39 All-in-One's tunnel also stops a join by triggering `OnConnectFailed`, from inside `UdpEngine.Connect` on `MainThread` |
+| launch | fonts ready (`GameWindow.initFonts` exit, first call; on the launch that registers the preload, the second call, after the first loader pass opened the hooks) | `GameWindow.mainThreadStart` exit |
+| start | `serverConnect` / `serverConnectCoop` (join); `Core.ResetLua("currentGame", …)` or `GameLoadingState.enter` (single player) | first `IngameState.render`. A join that stops while connecting ends it: `OnConnectFailed` / `OnDisconnect`, `RakNetPeerInterface.connectionStateChangedCallback` with `Failed` / `Disconnected`, `backToSinglePlayer`, `forceDisconnect` (Dont39 All-in-One's tunnel stops a join through `OnConnectFailed`, from inside `UdpEngine.Connect` on `MainThread`). At any step `MainScreenState.enter`, `IngameState.exit` (before its reset to the menu's mods), a new join or another Lua reset end it |
 | reload | `Core.ResetLua("default", …)` (mod list changed in the menu) | `ResetLua` exit |
+
+After its Lua reset a start pauses: no bar over the menu's interactive screens (character creation, spawn selection);
+it resumes at the login queue or the world load, and the time in between is not a frame gap. Boundaries the menu
+passes while paused do not move the flow.
 
 Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 
 - launch (10): mods (`loadMod` i / `getModIDs().size()`; ZombieBuddy's Java-mod pass falls in this step), translations,
-  UI texture packs (`LoadTexturePack` name), scripts (`LoadFile` i / total), clothing, tiles and furniture (the four
-  managers' `init`), Lua (`RunLua` i / `LuaManager.loadList.size()`, per `LoadDirBase` dir), texture packs, models and
-  animations, game boot (`OnGameBoot` callbacks i / n).
+  UI texture packs (`LoadTexturePack` name), scripts (files i / `ScriptManager.tempFileToModMap.size()`, counted inside
+  `ScriptManager.Load`), clothing, tiles and furniture (the four managers' `init`), Lua (files i / distinct entries of
+  `LuaManager.loadList`, per `LoadDirBase` folder, files run by `require` not counted), texture packs, models and
+  animations, game boot (event name).
 - start (13): connecting, reloading mods, translations, scripts, models, clothing and tiles (`ResetLua` L4153-4167),
-  Lua, main-menu events (`OnGameBoot`/`OnMainMenuEnter`/`OnResetLua` callbacks), login queue, preparing world
+  Lua, main-menu events (`OnGameBoot`/`OnMainMenuEnter`/`OnResetLua`: event name), login queue, preparing world
   (`GameLoadingState.enter`: server Lua i / n), loading world (item = `GameLoadingState.gameLoadingString`), ready
-  (vanilla's click prompt), entering world (`IngameState.enter`: `OnGameStart`/`OnLoad` callbacks, MP connect wait).
+  (vanilla's click prompt), entering world (`IngameState.enter`: event name, MP connect wait).
   Single player skips the steps it does not run; the bar jumps.
+- Steps and their order: `progress/Flow.java`, `Step.java`. A count past its total, or a step that begins out of order,
+  is a mismatch: it throws and stops the hooks.
 - reload: the `ResetLua` steps of start.
 
 ### Drawing
@@ -126,16 +136,19 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   centered tips, bottom text and figure (DI B6): a bar `min(640, 40 % of width)` wide, line 1 "n / N: step", line 2
   the item. Text needs `TextManager.instance.font` and no font still loading (`isAnyFontLoading`, DI risk 4); while
   fonts load, only the bar draws. Fonts are fetched per frame (`ResetLua` replaces them).
-- Own frames (`draw.FramePump.maybePush`, called from every per-item and boundary hook): only when the current thread
-  is `GameWindow.gameThread`, `Core.frameStage == 0`, a flow runs, and the last handed-over frame is ≥ 50 ms old.
+- Own frames (`draw.FramePump.tick`, called from every per-item, boundary and trigger hook): only in steps where the
+  game draws no frames of its own (`Step.ownFrames`; not connecting, login queue, loading world, ready), only when the
+  current thread is `GameWindow.gameThread`, `Core.frameStage == 0`, and the last handed-over frame is ≥ 50 ms old.
   Sequence as `GameWindow.doEpilepsyWarningText` (`StartFrame`, `EndFrame`, `StartFrameUI`, full-screen `renderi`
-  background, `EndFrameUI`), with `UIManager.useUiFbo` forced off for the frame and restored, as
-  `GameLoadingState.render` does (DI risk 6). No Lua, no `UIManager.render`, no `GameWindow.render` (mid-reset).
-- Triggers that keep gaps under 1 s: `loadMod`, `LoadFile`, `RunLua`, `LoadTexturePack`, `Event.trigger` and
-  `LuaCaller.protectedCallVoid` (per Lua callback; hot, so the handler's first check is a cheap flow/time test),
-  `ChooseGameInfo.getAvailableModDetails` (per mod in every manager loop and in ZombieBuddy's pass), the managers'
-  `initModData`, `CoopMaster.update`, `GameClient.update` (MP connect wait loops). `waitForRenderState` is not
-  touched: each own frame pumps (`Display.update(true)`).
+  background, `EndFrameUI`); during the launch, from the epilepsy warning until `ModelManager.create`, the own frame
+  is `doEpilepsyWarningText` itself, so the warning stays. `UIManager.useUiFbo` is forced off for the frame and
+  restored, as `GameLoadingState.render` does (DI risk 6). No Lua, no `UIManager.render`, no `GameWindow.render`
+  (mid-reset).
+- Triggers that keep gaps under 1 s: `loadMod`, `Core.DoFrameReady`, `RunLua(String, boolean)`, `LoadTexturePack`,
+  `checkEvent`, `KahluaThread.pcall(int)` (per Lua call from Java), `ChooseGameInfo.getAvailableModDetails` (per mod
+  in every manager loop and in ZombieBuddy's pass), `NetChecksum.Checksummer.addFile`, `CoopMaster.update`,
+  `GameClient.update` (MP connect wait loops). Several run per frame in game: their first check is a volatile flag,
+  before any clock read. `waitForRenderState` is not touched: each own frame pumps (`Display.update(true)`).
 - Known gap (D8): Dont39 All-in-One's tunnel opens its connection inside `UdpEngine.Connect` with blocking socket
   calls (TCP ≤1 s + ≤1 s, KCP ≤2 s), where no trigger above runs. The progress mod adds no hook for it and does not
   know the tunnel; the gap falls in the connecting step.
@@ -146,10 +159,14 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 
 ### Text, client only, errors
 
-- `text.Strings`: two UTF-8 resource tables (EN, CN) in the jar. CN when the game language is `CN`, else EN; the game's
-  fonts follow its language, so CN glyphs exist exactly then (DI B7).
-- Client only: a named gate active only when `!GameServer.server`; the main entrypoint logs "dedicated server: not
-  active" there. Drawing additionally requires `GameWindow.gameThread`.
+- `text.Strings`: the EN and CN text as Java switch tables. CN when `Translator.getLanguage().name()` is `CN`, else EN;
+  the game's fonts follow its language, so CN glyphs exist exactly then (DI B7).
+- Client only: no named gate (its `active()` would need `gateProblem`, which loads the targets reflectively, against
+  AC2). `progress.Progress` starts a flow only where `GameServer.server` is false (`hooks.Loading`), and every handler
+  and the drawing act only while a flow runs; the main entrypoint logs "dedicated server: not active" there. Drawing
+  additionally requires `GameWindow.gameThread`.
+- Access widening not in effect (`AccessWidener.report` returns a reason): the main entrypoint ends any running flow
+  and starts none for the session (`Progress.stop`), and logs the mod idle; the hooks stay open but do nothing.
 - Errors: hooks use the default gate; any exception in a handler or the drawing code stops all the mod's hooks with
   Zabric's report, and loading goes on as vanilla. An unexpected state (e.g. a step boundary out of order) throws
   with the flow and step named, which stops the hooks the same way.

@@ -1,0 +1,3 @@
+zabric-classtweaker v1
+# the script files ScriptManager.Load is about to load, read for the script count
+accessible field zombie/scripting/ScriptManager tempFileToModMap Ljava/util/HashMap;
