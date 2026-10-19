@@ -19,7 +19,7 @@ refactor; go by the symbols in `design.md`.
    test): AC1 cases.
 6. Docs: `ModHooks`/`Lifecycle` Javadoc, `zabric/mod/workshop/workshop.txt` (timing, attribute, client-UI-only note,
    handler signatures of preloaded mods), `.trellis/spec/mod/access-widening.md` (preLaunch rule: no game class, logs
-   held), `zabric-hooks.md`. Version 0.4.1 → 0.5.0 in `gradle/libs.versions.toml` and the sample's `zabricVersion`.
+   held), `zabric-hooks.md`. Version 0.4.1 → 0.5.0 in `gradle/libs.versions.toml`; the sample's `zabricVersion` follows in its own commit after the release.
 7. Commit Z.
 
 ## P — `loading-progress`
@@ -33,6 +33,8 @@ refactor; go by the symbols in `design.md`.
      `zabric-processor` as javac processor with the two `-A` options from `pzMod`, manifest attributes
      (`ZB-Preload`, `Zabric-PreLaunch`, `Zabric-Main`, `Zabric-Hooks: launch`), the `.classtweaker` into
      `META-INF/zabric`, `checkLoaderRefs` exclusion for the glue; `settings.gradle.kts`;
+   - a check task on the module's glue classes: every advice parameter and return type is a JDK type (D9), wired
+     into `check` and `jar`;
    - `smokeTest` registration; make the `GameSmokeTest` inputs only the All-in-One needs optional.
 9. `mod/42/mod.info`, `poster.png`, `mod/workshop/preview.png`, `workshop.txt` (EN + CN), README, `.classtweaker`.
 10. `progress` (flows, steps, state), `text` (EN/CN tables), `draw` (overlay at `EndFrameUI` HEAD, `FramePump`),
@@ -48,7 +50,7 @@ refactor; go by the symbols in `design.md`.
   `:loading-progress:smokeTest`, and `:dont39-all-in-one:smokeTest` (the widening and `GameSmokeTest` changes touch
   it).
 - Check the jar: glue and listings in the root package, manifest attributes, jar under `media/java/client`, no game
-  types in handler signatures (AC2).
+  types in the glue's advice signatures (AC2, also enforced by the build check of step 8).
 - In game (deploy Zabric and the mod locally, launch twice: the first registers the preload):
   - launch → menu with a screen recording (AC3), language CN and EN (AC6);
   - join `myserver1` with and without the mod in `Mods=` (AC4), single player with and without a mod-list change

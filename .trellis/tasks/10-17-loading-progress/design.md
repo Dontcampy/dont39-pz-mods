@@ -55,8 +55,9 @@ unchanged.
 - A mod opened at preLaunch gets the byte check instead of the reflective one: equivalent for "member exists", and
   the weave check still catches dropped advice.
 - ZombieBuddy reflects over a preloaded mod's glue at premain (`PatchEngine.collectPatches` → `Exposer`), loading the
-  types in handler signatures (DI A1). Zabric cannot prevent this; the author docs tell preloaded mods to keep game
-  types out of handler signatures (P follows it).
+  types in the glue's advice signatures (DI A1). Those are the target's types, not the handler's: the glue binds
+  `@Self` as the owner class and arguments as the target's erased types (`GlueWriter`, `PatchBuilder`). Zabric cannot
+  prevent this; the author docs say what loads early (P avoids it, D9).
 
 ## P — `loading-progress` mod
 
@@ -75,8 +76,12 @@ unchanged.
 - Only the generated glue lives in the root package (ZombieBuddy loads every class there at premain); code in
   subpackages: `entrypoint` (preLaunch: keeps the preload, does nothing else; main: one report line), `hooks`,
   `progress` (flow state), `draw` (overlay, own frames), `text` (strings).
-- Hook handlers take no game types (`@Self Object`, JDK argument types), so ZombieBuddy's premain reflection loads no
-  game class (AC2). Game classes are named only in method bodies, which run after the targets loaded.
+- JDK-only glue (D9, AC2): no handler uses `@Self`, and a handler binds a target's arguments only when all of them are
+  JDK types (`String`, primitives, `Object`); otherwise it binds none. State comes from statics in method bodies
+  (`Core.getInstance()`, `GameWindow` fields, the managers' `instance`), which run after the targets loaded. Where a
+  per-item name needs a game-typed argument, line 2 shows the count without the name, or a JDK-only overload or
+  callee is hooked instead (e.g. `LuaEventManager.triggerEvent(String, …)` for event names). A build check reads the
+  generated glue classes and fails on any non-JDK type in an advice signature.
 - Private members it reads (`ScriptManager.tempFileToModMap` for the script total, DI B5) go through a
   `.classtweaker`. The `widenCompileJars` wiring moves from `pz-feature.gradle.kts` into a convention plugin that
   `pz-feature` and this module both apply (`widening/WidenJars` already holds the task); the mod jar ships the list

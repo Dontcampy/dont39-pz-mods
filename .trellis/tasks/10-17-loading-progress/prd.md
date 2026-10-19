@@ -60,6 +60,9 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - D8 (2026-10-19): a blocking call another mod makes on `MainThread`, inside which the progress mod has no hook, is a
   known gap in R8, not something the progress mod works around. Today that is Dont39 All-in-One's tunnel open in
   `UdpEngine.Connect` (≤2 s). Moving the tunnel open off the game thread is not part of this task.
+- D9 (2026-10-19): the generated glue declares advice parameters with the target's own types, which ZombieBuddy loads
+  at premain for a preloaded jar. The progress mod therefore binds only JDK-typed arguments and never `@Self`; the
+  generator is not changed. A second-line item that would need a game-typed argument shows its count without a name.
 
 ## Requirements
 
@@ -108,7 +111,8 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - AC1 (R1–R3): Zabric unit tests cover opening at preLaunch, launch-wide vs. plain mods across a pass that lacks them,
   `closeAll` closing launch-wide mods, the attribute on a non-preloaded mod, the byte-based target check (missing
   member → stopped), and held log lines emitted once in order; all existing Zabric tests pass.
-- AC2 (R1): no game class is loaded at premain or preLaunch because of the progress mod (its targets first load where
+- AC2 (R1, D9): a build check fails if the mod's glue names a non-JDK type in an advice signature; and no game class
+  is loaded at premain or preLaunch because of the progress mod (its targets first load where
   vanilla loads them, per ZombieBuddy's `Transformed: … (new load)` lines), and its `hooks ready` line appears at the
   first pass.
 - AC3 (R5–R7): on a launch with ~245 mods, the bar appears once fonts are ready and advances through every launch step
