@@ -7,7 +7,7 @@ plugins {
   java
 }
 
-val zabricVersion = "0.4.0"
+val zabricVersion = "0.4.1"
 val modId = "ZabricJavaHooksSample"
 val javaPkgName = "com.example.zabricsample"
 
