@@ -1,0 +1,11 @@
+zabric-hooks v1
+mod test-mod
+gate g.Golden
+patch glue.TestGlue$Target_compute
+patch glue.TestGlue$Target_label
+patch glue.TestGlue$Target_init
+patch glue.TestGlue$Target_check
+hook t.Target compute (I)I glue.TestGlue$Target_compute
+hook t.Target label (Ljava/lang/String;)Ljava/lang/String; glue.TestGlue$Target_label
+hook t.Target <init> (Ljava/lang/String;)V glue.TestGlue$Target_init
+hook t.Target check ([Ljava/lang/String;)Z glue.TestGlue$Target_check

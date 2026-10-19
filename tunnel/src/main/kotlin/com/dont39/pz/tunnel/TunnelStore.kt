@@ -11,7 +11,8 @@ import zombie.ZomboidFileSystem
 /**
  * The tunnel of each server address, as `<host>:<game port>=<mode>,<TCP port>,<KCP port>` lines in Zomboid/Lua; a port
  * is 0 when never set. Keyed by address, as typed: the join only sees the address, and a new server entry has no id
- * yet. The add/edit server dialog writes it; `Dont39AllInOne_Tunnel.lua` parses it too, so change both together.
+ * yet. The add/edit server dialog writes it; `Dont39AllInOne_TunnelShared.lua` parses it too, so change both
+ * together; the test fixtures under `store/` pin the format.
  */
 internal object TunnelStore {
   private const val FILE_NAME = "Dont39AllInOne_Tunnel.txt"
@@ -41,11 +42,12 @@ internal object TunnelStore {
       }
   }
 
-  private val folder: Path
+  // Zomboid/Lua; tests pass their own folder
+  private val gameFolder: Path
     get() = Paths.get(ZomboidFileSystem.instance.cacheDir, "Lua")
 
   @Synchronized
-  fun get(host: String, port: Int): Entry? = read()[key(host, port)]
+  fun get(host: String, port: Int, folder: Path = gameFolder): Entry? = read(folder)[key(host, port)]
 
   // port arguments as text: Lua numbers would arrive as doubles
 
@@ -67,7 +69,6 @@ internal object TunnelStore {
    * entry.
    */
   @LuaGlobal("Dont39AllInOne_setTunnel")
-  @Synchronized
   fun luaSet(
     oldHost: String?,
     oldPort: String?,
@@ -77,13 +78,27 @@ internal object TunnelStore {
     tcpPort: String,
     kcpPort: String,
   ) {
+    set(oldHost, oldPort, host, port, mode, tcpPort, kcpPort, gameFolder)
+  }
+
+  @Synchronized
+  fun set(
+    oldHost: String?,
+    oldPort: String?,
+    host: String,
+    port: String,
+    mode: String,
+    tcpPort: String,
+    kcpPort: String,
+    folder: Path,
+  ) {
     val entry = Entry(
       Mode.of(mode) ?: throw IllegalArgumentException("unknown tunnel mode $mode"),
       parsePort(tcpPort, "TCP"),
       parsePort(kcpPort, "KCP"),
     )
     require(entry.mode == Mode.OFF || entry.port != 0) { "tunnel ${entry.mode.id} chosen without its port" }
-    val entries = read()
+    val entries = read(folder)
     if (oldHost != null && oldPort != null) {
       entries.remove(key(oldHost, oldPort.toInt()))
     }
@@ -93,7 +108,7 @@ internal object TunnelStore {
     } else {
       entries[key] = entry
     }
-    write(entries)
+    write(folder, entries)
   }
 
   private fun parsePort(text: String, what: String): Int {
@@ -104,7 +119,7 @@ internal object TunnelStore {
 
   private fun key(host: String, port: Int) = "${host.trim()}:$port"
 
-  private fun read(): MutableMap<String, Entry> {
+  private fun read(folder: Path): MutableMap<String, Entry> {
     val path = folder.resolve(FILE_NAME)
     if (Files.exists(path)) {
       return parse(path) { value -> entry(value) }
@@ -116,7 +131,7 @@ internal object TunnelStore {
     val entries = parse(released) { value ->
       value.toIntOrNull()?.takeIf { it in 1..MAX_PORT }?.let { Entry(Mode.TCP, it, 0) }
     }
-    write(entries)
+    write(folder, entries)
     return entries
   }
 
@@ -145,7 +160,7 @@ internal object TunnelStore {
     return entries
   }
 
-  private fun write(entries: Map<String, Entry>) {
+  private fun write(folder: Path, entries: Map<String, Entry>) {
     val path = folder.resolve(FILE_NAME)
     Files.createDirectories(path.parent)
     // a crash mid-write leaves the old file

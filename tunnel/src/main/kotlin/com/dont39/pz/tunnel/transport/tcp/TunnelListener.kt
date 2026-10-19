@@ -1,10 +1,11 @@
 package com.dont39.pz.tunnel.transport.tcp
 
+import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenListener
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
+import com.dont39.pz.tunnel.closeQuietly
 import java.io.IOException
-import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -39,7 +40,7 @@ internal class TunnelListener(
   }
 
   override fun close() {
-    runCatching { server.close() }
+    server.closeQuietly()
   }
 
   private fun accept() {
@@ -61,7 +62,8 @@ internal class TunnelListener(
           continue
         }
         failing = false
-        thread(isDaemon = true, name = "${TunnelIo.THREAD_PREFIX}connection from ${address(socket)}") { serve(socket) }
+        val from = TunnelIo.describe(socket.remoteSocketAddress)
+        thread(isDaemon = true, name = "${TunnelIo.THREAD_PREFIX}connection from $from") { serve(socket, from) }
       }
       log.info { "stopped listening on TCP port $port" }
     } catch (t: Throwable) {
@@ -70,30 +72,23 @@ internal class TunnelListener(
     }
   }
 
-  private fun serve(socket: Socket) {
-    val from = address(socket)
-    val opened = mutableListOf<DatagramSocket>()
+  private fun serve(socket: Socket, from: String) {
+    var local: LocalChannels? = null
     try {
       Wire.configure(socket)
       Wire.serverHello(socket, HELLO_MILLIS, udpPort)
-      val targets = listOf(gamePort, udpPort).map { InetSocketAddress(TunnelIo.LOOPBACK, it) }
-      targets.forEach { opened += TunnelIo.datagramSocket(0).apply { connect(it) } }
+      val channels = LocalChannels.toGame(gamePort, udpPort).also { local = it }
       // RakNet and the admin tools see the player at this address
-      log.info { "tunnel from $from open as 127.0.0.1:${opened[TunnelIo.GAME_CHANNEL].localPort}" }
-      Relay("tunnel from $from", socket, opened, targets, log).start()
+      log.info { "tunnel from $from open as 127.0.0.1:${channels.localPort(TunnelIo.GAME_CHANNEL)}" }
+      Relay("tunnel from $from", socket, channels, log).start()
     } catch (e: IOException) {
-      closeAll(socket, opened)
+      socket.closeQuietly()
+      local?.close()
       log.info { "could not open a tunnel for $from: ${TunnelIo.describe(e)}" }
     } catch (t: Throwable) {
-      closeAll(socket, opened)
+      socket.closeQuietly()
+      local?.close()
       log.error("opening a tunnel for $from", t)
     }
   }
-
-  private fun closeAll(socket: Socket, opened: List<DatagramSocket>) {
-    runCatching { socket.close() }
-    opened.forEach { runCatching { it.close() } }
-  }
-
-  private fun address(socket: Socket) = "${socket.inetAddress.hostAddress}:${socket.port}"
 }

@@ -9,6 +9,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.pzlauncher.zabric.internal.Log.PREFIX;
+
 /**
  * The mods that take effect only after a restart: preload mods registered this launch, and mods whose widening list
  * appeared or changed while the game ran. The client shows it in a dialog on the main menu; a server logs it.
@@ -28,7 +30,7 @@ public final class RestartList {
         }
         // a server has no main menu; the line repeats with the whole list whenever a mod joins it
         if (GameServer.server) {
-            DebugType.Mod.warn("[Zabric] restart the server once so that these mods take effect: %s",
+            DebugType.Mod.warn(PREFIX + "restart the server once so that these mods take effect: %s",
                     String.join(", ", names()));
         }
     }

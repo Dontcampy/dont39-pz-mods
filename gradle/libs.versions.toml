@@ -1,10 +1,5 @@
-# Version catalog is a central place for you to declare and version dependencies
-# https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
-# https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
-
 [versions]
 kotlin = "2.4.21"
-kotlinxDatetime = "0.8.0"
 kotlinxSerializationJSON = "1.11.0"
 kotlinxCoroutines = "1.11.0"
 # KSP2, versioned independently of Kotlin; generates the ZombieBuddy glue (zb-kt-utils-processor)
@@ -13,8 +8,10 @@ ksp = "2.3.12"
 asm = "9.11"
 # zabric-processor: renders the generated glue
 freemarker = "2.3.35"
-# tests only (zabric)
+# tests only (pz-junit)
 junit = "5.14.0"
+# tests only: runs KSP in zb-kt-utils-processor's tests; needs a release built on the ksp version above
+kctfork = "0.14.0"
 # build only: publishes zabric and zabric-processor (buildSrc pz-publish)
 mavenPublish = "0.37.0"
 # Zabric's mod version, also the version of its two Maven artifacts
@@ -28,17 +25,10 @@ asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 mavenPublishGradlePlugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublish" }
 kspApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinxSerialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJSON" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junitJupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
-
-# Libraries can be bundled together for easier import
-[bundles]
-kotlinxEcosystem = ["kotlinxDatetime", "kotlinxSerialization", "kotlinxCoroutines"]
-
-[plugins]
-kotlinPluginSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kctforkKsp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }

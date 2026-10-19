@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/10-19-codebase-structure-review/research/zabric-processors.md", "reason": "P1-P5 and dead code evidence"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "processor rules, front ends, generated glue and listing contract"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "LuaGlobal bridge and facade gate"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "tests and build gate"}

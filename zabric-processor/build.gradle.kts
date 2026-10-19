@@ -1,7 +1,12 @@
+import buildsrc.convention.mod.ZOMBIEBUDDY_JAR
+import buildsrc.convention.mod.pzDir
+
 // Zabric's annotation processor: authors use it as annotationProcessor. Plain Java whose only dependency is FreeMarker,
 // so it builds and publishes on its own; it names Zabric's and ZombieBuddy's types as strings.
 plugins {
+  id("buildsrc.convention.pz-jvm")
   `java-library`
+  id("buildsrc.convention.pz-junit")
   id("buildsrc.convention.pz-publish")
 }
 
@@ -15,33 +20,21 @@ mavenPublishing {
   }
 }
 
-java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(25)
-  }
+// the hook listing format, shared with Zabric's reader
+sourceSets.main {
+  java.srcDir(layout.settingsDirectory.dir("zabric/src/listingformat/java"))
 }
-
-tasks.withType<JavaCompile>().configureEach {
-  options.release = 17
-  options.encoding = "UTF-8"
-}
-
-val pzDir = providers.gradleProperty("pzDir")
 
 dependencies {
   implementation(libs.freemarker)
-  testImplementation(platform(libs.junitBom))
-  testImplementation(libs.junitJupiter)
-  testRuntimeOnly(libs.junitPlatformLauncher)
   // what the in-process compilations compile against: Zabric's hook API and ZombieBuddy's @Patch
   testRuntimeOnly(project(":zabric"))
-  testRuntimeOnly(files(pzDir.map { "$it/ZombieBuddy.jar" }))
+  testRuntimeOnly(files(pzDir().map { it.file(ZOMBIEBUDDY_JAR) }))
 }
 
-val weaveSources = rootProject.layout.projectDirectory.dir("zabric/src/test")
+val weaveSources = layout.settingsDirectory.dir("zabric/src/test")
 
 tasks.test {
-  useJUnitPlatform()
   // the golden test compiles the weave test's hook classes and compares with its reference glue and listings
   inputs.dir(weaveSources).withPropertyName("weaveSources")
   systemProperty("zabric.weaveSources", weaveSources.asFile.absolutePath)

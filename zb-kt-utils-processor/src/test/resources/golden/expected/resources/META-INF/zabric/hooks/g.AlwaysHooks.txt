@@ -1,0 +1,5 @@
+zabric-hooks v1
+mod test-mod
+gate g.Golden
+patch glue.TestGlue$Target_run
+hook t.Target run (Ljava/lang/String;JI)V glue.TestGlue$Target_run

@@ -1,0 +1,11 @@
+no separator
+=tcp,16300,0
+   =tcp,16300,0
+example.com:16261=udp,16300,0
+example.com:16261=tcp,16300
+example.com:16261=tcp,16300,0,0
+example.com:16261=tcp,0,16301
+example.com:16261=kcp,16300,0
+example.com:16261=tcp,65536,0
+example.com:16261=tcp,port,0
+example.com:16261=tcp,-1,0

@@ -1,10 +1,5 @@
 package com.dont39.pz.allinone
 
-import com.dont39.pz.animextendscase.AnimExtendsCase
-import com.dont39.pz.imekeyboardfix.ImeKeyboardFix
-import com.dont39.pz.missinganimfolders.MissingAnimFolders
-import com.dont39.pz.networkstatus.NetworkStatus
-import com.dont39.pz.tunnel.Tunnel
 import com.dont39.pz.zbktutils.reportWidening
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import zombie.debug.DebugType
@@ -17,10 +12,6 @@ object AllInOneMain : MainEntrypoint {
     val version = AllInOneMain::class.java.`package`.implementationVersion ?: "dev"
     DebugType.Mod.println("$PREFIX%s loaded", version)
     reportWidening("Dont39AllInOne", AllInOneMain::class.java)
-    ImeKeyboardFix.init()
-    MissingAnimFolders.init()
-    AnimExtendsCase.init()
-    Tunnel.init()
-    NetworkStatus.init()
+    initFeatures()
   }
 }

@@ -40,7 +40,7 @@ agent) rewrites those two and rebuilds every mod on Zabric:
   Mod code uses only Zabric's hook API
   ([`com.pzlauncher.zabric.hook`](../../../zabric/src/main/java/com/pzlauncher/zabric/hook/package-info.java)).
 
-`checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/CheckLoaderRefs.kt), registered in
+`checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/check/CheckLoaderRefs.kt), registered in
 `pz-java.gradle.kts`) fails the build on any other reference. Do not widen its exclusions; extend the seam instead.
 
 The one exception is a mod whose target *is* the loader: `zb-skip-online-checks`
@@ -60,16 +60,16 @@ What is not behind the seam and needs rework when switching loaders:
 |------------|-------|
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
-| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `GlueProcessor.kt` generates |
+| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
-| Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths of `zabric` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
+| Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
-| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`; `smokeTest` in `dont39-all-in-one/build.gradle.kts`; `serverSmokeTest` in `zb-kt/build.gradle.kts` |
+| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
 ---
@@ -82,8 +82,8 @@ What is not behind the seam and needs rework when switching loaders:
   `client/` jar anyway: do not rely on either behavior). A client-only feature therefore goes idle on a server in
   `problem()` (`ImeKeyboardFix.kt`).
 - Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
-  calls each feature's `init()`; `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy
-  runs one as its own entry point.
+  calls each feature's `init()` through the generated `initFeatures()` (`GenerateFeatureInit` in `FeatureInfo.kt`);
+  `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy runs one as its own entry point.
 - `loadModAfter` lists the mods a feature hooks and the mods whose jars its classes link: ZombieBuddy loads each
   jar's classes and applies its hooks one jar after another, and drops failed loads silently. Direct dependencies
   only; the chain covers the rest. Zabric needs no entry from mods that use only its entrypoints: it is preloaded on
@@ -95,8 +95,8 @@ What is not behind the seam and needs rework when switching loaders:
 
 - **Generated patch classes must be in exactly the `javaPkgName` package** (`com.dont39.pz.allinone`), not the
   feature package and not a subpackage; anything else is silently skipped. Enforced in `PatchEngine.collectPatches`;
-  the ModdingGuide example's `.patches` subpackage would not load. The bundling mod sets the package through `pzGlue`
-  (`pz-feature.gradle.kts`).
+  the ModdingGuide example's `.patches` subpackage would not load. `pz-feature.gradle.kts` reads the package from the
+  bundling mod's `mod.info` (`pzGlue`).
 - **Features never write patch classes.** Hooks are Zabric hook objects ([Zabric Hooks](./zabric-hooks.md)); the glue
   is generated. When in doubt, read it under `<module>/build/generated/ksp/main/`.
 - Handlers bind the target only through Zabric's annotations, never ZombieBuddy's `Patch` ([Loader Seam](#loader-seam)).
@@ -122,7 +122,8 @@ What is not behind the seam and needs rework when switching loaders:
   check a global exists before calling it.
 - Features do not depend on each other in Kotlin (facades are `internal`). One feature uses another's data through
   that feature's Lua global, read from its own Lua, and still works when the global is absent or returns nil:
-  `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus` (`TunnelClient.kt`).
+  `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus`, whose keys `TunnelStatus.kt` lists. A
+  table shared this way has its keys written down once, at the writer.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 

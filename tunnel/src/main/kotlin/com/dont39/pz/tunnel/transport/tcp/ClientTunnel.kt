@@ -1,10 +1,11 @@
 package com.dont39.pz.tunnel.transport.tcp
 
+import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenTunnel
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
+import com.dont39.pz.tunnel.closeQuietly
 import java.io.IOException
-import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.Socket
 
@@ -30,7 +31,7 @@ internal class ClientTunnel private constructor(private val relay: Relay) : Open
     ): ClientTunnel {
       val target = "$host:$tcpPort"
       val socket = Socket()
-      val opened = mutableListOf<DatagramSocket>()
+      var local: LocalChannels? = null
       try {
         try {
           Wire.configure(socket)
@@ -44,9 +45,9 @@ internal class ClientTunnel private constructor(private val relay: Relay) : Open
         } catch (e: IOException) {
           throw TunnelIo.probeFailed(TcpTransport.name, target, e)
         }
-        opened += TunnelIo.listenLocally(listOf(gamePort, udpPort), TcpTransport.name, target)
+        val channels = LocalChannels.listen(gamePort, udpPort, TcpTransport.name, target).also { local = it }
         val relay = try {
-          Relay("tunnel to $target", socket, opened, listOf(null, null), log)
+          Relay("tunnel to $target", socket, channels, log)
         } catch (e: IOException) {
           throw TunnelIo.probeFailed(TcpTransport.name, target, e)
         }
@@ -54,8 +55,8 @@ internal class ClientTunnel private constructor(private val relay: Relay) : Open
         tunnel.relay.start()
         return tunnel
       } catch (t: Throwable) {
-        runCatching { socket.close() }
-        opened.forEach { runCatching { it.close() } }
+        socket.closeQuietly()
+        local?.close()
         throw t
       }
     }

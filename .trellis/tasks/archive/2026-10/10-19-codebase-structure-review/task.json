@@ -1,0 +1,31 @@
+{
+  "id": "codebase-structure-review",
+  "name": "codebase-structure-review",
+  "title": "Codebase structure review and refactor",
+  "description": "Find shared code to extract, god classes, oversized packages and architecture improvements",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-10-19",
+  "completedAt": "2026-10-19",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-19-build-conventions",
+    "10-19-processor-refactor",
+    "10-19-zabric-runtime-refactor",
+    "10-19-tunnel-refactor"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

@@ -1,6 +1,7 @@
 package com.dont39.pz.tunnel
 
 import com.dont39.pz.tunnel.TunnelFailed.Reason
+import java.io.Closeable
 import java.io.EOFException
 import java.io.IOException
 import java.net.ConnectException
@@ -9,9 +10,10 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 import java.net.PortUnreachableException
+import java.net.SocketAddress
 import java.net.SocketTimeoutException
 
-/** What every transport shares: the channels it carries and the local UDP sockets RakNet talks to. */
+/** What every transport shares: the channels it carries, socket setup and how failures read. */
 internal object TunnelIo {
   /** The server's game port (DefaultPort). */
   const val GAME_CHANNEL = 0
@@ -26,7 +28,7 @@ internal object TunnelIo {
   const val THREAD_PREFIX = "Dont39AllInOne tunnel: "
 
   // map downloads arrive in bursts
-  private const val UDP_BUFFER = 1 shl 20
+  const val UDP_BUFFER = 1 shl 20
 
   /** RakNet listens on IPv4; the JVM's loopback address may be IPv6. */
   val LOOPBACK: InetAddress = InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))
@@ -35,29 +37,6 @@ internal object TunnelIo {
   fun datagramSocket(port: Int): DatagramSocket = DatagramSocket(InetSocketAddress(LOOPBACK, port)).apply {
     receiveBufferSize = UDP_BUFFER
     sendBufferSize = UDP_BUFFER
-  }
-
-  /**
-   * The client's sockets on 127.0.0.1 where RakNet sends, one per port of [ports], for the [transport] tunnel at
-   * [target]. Throws [TunnelFailed] when one is taken.
-   */
-  fun listenLocally(ports: List<Int>, transport: String, target: String): List<DatagramSocket> {
-    val opened = mutableListOf<DatagramSocket>()
-    for (port in ports) {
-      try {
-        opened += datagramSocket(port)
-      } catch (e: IOException) {
-        opened.forEach { runCatching { it.close() } }
-        val why = describe(e)
-        throw TunnelFailed(
-          Reason.LOCAL_PORT,
-          listOf(port.toString(), why),
-          "could not listen on 127.0.0.1:$port for the $transport tunnel at $target ($why)",
-          e,
-        )
-      }
-    }
-    return opened
   }
 
   /**
@@ -115,4 +94,13 @@ internal object TunnelIo {
     is EOFException -> "closed by the other end"
     else -> e.message?.let { "${e.javaClass.simpleName}: $it" } ?: e.javaClass.simpleName
   }
+
+  /** A player's address as the server logs it. */
+  fun describe(address: SocketAddress): String =
+    (address as? InetSocketAddress)?.let { "${it.address.hostAddress}:${it.port}" } ?: address.toString()
+}
+
+/** For cleanup after a failure or on close, where another error would only hide the first. */
+internal fun Closeable.closeQuietly() {
+  runCatching { close() }
 }

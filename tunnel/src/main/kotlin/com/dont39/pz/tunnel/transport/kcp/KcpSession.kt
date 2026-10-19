@@ -1,6 +1,7 @@
 package com.dont39.pz.tunnel.transport.kcp
 
 import com.dont39.pz.tunnel.LinkStats
+import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
 import com.dont39.pz.tunnel.fec.Fec
@@ -8,26 +9,20 @@ import com.dont39.pz.tunnel.fec.FecDecoder
 import com.dont39.pz.tunnel.fec.FecEncoder
 import com.dont39.pz.tunnel.kcp.Kcp
 import java.io.IOException
-import java.net.DatagramPacket
-import java.net.DatagramSocket
 import java.net.ProtocolException
-import java.net.SocketAddress
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReferenceArray
 import kotlin.concurrent.thread
 
 /**
- * One tunnel's KCP conversation [conv], either end: game datagrams from the [local] sockets (one per channel) go into
- * KCP and FEC and out through [send]; datagrams from the other end, given to [input], come back out to RakNet. [peers]:
- * where RakNet listens, per channel; null on the client, which learns them from the datagrams RakNet sends. [onClose]
- * runs once when the session closes, for whatever the caller keeps around it.
+ * One tunnel's KCP conversation [conv], either end: game datagrams from the [local] end go into KCP and FEC and out
+ * through [send]; datagrams from the other end, given to [input], come back out to RakNet. [onClose] runs once when
+ * the session closes, for whatever the caller keeps around it.
  */
 internal class KcpSession(
   private val label: String,
   val conv: Int,
   private val params: KcpParams,
-  private val local: List<DatagramSocket>,
-  peers: List<SocketAddress?>,
+  private val local: LocalChannels,
   private val send: (ByteArray, Int) -> Unit,
   private val log: TunnelLog,
   private val onClose: (KcpSession) -> Unit,
@@ -47,11 +42,6 @@ internal class KcpSession(
     fun clock(): Long = System.nanoTime() / 1_000_000L
   }
 
-  init {
-    require(local.size == TunnelIo.CHANNELS && peers.size == TunnelIo.CHANNELS) { "one UDP socket and peer per channel" }
-  }
-
-  private val peers = AtomicReferenceArray(peers.toTypedArray())
   private val closed = AtomicBoolean()
 
   // everything below is guarded by lock; KCP and FEC are not thread-safe
@@ -61,7 +51,6 @@ internal class KcpSession(
   private var lastHeard = now
   private var heard = false
   private var dropped = 0L
-  private val toLocal = DatagramPacket(ByteArray(0), 0)
 
   private val encoder = FecEncoder(params.dataShards, params.parityShards, params.flushMillis, KcpWire.CONV_SIZE) {
     KcpWire.writeConv(it, conv)
@@ -79,9 +68,9 @@ internal class KcpSession(
 
   fun start() {
     synchronized(lock) { kcp.update(clock()) }
-    local.forEachIndexed { channel, socket ->
+    repeat(TunnelIo.CHANNELS) { channel ->
       thread(isDaemon = true, name = "${TunnelIo.THREAD_PREFIX}$label, channel $channel to KCP") {
-        guarded("relaying the $label") { fromLocal(channel, socket) }
+        guarded("relaying the $label") { fromLocal(channel) }
       }
     }
   }
@@ -144,8 +133,7 @@ internal class KcpSession(
       val bye = KcpWire.close(conv)
       repeat(CLOSE_REPEATS) { runCatching { send(bye, bye.size) } }
     }
-    // also ends the local readers' blocking receives
-    local.forEach { runCatching { it.close() } }
+    local.close()
     onClose(this)
     val counts = synchronized(lock) { counts() }
     if (error == null) {
@@ -179,30 +167,20 @@ internal class KcpSession(
       "dropped ${dropped + decoder.malformed} invalid"
   }
 
-  private fun fromLocal(channel: Int, socket: DatagramSocket) {
+  private fun fromLocal(channel: Int) {
     // the channel byte goes in front of the datagram, so each message is one send
-    val message = ByteArray(1 + TunnelIo.MAX_DATAGRAM)
-    message[0] = channel.toByte()
-    val packet = DatagramPacket(message, 1, TunnelIo.MAX_DATAGRAM)
-    while (true) {
-      packet.setData(message, 1, TunnelIo.MAX_DATAGRAM)
-      socket.receive(packet)
-      // the latest sender: Steam's server query may come from another socket than RakNet
-      peers.set(channel, packet.socketAddress)
-      // an empty datagram carries nothing, and an empty message would be malformed
-      if (packet.length == 0) {
-        continue
-      }
+    local.receiveLoop(channel, 1) { message, length ->
+      message[0] = channel.toByte()
       val waiting = synchronized(lock) {
-        if (closed.get()) return
+        // closing closed the sockets, which ends the loop at the next receive
+        if (closed.get()) return@receiveLoop
         now = clock()
-        kcp.send(message, 0, 1 + packet.length)
+        kcp.send(message, 0, 1 + length)
         kcp.flush(now)
         kcp.waitSnd()
       }
       if (waiting > maxWaiting) {
         close("the other end does not keep up, $waiting packets wait to be sent")
-        return
       }
     }
   }
@@ -214,11 +192,7 @@ internal class KcpSession(
       if (channel !in 0 until TunnelIo.CHANNELS || message.size < 2) {
         throw ProtocolException("received a message of ${message.size} bytes on channel $channel")
       }
-      // RakNet's client always sends first, so this is only a stray message before it did
-      val to = peers[channel] ?: continue
-      toLocal.setData(message, 1, message.size - 1)
-      toLocal.socketAddress = to
-      local[channel].send(toLocal)
+      local.deliver(channel, message, 1, message.size - 1)
     }
   }
 

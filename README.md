@@ -1,26 +1,35 @@
 # dont39-pz-mods
 
-This project uses [Gradle](https://gradle.org/).
-To build and run the application, use the *Gradle* tool window by clicking the Gradle icon in the right-hand toolbar,
-or run it directly from the terminal:
+Project Zomboid (Build 42) mods on [ZombieBuddy](https://github.com/zed-0xff/ZombieBuddy).
 
-* Run `./gradlew run` to build and run the application.
-* Run `./gradlew build` to only build the application.
-* Run `./gradlew check` to run all checks, including tests.
-* Run `./gradlew clean` to clean all build outputs.
+## Modules
 
-Note the usage of the Gradle Wrapper (`./gradlew`).
-This is the suggested way to use Gradle in production projects.
+| Module | What it is |
+|--------|------------|
+| `zabric`, `zabric-processor` | Zabric: loader layer, hook API and runtime (a mod), and its annotation processor; both on Maven Central |
+| `zb-kt`, `zb-kt-utils`, `zb-kt-utils-processor` | ZabricKotlin: the Kotlin runtime mod, the shared runtime it ships, and its KSP glue generator |
+| `dont39-all-in-one` | Dont39 All-in-One: the mod that bundles the feature modules |
+| `ime-keyboard-fix`, `missing-anim-folders`, `anim-extends-case`, `tunnel`, `network-status`, `mod-options-sidebar` | the features, one module each |
+| `zb-skip-online-checks` | ZB Skip Online Checks, a mod for ZombieBuddy itself |
+| `buildSrc` | the convention plugins and build tasks every module uses |
+| `samples/zabric-java-hooks` | a standalone author build against the published Zabric artifacts |
 
-[Learn more about the Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
+## Local setup
 
-[Learn more about Gradle tasks](https://docs.gradle.org/current/userguide/command_line_interface.html#common_tasks).
+- JDK 25 for Gradle (`JAVA_HOME`); `buildSrc/build.gradle.kts` requires it.
+- Machine paths go in `~/.gradle/gradle.properties`, not in the repo:
 
-This project follows the suggested multi-module setup and consists of the `app` and `utils` subprojects.
-The shared build logic was extracted to a convention plugin located in `buildSrc`.
+  ```properties
+  # the Project Zomboid install, with projectzomboid.jar and ZombieBuddy.jar
+  pzDir=C:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid
+  # the dedicated server, for :zb-kt:serverSmokeTest only
+  pzServerDir=C:/Program Files (x86)/Steam/steamapps/common/Project Zomboid Dedicated Server
+  ```
 
-This project uses a version catalog (see `gradle/libs.versions.toml`) to declare and version dependencies
-and both a build cache and a configuration cache (see `gradle.properties`).
+  `pzUserDir` (default `~/Zomboid`) is where `deployWorkshop` stages the mods and the smoke tests read the log.
+- Feature target mods and ZombieBuddy subscribed in Steam.
+
+`./gradlew build assembleMod` builds and checks everything; `deployWorkshop` stages a mod for the game and for upload.
 
 ## Writing Java mods on Zabric
 

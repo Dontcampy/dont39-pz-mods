@@ -36,6 +36,8 @@
 
 - Apply `buildsrc.convention.pz-kotlin` (`buildSrc/src/main/kotlin/pz-kotlin.gradle.kts`); All-in-One features get it
   through `pz-feature`. Never bundle `kotlin/` or `kotlinx/` classes.
+- No entry with `kotlin/` classes follows the game jar on the Kotlin compile classpath, so the game's kotlin-stdlib
+  1.4.10 never shadows the current one; `compileKotlin` fails otherwise (`pz-kotlin.gradle.kts`).
 - The mod `require`s `\Zabric` and `\ZabricKotlin` and lists `\ZabricKotlin` in `loadModAfter`
   ([Loading](./zombiebuddy-patching.md#loading)).
 - Mod-level startup code is a Zabric main entrypoint, not a ZombieBuddy `Main`.

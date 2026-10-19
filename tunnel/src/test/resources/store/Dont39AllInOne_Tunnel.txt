@@ -1,0 +1,7 @@
+example.com:16261=tcp,16300,0
+10.0.0.5:16261=kcp,16300,16301
+
+  spaced.example.org:16261 =  off , 16300 , 16301
+2001:db8::1:16261=kcp,0,16301
+example.com:16262=off,0,0
+example.com:16261=kcp,16300,16301

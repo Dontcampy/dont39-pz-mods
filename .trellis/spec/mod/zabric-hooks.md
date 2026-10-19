@@ -11,9 +11,11 @@
 | Part | Code |
 |------|------|
 | Author API | `zabric/src/main/java/com/pzlauncher/zabric/hook/` |
-| Runtime | `zabric/src/main/java/com/pzlauncher/zabric/hook/impl/` |
-| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/`; its FreeMarker templates under `src/main/resources` in the same package |
-| Front ends | `ZabricProcessor.java` (javac); `GlueProcessor.kt`, `HookReader.kt` in `zb-kt-utils-processor` (KSP) |
+| Runtime | `zabric/src/main/java/com/pzlauncher/zabric/hook/impl/`: listing reader `HookListing.java`, target check `TargetCheck.java` |
+| Listing format (dir, suffix, header, default gate), compiled into Zabric, the processor and buildSrc | `zabric/src/listingformat/java/.../listing/HookListingFormat.java` |
+| Generator, shared by both front ends | `zabric-processor/src/main/java/com/pzlauncher/zabric/processor/glue/`: entry `HookAnalyzer.java`, handler checks `HandlerBinder.java` / `HandlerBinding.java`, patches `PatchBuilder.java`, output `GlueWriter.java`; its FreeMarker templates under `src/main/resources` in the same package |
+| Front ends | `ZabricProcessor.java`, `JavacHookReader.java` (javac); `GlueProcessor.kt`, `HookReader.kt` in `zb-kt-utils-processor` (KSP) |
+| Tests | javac side and generator: `zabric-processor/src/test/`; KSP side: `zb-kt-utils-processor/src/test/`, its golden glue under `src/test/resources/golden/` |
 | Reference glue | `zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java` |
 | Author build | `samples/zabric-java-hooks/` |
 
@@ -33,8 +35,8 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   (`WeaveCheck.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
-- Hook listings (`HookListing.java`): change the writer and all readers together; a change old readers must understand
-  takes a new header version.
+- Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers
+  together; a change old readers must understand takes a new header version.
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.

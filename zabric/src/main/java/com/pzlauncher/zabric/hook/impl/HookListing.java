@@ -1,16 +1,13 @@
 package com.pzlauncher.zabric.hook.impl;
 
+import com.pzlauncher.zabric.internal.Jars;
+import com.pzlauncher.zabric.listing.HookListingFormat;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,10 +28,10 @@ import java.util.zip.ZipFile;
  */
 public record HookListing(String source, String hookClass, String modId, String gate, List<String> patches,
                           List<Hook> hooks) {
-    public static final String DIR = "META-INF/zabric/hooks/";
-    public static final String SUFFIX = ".txt";
-    public static final String HEADER = "zabric-hooks v1";
-    public static final String DEFAULT_GATE = "default";
+    public static final String DIR = HookListingFormat.DIR;
+    public static final String SUFFIX = HookListingFormat.SUFFIX;
+    public static final String HEADER = HookListingFormat.HEADER;
+    public static final String DEFAULT_GATE = HookListingFormat.DEFAULT_GATE;
 
     public record Hook(String owner, String method, String descriptor, String patch) {
         @Override
@@ -123,7 +120,7 @@ public record HookListing(String source, String hookClass, String modId, String 
             if (entry == null) {
                 throw new NoSuchFileException(source);
             }
-            return parse(source, hookClass, lines(zip, entry));
+            return parse(source, hookClass, Jars.lines(zip, entry));
         }
     }
 
@@ -153,121 +150,30 @@ public record HookListing(String source, String hookClass, String modId, String 
                     continue;
                 }
                 String hookClass = name.substring(DIR.length(), name.length() - SUFFIX.length());
-                all.add(parse(jar + "!/" + name, hookClass, lines(zip, entry)));
+                all.add(parse(jar + "!/" + name, hookClass, Jars.lines(zip, entry)));
             }
         }
         return all;
     }
 
-    private static List<String> lines(ZipFile zip, ZipEntry entry) throws IOException {
-        try (InputStream in = zip.getInputStream(entry)) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8).lines().toList();
-        }
-    }
-
-    // from the class's own jar: all mod jars share one class loader, so a resource lookup could find another mod's
+    // TargetCheck does the check; these stay for the published surface and the existing callers
     public static String problem(Class<?> hookClass) {
-        Path location;
-        try {
-            location = location(hookClass);
-        } catch (URISyntaxException | RuntimeException e) {
-            return "cannot tell where " + hookClass.getName() + " was loaded from: " + e;
-        }
-        return problem(hookClass, location);
+        return TargetCheck.problem(hookClass);
     }
 
     public static String gateProblem(Class<?> gate) {
-        Path location;
-        try {
-            location = location(gate);
-        } catch (URISyntaxException | RuntimeException e) {
-            return "cannot tell where " + gate.getName() + " was loaded from: " + e;
-        }
-        return gateProblem(gate, location);
+        return TargetCheck.gateProblem(gate);
     }
 
     static String gateProblem(Class<?> gate, Path location) {
-        List<String> problems = new ArrayList<>();
-        try {
-            for (HookListing listing : readAll(location)) {
-                if (listing.gate().equals(gate.getName())) {
-                    String problem = listing.problem(gate.getClassLoader());
-                    if (problem != null) {
-                        problems.add(problem);
-                    }
-                }
-            }
-        } catch (IOException | RuntimeException e) {
-            return "cannot read the hook listings in " + location + ": " + e;
-        }
-        return problems.isEmpty() ? null : String.join("; ", problems);
+        return TargetCheck.gateProblem(gate, location);
     }
 
     static String problem(Class<?> hookClass, Path location) {
-        HookListing listing;
-        try {
-            listing = read(location, hookClass.getName());
-        } catch (IOException | RuntimeException e) {
-            return "cannot read the hook listing of " + hookClass.getName() + ": " + e;
-        }
-        return listing.problem(hookClass.getClassLoader());
+        return TargetCheck.problem(hookClass, location);
     }
 
     public String problem(ClassLoader loader) {
-        List<String> wrong = new ArrayList<>();
-        for (String patch : patches) {
-            try {
-                Class.forName(patch, false, loader);
-            } catch (ClassNotFoundException e) {
-                wrong.add("its patch class " + patch + " is not there");
-            } catch (LinkageError e) {
-                wrong.add("its patch class " + patch + " cannot be loaded: " + e);
-            }
-        }
-        for (Hook hook : hooks) {
-            String why;
-            try {
-                why = missing(Class.forName(hook.owner(), false, loader), hook);
-            } catch (ClassNotFoundException e) {
-                why = "class " + hook.owner() + " is not there";
-            } catch (LinkageError e) {
-                why = "cannot load " + hook.owner() + " or read its methods: " + e;
-            }
-            if (why != null) {
-                wrong.add(why);
-            }
-        }
-        return wrong.isEmpty() ? null : "the targets of " + hookClass + " (" + source + ") do not match: "
-                + String.join("; ", wrong);
-    }
-
-    private static String missing(Class<?> owner, Hook hook) {
-        List<String> same = new ArrayList<>();
-        if (hook.method().equals("<init>")) {
-            for (Constructor<?> c : owner.getDeclaredConstructors()) {
-                same.add(MethodType.methodType(void.class, c.getParameterTypes()).toMethodDescriptorString());
-            }
-        } else {
-            for (Method m : owner.getDeclaredMethods()) {
-                if (m.getName().equals(hook.method())) {
-                    same.add(MethodType.methodType(m.getReturnType(), m.getParameterTypes())
-                            .toMethodDescriptorString());
-                }
-            }
-        }
-        if (same.contains(hook.descriptor())) {
-            return null;
-        }
-        return same.isEmpty() ? hook.owner() + " has no method " + hook.method() : hook.owner() + " has no "
-                + hook.method() + hook.descriptor() + " (it has " + hook.method() + String.join(", " + hook.method(),
-                same) + ")";
-    }
-
-    private static Path location(Class<?> c) throws URISyntaxException {
-        CodeSource source = c.getProtectionDomain().getCodeSource();
-        if (source == null || source.getLocation() == null) {
-            throw new IllegalStateException(c.getName() + " has no code source");
-        }
-        return Path.of(source.getLocation().toURI());
+        return TargetCheck.problem(this, loader);
     }
 }

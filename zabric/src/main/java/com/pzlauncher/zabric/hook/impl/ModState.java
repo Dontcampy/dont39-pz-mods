@@ -5,6 +5,8 @@ import com.pzlauncher.zabric.hook.ModHooks;
 
 import java.util.List;
 
+import static com.pzlauncher.zabric.internal.Log.PREFIX;
+
 final class ModState implements ModHooks {
     private final String modId;
     private final HookGate defaultGate = new DefaultGate();
@@ -126,7 +128,7 @@ final class ModState implements ModHooks {
         @Override
         public void failed(String what, Throwable t) {
             String state = stop() ? "hooks stopped after an error while " : "hooks stopped; then an error while ";
-            HookRuntime.log().exception(t, HookRuntime.PREFIX + modId + ": " + state + what);
+            HookRuntime.log().exception(t, PREFIX + modId + ": " + state + what);
         }
 
         @Override

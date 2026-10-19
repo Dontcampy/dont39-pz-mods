@@ -55,7 +55,7 @@ local badgeTexture = nil
 -- ---- sampling ----
 
 local status = nil -- the Java side's last table; nil when not connected
-local tunnel = nil -- the tunnel feature's last table; nil when no tunnel carries the connection
+local tunnel = nil -- the tunnel feature's last table (keys: TunnelStatus.kt); nil when no tunnel carries the connection
 local history = {} -- oldest first; one more than WINDOW, so tunnel deltas span WINDOW seconds
 local windowKey = nil -- method and tunnel the history belongs to
 local nextSample = 0
@@ -73,7 +73,7 @@ end
 -- A new tunnel restarts its counters.
 local function countersWentBack(previous, current)
     if not previous or not current or current.mode ~= "kcp" or previous.mode ~= "kcp" then return false end
-    for _, key in ipairs({ "segmentsSent", "retransmitsTimeout", "retransmitsFast", "fecExpected" }) do
+    for _, key in ipairs({ "segmentsSent", "retransmitsTimeout", "retransmitsFast", "seqExpected" }) do
         if counter(current, key) < counter(previous, key) then return true end
     end
     return false
@@ -128,9 +128,9 @@ local function kcpWindow()
     local sent = counter(b, "segmentsSent") - counter(a, "segmentsSent")
     local resent = counter(b, "retransmitsTimeout") + counter(b, "retransmitsFast")
         - counter(a, "retransmitsTimeout") - counter(a, "retransmitsFast")
-    local expected = counter(b, "fecExpected") - counter(a, "fecExpected")
+    local expected = counter(b, "seqExpected") - counter(a, "seqExpected")
     -- a late shard filling an earlier gap lowers the count
-    local missing = math.max(0, counter(b, "fecMissing") - counter(a, "fecMissing"))
+    local missing = math.max(0, counter(b, "seqMissing") - counter(a, "seqMissing"))
     local inbound = expected > 0 and missing / expected or nil
     local outbound = sent > 0 and resent / sent or nil
     return inbound, outbound
@@ -210,7 +210,7 @@ local function tooltipLines()
         add(getText(TEXT .. "KcpInbound", percent(inbound)))
         add(getText(TEXT .. "KcpOutbound", percent(outbound)))
         add(getText(TEXT .. "KcpFec", whole(counter(tunnel, "fecRecovered")), whole(counter(tunnel, "fecUnrecoverable"))))
-        add(getText(TEXT .. "KcpRtt", whole(counter(tunnel, "srtt"))))
+        add(getText(TEXT .. "KcpRtt", whole(counter(tunnel, "srttMillis"))))
     elseif status.stats then
         add(getText(TEXT .. "Loss", percent(status.lossLastSecond), percent(status.lossTotal)))
     else

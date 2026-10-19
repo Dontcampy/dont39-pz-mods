@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenListener
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
@@ -137,13 +138,10 @@ internal class KcpListener(
   private fun answer(datagram: ByteArray, to: SocketAddress) = socket.send(DatagramPacket(datagram, datagram.size, to))
 
   private fun open(from: SocketAddress, nonce: Int): Opened? {
-    val label = "KCP tunnel from ${address(from)}"
-    val targets = listOf(gamePort, udpPort).map { InetSocketAddress(TunnelIo.LOOPBACK, it) }
-    val local = mutableListOf<DatagramSocket>()
-    try {
-      targets.forEach { local += TunnelIo.datagramSocket(0).apply { connect(it) } }
+    val label = "KCP tunnel from ${TunnelIo.describe(from)}"
+    val local = try {
+      LocalChannels.toGame(gamePort, udpPort)
     } catch (e: IOException) {
-      local.forEach { runCatching { it.close() } }
       log.info { "could not open a $label: ${TunnelIo.describe(e)}" }
       return null
     }
@@ -153,29 +151,31 @@ internal class KcpListener(
     } while (conv == 0 || sessions.containsKey(Key(from, conv)))
     val key = Key(from, conv)
     val helloKey = Key(from, nonce)
-    val session = KcpSession(
-      label,
-      conv,
-      params,
-      local,
-      targets,
-      { datagram, length -> socket.send(DatagramPacket(datagram, length, from)) },
-      log,
-    ) {
-      sessions.remove(key)
-      byHello.remove(helloKey)
-      scheduler.remove(it)
+    // the session closes the local sockets only once it exists
+    val session = try {
+      KcpSession(
+        label,
+        conv,
+        params,
+        local,
+        { datagram, length -> socket.send(DatagramPacket(datagram, length, from)) },
+        log,
+      ) {
+        sessions.remove(key)
+        byHello.remove(helloKey)
+        scheduler.remove(it)
+      }
+    } catch (e: Throwable) {
+      local.close()
+      throw e
     }
     val opened = Opened(session, KcpWire.welcome(nonce, conv, udpPort, params))
     sessions[key] = session
     byHello[helloKey] = opened
     // RakNet and the admin tools see the player at this address
-    log.info { "$label open as 127.0.0.1:${local[TunnelIo.GAME_CHANNEL].localPort}" }
+    log.info { "$label open as 127.0.0.1:${local.localPort(TunnelIo.GAME_CHANNEL)}" }
     session.start()
     scheduler.add(session)
     return opened
   }
-
-  private fun address(address: SocketAddress): String =
-    (address as? InetSocketAddress)?.let { "${it.address.hostAddress}:${it.port}" } ?: address.toString()
 }
