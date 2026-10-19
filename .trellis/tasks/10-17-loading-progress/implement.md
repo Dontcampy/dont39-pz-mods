@@ -51,6 +51,12 @@ refactor; go by the symbols in `design.md`.
     `Strings` EN/CN. Check, smokeTest, commit.
 15. C: Zabric heartbeat counter (tests); the mod's capture, render-thread drawer and GL save/restore, interim-frame
     count in the frame-gap line. Check, smokeTest, launch to the menu with and without Viewpoint (recording), commit.
+16. D12–D14 and C follow-ups: the three D12 triggers; the item sub-bar (D13) with interim frames advancing it; a
+    bind-based copy path without DSA (D14, also used when the window is multisampled if that blocks the DSA blit);
+    per-jar own frames throttled for jars that return at once; GL objects released after a mod stop if Zabric offers
+    a way, else stated as accepted; layout clear of ZombieBuddy's watermark at 4K (R7); the frame-gap line reports the
+    Java-mod pass's largest visible gap separately and labels known-exception gaps; design.md and R8 notes updated.
+    Check, smokeTest, launch to the menu (screenshots), commit.
 
 ## Validation
 

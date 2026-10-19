@@ -73,6 +73,16 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   `research/zb-pass-gap.md`): discovery triggers on `ZomboidFileSystem` (woven at premain); a Zabric loader-progress
   API (per Java mod jar, JDK-only listener) drives own frames and "Java mod i / n: id"; inside one jar's patching, the
   render thread shows interim frames: the last `MainThread` frame with the bar redrawn from a Zabric heartbeat count.
+- D12 (2026-10-19, `research/other-gaps.md`): triggers on `TextManager.isAnyFontLoading` (font pages, ~2.2 s in
+  translations), `ScriptBucket.getCurrentScriptObject` (script objects, ~1.7 s) and `ChooseGameInfo.readModInfo`
+  (mods that reread mod.info in their boot code). Known gaps like D8, since no hook can split them: one
+  `ScriptParser.stripComments` call per tile-geometry file (~2 s for vanilla's, every launch, start and reload), the
+  Steam installed-items query at discovery (~1.9 s), and other mods' long Lua callbacks.
+- D13 (2026-10-19): a thin sub-bar under line 2 shows the current item's progress (i / total of mods, script files,
+  Lua files, Java mods; inside a jar, the heartbeat-paced moves within that jar's share). The main bar stays step
+  n / N (D2).
+- D14 (2026-10-19): interim frames work without OpenGL 4.5 direct state access (bind-based copy with saved and restored
+  bindings); no capability switches them off. A GL error is a mismatch and stops the mod with its report.
 
 ## Requirements
 
@@ -106,11 +116,13 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - R8: while a flow runs, `MainThread` hands over a frame of its own at least every 1 s whenever no other frame came,
   so the bar keeps moving and Windows never sees 5 s without a pump in the measured phases (incl. `ResetLua`'s
   post-reset events, `GameLoadingState.enter` and `IngameState.enter`). Own frames come only from `MainThread`, never from
-  inside another frame, at most ~20 per second. Known exception (D8): a blocking call of another mod with no hook of
-  this mod inside, today Dont39 All-in-One's tunnel open (≤2 s); the frame-gap report names the step it fell in.
-  ZombieBuddy's Java-mod pass (D11): own frames at each jar; between them the render thread presents interim frames
-  (the last captured frame, bar redrawn, text unchanged) at most every 250 ms while the heartbeat moves, and none
-  when it stops, so a real hang still shows a still bar. Interim frames restore all GL state they touch.
+  inside another frame, at most ~20 per second (also for runs of jars that return at once). Known exceptions (D8,
+  D12): a blocking call of another mod with no hook of this mod inside (today Dont39 All-in-One's tunnel open, ≤2 s),
+  other mods' long Lua callbacks, tile-geometry comment stripping and the Steam installed-items query; the frame-gap
+  report names the step and item each gap fell in. ZombieBuddy's Java-mod pass (D11, D13): own frames at each jar;
+  between them the render thread presents interim frames (the last captured frame, sub-bar advanced, text
+  unchanged) while the heartbeat moves, and none when it stops, so a real hang still shows a still bar. Interim
+  frames come only from the render thread and restore all GL state they touch.
 - R9 (D5): English and Chinese text from the mod's own strings, not the game's translation files (those load late and
   vanish on servers that do not list the mod). Chinese shows when the game language is Chinese (CN); every other
   language shows English.
@@ -131,8 +143,9 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   nor the mod's own code loads a game class at preLaunch (class-load log: 0 game classes loaded from Zabric or mod
   frames there), ZombieBuddy's premain weaving of already-loaded targets excepted; the mod's `access widener: ok` and
   `hooks ready` lines appear at the first pass.
-- AC3b (D11): on the ~245-mod launch, the frame-gap line's largest `MainThread` gap is inside one Java mod jar, the
-  largest visible gap (counting interim frames) in the Java-mod pass is under 1 s, discovery's under 1 s; Zabric
+- AC3b (D11–D14): on the ~245-mod launch, the frame-gap line reports the largest visible gap (counting interim
+  frames) of the Java-mod pass separately, under 1 s; every other visible gap over 1 s is one of R8's known
+  exceptions; at 4K the bar and sub-bar do not cross ZombieBuddy's watermark (R7); Zabric
   tests cover the loader-progress listener and heartbeat; with Viewpoint enabled and disabled the screen shows no
   flicker or garbage (recording).
 - AC3 (R5–R7): on a launch with ~245 mods, the bar appears once fonts are ready and advances through every launch step
