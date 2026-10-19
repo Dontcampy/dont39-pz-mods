@@ -1,6 +1,6 @@
-import buildsrc.convention.PZ_TOOLCHAIN
-import buildsrc.convention.ZOMBIEBUDDY_JAR
-import buildsrc.convention.pzDir
+import buildsrc.convention.mod.PZ_TOOLCHAIN
+import buildsrc.convention.mod.ZOMBIEBUDDY_JAR
+import buildsrc.convention.mod.pzDir
 
 // Runs inside the Kotlin compiler, never in the game: a plain JVM module, not bundled.
 plugins {

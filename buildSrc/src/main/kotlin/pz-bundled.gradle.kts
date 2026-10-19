@@ -1,5 +1,9 @@
 package buildsrc.convention
 
+import buildsrc.convention.feature.FeatureInfo
+import buildsrc.convention.feature.PzArtifact
+import buildsrc.convention.feature.pzElements
+
 // A feature module the all-in-one mod bundles. Publishes its Lua and media files, its .classtweaker list (pz-feature
 // adds it) and its descriptor folder (FeatureInfo), so the mod reads none of this project's model.
 plugins {

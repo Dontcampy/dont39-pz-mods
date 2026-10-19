@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.widening
 
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection

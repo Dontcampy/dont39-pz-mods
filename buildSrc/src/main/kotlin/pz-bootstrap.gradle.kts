@@ -1,5 +1,7 @@
 package buildsrc.convention
 
+import buildsrc.convention.check.CheckBootstrapClasses
+
 // A module whose Java classes run before ZabricKotlin has installed Kotlin, or without it.
 plugins {
   java

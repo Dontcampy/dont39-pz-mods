@@ -1,7 +1,10 @@
-package buildsrc.convention
+package buildsrc.convention.smoke
 
+import buildsrc.convention.mod.kotlinVersions
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import java.io.File
+import java.util.UUID
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -10,8 +13,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.UntrackedTask
-import java.io.File
-import java.util.UUID
 
 /**
  * Starts the dedicated server the way its ProjectZomboid64.json does, without Steam, with its own cache dir and a test

@@ -1,4 +1,4 @@
-import buildsrc.convention.CheckLoaderRefs
+import buildsrc.convention.check.CheckLoaderRefs
 
 // Java (and Lua) only: ZombieBuddy runs PreMain before ZabricKotlin has installed the Kotlin runtime.
 plugins {

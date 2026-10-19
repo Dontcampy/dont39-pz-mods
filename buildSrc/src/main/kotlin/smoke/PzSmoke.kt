@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.smoke
 
 import groovy.json.JsonSlurper
 import org.gradle.api.GradleException

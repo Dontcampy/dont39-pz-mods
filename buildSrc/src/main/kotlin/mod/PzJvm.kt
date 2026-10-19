@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.mod
 
 import java.io.File
 import java.util.zip.ZipFile

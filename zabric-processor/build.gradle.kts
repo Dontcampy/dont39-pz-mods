@@ -1,5 +1,5 @@
-import buildsrc.convention.ZOMBIEBUDDY_JAR
-import buildsrc.convention.pzDir
+import buildsrc.convention.mod.ZOMBIEBUDDY_JAR
+import buildsrc.convention.mod.pzDir
 
 // Zabric's annotation processor: authors use it as annotationProcessor. Plain Java whose only dependency is FreeMarker,
 // so it builds and publishes on its own; it names Zabric's and ZombieBuddy's types as strings.

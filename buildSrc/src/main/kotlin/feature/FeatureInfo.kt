@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.feature
 
 import com.pzlauncher.zabric.listing.HookListingFormat
 import org.gradle.api.DefaultTask

@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.widening
 
 import com.pzlauncher.zabric.classtweaker.ClassTweaker
 import com.pzlauncher.zabric.classtweaker.ClassTweaker.Access

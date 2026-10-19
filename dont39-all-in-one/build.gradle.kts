@@ -1,14 +1,14 @@
-import buildsrc.convention.CheckGlue
-import buildsrc.convention.GameSmokeTest
-import buildsrc.convention.GenerateFeatureInit
-import buildsrc.convention.MergeClassTweakers
-import buildsrc.convention.PzArtifact
-import buildsrc.convention.jvmFolders
-import buildsrc.convention.kotlinVersions
-import buildsrc.convention.modInfoOf
-import buildsrc.convention.pzDir
-import buildsrc.convention.pzIncoming
-import buildsrc.convention.pzUserDir
+import buildsrc.convention.check.CheckGlue
+import buildsrc.convention.feature.GenerateFeatureInit
+import buildsrc.convention.feature.PzArtifact
+import buildsrc.convention.feature.jvmFolders
+import buildsrc.convention.feature.pzIncoming
+import buildsrc.convention.mod.kotlinVersions
+import buildsrc.convention.mod.modInfoOf
+import buildsrc.convention.mod.pzDir
+import buildsrc.convention.mod.pzUserDir
+import buildsrc.convention.smoke.GameSmokeTest
+import buildsrc.convention.widening.MergeClassTweakers
 
 plugins {
   id("buildsrc.convention.pz-kotlin")

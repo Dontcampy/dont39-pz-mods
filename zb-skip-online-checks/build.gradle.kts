@@ -1,5 +1,5 @@
-import buildsrc.convention.CheckLoaderRefs
-import buildsrc.convention.pzDir
+import buildsrc.convention.check.CheckLoaderRefs
+import buildsrc.convention.mod.pzDir
 
 // Java only: ZombieBuddy can run PreMain from the game folder before any mod, ZabricKotlin included, is loaded.
 plugins {

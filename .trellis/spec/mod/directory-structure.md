@@ -10,7 +10,7 @@
 settings.gradle.kts                  module list
 gradle.properties                    build settings; machine paths (pzDir, pzServerDir) go in ~/.gradle/gradle.properties
 buildSrc/src/main/kotlin/
-  pz-jvm.gradle.kts                  toolchain and bytecode level (PzJvm.kt); zabric-processor applies it without pz-java
+  pz-jvm.gradle.kts                  toolchain and bytecode level (mod/PzJvm.kt); zabric-processor applies it without pz-java
   pz-java.gradle.kts                 every game module: pz-jvm, zb-gradle-plugin, game and ZombieBuddy jars
   pz-kotlin.gradle.kts               every Kotlin module
   pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
@@ -19,12 +19,11 @@ buildSrc/src/main/kotlin/
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
   pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
-  PzPaths.kt, ModInfo.kt             machine paths, mod.info
-  PzArtifacts.kt                     the variants projects exchange data through
-  FeatureInfo.kt, CheckGlue.kt       feature descriptors, generated initFeatures(), checkGlue
-  PzSmoke.kt, GameSmokeTest.kt, ServerSmokeTest.kt  smoke tests
-  PzTargets.kt, ClassTweakerTasks.kt target mods and widened compile jars (see access-widening.md)
-  CheckLoaderRefs.kt, CheckBootstrapClasses.kt  class-reference checks (see zombiebuddy-patching.md, kotlin-runtime.md)
+  mod/                               machine paths, mod.info, typed extensions, JVM levels, version catalog
+  feature/                           the variants projects exchange data through, feature descriptors, initFeatures()
+  smoke/                             smoke tests
+  widening/                          target mods and widened compile jars (see access-widening.md)
+  check/                             class-reference checks and checkGlue (see zombiebuddy-patching.md, kotlin-runtime.md)
 <feature-module>/                    one per feature, e.g. ime-keyboard-fix/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hooks objects and @LuaGlobal functions

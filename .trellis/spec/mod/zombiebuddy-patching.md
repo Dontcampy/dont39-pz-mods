@@ -40,7 +40,7 @@ agent) rewrites those two and rebuilds every mod on Zabric:
   Mod code uses only Zabric's hook API
   ([`com.pzlauncher.zabric.hook`](../../../zabric/src/main/java/com/pzlauncher/zabric/hook/package-info.java)).
 
-`checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/CheckLoaderRefs.kt), registered in
+`checkLoaderRefs` ([`CheckLoaderRefs.kt`](../../../buildSrc/src/main/kotlin/check/CheckLoaderRefs.kt), registered in
 `pz-java.gradle.kts`) fails the build on any other reference. Do not widen its exclusions; extend the seam instead.
 
 The one exception is a mod whose target *is* the loader: `zb-skip-online-checks`

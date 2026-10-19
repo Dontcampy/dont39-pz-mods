@@ -1,5 +1,11 @@
 package buildsrc.convention
 
+import buildsrc.convention.check.CheckLoaderRefs
+import buildsrc.convention.mod.PZ_GAME_JAR
+import buildsrc.convention.mod.PzGame
+import buildsrc.convention.mod.ZOMBIEBUDDY_JAR
+import buildsrc.convention.mod.pzDir
+
 plugins {
   id("buildsrc.convention.pz-jvm")
   `java-library`

@@ -1,5 +1,17 @@
 package buildsrc.convention
 
+import buildsrc.convention.check.CheckLoaderRefs
+import buildsrc.convention.feature.FEATURE_BUNDLE
+import buildsrc.convention.feature.FeatureInfo
+import buildsrc.convention.feature.PzGlue
+import buildsrc.convention.mod.PZ_GAME_JAR
+import buildsrc.convention.mod.PzGame
+import buildsrc.convention.mod.modInfoOf
+import buildsrc.convention.mod.pzDir
+import buildsrc.convention.mod.pzWorkshopContent
+import buildsrc.convention.widening.PzTargets
+import buildsrc.convention.widening.WidenJars
+
 // A Kotlin feature module, bundled by dont39-all-in-one.
 plugins {
   id("buildsrc.convention.pz-kotlin")

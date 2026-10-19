@@ -1,5 +1,8 @@
-package buildsrc.convention
+package buildsrc.convention.smoke
 
+import buildsrc.convention.feature.FeatureInfo
+import buildsrc.convention.mod.kotlinVersions
+import buildsrc.convention.mod.modInfoValue
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection

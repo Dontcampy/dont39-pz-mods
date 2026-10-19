@@ -1,5 +1,6 @@
-package buildsrc.convention
+package buildsrc.convention.check
 
+import buildsrc.convention.feature.FeatureInfo
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection

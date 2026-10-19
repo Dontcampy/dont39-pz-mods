@@ -1,5 +1,9 @@
 package buildsrc.convention
 
+import buildsrc.convention.mod.PZ_RELEASE
+import buildsrc.convention.mod.PzGame
+import buildsrc.convention.mod.catalogLibrary
+import buildsrc.convention.mod.hasKotlinClasses
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 

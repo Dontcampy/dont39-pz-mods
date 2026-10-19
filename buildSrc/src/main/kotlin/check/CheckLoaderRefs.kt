@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.check
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException

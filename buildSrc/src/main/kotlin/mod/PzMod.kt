@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.mod
 
 import javax.inject.Inject
 

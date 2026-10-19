@@ -1,5 +1,11 @@
 package buildsrc.convention
 
+import buildsrc.convention.feature.PzArtifact
+import buildsrc.convention.feature.pzElements
+import buildsrc.convention.mod.PzMod
+import buildsrc.convention.mod.pzUserDir
+import buildsrc.convention.mod.readModInfo
+
 // A shipped mod: its id and javaPkgName come from mod/42/mod.info (pzMod). Registers assembleMod (the mod folder with
 // the jar; the module adds any other files), published as the mod-folder variant, and deployWorkshop.
 plugins {

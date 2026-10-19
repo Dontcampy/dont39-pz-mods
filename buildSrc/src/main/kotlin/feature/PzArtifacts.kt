@@ -1,4 +1,4 @@
-package buildsrc.convention
+package buildsrc.convention.feature
 
 import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
