@@ -201,5 +201,9 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
 - Read main-thread state once into a local on the render thread (`ImeWindow.kt`).
 - Win32 calls on the game window run on the thread that calls `Display.processMessages()`, including their undo
   (`ImeWindow.kt`).
+- GL outside the game's frames (render thread, between its swaps) creates its own objects with direct state access,
+  reads back every state it changes and writes it back exactly, and leaves the game's cached state
+  (`GLStateRenderThread`, `Texture.lastTextureID`) alone; the game's drawing calls feed the game thread's frame and
+  are not used there (`Interim.java` in `loading-progress`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on. Know how often the patched method is called before adding work to it.

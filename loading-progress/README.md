@@ -12,9 +12,14 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
   feed, tested in `src/test/`.
 - ZombieBuddy's Java mod pass runs no game method between its jars: Zabric's loader progress, registered at preLaunch
   (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar.
+- Patching one jar can hold the game thread for seconds. Meanwhile the render thread shows interim frames
+  (`draw/Interim.java`, hooks on `Display` in `hooks/DisplayHooks.java`): the jar's own frame, copied before its swap,
+  with the fill moved a pixel further into the jar's share every 750 ms while Zabric's heartbeat moves. It needs
+  OpenGL 4.5 direct state access and restores every GL state it touches.
 - `draw/Overlay.java` draws the bar at the head of `Core.EndFrameUI` in every frame the game thread hands over;
   `draw/FramePump.java` hands over its own frames from the hooks inside the loading code.
-- One `console.txt` line per flow: outcome, duration, own frames and the largest gap between frames, with its step.
+- One `console.txt` line per flow: outcome, duration, own and interim frames, the largest gap between frames the game
+  thread handed over and the largest counting interim frames, each with its step.
 
 ## Constraints
 

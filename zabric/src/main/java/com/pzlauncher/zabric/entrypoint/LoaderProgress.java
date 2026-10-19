@@ -1,6 +1,7 @@
 package com.pzlauncher.zabric.entrypoint;
 
 import com.pzlauncher.zabric.hook.ModHooks;
+import com.pzlauncher.zabric.loader.Loader;
 
 /**
  * The loader's progress through the Java mod jars of each pass over the mod list, for mods that show loading progress.
@@ -36,5 +37,16 @@ public final class LoaderProgress {
     /** Adds {@code listener} for {@code modId}, the mod it reports against. Never throws for non-null arguments. */
     public static void listen(String modId, Listener listener) {
         LISTENERS.listen(modId, listener);
+    }
+
+    /**
+     * A count that grows by one for each class the loader transforms or loads on its thread between
+     * {@link Listener#jarLoading} and {@link Listener#jarLoaded}: while it patches a jar, which can take seconds, the
+     * game's main thread runs none of its own code, so another thread (the render thread) can read this to show that
+     * the loader still works. It does not move between jars, outside passes, while the loader hangs, or for the rest
+     * of a pass Zabric cannot follow; it is no total and no fraction. Cheap, any thread, loads no game class.
+     */
+    public static long heartbeat() {
+        return Loader.jarWork();
     }
 }

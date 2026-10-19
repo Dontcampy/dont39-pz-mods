@@ -21,11 +21,23 @@ public final class FramePump {
     }
 
     public static void tick(Progress progress) {
+        push(progress, false);
+    }
+
+    /**
+     * A Java mod jar starts loading: its frame is the one the render thread fills while ZombieBuddy patches the jar,
+     * so it does not wait for the interval: one frame per jar, however short the jars.
+     */
+    public static void jarStarts(Progress progress) {
+        push(progress, true);
+    }
+
+    private static void push(Progress progress, boolean anyTime) {
         if (!progress.ownFrames()) {
             return;
         }
         long now = System.nanoTime();
-        if (!progress.ownFrameDue(now) || Thread.currentThread() != GameWindow.gameThread || pushing) {
+        if (!(anyTime || progress.ownFrameDue(now)) || Thread.currentThread() != GameWindow.gameThread || pushing) {
             return;
         }
         Core core = Core.getInstance();

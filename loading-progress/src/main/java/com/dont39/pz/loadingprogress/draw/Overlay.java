@@ -21,6 +21,8 @@ public final class Overlay {
     private static final int PAD = 8;
     private static final int GAP = 4;
     private static final int BAR_HEIGHT = 8;
+    /** The fill's grey, opaque: interim frames draw it again. */
+    static final float FILL = 0.85f;
 
     // game thread only: whether this frame's UI pass draws (with the UI frame buffer, not on every frame)
     private static boolean uiPass;
@@ -72,9 +74,13 @@ public final class Overlay {
             text.DrawStringCentre(UIFont.Small, center, y, first, 1.0, 1.0, 1.0, 1.0);
             y += lineHeight + GAP;
         }
+        int fill = (int) (width * view.fill());
         sprites.renderi(null, x, y, width, BAR_HEIGHT, 0.3f, 0.3f, 0.3f, 1f, null);
-        sprites.renderi(null, x, y, width * view.step() / view.flow().steps().size(), BAR_HEIGHT, 0.85f, 0.85f,
-                0.85f, 1f, null);
+        sprites.renderi(null, x, y, fill, BAR_HEIGHT, FILL, FILL, FILL, 1f, null);
+        if (view.item() == Item.JAVA_MOD) {
+            Interim.mark(new Interim.Bar(view.jar(), x, y, width, BAR_HEIGHT, screenWidth, core.getScreenHeight(), fill,
+                    (int) (width * view.jarEnd())));
+        }
         y += BAR_HEIGHT + GAP;
         if (secondLine) {
             text.DrawStringCentre(UIFont.Small, center, y, second, 0.8, 0.8, 0.8, 1.0);

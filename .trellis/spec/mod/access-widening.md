@@ -69,6 +69,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
   `loadJar` hook, on the loader's thread outside any transformer; it counts the jars from the records the pass wrote.
   A listener runs while its mod's hooks are open and a throw stops them like a hook error. A pass the seam cannot
   follow, or a hook it cannot install, makes it unavailable for the session and stops each listener's mod; it is no
-  lifecycle stop, since only those mods depend on it.
+  lifecycle stop, since only those mods depend on it. Its heartbeat counts the classes the loader's thread transforms
+  or loads inside a jar, through a retransform-capable transformer that only counts and is registered only while a
+  jar loads.
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

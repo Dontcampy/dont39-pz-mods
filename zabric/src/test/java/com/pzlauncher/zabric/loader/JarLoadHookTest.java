@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -131,6 +133,50 @@ class JarLoadHookTest {
         Path a = jar("a.jar", "lh-a", "loaded");
         assertFalse(loadJar(a, main), "the loader's own result: the test jar names no package");
         assertSame(thrown, JarLoadHook.takeEscaped());
+    }
+
+    @Test
+    void theHeartbeatCountsTheLoadersThreadInsideAJarOnly() throws Exception {
+        Instrumentation inst = Weaving.instrumentation();
+        long[] beats = new long[4];
+        listener = (index, total, modId, loaded) -> {
+            if (loaded) {
+                retransform(inst);
+                beats[3] = JarLoadHook.heartbeat();
+                return;
+            }
+            beats[0] = JarLoadHook.heartbeat();
+            retransform(inst);
+            beats[1] = JarLoadHook.heartbeat();
+            Thread other = new Thread(() -> retransform(inst));
+            other.start();
+            try {
+                other.join();
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
+            }
+            beats[2] = JarLoadHook.heartbeat();
+        };
+        JarLoadHook.passStarting();
+        Path a = jar("a.jar", "lh-a", "loaded");
+        loadJar(a, main);
+        assertNull(JarLoadHook.takeEscaped());
+        assertTrue(beats[1] > beats[0], "the loader's thread inside the jar: " + beats[0] + " -> " + beats[1]);
+        assertEquals(beats[1], beats[2], "another thread");
+        assertEquals(beats[2], beats[3], "after the jar");
+        retransform(inst);
+        assertEquals(beats[3], JarLoadHook.heartbeat(), "outside the pass's jars");
+    }
+
+    private static void retransform(Instrumentation inst) {
+        try {
+            inst.retransformClasses(Retransformed.class);
+        } catch (UnmodifiableClassException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static final class Retransformed {
     }
 
     private Path jar(String name, String modId, String reason) throws IOException, ReflectiveOperationException {

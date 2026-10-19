@@ -23,17 +23,29 @@ public final class Progress {
         DONE, STOPPED, LEFT
     }
 
-    /** What the log says when a flow ends; {@code largestGapItem}: the item shown when that gap ended. */
+    /**
+     * What the log says when a flow ends. {@code largestGap}: between frames the game thread handed over;
+     * {@code largestVisibleGap}: between those and interim frames together.
+     */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
-                      long largestGap, Step largestGapStep, Shown largestGapItem) {
+                      int interimFrames, Gap largestGap, Gap largestVisibleGap) {
+    }
+
+    /** A time without a new frame, with the step and the item shown when it ended. */
+    public record Gap(long nanos, Step step, Shown item) {
     }
 
     /** An item of the second line. */
     public record Shown(Item item, int index, int total, String name) {
     }
 
-    /** What a frame shows; {@code step} counts from 1. */
-    public record View(Flow flow, int step, Step current, Item item, int index, int total, String name) {
+    /**
+     * What a frame shows; {@code step} counts from 1. {@code fill}: the bar's filled fraction. While a Java mod jar
+     * loads, {@code jar} is its {@link #loadingJar()} and {@code jarEnd} the fraction the bar reaches once it loaded;
+     * otherwise 0 and {@code fill}.
+     */
+    public record View(Flow flow, int step, Step current, Item item, int index, int total, String name, double fill,
+                       long jar, double jarEnd) {
     }
 
     private final BooleanSupplier client;
@@ -44,6 +56,7 @@ public final class Progress {
     private volatile boolean showing;
     private volatile boolean ownFrames;
     private volatile long lastFrame;
+    private volatile long loadingJar;
 
     private Flow flow;
     private int step;
@@ -55,9 +68,10 @@ public final class Progress {
     private int total;
     private String name;
     private int ownFrameCount;
-    private long largestGap;
-    private Step largestGapStep;
-    private Shown largestGapItem;
+    private int interimFrameCount;
+    private long lastVisible;
+    private Gap largestGap;
+    private Gap largestVisibleGap;
     private boolean launchSeen;
     private boolean stopped;
 
@@ -66,6 +80,7 @@ public final class Progress {
     private int javaMod;
     private int javaModTotal;
     private boolean javaModLoading;
+    private long jarCount;
     private volatile boolean scriptsLoading;
     private int scriptsLoaded;
     private String scriptPath;
@@ -148,7 +163,7 @@ public final class Progress {
                 end(Outcome.STOPPED, "the Lua reset failed", now);
             } else if (step <= flow.steps().indexOf(Step.LUA_EVENTS)) {
                 // the menu shows its own screens, e.g. character creation, until the world loads
-                gap(now);
+                gaps(now);
                 paused = true;
                 update();
             }
@@ -241,9 +256,7 @@ public final class Progress {
     public synchronized void modsLoading(long now) {
         modsLoading = true;
         modsLoaded = 0;
-        javaMod = 0;
-        javaModTotal = 0;
-        javaModLoading = false;
+        clearJavaMods();
         reachLocked(Boundary.MODS, now);
     }
 
@@ -266,7 +279,17 @@ public final class Progress {
         javaMod = index;
         javaModTotal = total;
         javaModLoading = !loaded;
-        item(Item.JAVA_MOD, index, total, id);
+        if (item(Item.JAVA_MOD, index, total, id) && !loaded) {
+            loadingJar = ++jarCount;
+        }
+    }
+
+    /**
+     * The jar ZombieBuddy loads while the bar shows it: a number that changes with each jar, or 0 when none loads or
+     * the bar shows something else. For the render thread, without the lock.
+     */
+    public long loadingJar() {
+        return loadingJar;
     }
 
     public synchronized void modsLoaded() {
@@ -396,10 +419,24 @@ public final class Progress {
         }
         synchronized (this) {
             if (showing) {
-                gap(now);
+                gaps(now);
                 lastFrame = now;
+                lastVisible = Math.max(lastVisible, now);
             }
         }
+    }
+
+    /**
+     * The render thread showed an interim frame. It checked {@link #loadingJar()} before, and the game thread may have
+     * moved on since: the frame still counts.
+     */
+    public synchronized void interimFrame(long now) {
+        if (!showing) {
+            return;
+        }
+        interimFrameCount++;
+        visibleGap(now);
+        lastVisible = Math.max(lastVisible, now);
     }
 
     /** What to draw, or null when no flow shows. */
@@ -408,7 +445,13 @@ public final class Progress {
             return null;
         }
         synchronized (this) {
-            return showing ? new View(flow, step + 1, current(), item, index, total, name) : null;
+            if (!showing) {
+                return null;
+            }
+            double fill = fill();
+            long jar = loadingJar;
+            double jarEnd = jar == 0 ? fill : (step + (double) javaMod / javaModTotal) / flow.steps().size();
+            return new View(flow, step + 1, current(), item, index, total, name, fill, jar, jarEnd);
         }
     }
 
@@ -435,11 +478,13 @@ public final class Progress {
         paused = false;
         started = now;
         lastFrame = now;
+        lastVisible = now;
         clearItem();
+        clearJavaMods();
         ownFrameCount = 0;
-        largestGap = 0;
-        largestGapStep = first;
-        largestGapItem = null;
+        interimFrameCount = 0;
+        largestGap = new Gap(0, first, null);
+        largestVisibleGap = largestGap;
         update();
     }
 
@@ -462,6 +507,7 @@ public final class Progress {
             }
             paused = false;
             lastFrame = now;
+            lastVisible = now;
         } else if (i < step) {
             throw new IllegalStateException(flow.label() + ": " + next + " began after " + current());
         }
@@ -492,13 +538,17 @@ public final class Progress {
         return done + 1;
     }
 
-    private void item(Item kind, int i, int n, String itemName) {
-        if (flow != null && !paused && current().shows(kind)) {
-            item = kind;
-            index = i;
-            total = n;
-            name = itemName;
+    // whether the item shows
+    private boolean item(Item kind, int i, int n, String itemName) {
+        if (flow == null || paused || !current().shows(kind)) {
+            return false;
         }
+        item = kind;
+        index = i;
+        total = n;
+        name = itemName;
+        loadingJar = 0;
+        return true;
     }
 
     private void clearItem() {
@@ -506,27 +556,54 @@ public final class Progress {
         index = 0;
         total = 0;
         name = null;
+        loadingJar = 0;
     }
 
-    private void gap(long now) {
-        long gap = now - lastFrame;
-        if (gap > largestGap) {
-            largestGap = gap;
-            largestGapStep = current();
-            largestGapItem = item == Item.NONE ? null : new Shown(item, index, total, name);
+    private void clearJavaMods() {
+        javaMod = 0;
+        javaModTotal = 0;
+        javaModLoading = false;
+    }
+
+    // a step that shows the Java mod jars fills its share with them; any other shows as done
+    private double fill() {
+        double steps = flow.steps().size();
+        if (!current().shows(Item.JAVA_MOD)) {
+            return (step + 1) / steps;
         }
+        int jarsLoaded = javaModLoading ? javaMod - 1 : javaMod;
+        return (step + (javaModTotal == 0 ? 0 : (double) jarsLoaded / javaModTotal)) / steps;
+    }
+
+    private void gaps(long now) {
+        long gap = now - lastFrame;
+        if (gap > largestGap.nanos()) {
+            largestGap = gap(gap);
+        }
+        visibleGap(now);
+    }
+
+    private void visibleGap(long now) {
+        long gap = now - lastVisible;
+        if (gap > largestVisibleGap.nanos()) {
+            largestVisibleGap = gap(gap);
+        }
+    }
+
+    private Gap gap(long nanos) {
+        return new Gap(nanos, current(), item == Item.NONE ? null : new Shown(item, index, total, name));
     }
 
     private void end(Outcome outcome, String why, long now) {
         if (!paused) {
-            gap(now);
+            gaps(now);
         }
         finish(outcome, why, now);
     }
 
     private void finish(Outcome outcome, String why, long now) {
-        End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount, largestGap,
-                largestGapStep, largestGapItem);
+        End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount,
+                interimFrameCount, largestGap, largestVisibleGap);
         flow = null;
         paused = false;
         clearItem();
@@ -542,6 +619,9 @@ public final class Progress {
         active = flow != null;
         showing = active && !paused;
         ownFrames = showing && current().ownFrames();
+        if (!showing) {
+            loadingJar = 0;
+        }
     }
 
     private static String fileName(String path) {

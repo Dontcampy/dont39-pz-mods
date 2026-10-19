@@ -114,7 +114,7 @@ class ProgressTest {
         assertEquals(Progress.Outcome.DONE, end.outcome());
         assertEquals(13, end.step());
         // the wait in the menu is not a gap
-        assertTrue(end.largestGap() < TimeUnit.SECONDS.toNanos(7), "gap " + end.largestGap());
+        assertTrue(end.largestGap().nanos() < TimeUnit.SECONDS.toNanos(7), "gap " + end.largestGap());
     }
 
     @Test
@@ -299,8 +299,8 @@ class ProgressTest {
         progress.launchDone(at(1400));
         Progress.End end = ends.get(0);
         assertEquals(1, end.ownFrames());
-        assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), end.largestGap());
-        assertEquals(Step.MODS, end.largestGapStep());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), end.largestGap().nanos());
+        assertEquals(Step.MODS, end.largestGap().step());
     }
 
     @Test
@@ -316,8 +316,8 @@ class ProgressTest {
         progress.frameHandedOver(at(2150));
         progress.stop("why", at(2200));
         Progress.End end = ends.get(0);
-        assertEquals(TimeUnit.MILLISECONDS.toNanos(2000), end.largestGap());
-        assertEquals(new Progress.Shown(Item.JAVA_MOD, 2, 2, "Slow"), end.largestGapItem());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(2000), end.largestGap().nanos());
+        assertEquals(new Progress.Shown(Item.JAVA_MOD, 2, 2, "Slow"), end.largestGap().item());
     }
 
     @Test
@@ -335,6 +335,79 @@ class ProgressTest {
         progress.fontsReady(at(0));
         progress.frameHandedOver(at(300));
         progress.stop("why", at(10_000));
-        assertEquals(TimeUnit.MILLISECONDS.toNanos(300), ends.get(0).largestGap());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(300), ends.get(0).largestGap().nanos());
+    }
+
+    @Test
+    void theModsStepFillsItsShareWithTheJavaModJars() {
+        progress.fontsReady(at(0));
+        assertEquals(0.0, progress.view().fill(), "launch: step 1 of 10, no jar yet");
+        progress.modsLoading(at(1));
+        progress.javaMod(1, 4, "A", false);
+        Progress.View view = progress.view();
+        assertEquals(0.0, view.fill());
+        assertEquals(0.025, view.jarEnd(), 1e-9);
+        progress.javaMod(1, 4, "A", true);
+        assertEquals(0.025, progress.view().fill(), 1e-9);
+        assertEquals(progress.view().fill(), progress.view().jarEnd(), "no jar loads");
+        for (int i = 2; i <= 4; i++) {
+            progress.javaMod(i, 4, "J" + i, false);
+            progress.javaMod(i, 4, "J" + i, true);
+        }
+        progress.mod("A", 1);
+        assertEquals(0.1, progress.view().fill(), 1e-9);
+        progress.reach(Boundary.TRANSLATIONS, at(2));
+        assertEquals(0.2, progress.view().fill(), 1e-9);
+    }
+
+    @Test
+    void aJoinsModsStepStartsWhereConnectingEnded() {
+        progress.connect(at(0));
+        double connecting = progress.view().fill();
+        progress.resetBegins(false, at(1));
+        assertEquals(connecting, progress.view().fill(), 1e-9);
+        progress.modsLoading(at(2));
+        progress.javaMod(1, 1, "A", false);
+        assertEquals(connecting, progress.view().fill(), 1e-9);
+        assertEquals(2.0 / Flow.START.steps().size(), progress.view().jarEnd(), 1e-9);
+    }
+
+    @Test
+    void eachLoadingJarHasItsOwnNumberWhileTheBarShowsIt() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(1));
+        assertEquals(0, progress.loadingJar());
+        progress.javaMod(1, 2, "A", false);
+        long a = progress.loadingJar();
+        assertTrue(a != 0);
+        assertEquals(a, progress.view().jar());
+        progress.javaMod(1, 2, "A", true);
+        assertEquals(0, progress.loadingJar(), "between jars");
+        progress.javaMod(2, 2, "B", false);
+        long b = progress.loadingJar();
+        assertTrue(b != 0 && b != a);
+        progress.stop("why", at(2));
+        assertEquals(0, progress.loadingJar(), "no flow");
+    }
+
+    @Test
+    void interimFramesCountForTheVisibleGapOnly() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.javaMod(1, 1, "Slow", false);
+        progress.frameHandedOver(at(100));
+        progress.interimFrame(at(400));
+        progress.interimFrame(at(1000));
+        progress.javaMod(1, 1, "Slow", true);
+        progress.frameHandedOver(at(1300));
+        progress.stop("why", at(1350));
+        Progress.End end = ends.get(0);
+        assertEquals(2, end.interimFrames());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), end.largestGap().nanos());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(600), end.largestVisibleGap().nanos());
+        assertEquals(new Progress.Shown(Item.JAVA_MOD, 1, 1, "Slow"), end.largestVisibleGap().item());
+        // the render thread checked the jar before the flow ended
+        progress.interimFrame(at(1400));
+        assertEquals(1, ends.size());
     }
 }

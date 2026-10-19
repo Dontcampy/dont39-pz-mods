@@ -8,23 +8,27 @@ import net.bytebuddy.utility.JavaModule;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
+import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static net.bytebuddy.matcher.ElementMatchers.is;
 
 /**
  * Advice on the entry of ZombieBuddy's {@code Loader.loadMods(List)} and around each {@code loadJar} of its MAIN pass,
- * which it calls in a loop once it has decided on every mod. Public only because the advice is inlined into that class
- * and calls {@link #passStarting}, {@link #jarLoading} and {@link #jarLoaded}.
+ * which it calls in a loop once it has decided on every mod, and a transformer that counts the classes its thread
+ * transforms or loads inside each jar. Public only because the advice is inlined into that class and calls
+ * {@link #passStarting}, {@link #jarLoading} and {@link #jarLoaded}.
  */
 public final class JarLoadHook {
     private static final String LOADER = "me.zed_0xff.zombie_buddy.Loader";
@@ -32,6 +36,8 @@ public final class JarLoadHook {
     private static volatile Loader.JarListener listener;
     private static volatile Object mainPhase;
     private static final AtomicReference<Throwable> escaped = new AtomicReference<>();
+    private static final Counter COUNTER = new Counter();
+    private static Instrumentation instrumentation;
 
     // the loader's thread: the records before the pass decided, then the pass's jars
     private static Set<Object> before;
@@ -68,6 +74,7 @@ public final class JarLoadHook {
         }
         listener = onJar;
         mainPhase = main;
+        instrumentation = inst;
         AtomicBoolean transformed = new AtomicBoolean();
         AtomicReference<Throwable> error = new AtomicReference<>();
         // the class is loaded (ZombieBuddy runs this premain), hence retransformation
@@ -103,6 +110,11 @@ public final class JarLoadHook {
         }
     }
 
+    /** The classes the loader's thread has transformed or loaded inside its jars so far; any thread. */
+    static long heartbeat() {
+        return COUNTER.count.get();
+    }
+
     /** What went wrong since the last call, or null; the rest of that pass was not followed. */
     static Throwable takeEscaped() {
         return escaped.getAndSet(null);
@@ -110,6 +122,7 @@ public final class JarLoadHook {
 
     /** Called by the advice. Never throws into loadMods: other mods' loading depends on it. */
     public static synchronized void passStarting() {
+        stopCounting();
         jars = null;
         index = 0;
         current = null;
@@ -156,6 +169,8 @@ public final class JarLoadHook {
             index++;
             current = jar;
             currentMod = modId;
+            COUNTER.thread = Thread.currentThread();
+            instrumentation.addTransformer(COUNTER, true);
             listener.jar(index, jars.size(), modId, false);
         } catch (Throwable t) {
             failed(t);
@@ -173,6 +188,7 @@ public final class JarLoadHook {
                         + current));
             }
             current = null;
+            stopCounting();
             listener.jar(index, jars.size(), currentMod, true);
         } catch (Throwable t) {
             failed(t);
@@ -182,6 +198,30 @@ public final class JarLoadHook {
     private static void failed(Throwable t) {
         passFailed = true;
         escaped.compareAndSet(null, t);
+        stopCounting();
+    }
+
+    private static void stopCounting() {
+        if (COUNTER.thread != null) {
+            COUNTER.thread = null;
+            instrumentation.removeTransformer(COUNTER);
+        }
+    }
+
+    // only counts: a heartbeat for code on other threads while one jar's patching holds the loader's thread
+    private static final class Counter implements ClassFileTransformer {
+        final AtomicLong count = new AtomicLong();
+        // other threads' class loads are not the loader's work
+        volatile Thread thread;
+
+        @Override
+        public byte[] transform(Module module, ClassLoader loader, String className, Class<?> redefined,
+                                ProtectionDomain domain, byte[] bytes) {
+            if (Thread.currentThread() == thread) {
+                count.incrementAndGet();
+            }
+            return null;
+        }
     }
 
     private static String missing() {

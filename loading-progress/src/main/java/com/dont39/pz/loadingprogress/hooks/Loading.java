@@ -42,17 +42,26 @@ public final class Loading {
                     + ") on the thread " + Thread.currentThread().getName() + ", not on the game thread");
         }
         PROGRESS.javaMod(index, total, modId, loaded);
-        tick();
+        if (!loaded) {
+            FramePump.jarStarts(PROGRESS);
+        } else if (index == total) {
+            // otherwise the next jar follows at once, with its own frame
+            tick();
+        }
     }
 
     private static void ended(Progress.End end) {
-        Progress.Shown at = end.largestGapItem();
+        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, %d interim frames,"
+                        + " largest frame gap %s, largest visible gap %s", end.flow().label(),
+                end.outcome().name().toLowerCase(Locale.ROOT), end.why() == null ? "" : " (" + end.why() + ")",
+                end.nanos() / 1e9, end.step(), end.flow().steps().size(), Strings.step(end.at(), false),
+                end.ownFrames(), end.interimFrames(), gap(end.largestGap()), gap(end.largestVisibleGap()));
+    }
+
+    private static String gap(Progress.Gap gap) {
+        Progress.Shown at = gap.item();
         String item = at == null ? null : Strings.itemLine(at.item(), at.index(), at.total(), at.name(), false);
-        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, largest frame gap"
-                        + " %d ms in %s%s", end.flow().label(), end.outcome().name().toLowerCase(Locale.ROOT),
-                end.why() == null ? "" : " (" + end.why() + ")", end.nanos() / 1e9, end.step(),
-                end.flow().steps().size(), Strings.step(end.at(), false), end.ownFrames(),
-                TimeUnit.NANOSECONDS.toMillis(end.largestGap()), Strings.step(end.largestGapStep(), false),
-                item == null ? "" : " (" + item + ")");
+        return TimeUnit.NANOSECONDS.toMillis(gap.nanos()) + " ms in " + Strings.step(gap.step(), false)
+                + (item == null ? "" : " (" + item + ")");
     }
 }

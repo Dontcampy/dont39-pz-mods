@@ -126,6 +126,14 @@ public final class Loader {
     }
 
     /**
+     * How many classes the loader's thread has transformed or loaded inside the jars of its passes so far, as the
+     * {@link #onJarLoad} hook followed them; 0 without that hook. Any thread.
+     */
+    public static long jarWork() {
+        return JarLoadHook.heartbeat();
+    }
+
+    /**
      * Makes the loader run {@code modId} at game start from {@code versionDir}, the folder the game uses this session,
      * unless it already runs it from there or from a byte-identical copy. {@code commonDir}: the mod's common folder,
      * null when it has none. Throws when the mod cannot be preloaded or the loader's settings cannot be updated.
