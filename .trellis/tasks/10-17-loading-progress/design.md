@@ -118,7 +118,8 @@ passes while paused do not move the flow.
 
 Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 
-- launch (10): mods (`loadMod` i / `getModIDs().size()`; ZombieBuddy's Java-mod pass falls in this step), translations,
+- launch (10): mods (ZombieBuddy's Java-mod pass as item "Java mod i / n: id" from Zabric's loader progress, D11,
+  then `loadMod` i / `getModIDs().size()`), translations,
   UI texture packs (`LoadTexturePack` name), scripts (files i / `ScriptManager.tempFileToModMap.size()`, counted inside
   `ScriptManager.Load`), clothing, tiles and furniture (the four managers' `init`), Lua (files i / distinct entries of
   `LuaManager.loadList`, per `LoadDirBase` folder, files run by `require` not counted), texture packs, models and
@@ -152,7 +153,9 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   (mid-reset).
 - Triggers that keep gaps under 1 s: `loadMod`, `Core.DoFrameReady`, `RunLua(String, boolean)`, `LoadTexturePack`,
   `checkEvent`, `KahluaThread.pcall(int)` (per Lua call from Java), `ChooseGameInfo.getAvailableModDetails` (per mod
-  in every manager loop and in ZombieBuddy's pass), `NetChecksum.Checksummer.addFile`, `CoopMaster.update`,
+  in every manager loop; on the launch woven only at the end of the first pass, D10, so it does not act in discovery
+  or ZombieBuddy's pass there), `ZomboidFileSystem.getAllModFoldersAux` / `setModIdToDir` (mod discovery), Zabric's
+  loader progress (per Java mod jar, D11), `NetChecksum.Checksummer.addFile`, `CoopMaster.update`,
   `GameClient.update` (MP connect wait loops). Several run per frame in game: their first check is a volatile flag,
   before any clock read. `waitForRenderState` is not touched: each own frame pumps (`Display.update(true)`).
 - Known gap (D8): Dont39 All-in-One's tunnel opens its connection inside `UdpEngine.Connect` with blocking socket
@@ -166,13 +169,27 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 ### Discovery and the Java-mod pass (D11; evidence and anchors: `research/zb-pass-gap.md`)
 
 - A, discovery: JDK-only HEAD triggers on `ZomboidFileSystem.setModIdToDir(Ljava/lang/String;Ljava/lang/String;)V`
-  and `getAllModFoldersAux(Ljava/lang/String;Ljava/util/List;)V` (woven at premain, per mod folder). The design's
-  `getAvailableModDetails` trigger does not act on the launch (woven only at the first pass, D10).
-- B, Zabric loader-progress API: the loader seam advises ZombieBuddy's `Loader.loadJar` as `ModsLoadedHook` advises
-  `loadMods`, and calls public listeners with JDK-only arguments (jar index, total, mod id) on the loader's thread, at
-  each jar boundary, outside any transformer. Registration is a Zabric API call (no hook, no game type); the progress
-  mod registers at preLaunch, its listener ticks `FramePump` and sets line 2 to "Java mod i / n: id". ZombieBuddy
-  types stay in `loader/`; a mismatch with ZombieBuddy's `loadJar` is reported like `ModsLoadedHook`'s.
+  (per mod folder) and `getAllModFoldersAux(Ljava/lang/String;Ljava/util/List;)V` (per root folder), in
+  `LoadHooks.Mods`; `ZomboidFileSystem` is woven at premain. `getAvailableModDetails` does not act there on the launch
+  (woven only at the end of the first pass, D10).
+- B, Zabric loader progress: `loader/JarLoadHook` advises ZombieBuddy's `Loader.loadMods(List)` entry and
+  `static boolean loadJar(Path, String, String, Phase)` (MAIN phase only), installed at Zabric's premain like
+  `ModsLoadedHook`. Index and total: at `loadMods` entry it keeps the identities of ZombieBuddy's jar records; at the
+  pass's first jar the records written since with reason `loaded` are the pass's jars (preloaded ones included, stale
+  records of earlier passes excluded), and each `loadJar` is matched to one by its canonical path. A jar without such a
+  record, a second jar before the first returned, or more jars than recorded is a mismatch naming the loader version:
+  kept, never thrown into the loader, and the rest of that pass is not followed. Public API
+  `entrypoint.LoaderProgress.listen(modId, Listener)`, `Listener.jarLoading(index, total, modId)` and
+  `jarLoaded(...)` (default no-op): called on the loader's thread outside any transformer, while the listener's mod's
+  hooks are open; a throw removes the listener and stops that mod through its default gate. A hook Zabric cannot
+  install, or a pass it could not follow, makes loader progress unavailable for the session: `Lifecycle` stops each
+  listener's mod with the cause (or logs one Zabric line when none listens); not a lifecycle stop. Tests:
+  `JarLoadHookTest` (the real `loadJar` with the hook installed), `JarListenersTest`.
+- The progress mod registers `hooks.JavaMods` at preLaunch. The Java-mod pass is an item of the launch's (and a
+  reset's) "Loading mods" step, not a step of its own (D4, D11 wording): line 2 "Java mod i / n: id"
+  (`Item.JAVA_MOD`), a tick of `FramePump` before and after each jar. A call off the game thread while a flow runs, or
+  out of order (`Progress.javaMod`), throws, which stops the mod. The flow-end line names the item shown when its
+  largest gap ended.
 - C, interim frames from the render thread, only while the Java-mod step shows and only for a gap between own frames:
   - heartbeat: a Zabric counter bumped per transformation during the pass (a retransform-capable transformer that
     only counts, never transforms or loads), readable through the same API;

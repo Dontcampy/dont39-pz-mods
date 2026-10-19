@@ -1,0 +1,214 @@
+package com.pzlauncher.zabric.loader;
+
+import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.asm.Advice;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.utility.JavaModule;
+import org.jspecify.annotations.NonNull;
+
+import java.io.IOException;
+import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static net.bytebuddy.matcher.ElementMatchers.is;
+
+/**
+ * Advice on the entry of ZombieBuddy's {@code Loader.loadMods(List)} and around each {@code loadJar} of its MAIN pass,
+ * which it calls in a loop once it has decided on every mod. Public only because the advice is inlined into that class
+ * and calls {@link #passStarting}, {@link #jarLoading} and {@link #jarLoaded}.
+ */
+public final class JarLoadHook {
+    private static final String LOADER = "me.zed_0xff.zombie_buddy.Loader";
+
+    private static volatile Loader.JarListener listener;
+    private static volatile Object mainPhase;
+    private static final AtomicReference<Throwable> escaped = new AtomicReference<>();
+
+    // the loader's thread: the records before the pass decided, then the pass's jars
+    private static Set<Object> before;
+    private static Map<Path, String> jars;
+    private static int index;
+    private static Path current;
+    private static String currentMod;
+    // after an error the rest of the pass is not followed: its counts are unknown
+    private static boolean passFailed;
+
+    private JarLoadHook() {
+    }
+
+    static void install(Instrumentation inst, Loader.JarListener onJar) {
+        Class<?> loader = me.zed_0xff.zombie_buddy.Loader.class;
+        Method loadMods;
+        Method loadJar;
+        Object main;
+        try {
+            loadMods = loader.getMethod("loadMods", List.class);
+            Class<?> phase = Class.forName(LOADER + "$Phase", false, loader.getClassLoader());
+            Object[] constants = phase.isEnum() ? phase.getEnumConstants() : new Object[0];
+            main = Arrays.stream(constants)
+                    .filter(c -> ((Enum<?>) c).name().equals("MAIN"))
+                    .findFirst()
+                    .orElseThrow(() -> new NoSuchFieldException(phase.getName() + " has no constant MAIN"));
+            loadJar = loader.getDeclaredMethod("loadJar", Path.class, String.class, String.class, phase);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            throw new IllegalStateException(missing(), e);
+        }
+        if (!Modifier.isStatic(loadMods.getModifiers()) || !Modifier.isStatic(loadJar.getModifiers())
+                || loadJar.getReturnType() != boolean.class) {
+            throw new IllegalStateException(missing() + "; they are " + loadMods + " and " + loadJar);
+        }
+        listener = onJar;
+        mainPhase = main;
+        AtomicBoolean transformed = new AtomicBoolean();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        // the class is loaded (ZombieBuddy runs this premain), hence retransformation
+        new AgentBuilder.Default()
+                .disableClassFormatChanges()
+                .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+                .with(AgentBuilder.RedefinitionStrategy.Listener.ErrorEscalating.FAIL_FAST)
+                .with(new AgentBuilder.Listener.Adapter() {
+                    @Override
+                    public void onTransformation(@NonNull TypeDescription type, ClassLoader cl, JavaModule module,
+                                                 boolean loaded, @NonNull DynamicType dynamicType) {
+                        transformed.set(true);
+                    }
+
+                    @Override
+                    public void onError(@NonNull String typeName, ClassLoader cl, JavaModule module, boolean loaded,
+                                        @NonNull Throwable t) {
+                        error.set(t);
+                    }
+                })
+                .type(is(loader))
+                .transform((builder, type, cl, module, domain) -> builder
+                        .visit(Advice.to(PassEnter.class).on(is(loadMods)))
+                        .visit(Advice.to(JarAdvice.class).on(is(loadJar))))
+                .installOn(inst);
+        if (error.get() != null) {
+            throw new IllegalStateException("cannot hook " + loadJar + " of " + Loader.name() + " " + Loader.version(),
+                    error.get());
+        }
+        if (!transformed.get()) {
+            throw new IllegalStateException(loadJar + " of " + Loader.name() + " " + Loader.version()
+                    + " was not hooked");
+        }
+    }
+
+    /** What went wrong since the last call, or null; the rest of that pass was not followed. */
+    static Throwable takeEscaped() {
+        return escaped.getAndSet(null);
+    }
+
+    /** Called by the advice. Never throws into loadMods: other mods' loading depends on it. */
+    public static synchronized void passStarting() {
+        jars = null;
+        index = 0;
+        current = null;
+        currentMod = null;
+        passFailed = false;
+        try {
+            before = LoadStatus.records();
+        } catch (Throwable t) {
+            failed(t);
+        }
+    }
+
+    /** Called by the advice. Never throws into loadJar. */
+    public static synchronized void jarLoading(Path jar, Object phase) {
+        if (phase != mainPhase || passFailed) {
+            return;
+        }
+        try {
+            if (before == null) {
+                throw new IllegalStateException(mismatch("loads " + jar + " outside its pass over the mod list"));
+            }
+            if (current != null) {
+                throw new IllegalStateException(mismatch("loads " + jar + " before it returned from " + current));
+            }
+            if (jars == null) {
+                jars = LoadStatus.loadedSince(before);
+            }
+            Path real;
+            try {
+                real = jar.toRealPath();
+            } catch (IOException e) {
+                // gone since the loader recorded it: the loader reports that it cannot load it
+                real = jar.toAbsolutePath().normalize();
+            }
+            String modId = jars.get(real);
+            if (modId == null) {
+                throw new IllegalStateException(mismatch("loads " + real + " without a record that it loads it in"
+                        + " this pass (it recorded " + jars.keySet() + ")"));
+            }
+            if (index == jars.size()) {
+                throw new IllegalStateException(mismatch("loads " + real + " after the " + index + " jars it recorded"
+                        + " for this pass"));
+            }
+            index++;
+            current = jar;
+            currentMod = modId;
+            listener.jar(index, jars.size(), modId, false);
+        } catch (Throwable t) {
+            failed(t);
+        }
+    }
+
+    /** Called by the advice when loadJar returns. Never throws into loadJar. */
+    public static synchronized void jarLoaded(Path jar, Object phase) {
+        if (phase != mainPhase || passFailed) {
+            return;
+        }
+        try {
+            if (!jar.equals(current)) {
+                throw new IllegalStateException(mismatch("returned from loading " + jar + " while it was loading "
+                        + current));
+            }
+            current = null;
+            listener.jar(index, jars.size(), currentMod, true);
+        } catch (Throwable t) {
+            failed(t);
+        }
+    }
+
+    private static void failed(Throwable t) {
+        passFailed = true;
+        escaped.compareAndSet(null, t);
+    }
+
+    private static String missing() {
+        return Loader.name() + " " + Loader.version() + " has no static void loadMods(List) and static boolean"
+                + " loadJar(Path, String, String, Phase) with a Phase MAIN in " + LOADER;
+    }
+
+    private static String mismatch(String what) {
+        return Loader.name() + " " + Loader.version() + " " + what;
+    }
+
+    private static final class PassEnter {
+        @Advice.OnMethodEnter(suppress = Throwable.class)
+        static void enter() {
+            passStarting();
+        }
+    }
+
+    private static final class JarAdvice {
+        @Advice.OnMethodEnter(suppress = Throwable.class)
+        static void enter(@Advice.Argument(0) Path jar, @Advice.Argument(3) Object phase) {
+            jarLoading(jar, phase);
+        }
+
+        @Advice.OnMethodExit(suppress = Throwable.class)
+        static void exit(@Advice.Argument(0) Path jar, @Advice.Argument(3) Object phase) {
+            jarLoaded(jar, phase);
+        }
+    }
+}

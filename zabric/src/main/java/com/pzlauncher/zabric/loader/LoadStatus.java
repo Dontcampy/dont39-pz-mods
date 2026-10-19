@@ -7,11 +7,15 @@ import java.lang.reflect.RecordComponent;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * ZombieBuddy's record of its decision for each jar ({@code Loader.g_jarLoadStatus}), and the mod list it is loading.
@@ -54,11 +58,42 @@ final class LoadStatus {
         return ids;
     }
 
-    private static List<Loader.ModJar> jars(String wanted, Set<String> ids) {
+    /** The loader's records as they are now, to tell them from the ones a pass writes ({@link #loadedSince}). */
+    static Set<Object> records() {
         Shape s = shape();
-        List<Loader.ModJar> jars = new ArrayList<>();
+        Set<Object> records = Collections.newSetFromMap(new IdentityHashMap<>());
         try {
-            for (Object state : ((Map<?, ?>) s.status().get(null)).values()) {
+            records.addAll(statuses(s));
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
+        }
+        return records;
+    }
+
+    /**
+     * The jars recorded as loaded since {@code before} was taken, by the canonical path the loader keys them by, with
+     * their mod ids: in a pass, the jars it loads once it has decided on every mod.
+     */
+    static Map<Path, String> loadedSince(Set<Object> before) {
+        Map<Path, String> jars = new HashMap<>();
+        records(LOADED, state -> !before.contains(state), jar -> jars.put(jar.jar(), jar.modId()));
+        return jars;
+    }
+
+    private static List<Loader.ModJar> jars(String wanted, Set<String> ids) {
+        List<Loader.ModJar> jars = new ArrayList<>();
+        records(wanted, state -> true, jar -> {
+            if (ids == null || ids.contains(jar.modId())) {
+                jars.add(jar);
+            }
+        });
+        return jars;
+    }
+
+    private static void records(String wanted, Predicate<Object> which, Consumer<Loader.ModJar> found) {
+        Shape s = shape();
+        try {
+            for (Object state : statuses(s)) {
                 String id = (String) s.id().invoke(state);
                 Path jar = (Path) s.jarPath().invoke(state);
                 String reason = (String) s.reason().invoke(state);
@@ -66,14 +101,17 @@ final class LoadStatus {
                 if (!PRELOADED.equals(reason) && !LOADED.equals(reason) && (reason == null || !reason.startsWith("("))) {
                     throw new NoSuchFieldException("the record of " + id + " has the reason '" + reason + "'");
                 }
-                if (wanted.equals(reason) && (ids == null || ids.contains(id))) {
-                    jars.add(new Loader.ModJar(id, jar));
+                if (wanted.equals(reason) && which.test(state)) {
+                    found.accept(new Loader.ModJar(id, jar));
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
         }
-        return jars;
+    }
+
+    private static Collection<?> statuses(Shape s) throws IllegalAccessException {
+        return ((Map<?, ?>) s.status().get(null)).values();
     }
 
     private static Shape shape() {

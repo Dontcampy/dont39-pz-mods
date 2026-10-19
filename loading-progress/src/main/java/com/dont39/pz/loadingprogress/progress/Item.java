@@ -4,6 +4,7 @@ package com.dont39.pz.loadingprogress.progress;
 public enum Item {
     NONE,
     /** Counted: n / total. */
+    JAVA_MOD,
     MOD,
     SCRIPT,
     LUA,

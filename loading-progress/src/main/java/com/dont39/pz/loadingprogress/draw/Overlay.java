@@ -59,7 +59,7 @@ public final class Overlay {
         // the game's fonts have Chinese glyphs only when it runs in Chinese
         boolean chinese = "CN".equals(Translator.getLanguage().name());
         String first = Strings.stepLine(view.step(), view.flow().steps().size(), view.current(), chinese);
-        String second = view.item() == Item.WORLD ? worldText()
+        String second = view.current().shows(Item.WORLD) ? worldText()
                 : Strings.itemLine(view.item(), view.index(), view.total(), view.name(), chinese);
         int lineHeight = fonts ? text.getFontHeight(UIFont.Small) : 0;
         boolean secondLine = fonts && second != null;

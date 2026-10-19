@@ -45,6 +45,18 @@ public final class LoadHooks {
             PROGRESS.mod(id, ZomboidFileSystem.instance.getModIDs().size());
             Loading.tick();
         }
+
+        // mod discovery, per root folder and per mod folder; ChooseGameInfo, which drives it, is woven only after the
+        // launch's first pass
+        @Inject(method = "getAllModFoldersAux(Ljava/lang/String;Ljava/util/List;)V", at = @At("HEAD"))
+        public static void modRoot(CallbackInfo ci) {
+            Loading.tick();
+        }
+
+        @Inject(method = "setModIdToDir(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"))
+        public static void modFolder(CallbackInfo ci) {
+            Loading.tick();
+        }
     }
 
     @Hooks(Translator.class)

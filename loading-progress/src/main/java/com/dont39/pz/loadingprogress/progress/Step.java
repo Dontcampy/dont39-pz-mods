@@ -1,36 +1,40 @@
 package com.dont39.pz.loadingprogress.progress;
 
+import java.util.List;
+
 /** A named step of a flow. */
 public enum Step {
-    CONNECTING(Item.NONE, false),
-    MODS(Item.MOD, true),
-    TRANSLATIONS(Item.NONE, true),
-    UI_TEXTURES(Item.TEXTURE_PACK, true),
-    SCRIPTS(Item.SCRIPT, true),
-    CLOTHING(Item.NONE, true),
-    TILES(Item.NONE, true),
-    CLOTHING_TILES(Item.NONE, true),
-    LUA(Item.LUA, true),
-    TEXTURES(Item.TEXTURE_PACK, true),
-    MODELS(Item.NONE, true),
-    GAME_BOOT(Item.EVENT, true),
-    LUA_EVENTS(Item.EVENT, true),
-    LOGIN_QUEUE(Item.NONE, false),
-    PREPARING_WORLD(Item.LUA, true),
-    LOADING_WORLD(Item.WORLD, false),
-    READY(Item.NONE, false),
-    ENTERING_WORLD(Item.EVENT, true);
+    CONNECTING(false),
+    // ZombieBuddy's Java mod jars, then the game's mods
+    MODS(true, Item.JAVA_MOD, Item.MOD),
+    TRANSLATIONS(true),
+    UI_TEXTURES(true, Item.TEXTURE_PACK),
+    SCRIPTS(true, Item.SCRIPT),
+    CLOTHING(true),
+    TILES(true),
+    CLOTHING_TILES(true),
+    LUA(true, Item.LUA),
+    TEXTURES(true, Item.TEXTURE_PACK),
+    MODELS(true),
+    GAME_BOOT(true, Item.EVENT),
+    LUA_EVENTS(true, Item.EVENT),
+    LOGIN_QUEUE(false),
+    PREPARING_WORLD(true, Item.LUA),
+    LOADING_WORLD(false, Item.WORLD),
+    READY(false),
+    ENTERING_WORLD(true, Item.EVENT);
 
-    private final Item item;
     private final boolean ownFrames;
+    private final List<Item> items;
 
-    Step(Item item, boolean ownFrames) {
-        this.item = item;
+    Step(boolean ownFrames, Item... items) {
         this.ownFrames = ownFrames;
+        this.items = List.of(items);
     }
 
-    public Item item() {
-        return item;
+    /** Whether the second line names items of {@code kind} during the step. */
+    public boolean shows(Item kind) {
+        return items.contains(kind);
     }
 
     /** Whether the game draws no frames of its own during the step, so the mod hands over its own. */

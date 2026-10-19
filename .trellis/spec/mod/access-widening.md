@@ -13,8 +13,8 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars, merged list | `pz-widening.gradle.kts`, `buildSrc/src/main/kotlin/widening/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts`; a standalone mod ships its own list (`loading-progress/build.gradle.kts`) |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/`: facade and per-mod status `AccessWidener.java`, scan `WidenerScan.java` / `ModFolders.java`, modifier changes `WidenerTransform.java` |
-| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list hook) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java` |
-| Entrypoints, preload registration | `zabric/.../entrypoint/Lifecycle.java` (phases), `Entrypoints.java` (manifest, instantiation), `Preload.java`, `PreLaunchHook.java` |
+| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list and jar hooks) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java`, `JarLoadHook.java` |
+| Entrypoints, preload registration, loader progress | `zabric/.../entrypoint/Lifecycle.java` (phases), `Entrypoints.java` (manifest, instantiation), `Preload.java`, `PreLaunchHook.java`, `LoaderProgress.java` / `JarListeners.java` |
 | Helpers shared by Zabric's packages (`[Zabric]` log prefix, jar reading) | `zabric/.../internal/` |
 | Hook runtime for other mods' glue | `zabric/.../hook/` ([Zabric Hooks](./zabric-hooks.md)) |
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
@@ -50,7 +50,7 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
-  and the `loadMods` hook (`ModsLoadedHook.java`).
+  and its hooks on `loadMods` and `loadJar` (`ModsLoadedHook.java`, `JarLoadHook.java`).
 
 ## Entrypoints and Preload Registration
 
@@ -65,5 +65,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
   they follow the mod list, unless the manifest's `Zabric-Hooks: launch` keeps them open on every pass: for
   client-side UI only (`Lifecycle`, author contract in `zabric/mod/workshop/workshop.txt`).
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
+- Loader progress (`entrypoint/LoaderProgress.java`, API) reports each Java mod jar of a loader pass from the seam's
+  `loadJar` hook, on the loader's thread outside any transformer; it counts the jars from the records the pass wrote.
+  A listener runs while its mod's hooks are open and a throw stops them like a hook error. A pass the seam cannot
+  follow, or a hook it cannot install, makes it unavailable for the session and stops each listener's mod; it is no
+  lifecycle stop, since only those mods depend on it.
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

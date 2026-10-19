@@ -31,7 +31,7 @@ public final class TriggerHooks {
         }
     }
 
-    // per mod in every manager's loop, and in ZombieBuddy's Java mod pass
+    // per mod in every manager's loop; on the launch only after the first pass, which weaves it
     @Hooks(ChooseGameInfo.class)
     public static final class ModDetails {
         private ModDetails() {

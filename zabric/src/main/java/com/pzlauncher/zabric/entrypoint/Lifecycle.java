@@ -47,6 +47,9 @@ public final class Lifecycle {
     private static Instrumentation instrumentation;
     private static String failure;
     private static Throwable failureError;
+    // not a lifecycle failure: only the mods that follow the loader's progress depend on it
+    private static Throwable progressFailure;
+    private static boolean progressLost;
     private static boolean preLaunchRan;
     private static final List<Called> preLaunchCalls = new ArrayList<>();
     private static final Set<String> preLaunched = new HashSet<>();
@@ -72,6 +75,11 @@ public final class Lifecycle {
             hook = "its main hook (on " + Loader.name() + "'s pass over the mod list)";
             Loader.onModsLoaded(inst, Lifecycle::modsLoaded);
             installed = true;
+            try {
+                Loader.onJarLoad(inst, LoaderProgress.LISTENERS::jar);
+            } catch (Throwable t) {
+                progressFailure = t;
+            }
         } catch (Throwable t) {
             failure = "cannot install " + hook + ": " + t;
             failureError = t;
@@ -157,6 +165,10 @@ public final class Lifecycle {
                         + " phase failed: " + escaped + closeHooks(), LogSeverity.Error);
             }
             start();
+            Throwable lost = Loader.jarLoadEscaped();
+            if (lost != null) {
+                progressLost(lost);
+            }
             if (stopped) {
                 HookRuntime.closeAll();
                 return;
@@ -204,6 +216,22 @@ public final class Lifecycle {
             report();
         } finally {
             HookRuntime.releaseLog();
+        }
+        if (progressFailure != null) {
+            progressLost(new IllegalStateException("cannot install its hook on " + Loader.name()
+                    + "'s Java mod jars: " + progressFailure, progressFailure));
+        }
+    }
+
+    // final for the session: a later pass fails the same way
+    private static void progressLost(Throwable t) {
+        if (progressLost) {
+            return;
+        }
+        progressLost = true;
+        if (!LoaderProgress.LISTENERS.unavailable(t)) {
+            DebugType.Mod.printException(t, PREFIX + "loader progress: unavailable for this session: " + t,
+                    LogSeverity.Error);
         }
     }
 

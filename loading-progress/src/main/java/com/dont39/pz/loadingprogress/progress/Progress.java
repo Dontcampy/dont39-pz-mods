@@ -23,9 +23,13 @@ public final class Progress {
         DONE, STOPPED, LEFT
     }
 
-    /** What the log says when a flow ends. */
+    /** What the log says when a flow ends; {@code largestGapItem}: the item shown when that gap ended. */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
-                      long largestGap, Step largestGapStep) {
+                      long largestGap, Step largestGapStep, Shown largestGapItem) {
+    }
+
+    /** An item of the second line. */
+    public record Shown(Item item, int index, int total, String name) {
     }
 
     /** What a frame shows; {@code step} counts from 1. */
@@ -53,11 +57,15 @@ public final class Progress {
     private int ownFrameCount;
     private long largestGap;
     private Step largestGapStep;
+    private Shown largestGapItem;
     private boolean launchSeen;
     private boolean stopped;
 
     private boolean modsLoading;
     private int modsLoaded;
+    private int javaMod;
+    private int javaModTotal;
+    private boolean javaModLoading;
     private volatile boolean scriptsLoading;
     private int scriptsLoaded;
     private String scriptPath;
@@ -233,7 +241,32 @@ public final class Progress {
     public synchronized void modsLoading(long now) {
         modsLoading = true;
         modsLoaded = 0;
+        javaMod = 0;
+        javaModTotal = 0;
+        javaModLoading = false;
         reachLocked(Boundary.MODS, now);
+    }
+
+    /**
+     * ZombieBuddy loads ({@code loaded} false) or has loaded Java mod jar {@code index} of {@code total}, inside the mod
+     * list's load. Jars come one after another, from 1, each loaded before the next.
+     */
+    public synchronized void javaMod(int index, int total, String id, boolean loaded) {
+        if (!modsLoading || flow == null) {
+            return;
+        }
+        String what = "Java mod " + index + " / " + total + " (" + id + ")" + (loaded ? " loaded" : "");
+        boolean inOrder = loaded
+                ? javaModLoading && index == javaMod && total == javaModTotal
+                : !javaModLoading && index == javaMod + 1 && index <= total && (javaMod == 0 || total == javaModTotal);
+        if (!inOrder) {
+            throw new IllegalStateException(flow.label() + ": " + what + " came after Java mod " + javaMod + " / "
+                    + javaModTotal + (javaModLoading ? "" : " loaded") + " at " + current());
+        }
+        javaMod = index;
+        javaModTotal = total;
+        javaModLoading = !loaded;
+        item(Item.JAVA_MOD, index, total, id);
     }
 
     public synchronized void modsLoaded() {
@@ -406,6 +439,7 @@ public final class Progress {
         ownFrameCount = 0;
         largestGap = 0;
         largestGapStep = first;
+        largestGapItem = null;
         update();
     }
 
@@ -459,7 +493,7 @@ public final class Progress {
     }
 
     private void item(Item kind, int i, int n, String itemName) {
-        if (flow != null && !paused && current().item() == kind) {
+        if (flow != null && !paused && current().shows(kind)) {
             item = kind;
             index = i;
             total = n;
@@ -479,6 +513,7 @@ public final class Progress {
         if (gap > largestGap) {
             largestGap = gap;
             largestGapStep = current();
+            largestGapItem = item == Item.NONE ? null : new Shown(item, index, total, name);
         }
     }
 
@@ -491,7 +526,7 @@ public final class Progress {
 
     private void finish(Outcome outcome, String why, long now) {
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount, largestGap,
-                largestGapStep);
+                largestGapStep, largestGapItem);
         flow = null;
         paused = false;
         clearItem();

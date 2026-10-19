@@ -100,6 +100,31 @@ public final class Loader {
         return ModsLoadedHook.takeEscaped();
     }
 
+    /** Hears the jars of each pass over the mod list, on the loader's thread, outside any class transformation. */
+    @FunctionalInterface
+    public interface JarListener {
+        /**
+         * Before ({@code loaded} false) and after the loader loads jar {@code index} (from 1) of the {@code total} it
+         * loads in this pass, for {@code modId}. The jars it loads are those it approved for the pass's mod list and its
+         * preloaded mods; on a later pass, jars it loaded before return at once.
+         */
+        void jar(int index, int total, String modId, boolean loaded);
+    }
+
+    /**
+     * Calls {@code listener} at each jar of each of the loader's passes over the mod list. Throws naming the loader
+     * version when the hook cannot be installed. The hook never throws into the loader: a pass it cannot follow, or
+     * what {@code listener} throws, is kept for {@link #jarLoadEscaped} and ends its calls for that pass.
+     */
+    public static void onJarLoad(Instrumentation inst, JarListener listener) {
+        JarLoadHook.install(inst, listener);
+    }
+
+    /** What the {@link #onJarLoad} hook could not follow since the last call, or null. */
+    public static Throwable jarLoadEscaped() {
+        return JarLoadHook.takeEscaped();
+    }
+
     /**
      * Makes the loader run {@code modId} at game start from {@code versionDir}, the folder the game uses this session,
      * unless it already runs it from there or from a byte-identical copy. {@code commonDir}: the mod's common folder,

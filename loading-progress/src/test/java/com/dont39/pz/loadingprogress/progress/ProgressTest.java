@@ -196,6 +196,53 @@ class ProgressTest {
     }
 
     @Test
+    void javaModJarsComeBeforeTheGamesModsInTheModsStep() {
+        progress.fontsReady(at(0));
+        progress.javaMod(1, 2, "Early", false);
+        assertEquals(Item.NONE, progress.view().item(), "outside the mod list's load");
+        progress.modsLoading(at(1));
+        progress.javaMod(1, 2, "Zabric", false);
+        progress.javaMod(1, 2, "Zabric", true);
+        progress.javaMod(2, 2, "Viewpoint", false);
+        Progress.View view = progress.view();
+        assertEquals(Item.JAVA_MOD, view.item());
+        assertEquals(2, view.index());
+        assertEquals(2, view.total());
+        assertEquals("Viewpoint", view.name());
+        progress.javaMod(2, 2, "Viewpoint", true);
+        progress.mod("A", 3);
+        assertEquals(Item.MOD, progress.view().item());
+        assertEquals(Step.MODS, step());
+    }
+
+    @Test
+    void javaModJarsOutOfOrderThrow() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(1));
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false), "skipped one");
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(1, 3, "A", true), "loaded before loading");
+        progress.javaMod(1, 3, "A", false);
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false), "A not loaded yet");
+        progress.javaMod(1, 3, "A", true);
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 4, "B", false));
+        assertEquals("launch: Java mod 2 / 4 (B) came after Java mod 1 / 3 loaded at MODS", e.getMessage());
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(4, 3, "D", false), "past the total");
+    }
+
+    @Test
+    void aNewModListLoadCountsJavaModsAfresh() {
+        progress.connect(at(0));
+        progress.resetBegins(false, at(1));
+        progress.modsLoading(at(2));
+        progress.javaMod(1, 1, "A", false);
+        progress.javaMod(1, 1, "A", true);
+        progress.modsLoaded();
+        progress.modsLoading(at(3));
+        progress.javaMod(1, 1, "A", false);
+        assertEquals(1, progress.view().index());
+    }
+
+    @Test
     void requiredLuaFilesAreNotCounted() {
         progress.fontsReady(at(0));
         progress.reach(Boundary.LUA, at(1));
@@ -254,6 +301,23 @@ class ProgressTest {
         assertEquals(1, end.ownFrames());
         assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), end.largestGap());
         assertEquals(Step.MODS, end.largestGapStep());
+    }
+
+    @Test
+    void theLargestGapNamesTheItemItEndedAt() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.javaMod(1, 2, "A", false);
+        progress.frameHandedOver(at(100));
+        progress.javaMod(1, 2, "A", true);
+        progress.javaMod(2, 2, "Slow", false);
+        progress.frameHandedOver(at(150));
+        progress.javaMod(2, 2, "Slow", true);
+        progress.frameHandedOver(at(2150));
+        progress.stop("why", at(2200));
+        Progress.End end = ends.get(0);
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(2000), end.largestGap());
+        assertEquals(new Progress.Shown(Item.JAVA_MOD, 2, 2, "Slow"), end.largestGapItem());
     }
 
     @Test

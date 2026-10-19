@@ -10,6 +10,8 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
   keeps them open on server joins whose mod list lacks the mod.
 - The flows and their steps are in `progress/Flow.java`; `progress/Progress.java` is the game-free state the hooks
   feed, tested in `src/test/`.
+- ZombieBuddy's Java mod pass runs no game method between its jars: Zabric's loader progress, registered at preLaunch
+  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar.
 - `draw/Overlay.java` draws the bar at the head of `Core.EndFrameUI` in every frame the game thread hands over;
   `draw/FramePump.java` hands over its own frames from the hooks inside the loading code.
 - One `console.txt` line per flow: outcome, duration, own frames and the largest gap between frames, with its step.

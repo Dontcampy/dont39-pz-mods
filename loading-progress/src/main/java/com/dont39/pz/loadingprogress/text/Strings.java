@@ -43,6 +43,7 @@ public final class Strings {
     public static String itemLine(Item item, int index, int total, String name, boolean chinese) {
         return switch (item) {
             case NONE, WORLD -> null;
+            case JAVA_MOD -> counted(chinese ? "Java 模组" : "Java mod", index, total, name, chinese);
             case MOD -> counted(chinese ? "模组" : "Mod", index, total, name, chinese);
             case SCRIPT -> counted(chinese ? "脚本文件" : "Script file", index, total, name, chinese);
             case LUA -> counted(chinese ? "Lua 文件" : "Lua file", index, total, name, chinese);
