@@ -198,18 +198,18 @@ class ProgressTest {
     @Test
     void javaModJarsComeBeforeTheGamesModsInTheModsStep() {
         progress.fontsReady(at(0));
-        progress.javaMod(1, 2, "Early", false);
+        progress.javaMod(1, 2, "Early", false, now);
         assertEquals(Item.NONE, progress.view().item(), "outside the mod list's load");
         progress.modsLoading(at(1));
-        progress.javaMod(1, 2, "Zabric", false);
-        progress.javaMod(1, 2, "Zabric", true);
-        progress.javaMod(2, 2, "Viewpoint", false);
+        progress.javaMod(1, 2, "Zabric", false, now);
+        progress.javaMod(1, 2, "Zabric", true, now);
+        progress.javaMod(2, 2, "Viewpoint", false, now);
         Progress.View view = progress.view();
         assertEquals(Item.JAVA_MOD, view.item());
         assertEquals(2, view.index());
         assertEquals(2, view.total());
         assertEquals("Viewpoint", view.name());
-        progress.javaMod(2, 2, "Viewpoint", true);
+        progress.javaMod(2, 2, "Viewpoint", true, now);
         progress.mod("A", 3);
         assertEquals(Item.MOD, progress.view().item());
         assertEquals(Step.MODS, step());
@@ -219,14 +219,14 @@ class ProgressTest {
     void javaModJarsOutOfOrderThrow() {
         progress.fontsReady(at(0));
         progress.modsLoading(at(1));
-        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false), "skipped one");
-        assertThrows(IllegalStateException.class, () -> progress.javaMod(1, 3, "A", true), "loaded before loading");
-        progress.javaMod(1, 3, "A", false);
-        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false), "A not loaded yet");
-        progress.javaMod(1, 3, "A", true);
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 4, "B", false));
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false, now), "skipped one");
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(1, 3, "A", true, now), "loaded before loading");
+        progress.javaMod(1, 3, "A", false, now);
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 3, "B", false, now), "A not loaded yet");
+        progress.javaMod(1, 3, "A", true, now);
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> progress.javaMod(2, 4, "B", false, now));
         assertEquals("launch: Java mod 2 / 4 (B) came after Java mod 1 / 3 loaded at MODS", e.getMessage());
-        assertThrows(IllegalStateException.class, () -> progress.javaMod(4, 3, "D", false), "past the total");
+        assertThrows(IllegalStateException.class, () -> progress.javaMod(4, 3, "D", false, now), "past the total");
     }
 
     @Test
@@ -234,11 +234,11 @@ class ProgressTest {
         progress.connect(at(0));
         progress.resetBegins(false, at(1));
         progress.modsLoading(at(2));
-        progress.javaMod(1, 1, "A", false);
-        progress.javaMod(1, 1, "A", true);
+        progress.javaMod(1, 1, "A", false, now);
+        progress.javaMod(1, 1, "A", true, now);
         progress.modsLoaded();
         progress.modsLoading(at(3));
-        progress.javaMod(1, 1, "A", false);
+        progress.javaMod(1, 1, "A", false, now);
         assertEquals(1, progress.view().index());
     }
 
@@ -307,12 +307,12 @@ class ProgressTest {
     void theLargestGapNamesTheItemItEndedAt() {
         progress.fontsReady(at(0));
         progress.modsLoading(at(0));
-        progress.javaMod(1, 2, "A", false);
+        progress.javaMod(1, 2, "A", false, now);
         progress.frameHandedOver(at(100));
-        progress.javaMod(1, 2, "A", true);
-        progress.javaMod(2, 2, "Slow", false);
+        progress.javaMod(1, 2, "A", true, now);
+        progress.javaMod(2, 2, "Slow", false, now);
         progress.frameHandedOver(at(150));
-        progress.javaMod(2, 2, "Slow", true);
+        progress.javaMod(2, 2, "Slow", true, now);
         progress.frameHandedOver(at(2150));
         progress.stop("why", at(2200));
         Progress.End end = ends.get(0);
@@ -339,37 +339,103 @@ class ProgressTest {
     }
 
     @Test
-    void theModsStepFillsItsShareWithTheJavaModJars() {
+    void theBarFillsByStepAndTheSubBarByCountedItem() {
         progress.fontsReady(at(0));
-        assertEquals(0.0, progress.view().fill(), "launch: step 1 of 10, no jar yet");
+        assertEquals(0.1, progress.view().fill(), 1e-9, "launch: step 1 of 10");
+        assertTrue(progress.view().sub() < 0, "no item yet");
         progress.modsLoading(at(1));
-        progress.javaMod(1, 4, "A", false);
+        progress.javaMod(1, 4, "A", false, now);
         Progress.View view = progress.view();
-        assertEquals(0.0, view.fill());
-        assertEquals(0.025, view.jarEnd(), 1e-9);
-        progress.javaMod(1, 4, "A", true);
-        assertEquals(0.025, progress.view().fill(), 1e-9);
-        assertEquals(progress.view().fill(), progress.view().jarEnd(), "no jar loads");
-        for (int i = 2; i <= 4; i++) {
-            progress.javaMod(i, 4, "J" + i, false);
-            progress.javaMod(i, 4, "J" + i, true);
-        }
-        progress.mod("A", 1);
-        assertEquals(0.1, progress.view().fill(), 1e-9);
+        assertEquals(0.1, view.fill(), 1e-9, "jars do not move the bar");
+        assertEquals(0.0, view.sub());
+        assertEquals(0.25, view.jarEnd(), 1e-9);
+        progress.javaMod(1, 4, "A", true, now);
+        assertEquals(0.25, progress.view().sub(), 1e-9);
+        assertEquals(progress.view().sub(), progress.view().jarEnd(), "no jar loads");
+        progress.javaMod(2, 4, "B", false, now);
+        assertEquals(0.25, progress.view().sub(), 1e-9, "from the previous jar's end");
+        assertEquals(0.5, progress.view().jarEnd(), 1e-9);
+        progress.javaMod(2, 4, "B", true, now);
+        progress.mod("M", 4);
+        assertEquals(0.25, progress.view().sub(), 1e-9, "mod 1 / 4");
         progress.reach(Boundary.TRANSLATIONS, at(2));
         assertEquals(0.2, progress.view().fill(), 1e-9);
+        assertTrue(progress.view().sub() < 0, "nothing counted");
+        progress.reach(Boundary.SHARED_INIT, at(3));
+        progress.texturePack("UI");
+        assertTrue(progress.view().sub() < 0, "named only");
     }
 
     @Test
-    void aJoinsModsStepStartsWhereConnectingEnded() {
-        progress.connect(at(0));
-        double connecting = progress.view().fill();
-        progress.resetBegins(false, at(1));
-        assertEquals(connecting, progress.view().fill(), 1e-9);
-        progress.modsLoading(at(2));
-        progress.javaMod(1, 1, "A", false);
-        assertEquals(connecting, progress.view().fill(), 1e-9);
-        assertEquals(2.0 / Flow.START.steps().size(), progress.view().jarEnd(), 1e-9);
+    void aJarGetsAnOwnFrameAfterALongJarOnly() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.frameHandedOver(at(10));
+        assertFalse(progress.jarFrameDue(at(20)), "the first jar waits for the interval");
+        progress.javaMod(1, 3, "Long", false, at(20));
+        progress.frameHandedOver(at(70));
+        progress.javaMod(1, 3, "Long", true, at(90));
+        assertTrue(progress.jarFrameDue(at(91)), "after a jar of 70 ms");
+        progress.javaMod(2, 3, "Quick", false, at(91));
+        progress.frameHandedOver(at(91));
+        progress.javaMod(2, 3, "Quick", true, at(92));
+        assertFalse(progress.jarFrameDue(at(93)), "after a jar that returned at once");
+        assertTrue(progress.jarFrameDue(at(141)), "the interval passed anyway");
+    }
+
+    @Test
+    void theJavaModPassReportsItsLargestVisibleGap() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.frameHandedOver(at(100));
+        progress.javaMod(1, 1, "Slow", false, at(1500));
+        progress.frameHandedOver(at(1500));
+        progress.interimFrame(at(1800));
+        progress.javaMod(1, 1, "Slow", true, at(2100));
+        progress.frameHandedOver(at(2100));
+        progress.mod("M", 1);
+        progress.frameHandedOver(at(2200));
+        progress.stop("why", at(2300));
+        Progress.End end = ends.get(0);
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1400), end.largestVisibleGap().nanos(), "before the first jar");
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1400), end.javaModGap().nanos(), "ended at the first jar");
+    }
+
+    @Test
+    void knownCallsAreTheirShareOfAGap() {
+        progress.fontsReady(at(0));
+        progress.reach(Boundary.TILES, at(0));
+        progress.frameHandedOver(at(100));
+        progress.knownCall(Known.COMMENT_STRIPPING, at(200));
+        progress.knownCallEnded(at(2200));
+        progress.frameHandedOver(at(2300));
+        progress.knownCall(Known.STEAM_ITEMS, at(2400));
+        progress.knownCallEnded(at(2500));
+        progress.frameHandedOver(at(3500));
+        progress.stop("why", at(3600));
+        Progress.End end = ends.get(0);
+        assertNull(end.javaModGap());
+        Progress.Gap largest = end.largestVisibleGap();
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(2200), largest.nanos());
+        assertEquals(Known.COMMENT_STRIPPING, largest.known());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(2000), largest.knownNanos());
+        Progress.Gap unknown = end.unknownGap();
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1200), unknown.nanos(), "1100 ms outside known calls");
+        assertEquals(Known.STEAM_ITEMS, unknown.known());
+    }
+
+    @Test
+    void aKnownCallStillRunningCountsUpToTheFrame() {
+        progress.fontsReady(at(0));
+        progress.knownCall(Known.STEAM_ITEMS, at(100));
+        progress.frameHandedOver(at(1100));
+        progress.frameHandedOver(at(1600));
+        progress.knownCallEnded(at(1700));
+        progress.frameHandedOver(at(1800));
+        progress.stop("why", at(1800));
+        Progress.Gap largest = ends.get(0).largestVisibleGap();
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(1000), largest.knownNanos());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(100), ends.get(0).unknownGap().unknownNanos());
     }
 
     @Test
@@ -377,13 +443,13 @@ class ProgressTest {
         progress.fontsReady(at(0));
         progress.modsLoading(at(1));
         assertEquals(0, progress.loadingJar());
-        progress.javaMod(1, 2, "A", false);
+        progress.javaMod(1, 2, "A", false, now);
         long a = progress.loadingJar();
         assertTrue(a != 0);
         assertEquals(a, progress.view().jar());
-        progress.javaMod(1, 2, "A", true);
+        progress.javaMod(1, 2, "A", true, now);
         assertEquals(0, progress.loadingJar(), "between jars");
-        progress.javaMod(2, 2, "B", false);
+        progress.javaMod(2, 2, "B", false, now);
         long b = progress.loadingJar();
         assertTrue(b != 0 && b != a);
         progress.stop("why", at(2));
@@ -394,11 +460,11 @@ class ProgressTest {
     void interimFramesCountForTheVisibleGapOnly() {
         progress.fontsReady(at(0));
         progress.modsLoading(at(0));
-        progress.javaMod(1, 1, "Slow", false);
+        progress.javaMod(1, 1, "Slow", false, now);
         progress.frameHandedOver(at(100));
         progress.interimFrame(at(400));
         progress.interimFrame(at(1000));
-        progress.javaMod(1, 1, "Slow", true);
+        progress.javaMod(1, 1, "Slow", true, now);
         progress.frameHandedOver(at(1300));
         progress.stop("why", at(1350));
         Progress.End end = ends.get(0);

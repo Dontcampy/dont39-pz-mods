@@ -139,10 +139,19 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   over (epilepsy, model-loading, connect UI, login queue, `GameLoadingState.render`) and every own frame.
   `EndFrameUI` HEAD is the last point inside a frame; a RETURN hook on `GameLoadingState.render` would run after the
   frame was handed over and Zabric has no `@At("INVOKE")` (DI B6).
-- Layout: top center, below the top edge, clear of ZombieBuddy's top-left watermark and of the world-loading screen's
-  centered tips, bottom text and figure (DI B6): a bar `min(640, 40 % of width)` wide, line 1 "n / N: step", line 2
-  the item. Text needs `TextManager.instance.font` and no font still loading (`isAnyFontLoading`, DI risk 4); while
-  fonts load, only the bar draws. Fonts are fetched per frame (`ResetLua` replaces them).
+- Layout: centered, below ZombieBuddy's watermark and above the world-loading screen's centered tips, bottom text and
+  figure (DI B6): line 1 "n / N: step", the bar `min(640, 40 % of width)` wide (step n / N, D2), line 2 the item, and
+  under it a thin sub-bar with the item's i / total for counted items (Java mods, mods, script files, Lua files; D13),
+  hidden otherwise. Text needs `TextManager.instance.font` and no font still loading (`isAnyFontLoading`, DI risk 4);
+  while fonts load, only the bars draw. Fonts are fetched per frame (`ResetLua` replaces them).
+- Watermark rule (R7): ZombieBuddy 2.3.4's watermark (`Watermark.draw`, at `EndFrameUI` HEAD in every frame until
+  the world) is an icon (128 px on screens over 2000 px, else 64) with lines right of it: the version, a notice after a
+  preload change, and "N active Java mods: ..." wrapped at the screen's width, so at 4K with 14 Java mods it is three
+  rows across the whole width. No horizontal placement clears it; the overlay starts below its lowest possible row:
+  `Overlay.watermarkBottom` replays its wrapping with every Java mod id the loader progress named this session (each
+  measured with " (preload)", the pass's not yet named ones as wide as the average), always one notice row, and the
+  Small font's row height. The estimate only errs low on the screen; it grows when a pass begins, as the watermark
+  does.
 - Own frames (`draw.FramePump.tick`, called from every per-item, boundary and trigger hook): only in steps where the
   game draws no frames of its own (`Step.ownFrames`; not connecting, login queue, loading world, ready), only when the
   current thread is `GameWindow.gameThread`, `Core.frameStage == 0`, and the last handed-over frame is ≥ 50 ms old.
@@ -158,11 +167,25 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   loader progress (per Java mod jar, D11), `NetChecksum.Checksummer.addFile`, `CoopMaster.update`,
   `GameClient.update` (MP connect wait loops). Several run per frame in game: their first check is a volatile flag,
   before any clock read. `waitForRenderState` is not touched: each own frame pumps (`Display.update(true)`).
+- D12 triggers, as built (`TriggerHooks`, all HEAD, JDK-only, each woven before its step on the measured launch):
+  `TextManager.isAnyFontLoading()Z` (the font-page wait loop, every ~10 ms), `ScriptBucket.getCurrentScriptObject()`
+  (per script block), `ChooseGameInfo.readModInfo(String)` (mods that reread every mod.info in their boot code; HEAD
+  glue names only the arguments, so its game-typed return passes `checkJdkGlue`). Two more the launch's gaps showed:
+  `DebugFileWatcher.registerDir(Path)` (discovery registers every directory of each mod's media folder with the file
+  watcher; one mod with 12,673 directories took 1.8 s, which the research had put on the Steam query, 9 ms when warm)
+  and `LuaManager$Exposer.setExposed(Class)` (per class `LuaManager.init` exposes; many load and are patched there).
+  The font loop's own frames show ZombieBuddy's watermark drawn with font pages still loading (white blocks) for
+  about a second.
+- Known calls (D12, `Known`): `ScriptParser.stripComments` and `ZomboidFileSystem.getInstalledItemModsFolders` are
+  bracketed by HEAD/FINALLY on the game thread; the frame-gap report says how much of a gap they took. Only JDK or
+  native code runs inside them, so nothing can hand over a frame there.
 - Known gap (D8): Dont39 All-in-One's tunnel opens its connection inside `UdpEngine.Connect` with blocking socket
   calls (TCP ≤1 s + ≤1 s, KCP ≤2 s), where no trigger above runs. The progress mod adds no hook for it and does not
   know the tunnel; the gap falls in the connecting step.
-- Frame-gap report: per flow end, one log line with the flow's duration, own-frame count and the largest gap between
-  handed-over frames with its step (AC4, AC4b, AC7 evidence).
+- Frame-gap report: per flow end, one log line with the flow's duration, own and interim frame counts, and four gaps,
+  each with its step, item and known-call share: the largest between handed-over frames, the largest visible one
+  (interim frames count), the largest visible one the Java mod jars showed at (AC3b), and the one with the most time
+  outside known calls (AC3b: under 1 s means every longer gap is a known call) (AC4, AC4b, AC7 evidence).
 - Dont39 All-in-One's network status icon is created at `OnGameStart` (bottom left) and drawn by `UIManager` in
   in-world frames, after the start flow ends; no layout rule is needed for it.
 
@@ -187,21 +210,39 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   `JarLoadHookTest` (the real `loadJar` with the hook installed), `JarListenersTest`.
 - The progress mod registers `hooks.JavaMods` at preLaunch. The Java-mod pass is an item of the launch's (and a
   reset's) "Loading mods" step, not a step of its own (D4, D11 wording): line 2 "Java mod i / n: id"
-  (`Item.JAVA_MOD`), a tick of `FramePump` before and after each jar. A call off the game thread while a flow runs, or
-  out of order (`Progress.javaMod`), throws, which stops the mod. The flow-end line names the item shown when its
-  largest gap ended.
+  (`Item.JAVA_MOD`), an own frame at each jar's start and a tick after the last. The jar's frame skips the 50 ms
+  interval only when the pass's previous jar took 50 ms or longer (`Progress.jarFrameDue`): jars that return at once
+  (later passes) get no frame each. A short jar followed by a long one can leave the long one without an own frame and
+  so without interim frames. A call off the game thread while a flow runs, or out of order (`Progress.javaMod`),
+  throws, which stops the mod. The bar stays at its step (D2); the sub-bar shows jars done / total.
 - C, interim frames from the render thread, only while the Java-mod step shows and only for a gap between own frames:
   - heartbeat: a Zabric counter bumped per transformation during the pass (a retransform-capable transformer that
     only counts, never transforms or loads), readable through the same API;
-  - capture: at `Display.update(Z)V` HEAD of an own frame of that step, the back buffer is copied into a mod-owned
-    texture (GL 4.5 DSA, no binding changes);
-  - draw: from the render thread's idle path (`Display.processMessages()V`, or `RenderThread.queueInvokeOnRenderContext`
-    from a mod timer if that target cannot be woven), at most every 250 ms and only when the heartbeat moved: blit the
-    capture to the back buffer, scissor-clear the bar rectangles with the fill for the heartbeat-advanced position
-    within the current jar's share of the bar, `Display.swapBuffers()`; text stays as captured. Every GL state touched
-    (scissor, color mask, read/draw framebuffer, clear color) is saved and restored; the game's cached state
-    (`GLStateRenderThread`, `Texture.lastTextureID`) is never changed. Size: the framebuffer's, not `Core`'s screen.
+  - capture (D14, as built): at `Display.update(Z)V` HEAD of a frame that shows a Java mod, `glBlitFramebuffer` from
+    the window's back buffer into a mod-owned texture in the window's color format (8 bits per color, with or without
+    alpha, sRGB or not, or 10/10/10/2; another format is a mismatch), through its own framebuffer bound for drawing.
+    The format matches so that the copy from a multisampled window resolves. No direct state access: every binding is
+    read back and restored (`Saved`), the texture and unpack-buffer bindings while the texture is created. Copies run
+    with sRGB writes off (raw); the sub-bar's clear runs with the game's setting. The copy is kept between jars and
+    released at the first frame that shows something else.
+  - draw: from the render thread's idle path (`Display.processMessages()V`) at most every 250 ms and only when the
+    heartbeat moved: the copy goes back to the back buffer (a blit; into a multisampled window, where a blit cannot
+    write, a triangle covering the window whose fragments `texelFetch` their pixel, with program, vertex array,
+    texture unit 0 and its sampler, viewport, polygon mode, sRGB writes (on for an sRGB copy, which reads decoded) and
+    every switch that changes what a fragment writes read back, set and restored; GLSL 130, or 150 on a core profile),
+    then a scissored `glClearBufferfv` moves the sub-bar's fill, then `Display.swapBuffers()`;
+    text stays as captured. Each move covers a sixth of what is left of the jar's share of the sub-bar, at least a
+    pixel, and stops short of its end, where the next jar's own frame continues: the moves shrink and never pass it.
+    The game's cached state (`GLStateRenderThread`, `Texture.lastTextureID`) is never changed. Size: the
+    framebuffer's, not `Core`'s screen.
+  - no capability switches interim frames off; a context without OpenGL 3.0 (whose missing entry points would crash
+    in native code) is a mismatch. `glGetError` after the copy and after each interim frame: an error is a
+    mismatch and stops the mod (the message says it may have been left pending by the game). Measured on the 4K
+    NVIDIA window: the triangle path forced for one launch drew its interim frames without error and with the picture
+    intact; a multisampled window itself was not available.
   - errors on the render thread go to the mod's stop (default gate's report), never to the queue's log-and-continue.
+  - after a stop the copy (one framebuffer-sized texture) stays until the game exits: no hook of the mod runs to
+    release it, and Zabric tells a mod with the default gate nothing of its stop. Accepted: only after an error.
   - frame-gap report counts interim frames separately (AC3b); Viewpoint's patches of `Display.update` and
     `SpriteRenderer.postRender` are tested with and without Viewpoint.
 

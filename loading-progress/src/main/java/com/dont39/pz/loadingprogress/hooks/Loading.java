@@ -1,7 +1,9 @@
 package com.dont39.pz.loadingprogress.hooks;
 
 import com.dont39.pz.loadingprogress.draw.FramePump;
+import com.dont39.pz.loadingprogress.draw.Overlay;
 import com.dont39.pz.loadingprogress.progress.Boundary;
+import com.dont39.pz.loadingprogress.progress.Known;
 import com.dont39.pz.loadingprogress.progress.Progress;
 import com.dont39.pz.loadingprogress.text.Strings;
 import zombie.GameWindow;
@@ -41,7 +43,8 @@ public final class Loading {
             throw new IllegalStateException("Zabric reported Java mod " + index + " / " + total + " (" + modId
                     + ") on the thread " + Thread.currentThread().getName() + ", not on the game thread");
         }
-        PROGRESS.javaMod(index, total, modId, loaded);
+        PROGRESS.javaMod(index, total, modId, loaded, System.nanoTime());
+        Overlay.javaModSeen(modId, total);
         if (!loaded) {
             FramePump.jarStarts(PROGRESS);
         } else if (index == total) {
@@ -50,18 +53,38 @@ public final class Loading {
         }
     }
 
+    /** A {@link Known} call begins; on the game thread only, whose frames it holds up. */
+    static void knownCall(Known kind) {
+        if (PROGRESS.active() && Thread.currentThread() == GameWindow.gameThread) {
+            PROGRESS.knownCall(kind, System.nanoTime());
+        }
+    }
+
+    static void knownCallEnded() {
+        if (PROGRESS.active() && Thread.currentThread() == GameWindow.gameThread) {
+            PROGRESS.knownCallEnded(System.nanoTime());
+        }
+    }
+
     private static void ended(Progress.End end) {
-        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, %d interim frames,"
-                        + " largest frame gap %s, largest visible gap %s", end.flow().label(),
-                end.outcome().name().toLowerCase(Locale.ROOT), end.why() == null ? "" : " (" + end.why() + ")",
-                end.nanos() / 1e9, end.step(), end.flow().steps().size(), Strings.step(end.at(), false),
-                end.ownFrames(), end.interimFrames(), gap(end.largestGap()), gap(end.largestVisibleGap()));
+        DebugType.Mod.println(PREFIX + "%s: %s%s after %.1f s at step %d / %d (%s); %d own frames, %d interim frames;"
+                        + " largest frame gap %s; largest visible gap %s; in the Java mods %s; outside known calls %s",
+                end.flow().label(), end.outcome().name().toLowerCase(Locale.ROOT),
+                end.why() == null ? "" : " (" + end.why() + ")", end.nanos() / 1e9, end.step(),
+                end.flow().steps().size(), Strings.step(end.at(), false), end.ownFrames(), end.interimFrames(),
+                gap(end.largestGap()), gap(end.largestVisibleGap()),
+                end.javaModGap() == null ? "none" : gap(end.javaModGap()), gap(end.unknownGap()));
     }
 
     private static String gap(Progress.Gap gap) {
         Progress.Shown at = gap.item();
         String item = at == null ? null : Strings.itemLine(at.item(), at.index(), at.total(), at.name(), false);
-        return TimeUnit.NANOSECONDS.toMillis(gap.nanos()) + " ms in " + Strings.step(gap.step(), false)
-                + (item == null ? "" : " (" + item + ")");
+        return millis(gap.nanos()) + " in " + Strings.step(gap.step(), false) + (item == null ? "" : " (" + item + ")")
+                + (gap.known() == null ? "" : ", " + millis(gap.knownNanos()) + " of it in known calls, mostly "
+                + gap.known().label());
+    }
+
+    private static String millis(long nanos) {
+        return TimeUnit.NANOSECONDS.toMillis(nanos) + " ms";
     }
 }

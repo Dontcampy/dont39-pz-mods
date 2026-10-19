@@ -24,15 +24,23 @@ public final class Progress {
     }
 
     /**
-     * What the log says when a flow ends. {@code largestGap}: between frames the game thread handed over;
-     * {@code largestVisibleGap}: between those and interim frames together.
+     * What the log says when a flow ends. {@code largestGap}: between frames the game thread handed over; the others
+     * between those and interim frames together: {@code largestVisibleGap} of all, {@code javaModGap} of those the
+     * Java mod jars showed at (null when none showed), {@code unknownGap} the one with the most time outside
+     * {@link Known} calls.
      */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
-                      int interimFrames, Gap largestGap, Gap largestVisibleGap) {
+                      int interimFrames, Gap largestGap, Gap largestVisibleGap, Gap javaModGap, Gap unknownGap) {
     }
 
-    /** A time without a new frame, with the step and the item shown when it ended. */
-    public record Gap(long nanos, Step step, Shown item) {
+    /**
+     * A time without a new frame, with the step and the item shown when it ended; {@code knownNanos} of it went to
+     * {@link Known} calls, most to {@code known} (null when none).
+     */
+    public record Gap(long nanos, Step step, Shown item, Known known, long knownNanos) {
+        long unknownNanos() {
+            return nanos - knownNanos;
+        }
     }
 
     /** An item of the second line. */
@@ -40,12 +48,13 @@ public final class Progress {
     }
 
     /**
-     * What a frame shows; {@code step} counts from 1. {@code fill}: the bar's filled fraction. While a Java mod jar
-     * loads, {@code jar} is its {@link #loadingJar()} and {@code jarEnd} the fraction the bar reaches once it loaded;
-     * otherwise 0 and {@code fill}.
+     * What a frame shows; {@code step} counts from 1. {@code fill}: the bar's filled fraction, by step. {@code sub}: the
+     * sub-bar's, by a counted item, or negative when none shows. While a Java mod jar loads, {@code jar} is its
+     * {@link #loadingJar()} and {@code jarEnd} the fraction the sub-bar reaches once it loaded; otherwise 0 and
+     * {@code sub}.
      */
     public record View(Flow flow, int step, Step current, Item item, int index, int total, String name, double fill,
-                       long jar, double jarEnd) {
+                       double sub, long jar, double jarEnd) {
     }
 
     private final BooleanSupplier client;
@@ -70,10 +79,21 @@ public final class Progress {
     private int ownFrameCount;
     private int interimFrameCount;
     private long lastVisible;
+    // whether the last visible frame showed a Java mod jar: the gap after it is the Java mod pass's
+    private boolean javaModVisible;
     private Gap largestGap;
     private Gap largestVisibleGap;
+    private Gap javaModGap;
+    private Gap unknownGap;
     private boolean launchSeen;
     private boolean stopped;
+
+    // the Known call running now, and those in the current visible gap
+    private Known known;
+    private long knownStarted;
+    private long knownInGap;
+    private Known gapKnown;
+    private long gapKnownLongest;
 
     private boolean modsLoading;
     private int modsLoaded;
@@ -81,6 +101,9 @@ public final class Progress {
     private int javaModTotal;
     private boolean javaModLoading;
     private long jarCount;
+    private long jarStarted;
+    // how long the pass's previous jar took, 0 before its first
+    private long lastJarNanos;
     private volatile boolean scriptsLoading;
     private int scriptsLoaded;
     private String scriptPath;
@@ -264,7 +287,7 @@ public final class Progress {
      * ZombieBuddy loads ({@code loaded} false) or has loaded Java mod jar {@code index} of {@code total}, inside the mod
      * list's load. Jars come one after another, from 1, each loaded before the next.
      */
-    public synchronized void javaMod(int index, int total, String id, boolean loaded) {
+    public synchronized void javaMod(int index, int total, String id, boolean loaded, long now) {
         if (!modsLoading || flow == null) {
             return;
         }
@@ -279,8 +302,48 @@ public final class Progress {
         javaMod = index;
         javaModTotal = total;
         javaModLoading = !loaded;
+        if (loaded) {
+            lastJarNanos = now - jarStarted;
+        } else {
+            jarStarted = now;
+        }
         if (item(Item.JAVA_MOD, index, total, id) && !loaded) {
             loadingJar = ++jarCount;
+        }
+    }
+
+    /**
+     * Whether a Java mod jar that starts loading now gets an own frame, which its interim frames start from: when the
+     * pass's previous jar took the frame interval or longer, as by the interval itself. A run of jars that return at
+     * once gets no frame per jar.
+     */
+    public synchronized boolean jarFrameDue(long now) {
+        return ownFrames && (lastJarNanos >= FRAME_INTERVAL || now - lastFrame >= FRAME_INTERVAL);
+    }
+
+    /** A {@link Known} call begins on the game thread. */
+    public void knownCall(Known kind, long now) {
+        if (!showing) {
+            return;
+        }
+        synchronized (this) {
+            if (showing && known == null) {
+                known = kind;
+                knownStarted = now;
+            }
+        }
+    }
+
+    /** The {@link Known} call returned or threw. */
+    public void knownCallEnded(long now) {
+        if (!showing) {
+            return;
+        }
+        synchronized (this) {
+            if (known != null) {
+                countKnown(now);
+                known = null;
+            }
         }
     }
 
@@ -421,7 +484,7 @@ public final class Progress {
             if (showing) {
                 gaps(now);
                 lastFrame = now;
-                lastVisible = Math.max(lastVisible, now);
+                visible(now);
             }
         }
     }
@@ -436,7 +499,7 @@ public final class Progress {
         }
         interimFrameCount++;
         visibleGap(now);
-        lastVisible = Math.max(lastVisible, now);
+        visible(now);
     }
 
     /** What to draw, or null when no flow shows. */
@@ -448,10 +511,11 @@ public final class Progress {
             if (!showing) {
                 return null;
             }
-            double fill = fill();
+            double sub = sub();
             long jar = loadingJar;
-            double jarEnd = jar == 0 ? fill : (step + (double) javaMod / javaModTotal) / flow.steps().size();
-            return new View(flow, step + 1, current(), item, index, total, name, fill, jar, jarEnd);
+            double jarEnd = jar == 0 ? sub : (double) javaMod / javaModTotal;
+            return new View(flow, step + 1, current(), item, index, total, name, (step + 1.0) / flow.steps().size(),
+                    sub, jar, jarEnd);
         }
     }
 
@@ -483,8 +547,13 @@ public final class Progress {
         clearJavaMods();
         ownFrameCount = 0;
         interimFrameCount = 0;
-        largestGap = new Gap(0, first, null);
+        javaModVisible = false;
+        known = null;
+        clearKnownGap();
+        largestGap = new Gap(0, first, null, null, 0);
         largestVisibleGap = largestGap;
+        javaModGap = null;
+        unknownGap = largestGap;
         update();
     }
 
@@ -508,6 +577,7 @@ public final class Progress {
             paused = false;
             lastFrame = now;
             lastVisible = now;
+            clearKnownGap();
         } else if (i < step) {
             throw new IllegalStateException(flow.label() + ": " + next + " began after " + current());
         }
@@ -563,35 +633,69 @@ public final class Progress {
         javaMod = 0;
         javaModTotal = 0;
         javaModLoading = false;
+        lastJarNanos = 0;
     }
 
-    // a step that shows the Java mod jars fills its share with them; any other shows as done
-    private double fill() {
-        double steps = flow.steps().size();
-        if (!current().shows(Item.JAVA_MOD)) {
-            return (step + 1) / steps;
+    // the counted item's fraction: a loading jar counts from the previous one's end
+    private double sub() {
+        if (!item.counted() || total == 0) {
+            return -1;
         }
-        int jarsLoaded = javaModLoading ? javaMod - 1 : javaMod;
-        return (step + (javaModTotal == 0 ? 0 : (double) jarsLoaded / javaModTotal)) / steps;
+        int done = item == Item.JAVA_MOD && javaModLoading ? index - 1 : index;
+        return (double) done / total;
     }
 
     private void gaps(long now) {
         long gap = now - lastFrame;
         if (gap > largestGap.nanos()) {
-            largestGap = gap(gap);
+            largestGap = gap(gap, now);
         }
         visibleGap(now);
     }
 
     private void visibleGap(long now) {
-        long gap = now - lastVisible;
-        if (gap > largestVisibleGap.nanos()) {
-            largestVisibleGap = gap(gap);
+        Gap gap = gap(now - lastVisible, now);
+        if (gap.nanos() > largestVisibleGap.nanos()) {
+            largestVisibleGap = gap;
+        }
+        if ((javaModVisible || item == Item.JAVA_MOD) && (javaModGap == null || gap.nanos() > javaModGap.nanos())) {
+            javaModGap = gap;
+        }
+        if (gap.unknownNanos() > unknownGap.unknownNanos()) {
+            unknownGap = gap;
         }
     }
 
-    private Gap gap(long nanos) {
-        return new Gap(nanos, current(), item == Item.NONE ? null : new Shown(item, index, total, name));
+    // a frame was shown at now: the next gap starts
+    private void visible(long now) {
+        lastVisible = Math.max(lastVisible, now);
+        javaModVisible = item == Item.JAVA_MOD;
+        clearKnownGap();
+        if (known != null) {
+            knownStarted = now;
+        }
+    }
+
+    private void countKnown(long now) {
+        long nanos = now - knownStarted;
+        knownInGap += nanos;
+        if (nanos > gapKnownLongest) {
+            gapKnownLongest = nanos;
+            gapKnown = known;
+        }
+    }
+
+    private void clearKnownGap() {
+        knownInGap = 0;
+        gapKnown = null;
+        gapKnownLongest = 0;
+    }
+
+    private Gap gap(long nanos, long now) {
+        long running = known == null ? 0 : now - knownStarted;
+        Known most = running > gapKnownLongest ? known : gapKnown;
+        return new Gap(nanos, current(), item == Item.NONE ? null : new Shown(item, index, total, name), most,
+                Math.min(nanos, knownInGap + running));
     }
 
     private void end(Outcome outcome, String why, long now) {
@@ -603,9 +707,10 @@ public final class Progress {
 
     private void finish(Outcome outcome, String why, long now) {
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount,
-                interimFrameCount, largestGap, largestVisibleGap);
+                interimFrameCount, largestGap, largestVisibleGap, javaModGap, unknownGap);
         flow = null;
         paused = false;
+        known = null;
         clearItem();
         update();
         ended.accept(end);

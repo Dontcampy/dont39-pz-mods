@@ -11,15 +11,21 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
 - The flows and their steps are in `progress/Flow.java`; `progress/Progress.java` is the game-free state the hooks
   feed, tested in `src/test/`.
 - ZombieBuddy's Java mod pass runs no game method between its jars: Zabric's loader progress, registered at preLaunch
-  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar.
+  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar that follows a jar of 50 ms or more.
 - Patching one jar can hold the game thread for seconds. Meanwhile the render thread shows interim frames
   (`draw/Interim.java`, hooks on `Display` in `hooks/DisplayHooks.java`): the jar's own frame, copied before its swap,
-  with the fill moved a pixel further into the jar's share every 750 ms while Zabric's heartbeat moves. It needs
-  OpenGL 4.5 direct state access and restores every GL state it touches.
-- `draw/Overlay.java` draws the bar at the head of `Core.EndFrameUI` in every frame the game thread hands over;
-  `draw/FramePump.java` hands over its own frames from the hooks inside the loading code.
-- One `console.txt` line per flow: outcome, duration, own and interim frames, the largest gap between frames the game
-  thread handed over and the largest counting interim frames, each with its step.
+  with the sub-bar moved further into the jar's share every 250 ms while Zabric's heartbeat moves, in shrinking steps
+  that stop short of the jar's end. Bind-based GL with every binding and state restored, also for a multisampled
+  window; a GL error stops the mod.
+- `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over: the step line,
+  the bar by step, the item line and a sub-bar by the item's count, below ZombieBuddy's watermark (its wrapping is
+  replayed from the Java mods the loader progress named); `draw/FramePump.java` hands over its own frames from the
+  hooks inside the loading code.
+- Calls that hold the game thread with no hookable point inside (comment stripping of script files, Steam's installed
+  items query) are bracketed as known calls (`progress/Known.java`).
+- One `console.txt` line per flow: outcome, duration, own and interim frames; the largest gap between frames the game
+  thread handed over, the largest counting interim frames, the largest while the Java mod jars showed, and the one
+  with the most time outside known calls, each with its step, item and known-call share.
 
 ## Constraints
 

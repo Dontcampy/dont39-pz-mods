@@ -77,7 +77,9 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   translations), `ScriptBucket.getCurrentScriptObject` (script objects, ~1.7 s) and `ChooseGameInfo.readModInfo`
   (mods that reread mod.info in their boot code). Known gaps like D8, since no hook can split them: one
   `ScriptParser.stripComments` call per tile-geometry file (~2 s for vanilla's, every launch, start and reload), the
-  Steam installed-items query at discovery (~1.9 s), and other mods' long Lua callbacks.
+  Steam installed-items query at discovery (9 ms measured with a warm cache; bracketed for a cold one), and other
+  mods' long Lua callbacks. Discovery's measured ~1.8 s was `DebugFileWatcher.registerDir` per folder of a large mod,
+  covered by a trigger, as is `LuaManager$Exposer.setExposed` (~1 s of first class loads in `LuaManager.init`).
 - D13 (2026-10-19): a thin sub-bar under line 2 shows the current item's progress (i / total of mods, script files,
   Lua files, Java mods; inside a jar, the heartbeat-paced moves within that jar's share). The main bar stays step
   n / N (D2).
@@ -119,7 +121,8 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   inside another frame, at most ~20 per second (also for runs of jars that return at once). Known exceptions (D8,
   D12): a blocking call of another mod with no hook of this mod inside (today Dont39 All-in-One's tunnel open, ≤2 s),
   other mods' long Lua callbacks, tile-geometry comment stripping and the Steam installed-items query; the frame-gap
-  report names the step and item each gap fell in. ZombieBuddy's Java-mod pass (D11, D13): own frames at each jar;
+  report names the step and item each gap fell in, the share of it the last two took, the Java-mod pass's largest
+  visible gap and the gap with the most time outside them. ZombieBuddy's Java-mod pass (D11, D13): own frames at each jar;
   between them the render thread presents interim frames (the last captured frame, sub-bar advanced, text
   unchanged) while the heartbeat moves, and none when it stops, so a real hang still shows a still bar. Interim
   frames come only from the render thread and restore all GL state they touch.

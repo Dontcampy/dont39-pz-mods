@@ -1,6 +1,7 @@
 package com.dont39.pz.loadingprogress.hooks;
 
 import com.dont39.pz.loadingprogress.progress.Boundary;
+import com.dont39.pz.loadingprogress.progress.Known;
 import com.pzlauncher.zabric.hook.At;
 import com.pzlauncher.zabric.hook.CallbackInfo;
 import com.pzlauncher.zabric.hook.CallbackInfoReturnable;
@@ -56,6 +57,17 @@ public final class LoadHooks {
         @Inject(method = "setModIdToDir(Ljava/lang/String;Ljava/lang/String;)V", at = @At("HEAD"))
         public static void modFolder(CallbackInfo ci) {
             Loading.tick();
+        }
+
+        // a native Steam query and a loop of JDK calls, too long to split: the frame-gap line names its share
+        @Inject(method = "getInstalledItemModsFolders(Ljava/util/List;)V", at = @At("HEAD"))
+        public static void steamItems(CallbackInfo ci) {
+            Loading.knownCall(Known.STEAM_ITEMS);
+        }
+
+        @Inject(method = "getInstalledItemModsFolders(Ljava/util/List;)V", at = @At("FINALLY"))
+        public static void steamItemsListed(CallbackInfo ci, @Thrown Throwable thrown) {
+            Loading.knownCallEnded();
         }
     }
 
