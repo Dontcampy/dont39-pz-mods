@@ -163,6 +163,31 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
 - Dont39 All-in-One's network status icon is created at `OnGameStart` (bottom left) and drawn by `UIManager` in
   in-world frames, after the start flow ends; no layout rule is needed for it.
 
+### Discovery and the Java-mod pass (D11; evidence and anchors: `research/zb-pass-gap.md`)
+
+- A, discovery: JDK-only HEAD triggers on `ZomboidFileSystem.setModIdToDir(Ljava/lang/String;Ljava/lang/String;)V`
+  and `getAllModFoldersAux(Ljava/lang/String;Ljava/util/List;)V` (woven at premain, per mod folder). The design's
+  `getAvailableModDetails` trigger does not act on the launch (woven only at the first pass, D10).
+- B, Zabric loader-progress API: the loader seam advises ZombieBuddy's `Loader.loadJar` as `ModsLoadedHook` advises
+  `loadMods`, and calls public listeners with JDK-only arguments (jar index, total, mod id) on the loader's thread, at
+  each jar boundary, outside any transformer. Registration is a Zabric API call (no hook, no game type); the progress
+  mod registers at preLaunch, its listener ticks `FramePump` and sets line 2 to "Java mod i / n: id". ZombieBuddy
+  types stay in `loader/`; a mismatch with ZombieBuddy's `loadJar` is reported like `ModsLoadedHook`'s.
+- C, interim frames from the render thread, only while the Java-mod step shows and only for a gap between own frames:
+  - heartbeat: a Zabric counter bumped per transformation during the pass (a retransform-capable transformer that
+    only counts, never transforms or loads), readable through the same API;
+  - capture: at `Display.update(Z)V` HEAD of an own frame of that step, the back buffer is copied into a mod-owned
+    texture (GL 4.5 DSA, no binding changes);
+  - draw: from the render thread's idle path (`Display.processMessages()V`, or `RenderThread.queueInvokeOnRenderContext`
+    from a mod timer if that target cannot be woven), at most every 250 ms and only when the heartbeat moved: blit the
+    capture to the back buffer, scissor-clear the bar rectangles with the fill for the heartbeat-advanced position
+    within the current jar's share of the bar, `Display.swapBuffers()`; text stays as captured. Every GL state touched
+    (scissor, color mask, read/draw framebuffer, clear color) is saved and restored; the game's cached state
+    (`GLStateRenderThread`, `Texture.lastTextureID`) is never changed. Size: the framebuffer's, not `Core`'s screen.
+  - errors on the render thread go to the mod's stop (default gate's report), never to the queue's log-and-continue.
+  - frame-gap report counts interim frames separately (AC3b); Viewpoint's patches of `Display.update` and
+    `SpriteRenderer.postRender` are tested with and without Viewpoint.
+
 ### Text, client only, errors
 
 - `text.Strings`: the EN and CN text as Java switch tables. CN when `Translator.getLanguage().name()` is `CN`, else EN;

@@ -44,6 +44,14 @@ refactor; go by the symbols in `design.md`.
     the new module; a note in `zombiebuddy-patching.md`/`zabric-hooks.md` if a new rule came out of P.
 13. Commit P.
 
+## D11 — discovery and the Java-mod pass
+
+14. A + B: discovery triggers in the mod; Zabric loader-progress listener API (`loader/` advice on `Loader.loadJar`,
+    public API, tests, author docs, workshop text ≤ 7,800 chars); the mod's listener, line 2 "Java mod i / n: id",
+    `Strings` EN/CN. Check, smokeTest, commit.
+15. C: Zabric heartbeat counter (tests); the mod's capture, render-thread drawer and GL save/restore, interim-frame
+    count in the frame-gap line. Check, smokeTest, launch to the menu with and without Viewpoint (recording), commit.
+
 ## Validation
 
 - `./gradlew build assembleMod` (incl. `:zabric:test`, `:dont39-all-in-one:checkGlue`),

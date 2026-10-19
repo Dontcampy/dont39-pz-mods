@@ -68,9 +68,11 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   weaving of already-loaded targets (`LuaManager`, `KahluaThread`, `ZomboidFileSystem`) loads ~50 game classes, and
   each mod's access-widener report is the guard for what a list names; hooks on targets ZombieBuddy loaded at premain
   without weaving (`ChooseGameInfo`, `LuaManager$GlobalObject`) are woven at the end of the first pass, so mod
-  discovery (~3.4 s with ~245 mods) has no frame trigger and the bar stands still there (the window keeps pumping).
-- D11 (open, 2026-10-19): ZombieBuddy's Java-mod pass (~6.4 s with ~245 mods) has no hookable point on `MainThread`;
-  the user wants it covered. Options in `research/zb-pass-gap.md`.
+  discovery gets no trigger from them (D11 covers it through `ZomboidFileSystem`).
+- D11 (2026-10-19): mod discovery and ZombieBuddy's Java-mod pass are covered (options A + B + C of
+  `research/zb-pass-gap.md`): discovery triggers on `ZomboidFileSystem` (woven at premain); a Zabric loader-progress
+  API (per Java mod jar, JDK-only listener) drives own frames and "Java mod i / n: id"; inside one jar's patching, the
+  render thread shows interim frames: the last `MainThread` frame with the bar redrawn from a Zabric heartbeat count.
 
 ## Requirements
 
@@ -103,10 +105,12 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   screen, without covering its centered text, animated figure or ZombieBuddy's top-left watermark.
 - R8: while a flow runs, `MainThread` hands over a frame of its own at least every 1 s whenever no other frame came,
   so the bar keeps moving and Windows never sees 5 s without a pump in the measured phases (incl. `ResetLua`'s
-  post-reset events, `GameLoadingState.enter` and `IngameState.enter`). Frames come only from `MainThread`, never from
+  post-reset events, `GameLoadingState.enter` and `IngameState.enter`). Own frames come only from `MainThread`, never from
   inside another frame, at most ~20 per second. Known exception (D8): a blocking call of another mod with no hook of
   this mod inside, today Dont39 All-in-One's tunnel open (≤2 s); the frame-gap report names the step it fell in.
-  Also excepted: launch mod discovery (D10), and ZombieBuddy's Java-mod pass until D11 is settled.
+  ZombieBuddy's Java-mod pass (D11): own frames at each jar; between them the render thread presents interim frames
+  (the last captured frame, bar redrawn, text unchanged) at most every 250 ms while the heartbeat moves, and none
+  when it stops, so a real hang still shows a still bar. Interim frames restore all GL state they touch.
 - R9 (D5): English and Chinese text from the mod's own strings, not the game's translation files (those load late and
   vanish on servers that do not list the mod). Chinese shows when the game language is Chinese (CN); every other
   language shows English.
@@ -127,6 +131,10 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   nor the mod's own code loads a game class at preLaunch (class-load log: 0 game classes loaded from Zabric or mod
   frames there), ZombieBuddy's premain weaving of already-loaded targets excepted; the mod's `access widener: ok` and
   `hooks ready` lines appear at the first pass.
+- AC3b (D11): on the ~245-mod launch, the frame-gap line's largest `MainThread` gap is inside one Java mod jar, the
+  largest visible gap (counting interim frames) in the Java-mod pass is under 1 s, discovery's under 1 s; Zabric
+  tests cover the loader-progress listener and heartbeat; with Viewpoint enabled and disabled the screen shows no
+  flicker or garbage (recording).
 - AC3 (R5–R7): on a launch with ~245 mods, the bar appears once fonts are ready and advances through every launch step
   to the main menu, with mod, script and Lua counts on the second line. A screen recording shows it moving at least
   once per second.
