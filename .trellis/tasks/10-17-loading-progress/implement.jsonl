@@ -1,0 +1,14 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Layers, Zabric vs mods, pre-development checklist"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "New shipped module layout and naming"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API, glue, weave check, listing compatibility for the Zabric change and the mod's hooks"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric premain/preLaunch rules, entrypoints and preload registration, classtweaker"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader seam, patch classes in the root package, preload loading"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Report and stop, never a silent degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Prefix, lifecycle lines, no per-frame logging"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, in-game verification"}
+{"file": ".trellis/tasks/10-17-loading-progress/research/loading-flow.md", "reason": "Threads, pumping, phase timeline"}
+{"file": ".trellis/tasks/10-17-loading-progress/research/design-inputs.md", "reason": "Zabric flow, hook targets with descriptors, drawing, translations, build"}
+{"file": "zb-skip-online-checks/build.gradle.kts", "reason": "Model build for a plain-Java preloaded mod: pz-java, pz-mod, pz-bootstrap, manifest, checkLoaderRefs exclusion"}
+{"file": "samples/zabric-java-hooks/build.gradle.kts", "reason": "zabric-processor as javac processor with its -A options"}
+{"file": "buildSrc/src/main/kotlin/pz-feature.gradle.kts", "reason": "widenCompileJars wiring to move into a shared convention plugin"}
+{"file": "tunnel/src/main/kotlin/com/dont39/pz/tunnel/TunnelClient.kt", "reason": "Blocking tunnel open in UdpEngine.Connect and its OnConnectFailed stop (D8, AC4b)"}

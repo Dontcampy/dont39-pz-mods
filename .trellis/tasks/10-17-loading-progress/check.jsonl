@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and forbidden patterns"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Glue/listing compatibility and weave tests for the Zabric change"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Premain/preLaunch rules the Zabric change must keep"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Mismatch handling in the progress mod"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines and prefixes"}
+{"file": ".trellis/tasks/10-17-loading-progress/research/design-inputs.md", "reason": "Risks to recheck: thread and frame rules, fonts, useUiFbo, handler signatures"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "New module and convention plugin layout"}
