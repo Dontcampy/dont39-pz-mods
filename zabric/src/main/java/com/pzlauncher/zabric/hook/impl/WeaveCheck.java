@@ -22,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The loader drops a target's patches without an error when ByteBuddy or the JVM rejects them, so this read-only
- * transformer, last in the chain, looks for the {@code GETSTATIC <glue>.MOD} every inlined advice contains.
+ * transformer, last in the chain, looks for the {@code GETSTATIC <glue>.MOD} every inlined advice contains. For mods
+ * opened at preLaunch it also checks the targets' methods, which the pass-time target check could not.
  */
 final class WeaveCheck implements ClassFileTransformer {
     private static final String MOD_FIELD = "MOD";
@@ -34,7 +35,7 @@ final class WeaveCheck implements ClassFileTransformer {
         }
     }
 
-    private record Finding(Watched watched, Throwable cause) {
+    private record Finding(Watched watched, String what, Throwable cause) {
     }
 
     // findings wait for retransformClasses: the JVM's verdict comes after the transformers
@@ -103,7 +104,7 @@ final class WeaveCheck implements ClassFileTransformer {
             retransforming.remove();
         }
         if (failed == null && check.seen) {
-            check.findings.forEach(f -> report(f.watched(), f.cause()));
+            check.findings.forEach(f -> report(f.watched(), f.what(), f.cause()));
             return;
         }
         // the class keeps its earlier bytes, without what this pass's mods added
@@ -111,7 +112,7 @@ final class WeaveCheck implements ClassFileTransformer {
                 + target.getName() + " while it was retransformed");
         for (Watched w : watched.getOrDefault(internalName, List.of())) {
             if (entering.contains(w.mod()) && w.mod().live()) {
-                report(w, cause);
+                report(w, weaving(w), cause);
             }
         }
     }
@@ -134,10 +135,10 @@ final class WeaveCheck implements ClassFileTransformer {
                 pass.seen = true;
                 pass.findings.addAll(findings);
             } else {
-                findings.forEach(f -> report(f.watched(), f.cause()));
+                findings.forEach(f -> report(f.watched(), f.what(), f.cause()));
             }
         } catch (Throwable t) {
-            hooks.stream().filter(w -> w.mod().live()).forEach(w -> report(w, t));
+            hooks.stream().filter(w -> w.mod().live()).forEach(w -> report(w, weaving(w), t));
         }
         return null;
     }
@@ -154,18 +155,34 @@ final class WeaveCheck implements ClassFileTransformer {
         if (due.isEmpty()) {
             return findings;
         }
+        String target = className.replace('/', '.');
         Map<String, Set<String>> modReads;
+        // by Watched.key(); the gate hears of a mismatch before the class is defined
+        Map<String, String> targetProblems = new HashMap<>();
         try {
             Set<String> methods = new HashSet<>();
             due.forEach(w -> methods.add(w.hook().method() + w.hook().descriptor()));
             modReads = modReads(bytes, methods);
+            for (Watched w : due) {
+                HookListing listing = w.listing();
+                // as at the pass: a named gate checks its own hook classes
+                if (w.mod().checksTargetsOnLoad() && listing.defaultGate() && !targetProblems.containsKey(w.key())) {
+                    targetProblems.put(w.key(), TargetCheck.problem(listing, target, bytes));
+                }
+            }
         } catch (Throwable t) {
-            IllegalStateException cause = new IllegalStateException("cannot read the woven bytes of "
-                    + className.replace('/', '.') + " to check them", t);
-            due.forEach(w -> findings.add(new Finding(w, cause)));
+            IllegalStateException cause = new IllegalStateException("cannot read the woven bytes of " + target
+                    + " to check them", t);
+            due.forEach(w -> findings.add(new Finding(w, weaving(w), cause)));
             return findings;
         }
         for (Watched w : due) {
+            String targetProblem = targetProblems.get(w.key());
+            if (targetProblem != null) {
+                findings.add(new Finding(w, "checking the targets of " + simpleName(w) + " in " + target,
+                        new IllegalStateException(targetProblem)));
+                continue;
+            }
             Set<String> owners = modReads.get(w.hook().method() + w.hook().descriptor());
             if (owners == null) {
                 // a missing method is a target mismatch, which the target check reports
@@ -173,8 +190,8 @@ final class WeaveCheck implements ClassFileTransformer {
             }
             String patch = internalName(w.hook().patch());
             if (owners.stream().noneMatch(owner -> patch.startsWith(owner + "$"))) {
-                findings.add(new Finding(w, new IllegalStateException(w.hook() + " runs without " + w.hook().patch()
-                        + ": " + Loader.name() + " did not weave it (its log may say why)")));
+                findings.add(new Finding(w, weaving(w), new IllegalStateException(w.hook() + " runs without "
+                        + w.hook().patch() + ": " + Loader.name() + " did not weave it (its log may say why)")));
             }
         }
         return findings;
@@ -205,13 +222,19 @@ final class WeaveCheck implements ClassFileTransformer {
         return reads;
     }
 
-    private void report(Watched w, Throwable cause) {
+    private static String weaving(Watched w) {
+        return "weaving " + simpleName(w) + " into " + w.hook().owner() + "." + w.hook().method();
+    }
+
+    private static String simpleName(Watched w) {
+        String hookClass = w.listing().hookClass();
+        return hookClass.substring(Math.max(hookClass.lastIndexOf('.'), hookClass.lastIndexOf('$')) + 1);
+    }
+
+    private void report(Watched w, String what, Throwable cause) {
         if (!reported.add(w.key())) {
             return;
         }
-        String hookClass = w.listing().hookClass();
-        String simpleName = hookClass.substring(Math.max(hookClass.lastIndexOf('.'), hookClass.lastIndexOf('$')) + 1);
-        String what = "weaving " + simpleName + " into " + w.hook().owner() + "." + w.hook().method();
         ModState mod = w.mod();
         HookGate gate;
         try {

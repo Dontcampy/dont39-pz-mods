@@ -17,10 +17,11 @@ import java.util.jar.Manifest;
 
 import static com.pzlauncher.zabric.internal.Log.PREFIX;
 
-/** The entrypoint classes a mod declares in its jar manifest, and calling them. */
+/** The entrypoint classes and hook scope a mod declares in its jar manifest, and calling the entrypoints. */
 final class Entrypoints {
-    record Declared(String preLaunch, String main) {
-        static final Declared NONE = new Declared(null, null);
+    /** {@code launchHooks}: {@link Lifecycle#HOOKS} is {@link Lifecycle#HOOKS_LAUNCH}. */
+    record Declared(String preLaunch, String main, boolean launchHooks) {
+        static final Declared NONE = new Declared(null, null, false);
     }
 
     private Entrypoints() {
@@ -56,8 +57,31 @@ final class Entrypoints {
                 return Declared.NONE;
             }
             Attributes attributes = manifest.getMainAttributes();
-            return new Declared(className(attributes, Lifecycle.PRE_LAUNCH), className(attributes, Lifecycle.MAIN));
+            return new Declared(className(attributes, Lifecycle.PRE_LAUNCH), className(attributes, Lifecycle.MAIN),
+                    launchHooks(attributes));
         }
+    }
+
+    /** Why the mod's launch-wide hooks are ignored, or null: only a mod Zabric keeps preloaded opens at preLaunch. */
+    static String launchHooksProblem(Declared declared) {
+        if (!declared.launchHooks() || declared.preLaunch() != null) {
+            return null;
+        }
+        return "its manifest has " + Lifecycle.HOOKS + ": " + Lifecycle.HOOKS_LAUNCH + " but no " + Lifecycle.PRE_LAUNCH
+                + " entrypoint, so Zabric does not keep it preloaded; ignored: its hooks run only while it is in the"
+                + " mod list";
+    }
+
+    private static boolean launchHooks(Attributes attributes) {
+        String value = attributes.getValue(Lifecycle.HOOKS);
+        if (value == null) {
+            return false;
+        }
+        if (!value.strip().equals(Lifecycle.HOOKS_LAUNCH)) {
+            throw new IllegalStateException("its manifest has " + Lifecycle.HOOKS + ": '" + value + "'; the only value"
+                    + " is " + Lifecycle.HOOKS_LAUNCH);
+        }
+        return true;
     }
 
     private static String className(Attributes attributes, String name) {

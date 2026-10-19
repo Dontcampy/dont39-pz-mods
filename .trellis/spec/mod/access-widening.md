@@ -42,7 +42,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages
   elsewhere name it through `Loader.name()`.
 - Premain and preLaunch code touches no game class and logs nothing: the classes it widens are not loaded yet, and the
-  game's log is not up. Outcomes are reported at MAIN.
+  game's log is not up. Outcomes are reported at MAIN; the hook runtime holds its lines until then
+  (`HookRuntime.releaseLog`).
 - Its hooks run inside code every mod depends on (the game's `main`, ZombieBuddy's `loadMods`): they never throw out,
   and a failure stops the whole lifecycle for the session instead of running part of it (`entrypoint/Lifecycle.java`).
 - It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`).
@@ -58,6 +59,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - Order within a phase is undefined: no entrypoint may assume another mod's entrypoint of that phase has run.
   Class-path dependencies are a separate matter ([Loading](./zombiebuddy-patching.md#loading)).
 - Mods without entrypoints are left alone: mods that use only ZombieBuddy load as without Zabric.
+- The hooks of a mod Zabric keeps preloaded open at preLaunch (`HookRuntime.preLaunch`), so their targets are checked
+  from class bytes as each loads (`WeaveCheck`, `TargetCheck`), never by loading them. From the first pass they follow
+  the mod list, unless the manifest's `Zabric-Hooks: launch` keeps them open on every pass: for client-side UI only
+  (`Lifecycle`, author contract in `zabric/mod/workshop/workshop.txt`).
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.

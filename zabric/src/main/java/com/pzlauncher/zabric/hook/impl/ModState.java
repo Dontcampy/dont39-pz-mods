@@ -11,10 +11,15 @@ final class ModState implements ModHooks {
     private final String modId;
     private final HookGate defaultGate = new DefaultGate();
     private boolean inPass;
-    // until the pass-time weave check: hooks must not run on unchecked targets
+    // opened at preLaunch: until the first pass the mod list has not been read
+    private boolean preLaunchOpen;
+    private boolean launchWide;
+    // until the weave check: hooks must not run on unchecked targets
     private boolean held;
     private boolean stopped;
     private boolean checked;
+    // opened before the game loaded its targets, so they are checked from their bytes as they load
+    private volatile boolean checksTargetsOnLoad;
     private volatile List<HookListing> listings = List.of();
     // read on every hooked call, from any thread
     private volatile boolean open;
@@ -75,14 +80,26 @@ final class ModState implements ModHooks {
         return true;
     }
 
+    synchronized void openAtPreLaunch(boolean launchWide) {
+        preLaunchOpen = true;
+        this.launchWide = launchWide;
+        checksTargetsOnLoad = true;
+        held = true;
+        update();
+    }
+
+    /** Whether the mod enters held, for a weave check before it opens. */
     synchronized boolean enterPass() {
-        boolean entering = !inPass;
-        if (entering) {
-            inPass = true;
-            held = true;
-            update();
+        boolean wasOpen = open;
+        preLaunchOpen = false;
+        if (inPass) {
+            return false;
         }
-        return entering;
+        inPass = true;
+        // open since preLaunch: its targets were checked as they loaded
+        held = !wasOpen;
+        update();
+        return held;
     }
 
     synchronized void release() {
@@ -93,11 +110,27 @@ final class ModState implements ModHooks {
     synchronized void leavePass() {
         inPass = false;
         held = false;
+        preLaunchOpen = false;
         update();
     }
 
+    /** Closes the mod for good, also launch-wide; whether it was open since preLaunch. */
+    synchronized boolean close() {
+        boolean sincePreLaunch = open && (preLaunchOpen || launchWide);
+        inPass = false;
+        held = false;
+        preLaunchOpen = false;
+        launchWide = false;
+        update();
+        return sincePreLaunch;
+    }
+
     synchronized boolean live() {
-        return inPass && !stopped;
+        return member() && !stopped;
+    }
+
+    boolean checksTargetsOnLoad() {
+        return checksTargetsOnLoad;
     }
 
     List<HookListing> listings() {
@@ -115,8 +148,12 @@ final class ModState implements ModHooks {
         return first;
     }
 
+    private boolean member() {
+        return inPass || preLaunchOpen || launchWide;
+    }
+
     private void update() {
-        open = inPass && !held && !stopped;
+        open = member() && !held && !stopped;
     }
 
     private final class DefaultGate implements HookGate {

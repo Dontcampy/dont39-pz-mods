@@ -10,10 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -175,6 +179,84 @@ class HookRuntimeTest {
         assertEquals(List.of("error [Zabric] rt-broken: hooks stopped: cannot read the hook listings in " + jar
                 + ": java.lang.IllegalArgumentException: " + jar + "!/META-INF/zabric/hooks/a.Hooks.txt: the first"
                 + " line is not 'zabric-hooks v1'"), log.lines());
+    }
+
+    private static void preLaunch(Map<String, List<Path>> jarsByMod, Set<String> launchWide) {
+        HookRuntime.preLaunch(jarsByMod, launchWide, LOADER, Weaving.instrumentation());
+    }
+
+    @Test
+    void preLaunchOpensBeforeTheFirstPassThenOnlyLaunchWideModsStayOpenWithoutTheList() {
+        ModHooks plain = ZabricHooks.mod("rt-pre-plain");
+        ModHooks wide = ZabricHooks.mod("rt-pre-wide");
+        preLaunch(Map.of("rt-pre-plain", List.of(), "rt-pre-wide", List.of()), Set.of("rt-pre-wide"));
+        assertTrue(plain.open(), "before the first pass");
+        assertTrue(wide.open(), "before the first pass");
+        pass(Map.of("rt-other", List.of()), LOADER);
+        assertFalse(plain.open(), "plain: the pass lacks it");
+        assertTrue(wide.open(), "launch-wide: the pass lacks it");
+        pass(Map.of("rt-pre-plain", List.of(), "rt-pre-wide", List.of()), LOADER);
+        assertTrue(plain.open());
+        assertTrue(wide.open());
+        pass(Map.of(), LOADER);
+        assertFalse(plain.open());
+        assertTrue(wide.open());
+        assertEquals(List.of("rt-pre-wide"), HookRuntime.closeAll());
+        assertFalse(wide.open(), "a lifecycle stop closes launch-wide hooks");
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of(), log.lines());
+    }
+
+    @Test
+    void aStopBeforeTheFirstPassClosesAndNamesTheModsOpenSincePreLaunch() {
+        ModHooks mod = ZabricHooks.mod("rt-pre-stop");
+        preLaunch(Map.of("rt-pre-stop", List.of()), Set.of());
+        assertTrue(mod.open());
+        assertTrue(HookRuntime.closeAll().contains("rt-pre-stop"));
+        assertFalse(mod.open());
+        HookRuntime.releaseLog(log);
+    }
+
+    @Test
+    void whatPreLaunchLogsIsHeldUntilReleasedThenLoggedOnceInOrder() throws IOException {
+        Path jar = Listings.jar(dir, "held.jar", "a.Hooks", Listings.text("rt-held-bad", "default", "no.such.Patch",
+                "no.such.Target m ()V"));
+        preLaunch(Map.of("rt-held", List.of(), "rt-held-bad", List.of(jar)), Set.of("rt-held-bad"));
+        ModHooks mod = ZabricHooks.mod("rt-held");
+        ModHooks bad = ZabricHooks.mod("rt-held-bad");
+        assertTrue(bad.open(), "its target classes are looked up at the first pass");
+        assertTrue(mod.open());
+        mod.failed(mod.defaultGate(), WHAT, new IllegalStateException("first"));
+        pass(Map.of(), LOADER);
+        assertFalse(bad.open(), "a missing class stops the mod at the first pass, also one that lacks it");
+        assertEquals(List.of(), log.lines(), "held until the game's log is up");
+
+        HookRuntime.releaseLog(log);
+        mod.failed(mod.defaultGate(), WHAT, new IllegalStateException("second"));
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("error [Zabric] rt-held: hooks stopped after an error while " + WHAT
+                        + " | java.lang.IllegalStateException: first",
+                "error [Zabric] rt-held-bad: hooks stopped: the targets of a.Hooks (" + jar
+                        + "!/META-INF/zabric/hooks/a.Hooks.txt) do not match: its patch class no.such.Patch is not"
+                        + " there; class no.such.Target is not there",
+                "error [Zabric] rt-held: hooks stopped; then an error while " + WHAT
+                        + " | java.lang.IllegalStateException: second"), log.lines());
+    }
+
+    @Test
+    void aTargetClassInAJarOfTheFirstPassIsThere() throws IOException {
+        Path classes = dir.resolve("classes");
+        Files.createDirectories(classes.resolve("later"));
+        Files.write(classes.resolve("later/Target.class"), new byte[0]);
+        Path jar = Listings.jar(dir, "later.jar", "a.Hooks", Listings.text("rt-later", "default", PATCH,
+                "later.Target m ()V"));
+        preLaunch(Map.of("rt-later", List.of(jar)), Set.of("rt-later"));
+        try (URLClassLoader withLater = new URLClassLoader(new URL[] {classes.toUri().toURL()}, LOADER)) {
+            pass(Map.of(), withLater);
+        }
+        assertTrue(ZabricHooks.mod("rt-later").open());
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("info [Zabric] rt-later: hooks ready (1 hook class)"), log.lines());
     }
 
     private static final class Gate implements HookGate {

@@ -5,6 +5,8 @@ import com.pzlauncher.zabric.hook.ModHooks;
 import com.pzlauncher.zabric.hook.ZabricHooks;
 import com.pzlauncher.zabric.hook.check.CheckGate;
 import com.pzlauncher.zabric.hook.check.Loaded;
+import com.pzlauncher.zabric.hook.check.PreLaunchHits;
+import com.pzlauncher.zabric.hook.check.PreLoaded;
 import com.pzlauncher.zabric.hook.weave.Weaving;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -17,12 +19,16 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class WeaveCheckTest {
     private static final ClassLoader LOADER = WeaveCheckTest.class.getClassLoader();
     private static final String CHECK = "com.pzlauncher.zabric.hook.check";
+    private static final String PRE_LAUNCH_PATCH = CHECK + ".prelaunch.PreLaunchGlue$PreLaunchGood_twice";
 
     @TempDir
     Path dir;
@@ -53,6 +60,8 @@ class WeaveCheckTest {
         }
         Weaving.weave(CHECK + ".rejected");
         Weaving.weave(CHECK + ".late");
+        Weaving.weave(CHECK + ".prelaunch");
+        new PreLoaded().value(0);
     }
 
     @BeforeEach
@@ -152,6 +161,76 @@ class WeaveCheckTest {
         assertEquals(List.of("info [Zabric] check-late: hooks ready (2 hook classes)"), log.lines());
     }
 
+    @Test
+    void aModOpenedAtPreLaunchRunsItsHooksBeforeTheFirstPass() throws Exception {
+        String good = CHECK + ".PreLaunchGood";
+        Path jar = Listings.jar(dir, "pre.jar", "a.PreHooks", Listings.text("check-prelaunch", "default",
+                PRE_LAUNCH_PATCH, good + " twice (I)I"));
+        ModHooks mod = ZabricHooks.mod("check-prelaunch");
+        try (URLClassLoader targets = targetLoader(good, "twice")) {
+            HookRuntime.preLaunch(Map.of("check-prelaunch", List.of(jar)), Set.of(), targets,
+                    Weaving.instrumentation());
+            assertTrue(mod.open(), "before the first pass");
+            Class<?> goodClass = targets.loadClass(good);
+            int hits = PreLaunchHits.HITS.get();
+            goodClass.getMethod("twice", int.class).invoke(goodClass.getConstructor().newInstance(), 1);
+            assertEquals(hits + 1, PreLaunchHits.HITS.get(), "the target loaded after preLaunch runs the hook");
+            try (OpenProbe probe = new OpenProbe(good, "check-prelaunch")) {
+                HookRuntime.passProcessed(Map.of("check-prelaunch", List.of(jar)), targets,
+                        Weaving.instrumentation());
+                assertEquals(List.of(), probe.seen, "open since preLaunch, its target checked as it loaded: not held");
+            }
+        }
+        assertTrue(mod.open());
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("info [Zabric] check-prelaunch: hooks ready (1 hook class)"), log.lines(),
+                "once its target classes were found at the first pass");
+        pass(Map.of());
+        assertFalse(mod.open(), "a plain mod follows the mod list from the first pass");
+    }
+
+    @Test
+    void aTargetMethodMissingWhenItsClassLoadsStopsTheModBeforeTheClassIsDefined() throws Exception {
+        String missing = CHECK + ".PreLaunchMissing";
+        Path jar = Listings.jar(dir, "missing.jar", "a.MissingHooks", Listings.text("check-pre-missing", "default",
+                PRE_LAUNCH_PATCH, missing + " nope (I)I", missing + " count (J)J"));
+        ModHooks mod = ZabricHooks.mod("check-pre-missing");
+        try (URLClassLoader targets = targetLoader(missing, "count")) {
+            HookRuntime.preLaunch(Map.of("check-pre-missing", List.of(jar)), Set.of("check-pre-missing"), targets,
+                    Weaving.instrumentation());
+            assertTrue(mod.open(), "before its target loads");
+            try (OpenProbe probe = new OpenProbe(missing, "check-pre-missing")) {
+                targets.loadClass(missing);
+                assertEquals(List.of(false), probe.seen, "stopped before the class is defined");
+            }
+        }
+        assertFalse(mod.open(), "launch-wide hooks stop too");
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("error [Zabric] check-pre-missing: hooks stopped after an error while checking the"
+                        + " targets of MissingHooks in " + missing + " | java.lang.IllegalStateException: the targets of"
+                        + " a.MissingHooks (" + jar + "!/META-INF/zabric/hooks/a.MissingHooks.txt) do not match: "
+                        + missing + " has no method nope; " + missing + " has no count(J)J (it has count(I)I)"),
+                log.lines());
+    }
+
+    @Test
+    void aTargetLoadedBeforePreLaunchIsCheckedWhileTheModIsHeld() throws IOException {
+        String preLoaded = PreLoaded.class.getName();
+        Path jar = Listings.jar(dir, "preloaded.jar", "a.PreLoadedHooks", Listings.text("check-pre-loaded",
+                "default", PRE_LAUNCH_PATCH, preLoaded + " nope (I)I"));
+        try (OpenProbe probe = new OpenProbe(preLoaded, "check-pre-loaded")) {
+            HookRuntime.preLaunch(Map.of("check-pre-loaded", List.of(jar)), Set.of(), LOADER,
+                    Weaving.instrumentation());
+            assertEquals(List.of(false), probe.seen, "closed while its loaded target is checked");
+        }
+        assertFalse(ZabricHooks.mod("check-pre-loaded").open(), "never opened");
+        HookRuntime.releaseLog(log);
+        assertEquals(List.of("error [Zabric] check-pre-loaded: hooks stopped after an error while checking the targets"
+                + " of PreLoadedHooks in " + preLoaded + " | java.lang.IllegalStateException: the targets of"
+                + " a.PreLoadedHooks (" + jar + "!/META-INF/zabric/hooks/a.PreLoadedHooks.txt) do not match: "
+                + preLoaded + " has no method nope"), log.lines());
+    }
+
     // shows the order of gate failures among the runtime's lines
     public static final class LoggingGate implements HookGate {
         public static final LoggingGate INSTANCE = new LoggingGate();
@@ -223,6 +302,19 @@ class WeaveCheckTest {
                 .defineMethod(method, int.class, Visibility.PUBLIC).withParameters(int.class)
                 .intercept(FixedValue.value(0))
                 .make().load(LOADER, ClassLoadingStrategy.Default.WRAPPER).getLoaded();
+    }
+
+    // int method(int) in a class file under dir, so that the class is there before it loads
+    private URLClassLoader targetLoader(String className, String method) throws IOException {
+        byte[] bytes = new ByteBuddy().subclass(Object.class).name(className)
+                .defineMethod(method, int.class, Visibility.PUBLIC).withParameters(int.class)
+                .intercept(FixedValue.value(0))
+                .make().getBytes();
+        Path classes = dir.resolve("classes");
+        Path file = classes.resolve(className.replace('.', '/') + ".class");
+        Files.createDirectories(file.getParent());
+        Files.write(file, bytes);
+        return new URLClassLoader(new URL[] {classes.toUri().toURL()}, LOADER);
     }
 
     private static boolean loaded(String className) {

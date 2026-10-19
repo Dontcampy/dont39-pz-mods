@@ -24,11 +24,19 @@ import static com.pzlauncher.zabric.internal.Log.PREFIX;
  * keeps a mod with a preLaunch entrypoint preloaded. The mod id is the one the loader recorded for the jar, so a jar
  * cannot speak for another mod. Jars without these attributes are left alone. Order within a phase is undefined.
  * <p>
- * A pass's hooks open before its main entrypoints run, so those see their gates' state ({@link HookRuntime}).
+ * The hooks of a mod preloaded with a preLaunch entrypoint open once the preLaunch entrypoints have run and act until
+ * the first pass; from then on they follow the mod list, or stay open on every pass when the mod declares
+ * {@link #HOOKS}: {@link #HOOKS_LAUNCH}. Other mods' hooks open with the first pass that lists them. A pass's hooks
+ * open before its main entrypoints run, so those see their gates' state ({@link HookRuntime}). A lifecycle stop
+ * closes them all.
  */
 public final class Lifecycle {
     public static final String PRE_LAUNCH = "Zabric-PreLaunch";
     public static final String MAIN = "Zabric-Main";
+    /** The scope of the mod's hooks; its one value is {@link #HOOKS_LAUNCH}. */
+    public static final String HOOKS = "Zabric-Hooks";
+    /** Hooks open for the whole launch, also on passes whose mod list lacks the mod; for client-side UI only. */
+    public static final String HOOKS_LAUNCH = "launch";
 
     /** A preLaunch entrypoint called, or a preloaded jar whose manifest could not be read ({@code className} null). */
     private record Called(String modId, String className, Throwable error) {
@@ -48,6 +56,7 @@ public final class Lifecycle {
     private static boolean stopped;
     private static final Set<String> registered = new HashSet<>();
     private static final Set<String> mainCalled = new HashSet<>();
+    private static final Set<String> hooksReported = new HashSet<>();
 
     private Lifecycle() {
     }
@@ -79,6 +88,8 @@ public final class Lifecycle {
             return;
         }
         try {
+            Map<String, List<Path>> hooked = new LinkedHashMap<>();
+            Set<String> launchWide = new HashSet<>();
             for (Loader.ModJar jar : Loader.preloadedJars()) {
                 Declared declared;
                 try {
@@ -92,7 +103,14 @@ public final class Lifecycle {
                     preLaunchCalls.add(new Called(jar.modId(), declared.preLaunch(),
                             Entrypoints.call(declared.preLaunch(), PreLaunchEntrypoint.class,
                                     PreLaunchEntrypoint::onPreLaunch)));
+                    hooked.computeIfAbsent(jar.modId(), k -> new ArrayList<>()).add(jar.jar());
+                    if (declared.launchHooks()) {
+                        launchWide.add(jar.modId());
+                    }
                 }
+            }
+            if (!hooked.isEmpty()) {
+                HookRuntime.preLaunch(hooked, launchWide, ClassLoader.getSystemClassLoader(), instrumentation);
             }
         } catch (Throwable t) {
             failure = "the preLaunch phase failed: " + t;
@@ -136,7 +154,7 @@ public final class Lifecycle {
                 // what escaped may be stop() itself, after it marked the session stopped
                 stopped = true;
                 DebugType.Mod.printException(escaped, PREFIX + "entrypoints: stopped for this session: an earlier main"
-                        + " phase failed: " + escaped, LogSeverity.Error);
+                        + " phase failed: " + escaped + closeHooks(), LogSeverity.Error);
             }
             start();
             if (stopped) {
@@ -146,9 +164,8 @@ public final class Lifecycle {
             if (!zabricLoaded) {
                 // the player denied Zabric, or the loader skipped it: its preloaded hooks must not act for it
                 stopped = true;
-                HookRuntime.closeAll();
-                DebugType.Mod.warn(PREFIX + "entrypoints: not run this session: %s did not approve and load Zabric",
-                        Loader.name());
+                DebugType.Mod.warn(PREFIX + "entrypoints: not run this session: %s did not approve and load Zabric%s",
+                        Loader.name(), closeHooks());
                 return;
             }
             Map<String, List<Path>> loaded = byMod(Loader.loadedThisPass(pass));
@@ -161,6 +178,10 @@ public final class Lifecycle {
 
     private static void load(String modId, List<Path> jars) {
         Declared declared = Entrypoints.declared(modId, jars);
+        String hooksProblem = Entrypoints.launchHooksProblem(declared);
+        if (hooksProblem != null && hooksReported.add(modId)) {
+            DebugType.Mod.error(PREFIX + "%s: %s", modId, hooksProblem);
+        }
         if (declared.preLaunch() != null && registered.add(modId)) {
             Preload.register(modId, preLaunched.contains(modId));
         }
@@ -173,12 +194,20 @@ public final class Lifecycle {
         }
     }
 
-    // what premain and preLaunch found, once the game's log is up
+    // what premain and preLaunch found, once the game's log is up; then what the hooks held since preLaunch
     private static void start() {
         if (started) {
             return;
         }
         started = true;
+        try {
+            report();
+        } finally {
+            HookRuntime.releaseLog();
+        }
+    }
+
+    private static void report() {
         if (failure == null && PreLaunchHook.problem() != null) {
             failure = "its preLaunch hook failed: " + PreLaunchHook.problem();
             failureError = PreLaunchHook.error();
@@ -210,14 +239,21 @@ public final class Lifecycle {
             return;
         }
         stopped = true;
-        HookRuntime.closeAll();
+        String hooks = closeHooks();
         String versions = Loader.name() + " " + Loader.version() + ", game " + gameVersion();
         if (error != null) {
-            DebugType.Mod.printException(error, PREFIX + "entrypoints: stopped for this session: " + why + " ("
-                    + versions + ")", LogSeverity.Error);
+            DebugType.Mod.printException(error, PREFIX + "entrypoints: stopped for this session: " + why + hooks
+                    + " (" + versions + ")", LogSeverity.Error);
         } else {
-            DebugType.Mod.error(PREFIX + "entrypoints: stopped for this session: %s (%s)", why, versions);
+            DebugType.Mod.error(PREFIX + "entrypoints: stopped for this session: %s%s (%s)", why, hooks, versions);
         }
+    }
+
+    // hooks opened at preLaunch acted before the stop was found
+    private static String closeHooks() {
+        List<String> sincePreLaunch = HookRuntime.closeAll();
+        return sincePreLaunch.isEmpty() ? "" : "; the hooks of " + String.join(", ", sincePreLaunch)
+                + " ran from game start until now";
     }
 
     private static void failed(Throwable t, String phase, String modId, String className) {

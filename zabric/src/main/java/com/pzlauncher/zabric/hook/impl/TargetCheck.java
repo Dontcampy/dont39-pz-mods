@@ -2,6 +2,10 @@ package com.pzlauncher.zabric.hook.impl;
 
 import com.pzlauncher.zabric.hook.impl.HookListing.Hook;
 import com.pzlauncher.zabric.internal.Jars;
+import net.bytebuddy.jar.asm.ClassReader;
+import net.bytebuddy.jar.asm.ClassVisitor;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.utility.OpenedClassReader;
 
 import java.io.IOException;
 import java.lang.invoke.MethodType;
@@ -10,7 +14,9 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Whether the classes and methods a listing names are there at runtime as the hook class was compiled against. */
 final class TargetCheck {
@@ -71,7 +77,7 @@ final class TargetCheck {
             try {
                 Class.forName(patch, false, loader);
             } catch (ClassNotFoundException e) {
-                wrong.add("its patch class " + patch + " is not there");
+                wrong.add(patchMissing(patch));
             } catch (LinkageError e) {
                 wrong.add("its patch class " + patch + " cannot be loaded: " + e);
             }
@@ -79,9 +85,9 @@ final class TargetCheck {
         for (Hook hook : listing.hooks()) {
             String why;
             try {
-                why = missing(Class.forName(hook.owner(), false, loader), hook);
+                why = missing(hook, descriptors(Class.forName(hook.owner(), false, loader), hook));
             } catch (ClassNotFoundException e) {
-                why = "class " + hook.owner() + " is not there";
+                why = classMissing(hook);
             } catch (LinkageError e) {
                 why = "cannot load " + hook.owner() + " or read its methods: " + e;
             }
@@ -89,11 +95,73 @@ final class TargetCheck {
                 wrong.add(why);
             }
         }
+        return mismatch(listing, wrong);
+    }
+
+    /**
+     * The classes of {@link #problem(HookListing, ClassLoader)}, by their class files only: a class loaded here could
+     * load before the game loads it. Methods are checked by {@link #problem(HookListing, String, byte[])} as each
+     * target loads.
+     */
+    static String presenceProblem(HookListing listing, ClassLoader loader) {
+        List<String> wrong = new ArrayList<>();
+        for (String patch : listing.patches()) {
+            if (!present(patch, loader)) {
+                wrong.add(patchMissing(patch));
+            }
+        }
+        for (Hook hook : listing.hooks()) {
+            if (!present(hook.owner(), loader)) {
+                wrong.add(classMissing(hook));
+            }
+        }
+        return mismatch(listing, wrong);
+    }
+
+    /** The methods of {@link #problem(HookListing, ClassLoader)} for the hooks on {@code owner}, from its bytes. */
+    static String problem(HookListing listing, String owner, byte[] bytes) {
+        Map<String, List<String>> byName = new HashMap<>();
+        OpenedClassReader.of(bytes).accept(new ClassVisitor(OpenedClassReader.ASM_API) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature,
+                                             String[] exceptions) {
+                // reflection does not list the static initializer either
+                if (!name.equals("<clinit>")) {
+                    byName.computeIfAbsent(name, k -> new ArrayList<>()).add(descriptor);
+                }
+                return null;
+            }
+        }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        List<String> wrong = new ArrayList<>();
+        for (Hook hook : listing.hooks()) {
+            if (hook.owner().equals(owner)) {
+                String why = missing(hook, byName.getOrDefault(hook.method(), List.of()));
+                if (why != null) {
+                    wrong.add(why);
+                }
+            }
+        }
+        return mismatch(listing, wrong);
+    }
+
+    private static boolean present(String binaryName, ClassLoader loader) {
+        return loader.getResource(binaryName.replace('.', '/') + ".class") != null;
+    }
+
+    private static String patchMissing(String patch) {
+        return "its patch class " + patch + " is not there";
+    }
+
+    private static String classMissing(Hook hook) {
+        return "class " + hook.owner() + " is not there";
+    }
+
+    private static String mismatch(HookListing listing, List<String> wrong) {
         return wrong.isEmpty() ? null : "the targets of " + listing.hookClass() + " (" + listing.source()
                 + ") do not match: " + String.join("; ", wrong);
     }
 
-    private static String missing(Class<?> owner, Hook hook) {
+    private static List<String> descriptors(Class<?> owner, Hook hook) {
         List<String> same = new ArrayList<>();
         if (hook.method().equals("<init>")) {
             for (Constructor<?> c : owner.getDeclaredConstructors()) {
@@ -107,6 +175,11 @@ final class TargetCheck {
                 }
             }
         }
+        return same;
+    }
+
+    // same: the descriptors of the owner's methods of the hook's name
+    private static String missing(Hook hook, List<String> same) {
         if (same.contains(hook.descriptor())) {
             return null;
         }

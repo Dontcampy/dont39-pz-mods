@@ -37,6 +37,10 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers
   together; a change old readers must understand takes a new header version.
+- Hooks open with the first pass that lists the mod; a mod Zabric keeps preloaded opens at preLaunch, before the game
+  loads its targets, with the byte-based target check and held log lines
+  ([Access Widening](./access-widening.md#entrypoints-and-preload-registration)). For such a mod ZombieBuddy loads the
+  types in the glue's advice signatures at premain (target argument and return types, the target with `@Self`).
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.
