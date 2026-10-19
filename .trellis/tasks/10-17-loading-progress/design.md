@@ -82,10 +82,10 @@ unchanged.
   `pz-feature` and this module both apply (`widening/WidenJars` already holds the task); the mod jar ships the list
   where Zabric reads it at game start (`META-INF/zabric`, as `dont39-all-in-one` puts its merged list).
 - `checkLoaderRefs` excludes only the glue in the root package, as `zb-skip-online-checks` excludes its root.
-- Smoke tests: `GameSmokeTest` and `ServerSmokeTest` (`buildSrc/.../smoke/`) are registered by `dont39-all-in-one`
-  and `zb-kt` with their own inputs. This module registers its own `smokeTest` (reaches the menu, the mod's `hooks
-  ready` and main lines, no error) and `serverSmokeTest` (the jar preloaded, the client-only line, no error); inputs
-  only those modules need (Kotlin versions, features) become optional rather than copied.
+- Smoke test: `GameSmokeTest` (`buildSrc/.../smoke/`) is registered by `dont39-all-in-one` with its own inputs. This
+  module registers its own `smokeTest` (reaches the menu, the mod's `hooks ready` and main lines, no error); inputs
+  only the All-in-One needs (Kotlin versions, features) become optional rather than copied. No `serverSmokeTest`: a
+  client-only mod.
 
 ### Flows and steps
 

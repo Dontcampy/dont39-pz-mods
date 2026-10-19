@@ -127,10 +127,10 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
 - AC6 (R9): text is Chinese with the game in Chinese and English with the game in English.
 - AC7 (R8): launch → menu and join → first in-world frame are each at most 5 % slower than without the mod (two runs
   each, same mod list, same session).
-- AC8 (R10, R11): `serverSmokeTest` with the jar preloaded logs the client-only line and no error; a forced mismatch
-  (test build with a wrong target) is reported once and the game reaches the menu.
-- AC9: build gate passes (`./gradlew build assembleMod`, `smokeTest` and `serverSmokeTest` with the mod included);
-  specs updated.
+- AC8 (R11): a forced mismatch (test build with a wrong target) is reported once and the game reaches the menu. R10
+  has no server test (2026-10-19: client-only mod); review checks that every hook and the drawing sit behind the
+  client-only gate.
+- AC9: build gate passes (`./gradlew build assembleMod`, the mod's `smokeTest`); specs updated.
 
 ## Out of Scope
 

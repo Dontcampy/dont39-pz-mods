@@ -33,7 +33,7 @@ refactor; go by the symbols in `design.md`.
      `zabric-processor` as javac processor with the two `-A` options from `pzMod`, manifest attributes
      (`ZB-Preload`, `Zabric-PreLaunch`, `Zabric-Main`, `Zabric-Hooks: launch`), the `.classtweaker` into
      `META-INF/zabric`, `checkLoaderRefs` exclusion for the glue; `settings.gradle.kts`;
-   - `smokeTest` and `serverSmokeTest` registrations; make the inputs only the existing callers need optional.
+   - `smokeTest` registration; make the `GameSmokeTest` inputs only the All-in-One needs optional.
 9. `mod/42/mod.info`, `poster.png`, `mod/workshop/preview.png`, `workshop.txt` (EN + CN), README, `.classtweaker`.
 10. `progress` (flows, steps, state), `text` (EN/CN tables), `draw` (overlay at `EndFrameUI` HEAD, `FramePump`),
     `hooks` (boundaries and per-item triggers from design; javap descriptors from DI B5), `entrypoint`.
@@ -45,8 +45,8 @@ refactor; go by the symbols in `design.md`.
 ## Validation
 
 - `./gradlew build assembleMod` (incl. `:zabric:test`, `:dont39-all-in-one:checkGlue`),
-  `:loading-progress:smokeTest`, `:loading-progress:serverSmokeTest` (AC8), and the existing `smokeTest` /
-  `serverSmokeTest` of `dont39-all-in-one` / `zb-kt` (the widening and smoke-test changes touch them).
+  `:loading-progress:smokeTest`, and `:dont39-all-in-one:smokeTest` (the widening and `GameSmokeTest` changes touch
+  it).
 - Check the jar: glue and listings in the root package, manifest attributes, jar under `media/java/client`, no game
   types in handler signatures (AC2).
 - In game (deploy Zabric and the mod locally, launch twice: the first registers the preload):
