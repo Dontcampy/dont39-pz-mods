@@ -85,6 +85,10 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   n / N (D2).
 - D14 (2026-10-19): interim frames work without OpenGL 4.5 direct state access (bind-based copy with saved and restored
   bindings); no capability switches them off. A GL error is a mismatch and stops the mod with its report.
+- D15 (2026-10-20, replaces D13's sub-bar and lines 1 and 2): under the main bar (step n / N), a log of as many
+  lines as fit between the bar and the vanilla loading screen's own content (~12 at 1080p, ~20 at 4K): one per step change and one per item (mod, script file, Lua file, Java mod, texture pack, event), the newest
+  at the bottom, older lines fading by position and dropped by count, never by time. Interim frames animate trailing
+  dots on the newest line while the heartbeat moves.
 
 ## Requirements
 
