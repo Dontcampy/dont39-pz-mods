@@ -26,8 +26,7 @@ The docs do not cover every annotation option or loader rule. The source is auth
 
 When the docs and the source disagree, trust the source (see the package rule below).
 
-After a ZombieBuddy update, recheck its `Watermark.java` against what `loading-progress` assumes of it: the layout
-`Overlay.watermarkBottom` replays, and the Small font it draws with, which `FramePump` waits for.
+After a ZombieBuddy update, recheck its `Watermark.java` against `loading-progress` (`Overlay`, `FramePump`).
 
 ---
 
@@ -83,8 +82,7 @@ What is not behind the seam and needs rework when switching loaders:
   `server/`, so it loads on clients and dedicated servers (ModdingGuide "Client/server JAR paths";
   `JavaModInfo.validateAndCreate` has the check, though ZombieBuddy 2.3.4 on the user's Linux server loaded a
   `client/` jar anyway: do not rely on either behavior). A client-only feature therefore goes idle on a server in
-  `problem()` (`ImeKeyboardFix.kt`). A client-only mod of its own may put its jar under `media/java/client/`
-  (`pzMod.jarFolder`) and still checks `GameServer.server` (`Loading.java` in `loading-progress`).
+  `problem()` (`ImeKeyboardFix.kt`); a client-only mod with a `client/` jar checks it too (`pzMod.jarFolder`).
 - Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
   calls each feature's `init()` through the generated `initFeatures()` (`GenerateFeatureInit` in `FeatureInfo.kt`);
   `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy runs one as its own entry point.
@@ -204,10 +202,7 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
 - Read main-thread state once into a local on the render thread (`ImeWindow.kt`).
 - Win32 calls on the game window run on the thread that calls `Display.processMessages()`, including their undo
   (`ImeWindow.kt`).
-- GL outside the game's frames (render thread, between its swaps) creates its own objects, reads back every binding
-  and state it changes and writes it back exactly, and leaves the game's cached state (`GLStateRenderThread`,
-  `Texture.lastTextureID`) alone; the game's drawing calls feed the game thread's frame and are not used there. It
-  needs no GL version past what the game uses (no direct state access), handles a multisampled window, and a GL error
-  after it is a mismatch that stops the mod (`Interim.java` in `loading-progress`).
+- GL outside the game's frames restores every state it changes and leaves the game's cached GL state alone
+  (`Interim.java` in `loading-progress`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on. Know how often the patched method is called before adding work to it.

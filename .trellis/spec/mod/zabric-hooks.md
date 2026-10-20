@@ -33,27 +33,18 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   drops advice that fails verification without an error, so before release only a weave test catches it.
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
-- A class that loads while a transformer of the agent runs on the same thread passes every transformer of the agent by:
-  ZombieBuddy's patches, the access widener and the weave check. ZombieBuddy loads such classes when it describes a
-  retransformed class by reflection, so before Zabric retransforms a target it loads the target's member types, and at
-  each pass it retransforms the targets the weave check has not seen load (`WeaveCheck.java`).
+- A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
+  weave check); Zabric loads a target's member types before retransforming it (`WeaveCheck.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers
   together; a change old readers must understand takes a new header version.
-- Hooks open with the first pass that lists the mod; a mod Zabric keeps preloaded opens at preLaunch, before the game
-  loads its targets, with the byte-based target check and held log lines
-  ([Access Widening](./access-widening.md#entrypoints-and-preload-registration)). For such a mod ZombieBuddy loads the
-  types in the glue's advice signatures at premain (target argument and return types, the target with `@Self`). The
-  glue binds every argument of a hooked method, whatever its handlers bind, so a preloaded mod that leaves game classes
-  to the game hooks only methods whose signatures name JDK types; `checkJdkGlue` (`CheckJdkGlue.kt`) enforces it
-  (`loading-progress`).
+- A preloaded mod's glue names only JDK types: ZombieBuddy loads advice signature types at premain, and the glue binds
+  every argument of a hooked method (`CheckJdkGlue.kt`).
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
-- `RETURN` and `FINALLY` handlers run for every call whose `HEAD` found the hooks open, also when they closed or stopped
-  during the call, so that `FINALLY` can undo what `HEAD` did (`WeaveTest.exitPairsWithItsCallsEnter`). An exit
-  handler of a long-running target that moves state other calls read checks `ModHooks.open()` first
-  (`Loading.hooksClosed` in `loading-progress`).
+- Exit handlers also run after the hooks closed during the call; one that changes state other calls read checks
+  `ModHooks.open()` (`WeaveTest.exitPairsWithItsCallsEnter`).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.
 - A hand-written ZombieBuddy `@Patch` is rejected unless marked `@UnsafeLoaderPatch`, a disclaimer that Zabric does not
   support it. This repo uses none.

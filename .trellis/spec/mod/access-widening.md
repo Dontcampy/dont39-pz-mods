@@ -59,18 +59,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - Order within a phase is undefined: no entrypoint may assume another mod's entrypoint of that phase has run.
   Class-path dependencies are a separate matter ([Loading](./zombiebuddy-patching.md#loading)).
 - Mods without entrypoints are left alone: mods that use only ZombieBuddy load as without Zabric.
-- The hooks of a mod Zabric keeps preloaded open at preLaunch (`HookRuntime.preLaunch`), so their targets are checked
-  from class bytes (`WeaveCheck`, `TargetCheck`): loaded ones from their class files, the others as each loads, never by
-  loading or retransforming them; the weaving of the loaded ones is checked at the first pass. From the first pass
-  they follow the mod list, unless the manifest's `Zabric-Hooks: launch` keeps them open on every pass: for
-  client-side UI only (`Lifecycle`, author contract in `zabric/mod/workshop/workshop.txt`).
+- A preloaded mod's hooks open at preLaunch; Zabric never loads or retransforms their targets there
+  (`HookRuntime.preLaunch`). `Zabric-Hooks: launch` is for client-side UI only (author contract).
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
-- Loader progress (`entrypoint/LoaderProgress.java`, API) reports each Java mod jar of a loader pass from the seam's
-  `loadJar` hook, on the loader's thread outside any transformer; it counts the jars from the records the pass wrote.
-  A listener runs while its mod's hooks are open and a throw stops them like a hook error. A pass the seam cannot
-  follow, or a hook it cannot install, makes it unavailable for the session and stops each listener's mod; it is no
-  lifecycle stop, since only those mods depend on it. Its heartbeat counts the classes the loader's thread transforms
-  or loads inside a jar, through a retransform-capable transformer that only counts and is registered only while a
-  jar loads.
+- Loader progress calls listeners outside any transformer; when Zabric cannot follow a pass it stops only the
+  listening mods, never the lifecycle (`LoaderProgress.java`, `JarLoadHook.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
   its current hash was approved. The Workshop texts say so.
