@@ -89,6 +89,9 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   lines as fit between the bar and the vanilla loading screen's own content (~12 at 1080p, ~20 at 4K): one per step change and one per item (mod, script file, Lua file, Java mod, texture pack, event), the newest
   at the bottom, older lines fading by position and dropped by count, never by time. Interim frames animate trailing
   dots on the newest line while the heartbeat moves.
+- D16 (2026-10-20, replaces the top-center placement of R7/D15): the bar and the log sit in a column at the right
+  edge, the bar at the top and the log under it down to near the bottom, clear of everything vanilla draws there; the
+  line count follows that height.
 
 ## Requirements
 
