@@ -582,3 +582,39 @@ Surveyed the repo (no true god class; hook package is all public API). Build: ty
 ### Status
 
 [OK] **Completed**
+
+
+## Session 25: Loading progress mod and Zabric 0.5.0 preLaunch hooks
+<!-- trellis-session: v=2 fp=6dc7ecbf6c6fbbdf -->
+
+**Date**: 2026-10-20
+**Task**: Loading progress mod and Zabric 0.5.0 preLaunch hooks
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Carried the 10-17 loading-progress plan onto current main and built it. Zabric 0.5.0: preloaded mods' hooks open at preLaunch (byte-checked targets, held log, Zabric-Hooks: launch opt-in), never retransform at preLaunch (nested class loads skip every transformer of the agent), LoaderProgress per-jar listener and heartbeat. New client-only plain-Java mod Dont39LoadingProgress: step bar + item sub-bar over launch and game start, own frames on MainThread, render-thread interim frames inside a Java mod jar's patching (bind-based GL copy), JDK-only glue (checkJdkGlue), below ZombieBuddy's watermark, EN/CN. Build: pz-widening plugin, pz-mod jar folder. Acceptance: launch/SP/local-server joins/CN-EN/timing (+4.4 % launch, +2.3 % join)/forced mismatch pass; open: myserver2 TCP/KCP tunnel joins, version-mismatch join, Workshop art, releases.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6e111f8` | Plan loading progress and a responsive window during loads |
+| `0680c6e` | Drop the server smoke test from the loading progress plan; the mod is client only |
+| `93488b8` | Open preloaded mods' hooks at preLaunch, with a launch-wide opt-in |
+| `a5a07f6` | Loading progress plan: JDK-only glue for the progress mod; task started |
+| `a27e3ea` | Add Loading Progress, a client mod with a progress bar for loads |
+| `ad5a1b2` | Never retransform at preLaunch; load a target's member types before retransforming |
+| `628d819` | Loading progress plan: cover mod discovery and ZombieBuddy's Java-mod pass (D10, D11) |
+| `e2bc6e4` | Report loader progress per Java mod jar; cover launch discovery |
+| `fa38a45` | Show interim frames from the render thread inside a Java mod jar's patching |
+| `a43c892` | Loading progress research: the remaining launch gaps |
+| `b8e788d` | Loading progress plan: known gaps, item sub-bar, interim frames without DSA (D12-D14) |
+| `28e538e` | Add the item sub-bar, more load triggers and a bind-based interim copy |
+| `60fff51` | Keep the watermark clean while fonts load; burst jar frames; skip interim frames on the game's GL errors |
+| `d0af4f0` | Log the dedicated-server line once, also when only preloaded; end flows when Zabric closed the hooks |
+| `f576c5c` | Loading progress: record the acceptance results and open items |
+
+### Status
+
+[OK] **Completed**
