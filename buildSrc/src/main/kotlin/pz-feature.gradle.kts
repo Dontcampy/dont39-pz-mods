@@ -11,7 +11,7 @@ import buildsrc.convention.widening.PzWidening
 plugins {
   id("buildsrc.convention.pz-kotlin")
   id("com.google.devtools.ksp")
-  id("buildsrc.convention.pz-bundled")
+  id("buildsrc.convention.pz-bundled-feature")
   id("buildsrc.convention.pz-widening")
 }
 
@@ -21,6 +21,10 @@ dependencies {
   // hook annotations and the runtime the generated glue calls
   compileOnly(project(":zabric"))
   ksp(project(":zb-kt-utils-processor"))
+  // shared with the other features, in the bundling mod's jar
+  compileOnly(project(":allinone-common"))
+  // the tests run outside that jar
+  testImplementation(project(":allinone-common"))
 }
 
 // read as a file, not from the bundling mod's project

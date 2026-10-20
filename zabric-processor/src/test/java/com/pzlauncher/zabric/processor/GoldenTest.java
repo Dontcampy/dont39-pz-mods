@@ -19,11 +19,12 @@ class GoldenTest {
     private static final Path WEAVE = Path.of(System.getProperty("zabric.weaveSources"));
     private static final String PACKAGE = "com/pzlauncher/zabric/hook/weave/";
     private static final List<String> HOOK_CLASSES = List.of("AlwaysHooks", "DefaultHooks", "GatedHooks",
-            "ShapeHooks");
+            "ItemHooks", "NestedHooks", "ShapeHooks");
 
     @Test
     void weaveHooksGenerateTheReferenceGlue(@TempDir Path dir) throws IOException {
-        List<Path> sources = Stream.concat(HOOK_CLASSES.stream(), Stream.of("Target", "Shapes", "TestGate", "Events"))
+        List<Path> sources = Stream.concat(HOOK_CLASSES.stream(),
+                        Stream.of("Target", "Shapes", "Nested", "TestGate", "Events"))
                 .map(name -> WEAVE.resolve("java/" + PACKAGE + name + ".java")).toList();
         Compiler.Result result = Compiler.compile(dir,
                 Map.of("zabric.modId", "weave", "zabric.javaPkgName", "com.pzlauncher.zabric.hook.weave.glue"),

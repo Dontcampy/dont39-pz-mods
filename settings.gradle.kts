@@ -10,11 +10,13 @@ plugins {
   id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+include(":allinone-common")
 include(":mod-options-sidebar")
 include(":ime-keyboard-fix")
 include(":missing-anim-folders")
 include(":anim-extends-case")
 include(":tunnel")
+include(":mod-sync")
 include(":network-status")
 include(":zb-kt")
 include(":zb-kt-utils")

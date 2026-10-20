@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~642 | Active |
+| `journal-1.md` | ~656 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 27 | 2026-10-20 | Loading Progress switches and load timing report | `25f5be8` | `claude/trellis-loading-progress-tasks-67a636` |
+| 26 | 2026-10-20 | Server mod sync core (PR #21) | `5902e6d`, `371fbe7`, `43253dc`, `a4c9b25` | `claude/server-sync-mod-33c0e3` |
 | 25 | 2026-10-20 | Loading progress mod and Zabric 0.5.0 preLaunch hooks | `6e111f8`, `0680c6e`, `93488b8`, `a5a07f6`, `a27e3ea`, `ad5a1b2`, `628d819`, `e2bc6e4`, `fa38a45`, `a43c892`, `b8e788d`, `28e538e`, `60fff51`, `d0af4f0`, `f576c5c` | `claude/trellis-loading-progress-tasks-67a636` |
 | 24 | 2026-10-19 | Codebase structure review and four-part refactor | `c118cf1`, `070f607`, `8585ace`, `65d88b0`, `37a0270`, `e334146`, `b0fcd00`, `742b586`, `000246d`, `8454f3a` | `refactor/tunnel-refactor` |
 | 23 | 2026-10-18 | Multiplayer network status icon | `a85c7a9` | `-` |

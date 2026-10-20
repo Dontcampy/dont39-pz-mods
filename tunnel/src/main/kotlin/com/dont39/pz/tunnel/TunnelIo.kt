@@ -1,8 +1,8 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.TunnelFailed.Reason
 import java.io.Closeable
-import java.io.EOFException
 import java.io.IOException
 import java.net.ConnectException
 import java.net.DatagramSocket
@@ -88,11 +88,6 @@ internal object TunnelIo {
       "could not open the $transport tunnel at $target (${describe(e)})",
       e,
     )
-  }
-
-  fun describe(e: IOException): String = when (e) {
-    is EOFException -> "closed by the other end"
-    else -> e.message?.let { "${e.javaClass.simpleName}: $it" } ?: e.javaClass.simpleName
   }
 
   /** A player's address as the server logs it. */

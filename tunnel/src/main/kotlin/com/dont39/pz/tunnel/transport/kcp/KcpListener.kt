@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenListener
 import com.dont39.pz.tunnel.TunnelIo
@@ -90,7 +91,7 @@ internal class KcpListener(
           }
           // a failure that repeats would flood the log
           if (!failing) {
-            log.info { "could not receive or answer on KCP port $port: ${TunnelIo.describe(e)}" }
+            log.info { "could not receive or answer on KCP port $port: ${describe(e)}" }
           }
           failing = true
           Thread.sleep(RETRY_MILLIS)
@@ -142,7 +143,7 @@ internal class KcpListener(
     val local = try {
       LocalChannels.toGame(gamePort, udpPort)
     } catch (e: IOException) {
-      log.info { "could not open a $label: ${TunnelIo.describe(e)}" }
+      log.info { "could not open a $label: ${describe(e)}" }
       return null
     }
     var conv: Int

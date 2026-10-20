@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.put
 import se.krka.kahlua.vm.KahluaTable
 import zombie.Lua.LuaManager
 
@@ -26,6 +27,4 @@ internal object TunnelStatus {
     }
     return table
   }
-
-  private fun KahluaTable.put(key: String, value: Number) = rawset(key, value.toDouble())
 }

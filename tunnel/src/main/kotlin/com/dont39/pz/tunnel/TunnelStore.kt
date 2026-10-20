@@ -1,11 +1,11 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.serverKey
+import com.dont39.pz.common.writeAtomically
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.nio.file.StandardCopyOption.ATOMIC_MOVE
-import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import zombie.ZomboidFileSystem
 
 /**
@@ -47,7 +47,7 @@ internal object TunnelStore {
     get() = Paths.get(ZomboidFileSystem.instance.cacheDir, "Lua")
 
   @Synchronized
-  fun get(host: String, port: Int, folder: Path = gameFolder): Entry? = read(folder)[key(host, port)]
+  fun get(host: String, port: Int, folder: Path = gameFolder): Entry? = read(folder)[serverKey(host, port)]
 
   // port arguments as text: Lua numbers would arrive as doubles
 
@@ -100,9 +100,9 @@ internal object TunnelStore {
     require(entry.mode == Mode.OFF || entry.port != 0) { "tunnel ${entry.mode.id} chosen without its port" }
     val entries = read(folder)
     if (oldHost != null && oldPort != null) {
-      entries.remove(key(oldHost, oldPort.toInt()))
+      entries.remove(serverKey(oldHost, oldPort.toInt()))
     }
-    val key = key(host, port.toInt())
+    val key = serverKey(host, port.toInt())
     if (entry == Entry(Mode.OFF, 0, 0)) {
       entries.remove(key)
     } else {
@@ -116,8 +116,6 @@ internal object TunnelStore {
     require(port in 0..MAX_PORT) { "$what port $port is not between 0 and $MAX_PORT" }
     return port
   }
-
-  private fun key(host: String, port: Int) = "${host.trim()}:$port"
 
   private fun read(folder: Path): MutableMap<String, Entry> {
     val path = folder.resolve(FILE_NAME)
@@ -161,11 +159,8 @@ internal object TunnelStore {
   }
 
   private fun write(folder: Path, entries: Map<String, Entry>) {
-    val path = folder.resolve(FILE_NAME)
-    Files.createDirectories(path.parent)
-    // a crash mid-write leaves the old file
-    val temp = path.resolveSibling("$FILE_NAME.tmp")
-    Files.write(temp, entries.map { (key, e) -> "$key=${e.mode.id},${e.tcpPort},${e.kcpPort}" })
-    Files.move(temp, path, REPLACE_EXISTING, ATOMIC_MOVE)
+    writeAtomically(folder.resolve(FILE_NAME)) { temp ->
+      Files.write(temp, entries.map { (key, e) -> "$key=${e.mode.id},${e.tcpPort},${e.kcpPort}" })
+    }
   }
 }

@@ -19,7 +19,9 @@
 | Reference glue | `zabric/src/test/java/com/pzlauncher/zabric/hook/weave/glue/WeaveGlue.java` |
 | Author build | `samples/zabric-java-hooks/` |
 
-Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
+Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`. Private and package-private targets on a
+nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave cases in `WeaveTest`
+(`ItemHooks`, `NestedHooks`).
 
 ---
 

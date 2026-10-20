@@ -1,0 +1,20 @@
+{
+    "UI_Dont39AllInOne_ModSync_Failed": "无法使用服务器版本的创意工坊物品加入：%1",
+    "UI_Dont39AllInOne_ModSync_Failed_Network": "无法从 %1 下载服务器的创意工坊物品：\n%2\n请询问服务器管理员模组同步端口是否已开放。",
+    "UI_Dont39AllInOne_ModSync_Failed_Jar": "服务器版本的 %1 含有不同的 Java 代码（%2），游戏运行期间无法从服务器获取。\n请让服务器管理员重启服务器，以更新该物品。",
+    "UI_Dont39AllInOne_ModSync_Failed_Refused": "%1 包含 %2，它永远不会从服务器获取。\n请让服务器管理员重启服务器，以更新该物品。",
+    "UI_Dont39AllInOne_ModSync_Failed_Declined": "加入已停止：你选择不下载服务器版本的创意工坊物品。",
+    "UI_Dont39AllInOne_ModSync_Failed_Dialog": "Dont39 All-in-One 的下载对话框出错（详情见 console.txt）。",
+    "UI_Dont39AllInOne_ModSync_Failed_Error": "Dont39 All-in-One 的模组同步出错后已停止（详情见 console.txt）。",
+    "UI_Dont39AllInOne_ModSync_Failed_Inactive": "服务器运行的某个创意工坊物品版本与你的不同，而 Dont39 All-in-One 的模组同步已关闭：%1",
+    "UI_Dont39AllInOne_ModSync_Preparing": "正在检查服务器版本的创意工坊物品……",
+    "UI_Dont39AllInOne_ModSync_Waiting": "等待你的回答……",
+    "UI_Dont39AllInOne_ModSync_Progress": "正在下载服务器的创意工坊物品：%1 / %2 个文件，%3 / %4",
+    "UI_Dont39AllInOne_ModSync_ConfirmTitle": "下载服务器的创意工坊物品？",
+    "UI_Dont39AllInOne_ModSync_ConfirmText": "你的这些创意工坊物品与服务器 %1 运行的版本不同。为了加入，将从服务器下载不同的文件，并保留供以后加入使用。你自己的副本保持不变，用于单人游戏和其他服务器。",
+    "UI_Dont39AllInOne_ModSync_ConfirmItem": "%1：%2，%3 个文件",
+    "UI_Dont39AllInOne_ModSync_ConfirmTotal": "总计：%1，%2 个文件",
+    "UI_Dont39AllInOne_ModSync_DontAsk": "不再为此服务器询问",
+    "UI_Dont39AllInOne_ModSync_Download": "下载并加入",
+    "UI_Dont39AllInOne_ModSync_Cancel": "取消"
+}

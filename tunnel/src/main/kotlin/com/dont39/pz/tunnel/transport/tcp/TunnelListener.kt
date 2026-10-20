@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.tcp
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenListener
 import com.dont39.pz.tunnel.TunnelIo
@@ -55,7 +56,7 @@ internal class TunnelListener(
           }
           // a client that resets before it is accepted must not end the listener; repeats would flood the log
           if (!failing) {
-            log.info { "could not accept a tunnel connection on TCP port $port: ${TunnelIo.describe(e)}" }
+            log.info { "could not accept a tunnel connection on TCP port $port: ${describe(e)}" }
           }
           failing = true
           Thread.sleep(ACCEPT_RETRY_MILLIS)
@@ -84,7 +85,7 @@ internal class TunnelListener(
     } catch (e: IOException) {
       socket.closeQuietly()
       local?.close()
-      log.info { "could not open a tunnel for $from: ${TunnelIo.describe(e)}" }
+      log.info { "could not open a tunnel for $from: ${describe(e)}" }
     } catch (t: Throwable) {
       socket.closeQuietly()
       local?.close()

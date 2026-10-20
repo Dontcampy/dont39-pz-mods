@@ -4,6 +4,8 @@
 
 require "ISUI/ISUIElement"
 
+local Common = require "Dont39AllInOne_Common"
+
 -- not "network-status: ", which prefixes the Java side's status lines
 local PREFIX = "[Dont39AllInOne] network-status icon: "
 local OPTIONS_ID = "Dont39AllInOne_NetworkStatus"
@@ -36,11 +38,6 @@ local TEXT_COLOR = { r = 1, g = 1, b = 1 }
 local DEBUG_COLOR = { r = 0.7, g = 0.7, b = 0.7 }
 local METHOD_TEXT = { udp = "Udp", steam = "Steam", tcp = "Tcp", kcp = "Kcp" } -- UI_Dont39AllInOne_NetworkStatus_Method<text>
 
--- Never throws.
-local function log(message)
-    pcall(function() DebugType.Mod:println(PREFIX .. message) end)
-end
-
 if not PZAPI or not PZAPI.ModOptions or not PZAPI.ModOptions.create then
     error(PREFIX .. "the game's mod options (PZAPI.ModOptions) were not found")
 end
@@ -48,8 +45,14 @@ end
 local options = PZAPI.ModOptions:create(OPTIONS_ID, TEXT .. "Options")
 local showOption = options:addTickBox("show", TEXT .. "Show", true, TEXT .. "ShowTooltip")
 
-local disabled = false -- after an error in this file; final for the session
 local icon = nil
+local guard = Common.guard(PREFIX, function()
+    if icon then
+        pcall(function() icon:removeFromUIManager() end)
+        icon = nil
+    end
+end)
+local fail = guard.fail
 local badgeTexture = nil
 
 -- ---- sampling ----
@@ -305,19 +308,6 @@ local function drawIcon(self)
     end
 end
 
-local function fail(what, err, trace)
-    if disabled then return end
-    disabled = true
-    pcall(function()
-        DebugType.Mod:error(PREFIX .. "disabled after an error while " .. what .. ": " .. tostring(err) .. "\n"
-            .. tostring(trace))
-    end)
-    if icon then
-        pcall(function() icon:removeFromUIManager() end)
-        icon = nil
-    end
-end
-
 local NetworkStatusIcon = ISUIElement:derive("Dont39AllInOne_NetworkStatusIcon")
 
 function NetworkStatusIcon:instantiate()
@@ -351,7 +341,7 @@ local function update(self)
 end
 
 function NetworkStatusIcon:render()
-    if disabled then return end
+    if guard.disabled then return end
     local ok, err, trace = pcall(update, self)
     if not ok then
         fail("drawing the network status icon", err, trace)
@@ -377,12 +367,12 @@ end
 local reportedNoJava = false
 
 Events.OnGameStart.Add(function()
-    if disabled or not isClient() then return end
+    if guard.disabled or not isClient() then return end
     -- absent when ZombieBuddy did not load this mod's Java code
     if not Dont39AllInOne_getNetworkStatus then
         if not reportedNoJava then
             reportedNoJava = true
-            log("no icon: the Java part of Dont39 All-in-One is not loaded")
+            Common.log(PREFIX, "no icon: the Java part of Dont39 All-in-One is not loaded")
         end
         return
     end
@@ -393,7 +383,7 @@ Events.OnGameStart.Add(function()
 end)
 
 Events.OnResolutionChange.Add(function()
-    if disabled or not icon then return end
+    if guard.disabled or not icon then return end
     local ok, err, trace = pcall(anchor, icon)
     if not ok then
         fail("moving the network status icon after a resolution change", err, trace)

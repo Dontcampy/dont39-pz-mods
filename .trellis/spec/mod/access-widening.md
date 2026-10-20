@@ -32,6 +32,9 @@ Reference feature: `ime-keyboard-fix` (game fields).
   `src/main/resources/META-INF/dont39/<module>.classtweaker` (build input only); the facade passes `widened = true` to
   `Feature`. The aggregating mod ships the merged list in its own jar.
 - Widen only fields, classes and constructors; other methods are not widened (visibility can change dispatch).
+- A class loaded before Zabric's widener runs keeps its access ("already loaded before Zabric ran"), although the
+  compile jars widen it. `zombie.ZomboidFileSystem` is one (ZombieBuddy patches it at premain); reach such a class
+  through public members, as `Swap.kt` in `mod-sync` does. Only `smokeTest` catches this, not the build.
 - Read a target mod's version by name (`TargetMod.kt`): a `static final` constant is inlined at build time.
 - Target-mod types only in classes that load after the feature is active, never in the facade.
 

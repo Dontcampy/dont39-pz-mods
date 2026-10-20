@@ -1,0 +1,4 @@
+{
+    "Sandbox_Dont39AllInOne_ModSyncPort": "模组同步端口",
+    "Sandbox_Dont39AllInOne_ModSyncPort_tooltip": "服务器在此 TCP 端口向创意工坊物品版本与服务器不同的玩家（例如服务器运行期间某个模组在创意工坊上更新了）提供服务器的物品。玩家使用服务器的版本加入，只下载不同的文件。0 表示关闭。需要在防火墙中放行此 TCP 端口。服务器启动时生效。"
+}

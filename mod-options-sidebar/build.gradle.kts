@@ -1,3 +1,3 @@
 plugins {
-  id("buildsrc.convention.pz-bundled")
+  id("buildsrc.convention.pz-bundled-feature")
 }

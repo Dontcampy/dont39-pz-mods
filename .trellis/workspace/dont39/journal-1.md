@@ -594,6 +594,16 @@ Surveyed the repo (no true god class; hook package is all public API). Build: ty
 ### Summary
 
 Carried the 10-17 loading-progress plan onto current main and built it. Zabric 0.5.0: preloaded mods' hooks open at preLaunch (byte-checked targets, held log, Zabric-Hooks: launch opt-in), never retransform at preLaunch (nested class loads skip every transformer of the agent), LoaderProgress per-jar listener and heartbeat. New client-only plain-Java mod Dont39LoadingProgress: step bar + item sub-bar over launch and game start, own frames on MainThread, render-thread interim frames inside a Java mod jar's patching (bind-based GL copy), JDK-only glue (checkJdkGlue), below ZombieBuddy's watermark, EN/CN. Build: pz-widening plugin, pz-mod jar folder. Acceptance: launch/SP/local-server joins/CN-EN/timing (+4.4 % launch, +2.3 % join)/forced mismatch pass; open: myserver2 TCP/KCP tunnel joins, version-mismatch join, Workshop art, releases.
+## Session 26: Server mod sync core (PR #21)
+<!-- trellis-session: v=2 fp=96fcedb4331b5669 -->
+
+**Date**: 2026-10-20
+**Task**: Server mod sync core (PR #21)
+**Branch**: `claude/server-sync-mod-33c0e3`
+
+### Summary
+
+New mod-sync feature: a client whose Workshop copy differs from the dedicated server's (VersionMismatch) joins with the server's copy, downloading only differing files over HTTP (port from a connection-details trailer), with a confirm dialog, a per-server cache and a session-only folder swap; jar changes and loader mods are refused with a reason. Zabric weave/widener tests for private and nested targets. Per-feature translations and sandbox options merged by mergeMedia. After review: mod-sync split into protocol/server/client packages, and a shared allinone-common module (Kotlin helpers + Dont39AllInOne_Common.lua) replaces copies in tunnel, network-status and mod-sync. In-game tested before the refactor on the Linux test server; after it only build, assembled-mod comparison and a main-menu smokeTest. PR https://github.com/Dontcampy/dont39-pz-mods/pull/21 open; follow-up children zabric-launch-override and mod-sync-java still in planning.
 
 ### Git Commits
 
@@ -636,6 +646,10 @@ Two switches (bar/log, timing report) in Dont39LoadingProgress.ini and on the mo
 | Hash | Message |
 |------|---------|
 | `25f5be8` | Add Loading Progress switches and a load timing report |
+| `5902e6d` | Prove hooks on private and nested-class methods weave and widen |
+| `371fbe7` | Take a Workshop item from the server when its version differs from the player's |
+| `43253dc` | Give each feature its own translation and sandbox option files |
+| `a4c9b25` | Split mod-sync into protocol, server and client, and share code across features |
 
 ### Status
 

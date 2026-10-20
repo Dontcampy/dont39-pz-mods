@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,7 +28,7 @@ class WeaveTest {
         TestGate.INSTANCE.reset();
         pass(Map.of("weave", List.of(Weaving.listings())));
         // logged only after the weave check found the loaded target woven
-        assertEquals(List.of("info [Zabric] weave: hooks ready (4 hook classes)"), log.lines());
+        assertEquals(List.of("info [Zabric] weave: hooks ready (6 hook classes)"), log.lines());
         assertEquals(List.of(), TestGate.INSTANCE.failures);
     }
 
@@ -172,6 +173,32 @@ class WeaveTest {
         assertEquals(List.of("connect body s-h-7-pw 7 pw true"), Events.take());
         assertEquals("h:7", shapes.connect("h", 7, "pw", false));
         assertEquals(List.of("connect body h 7 pw false"), Events.take());
+    }
+
+    @Test
+    void modifyVariableOnAPackagePrivateMethodOfANestedClass() {
+        Nested.Item item = new Nested().item;
+        item.error = "taken";
+        item.setState(Nested.State.FAIL);
+        assertEquals(Nested.State.READY, item.state);
+        assertNull(item.error);
+        assertEquals(List.of("setState body READY"), Events.take());
+
+        item.error = "other";
+        item.setState(Nested.State.FAIL);
+        assertEquals(Nested.State.FAIL, item.state);
+        assertEquals(List.of("setState body FAIL"), Events.take());
+    }
+
+    @Test
+    void headCancelOnAPrivateMethodHoldsUntilReleased() {
+        Nested nested = new Nested();
+        nested.update();
+        nested.update();
+        assertEquals(List.of("held", "held"), Events.take());
+        nested.item.state = Nested.State.READY;
+        nested.update();
+        assertEquals(List.of("step body"), Events.take());
     }
 
     @Test

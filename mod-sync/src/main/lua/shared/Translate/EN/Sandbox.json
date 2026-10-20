@@ -1,0 +1,4 @@
+{
+    "Sandbox_Dont39AllInOne_ModSyncPort": "Mod sync port",
+    "Sandbox_Dont39AllInOne_ModSyncPort_tooltip": "TCP port on which the server offers its Workshop items to players whose copy of an item is another version, e.g. after a mod was updated on the Workshop while the server runs. They join with the server's version, downloading only the files that differ. 0 turns it off. Open this TCP port in the firewall. Takes effect when the server starts."
+}
