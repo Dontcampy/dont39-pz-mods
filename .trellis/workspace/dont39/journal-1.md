@@ -607,3 +607,25 @@ New mod-sync feature: a client whose Workshop copy differs from the dedicated se
 ### Status
 
 [OK] **Completed**
+
+
+## Session 28: Zabric one-launch mod folder override
+<!-- trellis-session: v=2 fp=97ef697910cf7c11 -->
+
+**Date**: 2026-10-21
+**Task**: Zabric one-launch mod folder override
+**Branch**: `claude/trellis-main-update-subtasks-6c01f8`
+
+### Summary
+
+Updated main; planned and implemented child 10-20-zabric-launch-override (Zabric LaunchOverride, JavaMods, WidenRoots); in-game check found and fixed a retransformation bug on runtime proxies; release deferred to the parent's integration review. Next: plan 10-20-mod-sync-java.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8560834` | Let a mod load a Workshop item from another folder for one launch, and tell which jar serves a package |
+
+### Status
+
+[OK] **Completed**

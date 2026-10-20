@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 26
-- **Last Active**: 2026-10-20
+- **Total Sessions**: 28
+- **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~609 | Active |
+| `journal-1.md` | ~631 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 28 | 2026-10-21 | Zabric one-launch mod folder override | `8560834` | `claude/trellis-main-update-subtasks-6c01f8` |
 | 26 | 2026-10-20 | Server mod sync core (PR #21) | `5902e6d`, `371fbe7`, `43253dc`, `a4c9b25` | `claude/server-sync-mod-33c0e3` |
 | 24 | 2026-10-19 | Codebase structure review and four-part refactor | `c118cf1`, `070f607`, `8585ace`, `65d88b0`, `37a0270`, `e334146`, `b0fcd00`, `742b586`, `000246d`, `8454f3a` | `refactor/tunnel-refactor` |
 | 23 | 2026-10-18 | Multiplayer network status icon | `a85c7a9` | `-` |
