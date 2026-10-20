@@ -50,6 +50,10 @@ Reference hooks: `ImeCaret.kt` and `ImeWindow.kt` in `ime-keyboard-fix`.
   (`loading-progress`).
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
+- `RETURN` and `FINALLY` handlers run for every call whose `HEAD` found the hooks open, also when they closed or stopped
+  during the call, so that `FINALLY` can undo what `HEAD` did (`WeaveTest.exitPairsWithItsCallsEnter`). An exit
+  handler of a long-running target that moves state other calls read checks `ModHooks.open()` first
+  (`Loading.hooksClosed` in `loading-progress`).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.
 - A hand-written ZombieBuddy `@Patch` is rejected unless marked `@UnsafeLoaderPatch`, a disclaimer that Zabric does not
   support it. This repo uses none.

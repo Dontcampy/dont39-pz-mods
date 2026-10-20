@@ -4,7 +4,6 @@ import com.dont39.pz.loadingprogress.hooks.Loading;
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint;
 import com.pzlauncher.zabric.widener.AccessWidener;
 import zombie.debug.DebugType;
-import zombie.network.GameServer;
 
 import static com.dont39.pz.loadingprogress.hooks.Loading.PREFIX;
 
@@ -12,12 +11,11 @@ import static com.dont39.pz.loadingprogress.hooks.Loading.PREFIX;
 public final class MainEntry implements MainEntrypoint {
     @Override
     public void onMain() {
-        String version = MainEntry.class.getPackage().getImplementationVersion();
-        if (GameServer.server) {
-            DebugType.Mod.println(PREFIX + "%s loaded; dedicated server: not active", version);
+        // a server lists the mod or only preloads it: the line comes once, from here or ServerHooks
+        if (!Loading.PROGRESS.client()) {
             return;
         }
-        DebugType.Mod.println(PREFIX + "%s loaded", version);
+        DebugType.Mod.println(PREFIX + "%s loaded", MainEntry.class.getPackage().getImplementationVersion());
         if (AccessWidener.report(Loading.MOD_ID, MainEntry.class) != null) {
             Loading.PROGRESS.stop("the access widener did not apply the mod's list", System.nanoTime());
             DebugType.Mod.warn(PREFIX + "idle: the access widener did not apply the mod's list (line above)");

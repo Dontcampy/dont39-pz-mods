@@ -36,7 +36,9 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
   never with `@Self`. `checkJdkGlue` fails the build otherwise; where a per-item method takes a game type, a JDK-only
   callee or caller is hooked instead (`Core.DoFrameReady` for script files, `KahluaThread.pcall(int)` for Lua calls).
 - Hooks use the mod's default gate, so Zabric checks their targets from class bytes as each loads. Client only: flows
-  start only where `GameServer.server` is false, and every handler and the drawing act only while a flow runs.
+  start only where `GameServer.server` is false, and every handler and the drawing act only while a flow runs. A
+  dedicated server logs one "not active" line, from the main entrypoint or, when it only preloads the mod, from
+  `hooks/ServerHooks.java`.
 
 ## Checks
 

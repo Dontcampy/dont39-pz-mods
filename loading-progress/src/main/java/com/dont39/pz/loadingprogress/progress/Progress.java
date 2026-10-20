@@ -60,6 +60,7 @@ public final class Progress {
     }
 
     private final BooleanSupplier client;
+    private final Runnable notClient;
     private final Consumer<End> ended;
 
     // read without the lock on hot paths
@@ -90,6 +91,7 @@ public final class Progress {
     private Gap unknownGap;
     private boolean launchSeen;
     private boolean stopped;
+    private boolean notClientSeen;
 
     // the Known call running now, and those in the current visible gap
     private Known known;
@@ -115,10 +117,26 @@ public final class Progress {
     private int luaRun;
     private int luaTotal;
 
-    /** {@code client}: flows start only where it is true. {@code ended} hears each flow's end, under the lock. */
-    public Progress(BooleanSupplier client, Consumer<End> ended) {
+    /**
+     * {@code client}: flows start only where it is true; {@code notClient} hears once where it is not. {@code ended}
+     * hears each flow's end. Both under the lock.
+     */
+    public Progress(BooleanSupplier client, Runnable notClient, Consumer<End> ended) {
         this.client = client;
+        this.notClient = notClient;
         this.ended = ended;
+    }
+
+    /** Whether flows start here; the first time they do not, {@code notClient} hears it. */
+    public synchronized boolean client() {
+        if (client.getAsBoolean()) {
+            return true;
+        }
+        if (!notClientSeen) {
+            notClientSeen = true;
+            notClient.run();
+        }
+        return false;
     }
 
     /** Fonts are ready for the first time this session: the launch begins. */
@@ -544,7 +562,7 @@ public final class Progress {
         if (flow != null) {
             throw new IllegalStateException(next.label() + " began while the " + flow.label() + " was at " + current());
         }
-        if (stopped || !client.getAsBoolean()) {
+        if (stopped || !client()) {
             return;
         }
         flow = next;

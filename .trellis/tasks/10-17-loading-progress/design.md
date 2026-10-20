@@ -274,7 +274,8 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   the game's fonts follow its language, so CN glyphs exist exactly then (DI B7).
 - Client only: no named gate (its `active()` would need `gateProblem`, which loads the targets reflectively, against
   AC2). `progress.Progress` starts a flow only where `GameServer.server` is false (`hooks.Loading`), and every handler
-  and the drawing act only while a flow runs; the main entrypoint logs "dedicated server: not active" there. Drawing
+  and the drawing act only while a flow runs; "dedicated server: not active" is logged once there, from the main
+  entrypoint or, for a server that preloads the mod without listing it, a hook at `GameServer.doMinimumInit`. Drawing
   additionally requires `GameWindow.gameThread`.
 - Access widening not in effect (`AccessWidener.report` returns a reason): the main entrypoint ends any running flow
   and starts none for the session (`Progress.stop`), and logs the mod idle; the hooks stay open but do nothing.

@@ -15,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProgressTest {
     private final List<Progress.End> ends = new ArrayList<>();
     private boolean client = true;
-    private final Progress progress = new Progress(() -> client, ends::add);
+    private int notClient;
+    private final Progress progress = new Progress(() -> client, () -> notClient++, ends::add);
     private long now;
 
     private long at(long millis) {
@@ -86,6 +87,15 @@ class ProgressTest {
         progress.worldPrepares(at(2));
         assertNull(progress.view());
         assertTrue(ends.isEmpty());
+        assertFalse(progress.client());
+        assertEquals(1, notClient, "said once, by whichever comes first");
+    }
+
+    @Test
+    void aClientSaysNothing() {
+        assertTrue(progress.client());
+        progress.fontsReady(at(0));
+        assertEquals(0, notClient);
     }
 
     @Test

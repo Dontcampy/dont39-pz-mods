@@ -45,6 +45,8 @@ public final class CoreHooks {
 
     @Inject(method = "ResetLua(Ljava/lang/String;Ljava/lang/String;)V", at = @At("FINALLY"))
     public static void resetEnds(CallbackInfo ci, @Thrown Throwable thrown) {
-        PROGRESS.resetEnds(thrown != null, System.nanoTime());
+        if (!Loading.hooksClosed()) {
+            PROGRESS.resetEnds(thrown != null, System.nanoTime());
+        }
     }
 }

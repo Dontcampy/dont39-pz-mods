@@ -1,7 +1,10 @@
 package com.dont39.pz.loadingprogress.text;
 
 import com.dont39.pz.loadingprogress.progress.Item;
+import com.dont39.pz.loadingprogress.progress.Progress;
 import com.dont39.pz.loadingprogress.progress.Step;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * The mod's own English and Chinese text: the game's translation files load after the bar first shows, and only for
@@ -50,6 +53,20 @@ public final class Strings {
             case TEXTURE_PACK -> named(chinese ? "纹理包" : "Texture pack", name, chinese);
             case EVENT -> named(chinese ? "Lua 事件" : "Lua event", name, chinese);
         };
+    }
+
+    /** A frame gap for the log line of a flow's end, in English. */
+    public static String gap(Progress.Gap gap) {
+        Progress.Shown at = gap.item();
+        String item = at == null ? null : itemLine(at.item(), at.index(), at.total(), at.name(), false);
+        long knownMillis = TimeUnit.NANOSECONDS.toMillis(gap.knownNanos());
+        return millis(gap.nanos()) + " in " + step(gap.step(), false) + (item == null ? "" : " (" + item + ")")
+                + (gap.known() == null || knownMillis == 0 ? ""
+                : ", " + knownMillis + " ms of it in known calls, mostly " + gap.known().label());
+    }
+
+    private static String millis(long nanos) {
+        return TimeUnit.NANOSECONDS.toMillis(nanos) + " ms";
     }
 
     private static String counted(String what, int index, int total, String name, boolean chinese) {

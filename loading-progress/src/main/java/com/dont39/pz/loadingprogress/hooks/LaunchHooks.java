@@ -25,7 +25,9 @@ public final class LaunchHooks {
         // the first frames with text can come from here on
         @Inject(method = "initFonts", at = @At("RETURN"))
         public static void fontsReady(CallbackInfo ci) {
-            PROGRESS.fontsReady(System.nanoTime());
+            if (!Loading.hooksClosed()) {
+                PROGRESS.fontsReady(System.nanoTime());
+            }
         }
 
         @Inject(method = "initShared", at = @At("HEAD"))
@@ -53,7 +55,9 @@ public final class LaunchHooks {
         @Inject(method = "mainThreadStart", at = @At("RETURN"))
         public static void started(CallbackInfo ci) {
             FramePump.warningShown(false);
-            PROGRESS.launchDone(System.nanoTime());
+            if (!Loading.hooksClosed()) {
+                PROGRESS.launchDone(System.nanoTime());
+            }
         }
     }
 

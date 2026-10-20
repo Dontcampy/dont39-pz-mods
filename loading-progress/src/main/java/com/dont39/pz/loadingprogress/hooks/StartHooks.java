@@ -84,7 +84,9 @@ public final class StartHooks {
         // the loading thread runs; the state draws its loading screen
         @Inject(method = "enter", at = @At("RETURN"))
         public static void load(CallbackInfo ci) {
-            Loading.reach(Boundary.WORLD_LOAD);
+            if (!Loading.hooksClosed()) {
+                Loading.reach(Boundary.WORLD_LOAD);
+            }
         }
 
         @Inject(method = "SendDone", at = @At("HEAD"))
