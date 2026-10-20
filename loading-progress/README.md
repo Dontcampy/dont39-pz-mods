@@ -1,8 +1,8 @@
 # Dont39LoadingProgress
 
-A client-only Java mod that shows a progress bar while Project Zomboid loads (launch to the main menu; server join or
-single-player start to the first frame in the world) and hands over frames of its own where the game loads without
-drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/workshop.txt`.
+A client-only Java mod that shows a progress bar and a log of what loads while Project Zomboid loads (launch to the
+main menu; server join or single-player start to the first frame in the world) and hands over frames of its own where
+the game loads without drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/workshop.txt`.
 
 ## How it works
 
@@ -11,16 +11,18 @@ drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/
 - The flows and their steps are in `progress/Flow.java`; `progress/Progress.java` is the game-free state the hooks
   feed, tested in `src/test/`.
 - ZombieBuddy's Java mod pass runs no game method between its jars: Zabric's loader progress, registered at preLaunch
-  (`hooks/JavaMods.java`), gives the "Java mod i / n" item and a frame per jar: two at once, then one per 50 ms.
+  (`hooks/JavaMods.java`), gives the "Java mod i / n" line and a frame per jar: two at once, then one per 50 ms.
 - Patching one jar can hold the game thread for seconds. Meanwhile the render thread shows interim frames
   (`draw/Interim.java`, hooks on `Display` in `hooks/DisplayHooks.java`): the jar's own frame, copied before its swap,
-  with the sub-bar moved further into the jar's share every 250 ms while Zabric's heartbeat moves, in shrinking steps
-  that stop short of the jar's end. Bind-based GL with every binding and state restored, also for a multisampled
-  window; a GL error of its own calls stops the mod, one the game left pending skips the frame.
-- `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over: the step line,
-  the bar by step, the item line and a sub-bar by the item's count, below ZombieBuddy's watermark (its wrapping is
-  replayed from the Java mods the loader progress named); `draw/FramePump.java` hands over its own frames from the
-  hooks inside the loading code, but none while the watermark's font loads and the render thread pumps on its own.
+  with up to three trailing dots after the log's newest line, one more (or none again after three) every 250 ms while
+  Zabric's heartbeat moves. Bind-based GL with every binding and state restored, also for a multisampled window; a GL
+  error of its own calls stops the mod, one the game left pending skips the frame.
+- `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over: the bar by
+  step below ZombieBuddy's watermark (its wrapping is replayed from the Java mods the loader progress named), and under
+  it the flow's log (`progress/Log.java`): a line per step and per item, newest at the bottom, older ones fading, as
+  many as fit above the loading screens' own text (`Overlay.rows`); `draw/FramePump.java` hands over its own frames
+  from the hooks inside the loading code, but none while the watermark's font loads and the render thread pumps on its
+  own.
 - Calls that hold the game thread with no hookable point inside (comment stripping of script files, Steam's installed
   items query) are bracketed as known calls (`progress/Known.java`).
 - One `console.txt` line per flow: outcome, duration, own and interim frames (and interim frames skipped for the

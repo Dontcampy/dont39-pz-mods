@@ -2,19 +2,23 @@ package com.dont39.pz.loadingprogress.progress;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * The running flow, its step and item, and its frame gaps. Game-free: the hooks pass in what they read of the game and
- * the time. Called from the game thread and the world-loading thread; hot callers check the volatile flags first. A
- * step that begins out of order throws, which stops the mod's hooks.
+ * The running flow, its step and item, its log and its frame gaps. Game-free: the hooks pass in what they read of the
+ * game and the time. Called from the game thread and the world-loading thread; hot callers check the volatile flags
+ * first. A step that begins out of order throws, which stops the mod's hooks.
  */
 public final class Progress {
     /** At most this often an own frame; about 20 per second. */
     static final long FRAME_INTERVAL = TimeUnit.MILLISECONDS.toNanos(50);
+    /** The most lines the log keeps, and so the most it shows. */
+    public static final int LOG_LINES = 64;
 
     // the connection states ConnectToServer.lua treats as a failed join
     private static final Set<String> FAILED_STATES = Set.of("Failed", "Disconnected");
@@ -45,18 +49,16 @@ public final class Progress {
         }
     }
 
-    /** An item of the second line. */
+    /** The item shown when a gap ended. */
     public record Shown(Item item, int index, int total, String name) {
     }
 
     /**
-     * What a frame shows; {@code step} counts from 1. {@code fill}: the bar's filled fraction, by step. {@code sub}: the
-     * sub-bar's, by a counted item, or negative when none shows. While a Java mod jar loads, {@code jar} is its
-     * {@link #loadingJar()} and {@code jarEnd} the fraction the sub-bar reaches once it loaded; otherwise 0 and
-     * {@code sub}.
+     * What a frame shows; {@code step} counts from 1. {@code fill}: the bar's filled fraction, by step. {@code jar}:
+     * while a Java mod jar loads its {@link #loadingJar()}, otherwise 0. {@code log}: the flow's last lines, oldest
+     * first.
      */
-    public record View(Flow flow, int step, Step current, Item item, int index, int total, String name, double fill,
-                       double sub, long jar, double jarEnd) {
+    public record View(Flow flow, int step, Step current, Item item, double fill, long jar, List<Line> log) {
     }
 
     private final BooleanSupplier client;
@@ -79,6 +81,7 @@ public final class Progress {
     private int index;
     private int total;
     private String name;
+    private final Log log = new Log(LOG_LINES);
     private int ownFrameCount;
     private int interimFrameCount;
     private int interimSkipCount;
@@ -387,7 +390,7 @@ public final class Progress {
         }
         synchronized (this) {
             if (modsLoading && flow != null) {
-                modsLoaded = counted(modsLoaded, total, "mod " + id);
+                modsLoaded = counted(modsLoaded, total, "mod", id);
                 item(Item.MOD, modsLoaded, total, id);
             }
         }
@@ -424,7 +427,7 @@ public final class Progress {
         synchronized (this) {
             if (scriptsLoading && flow != null && path != null && !path.equals(scriptPath)) {
                 scriptPath = path;
-                scriptsLoaded = counted(scriptsLoaded, total, "script file " + path);
+                scriptsLoaded = counted(scriptsLoaded, total, "script file", path);
                 item(Item.SCRIPT, scriptsLoaded, total, file);
             }
         }
@@ -456,13 +459,23 @@ public final class Progress {
         if (luaTotal < 0) {
             luaTotal = new HashSet<>(files).size();
         }
-        luaRun = counted(luaRun, luaTotal, "Lua file " + file);
+        luaRun = counted(luaRun, luaTotal, "Lua file", file);
         item(Item.LUA, luaRun, luaTotal, fileName(file));
     }
 
     public synchronized void luaRan() {
         if (luaLoading && luaDepth > 0) {
             luaDepth--;
+        }
+    }
+
+    /** The world-loading screen's text, read each frame: a new one is the next item. */
+    public void worldText(String text) {
+        if (!showing || text == null || text.isBlank()) {
+            return;
+        }
+        synchronized (this) {
+            item(Item.WORLD, 0, 0, text);
         }
     }
 
@@ -539,11 +552,8 @@ public final class Progress {
             if (!showing) {
                 return null;
             }
-            double sub = sub();
-            long jar = loadingJar;
-            double jarEnd = jar == 0 ? sub : (double) javaMod / javaModTotal;
-            return new View(flow, step + 1, current(), item, index, total, name, (step + 1.0) / flow.steps().size(),
-                    sub, jar, jarEnd);
+            return new View(flow, step + 1, current(), item, (step + 1.0) / flow.steps().size(), loadingJar,
+                    log.lines());
         }
     }
 
@@ -573,6 +583,8 @@ public final class Progress {
         lastVisible = now;
         clearItem();
         clearJavaMods();
+        log.clear();
+        stepLine();
         ownFrameCount = 0;
         interimFrameCount = 0;
         interimSkipCount = 0;
@@ -613,6 +625,7 @@ public final class Progress {
         if (i > step) {
             step = i;
             clearItem();
+            stepLine();
         }
         update();
     }
@@ -629,18 +642,22 @@ public final class Progress {
         }
     }
 
-    private int counted(int done, int total, String what) {
+    // the message only on a throw: files come by the thousand
+    private int counted(int done, int total, String what, String itemName) {
         if (done >= total) {
-            throw new IllegalStateException(flow.label() + ": " + what + " is past the " + total + " counted at "
-                    + current());
+            throw new IllegalStateException(flow.label() + ": " + what + " " + itemName + " is past the " + total
+                    + " counted at " + current());
         }
         return done + 1;
     }
 
-    // whether the item shows
+    // whether the item shows; a new one is a line of the log, a repeat (a jar that loaded, an event again) is not
     private boolean item(Item kind, int i, int n, String itemName) {
         if (flow == null || paused || !current().shows(kind)) {
             return false;
+        }
+        if (kind != item || i != index || !Objects.equals(itemName, name)) {
+            log.add(new Line(current(), kind, i, n, itemName));
         }
         item = kind;
         index = i;
@@ -662,15 +679,6 @@ public final class Progress {
         javaMod = 0;
         javaModTotal = 0;
         javaModLoading = false;
-    }
-
-    // the counted item's fraction: a loading jar counts from the previous one's end
-    private double sub() {
-        if (!item.counted() || total == 0) {
-            return -1;
-        }
-        int done = item == Item.JAVA_MOD && javaModLoading ? index - 1 : index;
-        return (double) done / total;
     }
 
     private void gaps(long now) {
@@ -742,6 +750,10 @@ public final class Progress {
         clearItem();
         update();
         ended.accept(end);
+    }
+
+    private void stepLine() {
+        log.add(Line.step(current(), step + 1, flow.steps().size()));
     }
 
     private Step current() {

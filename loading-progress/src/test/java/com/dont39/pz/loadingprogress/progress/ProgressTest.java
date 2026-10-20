@@ -3,8 +3,12 @@ package com.dont39.pz.loadingprogress.progress;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -28,6 +32,11 @@ class ProgressTest {
         return progress.view().current();
     }
 
+    private Line newest() {
+        List<Line> log = progress.view().log();
+        return log.get(log.size() - 1);
+    }
+
     @Test
     void launchRunsItsStepsInOrder() {
         progress.fontsReady(at(0));
@@ -35,10 +44,8 @@ class ProgressTest {
         progress.modsLoading(at(10));
         progress.mod("A", 2);
         progress.mod("B", 2);
-        Progress.View view = progress.view();
-        assertEquals(Item.MOD, view.item());
-        assertEquals(2, view.index());
-        assertEquals("B", view.name());
+        assertEquals(Item.MOD, progress.view().item());
+        assertEquals(new Line(Step.MODS, Item.MOD, 2, 2, "B"), newest());
         progress.modsLoaded();
         for (Boundary b : List.of(Boundary.TRANSLATIONS, Boundary.SHARED_INIT, Boundary.SCRIPTS,
                 Boundary.SPRITE_MODELS, Boundary.CLOTHING, Boundary.TILES, Boundary.LUA, Boundary.WINDOW_ENTER,
@@ -48,7 +55,7 @@ class ProgressTest {
         assertEquals(Step.MODELS, step());
         progress.event("OnGameBoot", at(30));
         assertEquals(10, progress.view().step());
-        assertEquals("OnGameBoot", progress.view().name());
+        assertEquals(new Line(Step.GAME_BOOT, Item.EVENT, 0, 0, "OnGameBoot"), newest());
         progress.launchDone(at(40));
         assertNull(progress.view());
         assertEquals(Progress.Outcome.DONE, ends.get(0).outcome());
@@ -214,11 +221,8 @@ class ProgressTest {
         progress.javaMod(1, 2, "Zabric", false, now);
         progress.javaMod(1, 2, "Zabric", true, now);
         progress.javaMod(2, 2, "Viewpoint", false, now);
-        Progress.View view = progress.view();
-        assertEquals(Item.JAVA_MOD, view.item());
-        assertEquals(2, view.index());
-        assertEquals(2, view.total());
-        assertEquals("Viewpoint", view.name());
+        assertEquals(Item.JAVA_MOD, progress.view().item());
+        assertEquals(new Line(Step.MODS, Item.JAVA_MOD, 2, 2, "Viewpoint"), newest());
         progress.javaMod(2, 2, "Viewpoint", true, now);
         progress.mod("A", 3);
         assertEquals(Item.MOD, progress.view().item());
@@ -249,7 +253,7 @@ class ProgressTest {
         progress.modsLoaded();
         progress.modsLoading(at(3));
         progress.javaMod(1, 1, "A", false, now);
-        assertEquals(1, progress.view().index());
+        assertTrue(progress.loadingJar() != 0, "jar 1 loads again");
     }
 
     @Test
@@ -264,10 +268,7 @@ class ProgressTest {
         progress.luaRan();
         progress.lua("lua/two.lua", files);
         progress.luaRan();
-        Progress.View view = progress.view();
-        assertEquals(2, view.index());
-        assertEquals(2, view.total());
-        assertEquals("two.lua", view.name());
+        assertEquals(new Line(Step.LUA, Item.LUA, 2, 2, "two.lua"), newest());
     }
 
     @Test
@@ -279,8 +280,7 @@ class ProgressTest {
         progress.script("a/items.txt", "items.txt", 2);
         progress.script("a/items.txt", "items.txt", 2);
         progress.script("b/recipes.txt", "recipes.txt", 2);
-        assertEquals(2, progress.view().index());
-        assertEquals("recipes.txt", progress.view().name());
+        assertEquals(new Line(Step.SCRIPTS, Item.SCRIPT, 2, 2, "recipes.txt"), newest());
         progress.scriptsLoaded();
         assertFalse(progress.countsScripts());
     }
@@ -292,7 +292,7 @@ class ProgressTest {
         assertEquals(Item.NONE, progress.view().item());
         progress.reach(Boundary.SHARED_INIT, at(1));
         progress.texturePack("UI");
-        assertEquals("UI", progress.view().name());
+        assertEquals(new Line(Step.UI_TEXTURES, Item.TEXTURE_PACK, 0, 0, "UI"), newest());
     }
 
     @Test
@@ -349,31 +349,157 @@ class ProgressTest {
     }
 
     @Test
-    void theBarFillsByStepAndTheSubBarByCountedItem() {
+    void theBarFillsByStep() {
         progress.fontsReady(at(0));
         assertEquals(0.1, progress.view().fill(), 1e-9, "launch: step 1 of 10");
-        assertTrue(progress.view().sub() < 0, "no item yet");
         progress.modsLoading(at(1));
         progress.javaMod(1, 4, "A", false, now);
-        Progress.View view = progress.view();
-        assertEquals(0.1, view.fill(), 1e-9, "jars do not move the bar");
-        assertEquals(0.0, view.sub());
-        assertEquals(0.25, view.jarEnd(), 1e-9);
-        progress.javaMod(1, 4, "A", true, now);
-        assertEquals(0.25, progress.view().sub(), 1e-9);
-        assertEquals(progress.view().sub(), progress.view().jarEnd(), "no jar loads");
-        progress.javaMod(2, 4, "B", false, now);
-        assertEquals(0.25, progress.view().sub(), 1e-9, "from the previous jar's end");
-        assertEquals(0.5, progress.view().jarEnd(), 1e-9);
-        progress.javaMod(2, 4, "B", true, now);
-        progress.mod("M", 4);
-        assertEquals(0.25, progress.view().sub(), 1e-9, "mod 1 / 4");
+        assertEquals(0.1, progress.view().fill(), 1e-9, "jars do not move the bar");
         progress.reach(Boundary.TRANSLATIONS, at(2));
         assertEquals(0.2, progress.view().fill(), 1e-9);
-        assertTrue(progress.view().sub() < 0, "nothing counted");
+    }
+
+    private List<String> log() {
+        return progress.view().log().stream()
+                .map(line -> line.isStep() ? line.index() + " " + line.step()
+                        : line.item() + " " + line.index() + " " + line.name())
+                .toList();
+    }
+
+    @Test
+    void theLogHasALinePerStepAndPerItemNewestLast() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(1));
+        progress.javaMod(1, 2, "Zabric", false, now);
+        progress.javaMod(1, 2, "Zabric", true, now);
+        progress.javaMod(2, 2, "Viewpoint", false, now);
+        progress.javaMod(2, 2, "Viewpoint", true, now);
+        progress.mod("A", 1);
+        progress.reach(Boundary.TRANSLATIONS, at(2));
         progress.reach(Boundary.SHARED_INIT, at(3));
         progress.texturePack("UI");
-        assertTrue(progress.view().sub() < 0, "named only");
+        progress.texturePack("UI");
+        progress.texturePack("UI2");
+        assertEquals(List.of("1 MODS", "JAVA_MOD 1 Zabric", "JAVA_MOD 2 Viewpoint", "MOD 1 A", "2 TRANSLATIONS",
+                "3 UI_TEXTURES", "TEXTURE_PACK 0 UI", "TEXTURE_PACK 0 UI2"), log());
+        Line step = progress.view().log().get(4);
+        assertEquals(10, step.total(), "of the flow's steps");
+    }
+
+    @Test
+    void theLogKeepsItsNewestLines() {
+        progress.fontsReady(at(0));
+        progress.scriptsLoading(null, at(1));
+        int files = Progress.LOG_LINES * 3;
+        for (int i = 1; i <= files; i++) {
+            progress.script("s/" + i, i + ".txt", files);
+        }
+        List<Line> log = progress.view().log();
+        assertEquals(Progress.LOG_LINES, log.size());
+        assertEquals(files - Progress.LOG_LINES + 1, log.get(0).index());
+        assertEquals(files, log.get(log.size() - 1).index());
+    }
+
+    @Test
+    void aStuckItemStaysInTheLog() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(1));
+        progress.javaMod(1, 1, "Slow", false, now);
+        for (int i = 0; i < 100; i++) {
+            progress.frameHandedOver(at(1000L * i));
+        }
+        assertEquals("JAVA_MOD 1 Slow", log().get(log().size() - 1));
+    }
+
+    @Test
+    void eachFlowStartsItsOwnLog() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(1));
+        progress.mod("A", 1);
+        progress.reach(Boundary.GAME_BOOT, at(2));
+        progress.launchDone(at(3));
+        progress.connect(at(4));
+        assertEquals(List.of("1 CONNECTING"), log());
+        progress.event("OnConnectFailed", at(5));
+        progress.worldPrepares(at(6));
+        assertEquals(List.of(Line.step(Step.PREPARING_WORLD, 10, 13)), progress.view().log());
+    }
+
+    @Test
+    void aJoinsLogGoesOnAfterTheMenu() {
+        progress.connect(at(0));
+        progress.resetBegins(false, at(1));
+        progress.resetEnds(false, at(2));
+        progress.worldPrepares(at(3));
+        assertEquals(List.of("1 CONNECTING", "2 MODS", "10 PREPARING_WORLD"), log());
+    }
+
+    @Test
+    void theWorldLoadingTextIsAnItemPerChange() {
+        progress.worldText("Loading");
+        assertNull(progress.view(), "no flow");
+        progress.worldPrepares(at(0));
+        progress.worldText("too early");
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.worldText("Loading map");
+        progress.worldText("Loading map");
+        progress.worldText(" ");
+        progress.worldText("Loading chunks");
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "WORLD 0 Loading map", "WORLD 0 Loading chunks"),
+                log());
+    }
+
+    @Test
+    void itemsFromManyThreadsKeepTheirOrderInTheLog() throws InterruptedException {
+        progress.fontsReady(at(0));
+        progress.reach(Boundary.SHARED_INIT, at(1));
+        int threads = 4;
+        int packs = 5_000;
+        AtomicBoolean done = new AtomicBoolean();
+        List<Throwable> failures = new CopyOnWriteArrayList<>();
+        Thread reader = new Thread(() -> {
+            while (!done.get()) {
+                try {
+                    List<Line> log = progress.view().log();
+                    assertTrue(log.size() <= Progress.LOG_LINES);
+                    log.forEach(Objects::requireNonNull);
+                } catch (Throwable e) {
+                    failures.add(e);
+                    return;
+                }
+            }
+        });
+        reader.start();
+        List<Thread> writers = new ArrayList<>();
+        for (int t = 0; t < threads; t++) {
+            String prefix = t + ":";
+            Thread writer = new Thread(() -> {
+                for (int i = 0; i < packs; i++) {
+                    progress.texturePack(prefix + i);
+                }
+            });
+            writers.add(writer);
+            writer.start();
+        }
+        for (Thread writer : writers) {
+            writer.join();
+        }
+        done.set(true);
+        reader.join();
+        assertEquals(List.of(), failures);
+        List<Line> log = progress.view().log();
+        assertEquals(Progress.LOG_LINES, log.size());
+        // each thread's packs in the order it logged them
+        int[] last = new int[threads];
+        Arrays.fill(last, -1);
+        for (Line line : log) {
+            String[] parts = line.name().split(":");
+            int thread = Integer.parseInt(parts[0]);
+            int pack = Integer.parseInt(parts[1]);
+            assertTrue(pack > last[thread], line.name());
+            last[thread] = pack;
+        }
+        assertTrue(Arrays.stream(last).anyMatch(pack -> pack == packs - 1), "the last pack logged is kept");
     }
 
     @Test

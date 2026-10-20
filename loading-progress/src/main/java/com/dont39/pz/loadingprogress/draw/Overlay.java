@@ -1,12 +1,15 @@
 package com.dont39.pz.loadingprogress.draw;
 
 import com.dont39.pz.loadingprogress.progress.Item;
+import com.dont39.pz.loadingprogress.progress.Line;
 import com.dont39.pz.loadingprogress.progress.Progress;
+import com.dont39.pz.loadingprogress.progress.Step;
 import com.dont39.pz.loadingprogress.text.Strings;
 import zombie.GameWindow;
 import zombie.core.Core;
 import zombie.core.SpriteRenderer;
 import zombie.core.Translator;
+import zombie.core.fonts.AngelCodeFont;
 import zombie.gameStates.GameLoadingState;
 import zombie.ui.TextManager;
 import zombie.ui.UIFont;
@@ -19,8 +22,8 @@ import java.util.TreeSet;
 
 /**
  * Draws the bar at the end of every frame the game thread hands over while a flow shows: centered below ZombieBuddy's
- * watermark (top left, its Java mod list as wide as the screen) and above the world-loading screen's centered and
- * bottom text. Line 1 the step with the bar by step, line 2 the item with a sub-bar for a counted one.
+ * watermark (top left, its Java mod list as wide as the screen), the bar by step, and under it the flow's log, newest
+ * line at the bottom and older ones fading upwards, as many lines as fit above the loading screens' own text.
  */
 public final class Overlay {
     private static final int MAX_WIDTH = 640;
@@ -28,9 +31,9 @@ public final class Overlay {
     private static final int PAD = 8;
     private static final int GAP = 4;
     private static final int BAR_HEIGHT = 8;
-    private static final int SUB_BAR_HEIGHT = 4;
-    /** The fill's grey, opaque: interim frames draw it again. */
-    static final float FILL = 0.85f;
+    private static final float FILL = 0.85f;
+    // the alpha of the log's top line
+    private static final double FADED = 0.2;
 
     // game thread only
     // whether this frame's UI pass draws (with the UI frame buffer, not on every frame)
@@ -41,6 +44,9 @@ public final class Overlay {
     private static int javaModsExpected;
     private static Watermark watermark;
     private static int watermarkBottom;
+    private static int largeHeight;
+    private static Room room;
+    private static int rows;
 
     private Overlay() {
     }
@@ -63,6 +69,14 @@ public final class Overlay {
         if (view == null || Thread.currentThread() != GameWindow.gameThread) {
             return;
         }
+        // only here: GameLoadingState is not loaded before its screen
+        if (view.current().shows(Item.WORLD)) {
+            progress.worldText(GameLoadingState.gameLoadingString);
+            view = progress.view();
+            if (view == null) {
+                return;
+            }
+        }
         // before drawing: a drawing error must not also read as a frame without this hook
         progress.frameHandedOver(System.nanoTime());
         if (drawn) {
@@ -73,57 +87,97 @@ public final class Overlay {
     private static void draw(Progress.View view) {
         Core core = Core.getInstance();
         int screenWidth = core.getScreenWidth();
+        int screenHeight = core.getScreenHeight();
         int width = Math.min(MAX_WIDTH, screenWidth * 2 / 5);
         int x = (screenWidth - width) / 2;
-        double center = screenWidth / 2.0;
         TextManager text = TextManager.instance;
         // the Small font, the only one it draws with; a Lua reset recreates the fonts and does not wait for them
         boolean fonts = text.font != null && !text.font.isLoading();
         // the game's fonts have Chinese glyphs only when it runs in Chinese
         boolean chinese = "CN".equals(Translator.getLanguage().name());
-        String first = Strings.stepLine(view.step(), view.flow().steps().size(), view.current(), chinese);
-        String second = view.current().shows(Item.WORLD) ? worldText()
-                : Strings.itemLine(view.item(), view.index(), view.total(), view.name(), chinese);
         int lineHeight = fonts ? text.getFontHeight(UIFont.Small) : 0;
-        boolean secondLine = fonts && second != null;
-        boolean subBar = view.sub() >= 0;
-        int height = PAD + (fonts ? lineHeight + GAP : 0) + BAR_HEIGHT + (secondLine ? GAP + lineHeight : 0)
-                + (subBar ? GAP + SUB_BAR_HEIGHT : 0) + PAD;
         if (fonts) {
             watermarkBottom = watermarkBottom(text, screenWidth, lineHeight);
         }
         // without fonts yet, at least below its icon
         int top = Math.max(watermarkBottom, watermarkIcon(screenWidth)) + MARGIN;
+        int logTop = top + PAD + BAR_HEIGHT + GAP;
+
+        // the newest lines that fit, oldest first
+        int fit = fonts ? rows(view.current(), text, screenHeight, logTop, lineHeight) : 0;
+        List<Line> log = view.log();
+        List<Line> shown = new ArrayList<>();
+        List<String> lines = new ArrayList<>();
+        for (int i = log.size() - 1; i >= 0 && lines.size() < fit; i--) {
+            String line = Strings.line(log.get(i), chinese);
+            if (line != null) {
+                shown.add(0, log.get(i));
+                lines.add(0, line);
+            }
+        }
+        int textWidth = 0;
+        int newestEnd = x;
+        for (String line : lines) {
+            newestEnd = x + text.MeasureStringX(UIFont.Small, line);
+            textWidth = Math.max(textWidth, newestEnd - x);
+        }
+        boolean javaMod = view.item() == Item.JAVA_MOD;
+        if (javaMod && !lines.isEmpty()) {
+            // the interim frames' dots stay on the box
+            textWidth = Math.max(textWidth, newestEnd - x + Interim.dotsWidth(lineHeight));
+        }
+        int height = PAD + BAR_HEIGHT + (lines.isEmpty() ? 0 : GAP + lines.size() * lineHeight) + PAD;
 
         SpriteRenderer sprites = SpriteRenderer.instance;
-        sprites.renderi(null, x - PAD, top, width + 2 * PAD, height, 0f, 0f, 0f, 0.6f, null);
-        int y = top + PAD;
-        if (fonts) {
-            text.DrawStringCentre(UIFont.Small, center, y, first, 1.0, 1.0, 1.0, 1.0);
-            y += lineHeight + GAP;
-        }
-        bar(sprites, x, y, width, BAR_HEIGHT, (int) (width * view.fill()));
-        y += BAR_HEIGHT;
-        if (secondLine) {
-            y += GAP;
-            text.DrawStringCentre(UIFont.Small, center, y, second, 0.8, 0.8, 0.8, 1.0);
+        sprites.renderi(null, x - PAD, top, Math.max(width, textWidth) + 2 * PAD, height, 0f, 0f, 0f, 0.6f, null);
+        sprites.renderi(null, x, top + PAD, width, BAR_HEIGHT, 0.3f, 0.3f, 0.3f, 1f, null);
+        sprites.renderi(null, x, top + PAD, (int) (width * view.fill()), BAR_HEIGHT, FILL, FILL, FILL, 1f, null);
+        int y = logTop;
+        for (int i = 0; i < lines.size(); i++) {
+            // by position: the top of the log is the faintest
+            int age = lines.size() - 1 - i;
+            double alpha = 1 - (1 - FADED) * age / Math.max(1, fit - 1);
+            double grey = shown.get(i).isStep() ? 1.0 : 0.8;
+            text.DrawString(UIFont.Small, x, y, lines.get(i), grey, grey, grey, alpha);
             y += lineHeight;
         }
-        if (subBar) {
-            y += GAP;
-            int fill = (int) (width * view.sub());
-            bar(sprites, x, y, width, SUB_BAR_HEIGHT, fill);
-            // also between jars, which keeps the copy for the next
-            if (view.item() == Item.JAVA_MOD) {
-                Interim.mark(new Interim.Bar(view.jar(), x, y, width, SUB_BAR_HEIGHT, screenWidth,
-                        core.getScreenHeight(), fill, (int) (width * view.jarEnd())));
-            }
+        // also between jars, which keeps the copy for the next
+        if (javaMod) {
+            long jar = lines.isEmpty() ? 0 : view.jar();
+            Interim.mark(new Interim.Dots(jar, newestEnd, y - lineHeight, lineHeight, screenWidth, screenHeight));
         }
     }
 
-    private static void bar(SpriteRenderer sprites, int x, int y, int width, int height, int fill) {
-        sprites.renderi(null, x, y, width, height, 0.3f, 0.3f, 0.3f, 1f, null);
-        sprites.renderi(null, x, y, fill, height, FILL, FILL, FILL, 1f, null);
+    /**
+     * How many lines fit between the bar and the highest of the loading screens' own centered text: the epilepsy
+     * warning's first line ({@code GameWindow.doEpilepsyWarningText}, 3.5 NewLarge lines above the middle). The
+     * world-loading screen's text sits lower (its intro and errors around the middle, tips, prompts and the figure at
+     * the bottom). One line of margin. While NewLarge loads, its line height grows as its pages do: the last loaded
+     * one's counts until then, and no line shows before the first.
+     */
+    private static int rows(Step step, TextManager text, int screenHeight, int logTop, int lineHeight) {
+        // their UI starts right under the bar
+        if (step == Step.CONNECTING || step == Step.LOGIN_QUEUE) {
+            return 0;
+        }
+        AngelCodeFont large = text.getFontFromEnum(UIFont.NewLarge);
+        if (large != null && !large.isLoading()) {
+            largeHeight = large.getLineHeight();
+        }
+        if (largeHeight == 0) {
+            return 0;
+        }
+        Room key = new Room(screenHeight, logTop, lineHeight, largeHeight);
+        if (!key.equals(room)) {
+            room = key;
+            int content = screenHeight / 2 - (int) (3.5f * key.largeHeight());
+            rows = Math.max(0, Math.min((content - lineHeight - PAD - logTop) / lineHeight, Progress.LOG_LINES));
+        }
+        return rows;
+    }
+
+    // what the log's room depends on
+    private record Room(int screenHeight, int logTop, int lineHeight, int largeHeight) {
     }
 
     /**
@@ -178,10 +232,5 @@ public final class Overlay {
 
     // what the watermark's estimate depends on
     private record Watermark(int javaMods, int javaModsExpected, int screenWidth, int lineHeight) {
-    }
-
-    private static String worldText() {
-        String loading = GameLoadingState.gameLoadingString;
-        return loading == null || loading.isBlank() ? null : loading;
     }
 }

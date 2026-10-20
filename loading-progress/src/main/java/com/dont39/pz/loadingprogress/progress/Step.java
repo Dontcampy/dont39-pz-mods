@@ -32,7 +32,7 @@ public enum Step {
         this.items = List.of(items);
     }
 
-    /** Whether the second line names items of {@code kind} during the step. */
+    /** Whether the step logs items of {@code kind}. */
     public boolean shows(Item kind) {
         return items.contains(kind);
     }

@@ -1,6 +1,7 @@
 package com.dont39.pz.loadingprogress.text;
 
 import com.dont39.pz.loadingprogress.progress.Item;
+import com.dont39.pz.loadingprogress.progress.Line;
 import com.dont39.pz.loadingprogress.progress.Progress;
 import com.dont39.pz.loadingprogress.progress.Step;
 
@@ -14,9 +15,10 @@ public final class Strings {
     private Strings() {
     }
 
-    /** {@code "n / N: step"}. */
-    public static String stepLine(int n, int count, Step step, boolean chinese) {
-        return n + " / " + count + (chinese ? "：" : ": ") + step(step, chinese);
+    /** A line of the log under the bar, or null when the item has nothing to show. */
+    public static String line(Line line, boolean chinese) {
+        return line.isStep() ? line.index() + " / " + line.total() + "  " + step(line.step(), chinese)
+                : itemLine(line.item(), line.index(), line.total(), line.name(), chinese);
     }
 
     public static String step(Step step, boolean chinese) {
@@ -42,10 +44,12 @@ public final class Strings {
         };
     }
 
-    /** The second line, or null when the item has nothing to show. */
+    /** An item, or null when it has nothing to show. */
     public static String itemLine(Item item, int index, int total, String name, boolean chinese) {
         return switch (item) {
-            case NONE, WORLD -> null;
+            case NONE -> null;
+            // the game's own text, in its language
+            case WORLD -> name;
             case JAVA_MOD -> counted(chinese ? "Java 模组" : "Java mod", index, total, name, chinese);
             case MOD -> counted(chinese ? "模组" : "Mod", index, total, name, chinese);
             case SCRIPT -> counted(chinese ? "脚本文件" : "Script file", index, total, name, chinese);

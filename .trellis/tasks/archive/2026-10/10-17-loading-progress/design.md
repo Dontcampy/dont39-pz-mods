@@ -139,11 +139,14 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   over (epilepsy, model-loading, connect UI, login queue, `GameLoadingState.render`) and every own frame.
   `EndFrameUI` HEAD is the last point inside a frame; a RETURN hook on `GameLoadingState.render` would run after the
   frame was handed over and Zabric has no `@At("INVOKE")` (DI B6).
-- Layout: centered, below ZombieBuddy's watermark and above the world-loading screen's centered tips, bottom text and
-  figure (DI B6): line 1 "n / N: step", the bar `min(640, 40 % of width)` wide (step n / N, D2), line 2 the item, and
-  under it a thin sub-bar with the item's i / total for counted items (Java mods, mods, script files, Lua files; D13),
-  hidden otherwise. Text needs the Small font it draws with loaded (`TextManager.instance.font`, DI risk 4); while it
-  loads, only the bars draw. Fonts are fetched per frame (`ResetLua` replaces them).
+- Layout (D15): centered below ZombieBuddy's watermark, the bar `min(640, 40 % of width)` wide (step n / N, D2), and
+  under it, left-aligned, the flow's log (`progress/Log.java`, cleared at each flow's begin): a line per step that
+  begins ("n / N  step") and per new item (`Progress.item`; a repeat of the current item adds none), newest at the
+  bottom, older lines fading by position, dropped by count only. Lines that fit: `Overlay.rows`, from the Small and
+  NewLarge fonts' line heights and the screen height (NewLarge's last loaded one while it loads, none before); none on
+  the connect and login-queue screens, whose UI starts right under the bar. The world-loading text is an item per change, read per frame. Text
+  needs the Small font it draws with loaded (`TextManager.instance.font`, DI risk 4); while it loads, only the bar
+  draws. Fonts are fetched per frame (`ResetLua` replaces them).
 - Watermark rule (R7): ZombieBuddy 2.3.4's watermark (`Watermark.draw`, at `EndFrameUI` HEAD in every frame until
   the world) is an icon (128 px on screens over 2000 px, else 64) with lines right of it: the version, a notice after a
   preload change, and "N active Java mods: ..." wrapped at the screen's width, so at 4K with 14 Java mods it is three
@@ -229,12 +232,12 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   listener's mod with the cause (or logs one Zabric line when none listens); not a lifecycle stop. Tests:
   `JarLoadHookTest` (the real `loadJar` with the hook installed), `JarListenersTest`.
 - The progress mod registers `hooks.JavaMods` at preLaunch. The Java-mod pass is an item of the launch's (and a
-  reset's) "Loading mods" step, not a step of its own (D4, D11 wording): line 2 "Java mod i / n: id"
+  reset's) "Loading mods" step, not a step of its own (D4, D11 wording): a log line "Java mod i / n: id"
   (`Item.JAVA_MOD`), an own frame at each jar's start and a tick after the last. Jar frames come two at once, then
   one per 50 ms (`Progress.takeJarFrame`): a long jar right after a short one gets its own frame and so its interim
   frames, and jars that return at once (later passes) get no frame each. A long jar after two short ones within 50 ms
   can still go without. A call off the game thread while a flow runs, or out of order (`Progress.javaMod`),
-  throws, which stops the mod. The bar stays at its step (D2); the sub-bar shows jars done / total.
+  throws, which stops the mod. The bar stays at its step (D2).
 - C, interim frames from the render thread, only while the Java-mod step shows and only for a gap between own frames:
   - heartbeat: a Zabric counter bumped per transformation during the pass (a retransform-capable transformer that
     only counts, never transforms or loads), readable through the same API;
@@ -243,16 +246,16 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
     alpha, sRGB or not, or 10/10/10/2; another format is a mismatch), through its own framebuffer bound for drawing.
     The format matches so that the copy from a multisampled window resolves. No direct state access: every binding is
     read back and restored (`Saved`), the texture and unpack-buffer bindings while the texture is created. Copies run
-    with sRGB writes off (raw); the sub-bar's clear runs with the game's setting. The copy is kept between jars and
+    with sRGB writes off (raw); the dots' clears run with the game's setting. The copy is kept between jars and
     released at the first frame that shows something else.
   - draw: from the render thread's idle path (`Display.processMessages()V`) at most every 250 ms and only when the
     heartbeat moved: the copy goes back to the back buffer (a blit; into a multisampled window, where a blit cannot
     write, a triangle covering the window whose fragments `texelFetch` their pixel, with program, vertex array,
     texture unit 0 and its sampler, viewport, polygon mode, sRGB writes (on for an sRGB copy, which reads decoded) and
     every switch that changes what a fragment writes read back, set and restored; GLSL 130, or 150 on a core profile),
-    then a scissored `glClearBufferfv` moves the sub-bar's fill, then `Display.swapBuffers()`;
-    text stays as captured. Each move covers a sixth of what is left of the jar's share of the sub-bar, at least a
-    pixel, and stops short of its end, where the next jar's own frame continues: the moves shrink and never pass it.
+    then scissored `glClearBufferfv` dots after the newest log line's text end (`Interim.Dots`, recorded when the
+    captured frame was drawn: no text can be drawn on the render thread), one more per frame up to three, then none
+    again, then `Display.swapBuffers()`.
     The game's cached state (`GLStateRenderThread`, `Texture.lastTextureID`) is never changed. Size: the
     framebuffer's, not `Core`'s screen.
   - no capability switches interim frames off; a context without OpenGL 3.0 (whose missing entry points would crash

@@ -24,32 +24,32 @@ import static org.lwjgl.opengl.GL33C.*;
 
 /**
  * Frames the render thread shows while ZombieBuddy patches one Java mod jar, which holds the game thread for seconds:
- * the jar's own frame, copied from the back buffer before its swap, with the sub-bar filled further into the jar's
- * share each time while Zabric's heartbeat moves, so that it stands still when the loader hangs. The text stays as
- * captured. Raw GL without direct state access (the game's drawing belongs to the game thread's frame); every state it
- * touches is read back and restored, and the game's cached state is left alone. A GL error of its calls stops the
- * mod; one the game left pending skips the frame.
- * Render thread only, except {@link #mark}; a throw stops the mod's hooks, so no frame follows.
+ * the jar's own frame, copied from the back buffer before its swap, with one more trailing dot after the log's newest
+ * line each time while Zabric's heartbeat moves (none after three), so that it stands still when the loader hangs.
+ * Dots are filled rectangles: no text can be drawn here. Raw GL without direct state access (the game's drawing belongs
+ * to the game thread's frame); every state it touches is read back and restored, and the game's cached state is left
+ * alone. A GL error of its calls stops the mod; one the game left pending skips the frame.
+ * Render thread only, except {@link #mark} and {@link #dotsWidth}; a throw stops the mod's hooks, so no frame follows.
  */
 public final class Interim {
     private static final long INTERVAL = TimeUnit.MILLISECONDS.toNanos(250);
-    // each frame fills this part of what is left of the jar's share: the moves shrink and stop short of its end
-    private static final int PARTS = 6;
-    private static final float[] FILL = {Overlay.FILL, Overlay.FILL, Overlay.FILL, 1f};
+    private static final int MAX_DOTS = 3;
+    // the newest line's colour
+    private static final float[] DOT = {0.8f, 0.8f, 0.8f, 1f};
 
     /**
-     * The sub-bar of a frame that shows a Java mod jar, in screen pixels: {@code fill} wide, and {@code limit} once the
-     * jar loaded. {@code jar}: {@link Progress#loadingJar()}, 0 between jars.
+     * The log's newest line in a frame that shows a Java mod jar, in screen pixels: its text ends at {@code x}, its row
+     * is {@code y} to {@code y + height}. {@code jar}: {@link Progress#loadingJar()}, 0 between jars or when the line
+     * is not drawn.
      */
-    public record Bar(long jar, int x, int y, int width, int height, int screenWidth, int screenHeight, int fill,
-                      int limit) {
+    public record Dots(long jar, int x, int y, int height, int screenWidth, int screenHeight) {
     }
 
     // render thread only
-    private static Bar marked;
-    private static Bar shown;
+    private static Dots marked;
+    private static Dots shown;
     private static long lastBeat;
-    private static int lastFill;
+    private static int lastDots;
     private static long lastShown;
     private static Capture capture;
     private static Quad quad;
@@ -60,9 +60,14 @@ public final class Interim {
     private Interim() {
     }
 
+    /** How far right of the text's end the dots reach in a row {@code height} high. */
+    public static int dotsWidth(int height) {
+        return 2 * MAX_DOTS * dotSize(height);
+    }
+
     /** Game thread, inside a frame that shows a Java mod: its swap captures it. */
-    public static void mark(Bar bar) {
-        SpriteRenderer.instance.drawGeneric(new Mark(bar));
+    public static void mark(Dots dots) {
+        SpriteRenderer.instance.drawGeneric(new Mark(dots));
     }
 
     /** At the head of {@code Display.update(boolean)}: the back buffer holds a whole frame of the game thread's. */
@@ -70,9 +75,9 @@ public final class Interim {
         if (Thread.currentThread() != RenderThread.renderThread) {
             return;
         }
-        Bar bar = marked;
-        if (bar == null) {
-            // the bar shows something else now
+        Dots dots = marked;
+        if (dots == null) {
+            // the log shows something else now
             if (capture != null || shown != null) {
                 release();
             }
@@ -81,8 +86,8 @@ public final class Interim {
         marked = null;
         lastShown = System.nanoTime();
         shown = null;
-        if (bar.jar() != 0) {
-            capture(bar, progress);
+        if (dots.jar() != 0) {
+            capture(dots, progress);
         }
     }
 
@@ -91,8 +96,8 @@ public final class Interim {
         if (Thread.currentThread() != RenderThread.renderThread) {
             return;
         }
-        Bar bar = shown;
-        if (bar == null || progress.loadingJar() != bar.jar()) {
+        Dots dots = shown;
+        if (dots == null || progress.loadingJar() != dots.jar()) {
             return;
         }
         long now = System.nanoTime();
@@ -102,9 +107,7 @@ public final class Interim {
             return;
         }
         long beat = LoaderProgress.heartbeat();
-        // short of the limit, where the next jar's own frame takes over
-        int fill = lastFill + Math.max(1, (bar.limit() - lastFill) / PARTS);
-        if (beat == lastBeat || fill >= bar.limit()) {
+        if (beat == lastBeat) {
             return;
         }
         GLFW.glfwGetFramebufferSize(Display.getWindow(), framebufferWidth, framebufferHeight);
@@ -116,14 +119,15 @@ public final class Interim {
         if (gameErrorPending(progress)) {
             return;
         }
-        present(bar, fill);
+        int count = (lastDots + 1) % (MAX_DOTS + 1);
+        present(dots, count);
         lastShown = now;
         lastBeat = beat;
-        lastFill = fill;
+        lastDots = count;
         progress.interimFrame(System.nanoTime());
     }
 
-    private static void capture(Bar bar, Progress progress) {
+    private static void capture(Dots dots, Progress progress) {
         // the window's own size, which the screen size of the game's UI need not be
         GLFW.glfwGetFramebufferSize(Display.getWindow(), framebufferWidth, framebufferHeight);
         int w = framebufferWidth[0];
@@ -157,20 +161,18 @@ public final class Interim {
             saved.restore();
         }
         check("copying a frame for interim frames");
-        shown = bar;
+        shown = dots;
         lastBeat = LoaderProgress.heartbeat();
-        lastFill = bar.fill();
+        lastDots = 0;
     }
 
-    private static void present(Bar bar, int fill) {
+    private static void present(Dots dots, int count) {
         int width = capture.width();
         int height = capture.height();
-        double sx = (double) width / bar.screenWidth();
-        double sy = (double) height / bar.screenHeight();
-        int left = (int) Math.round((bar.x() + bar.fill()) * sx);
-        int right = (int) Math.round((bar.x() + fill) * sx);
-        int top = (int) Math.round(bar.y() * sy);
-        int bottom = (int) Math.round((bar.y() + bar.height()) * sy);
+        double sx = (double) width / dots.screenWidth();
+        double sy = (double) height / dots.screenHeight();
+        int size = dotSize(dots.height());
+        int bottom = dots.y() + dots.height() * 3 / 4;
         Saved saved = Saved.read();
         try {
             glDisable(GL_SCISSOR_TEST);
@@ -187,12 +189,19 @@ public final class Interim {
                 glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
             }
-            // the fill is written as the game wrote it
+            // the dots are written as the game writes its text
             saved.srgbWrites();
             glEnable(GL_SCISSOR_TEST);
-            // GL counts rows from the bottom
-            glScissor(left, height - bottom, right - left, bottom - top);
-            glClearBufferfv(GL_COLOR, 0, FILL);
+            for (int i = 0; i < count; i++) {
+                int left = dots.x() + size + i * 2 * size;
+                int x0 = (int) Math.round(left * sx);
+                int x1 = (int) Math.round((left + size) * sx);
+                int y0 = (int) Math.round((bottom - size) * sy);
+                int y1 = (int) Math.round(bottom * sy);
+                // GL counts rows from the bottom
+                glScissor(x0, height - y1, x1 - x0, y1 - y0);
+                glClearBufferfv(GL_COLOR, 0, DOT);
+            }
         } finally {
             saved.restore();
         }
@@ -511,17 +520,22 @@ public final class Interim {
         }
     }
 
+    // square dots near the baseline, an eighth of the row high and as far apart
+    private static int dotSize(int height) {
+        return Math.max(2, height / 8);
+    }
+
     // runs on the render thread where the frame's UI ends, just before that frame's swap
     private static final class Mark extends TextureDraw.GenericDrawer {
-        private final Bar bar;
+        private final Dots dots;
 
-        Mark(Bar bar) {
-            this.bar = bar;
+        Mark(Dots dots) {
+            this.dots = dots;
         }
 
         @Override
         public void render() {
-            marked = bar;
+            marked = dots;
         }
     }
 }
