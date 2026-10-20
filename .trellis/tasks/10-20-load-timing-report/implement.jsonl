@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Layers and pre-development checklist"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Report and stop, never a silent degrade; settings errors"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Console line for the report path"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook rules; JDK-only glue for a preloaded mod"}
+{"file": ".trellis/tasks/archive/2026-10/10-17-loading-progress/design.md", "reason": "Current Loading Progress design: flows, log, frames"}
