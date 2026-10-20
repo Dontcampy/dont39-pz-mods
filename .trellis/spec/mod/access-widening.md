@@ -49,6 +49,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - Its hooks run inside code every mod depends on (the game's `main`, ZombieBuddy's `loadMods`): they never throw out,
   and a failure stops the whole lifecycle for the session instead of running part of it (`entrypoint/Lifecycle.java`).
 - It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`).
+- Premain reads the game's arguments from the process (`internal/GameArgs.java`), never `sun.java.command`: the
+  game's native launcher starts the JVM through JNI, which leaves that property unset.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)

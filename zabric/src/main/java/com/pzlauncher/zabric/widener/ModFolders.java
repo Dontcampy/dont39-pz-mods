@@ -1,5 +1,7 @@
 package com.pzlauncher.zabric.widener;
 
+import com.pzlauncher.zabric.internal.GameArgs;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,23 +72,24 @@ final class ModFolders {
         return jars;
     }
 
-    // the game's -cachedir argument; the agent sees only the command line the JVM recorded
     private static Path cacheDir() {
-        String command = System.getProperty("sun.java.command", "");
-        int at = command.indexOf(CACHE_DIR_ARG);
-        while (at > 0 && command.charAt(at - 1) != ' ') {
-            at = command.indexOf(CACHE_DIR_ARG, at + 1);
+        return cacheDir(GameArgs.read(), System.getProperty("os.name"), System.getProperty("user.home"),
+                System.getProperty("deployment.user.cachedir"));
+    }
+
+    // as the game's main and ZomboidFileSystem.getCacheDir work it out
+    static Path cacheDir(List<String> args, String osName, String userHome, String deploymentCacheDir) {
+        String dir = null;
+        for (String arg : args) {
+            if (arg.startsWith(CACHE_DIR_ARG)) {
+                dir = arg.substring(CACHE_DIR_ARG.length()).trim();
+            }
         }
-        if (at < 0) {
-            return Path.of(System.getProperty("user.home"), "Zomboid");
+        if (dir != null) {
+            return Path.of(dir);
         }
-        String value = command.substring(at + CACHE_DIR_ARG.length());
-        int next = value.indexOf(" -");
-        value = (next < 0 ? value : value.substring(0, next)).strip();
-        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return Path.of(value);
+        boolean deployment = deploymentCacheDir != null && !osName.startsWith("Win");
+        return Path.of(deployment ? deploymentCacheDir : userHome, "Zomboid");
     }
 
     private static List<Path> children(Path dir) throws IOException {

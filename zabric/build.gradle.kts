@@ -11,6 +11,23 @@ plugins {
 
 version = libs.versions.zabric.get()
 
+// FFM is final in Java 22, but authors' builds read the jar at Zabric's release: only this code is newer, and the game
+// runs on 25
+val ffm = sourceSets.create("ffm")
+tasks.named<JavaCompile>(ffm.compileJavaTaskName) { options.release = 22 }
+sourceSets.main {
+  compileClasspath += ffm.output
+  runtimeClasspath += ffm.output
+}
+sourceSets.test { runtimeClasspath += ffm.output }
+tasks.jar { from(ffm.output) }
+tasks.named<Jar>("sourcesJar") { from(ffm.allSource) }
+
+tasks.test {
+  // as the game's Windows launchers pass it, so FFM runs without a warning
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
+}
+
 // The published jar is the mod jar: authors compile against it, players get it from the Workshop item. The game and
 // ZombieBuddy jars stay off the POM; authors have both locally.
 mavenPublishing {
