@@ -17,10 +17,11 @@ the game loads without drawing, so the window keeps pumping its messages. Worksh
   with up to three trailing dots after the log's newest line, one more (or none again after three) every 250 ms while
   Zabric's heartbeat moves. Bind-based GL with every binding and state restored, also for a multisampled window; a GL
   error of its own calls stops the mod, one the game left pending skips the frame.
-- `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over: the bar by
-  step below ZombieBuddy's watermark (its wrapping is replayed from the Java mods the loader progress named), and under
-  it the flow's log (`progress/Log.java`): a line per step and per item, newest at the bottom, older ones fading, as
-  many as fit above the loading screens' own text (`Overlay.rows`); `draw/FramePump.java` hands over its own frames
+- `draw/Overlay.java` draws at the head of `Core.EndFrameUI` in every frame the game thread hands over, in a column at
+  the right edge (`draw/Column.java`) below ZombieBuddy's watermark (its wrapping is replayed from the Java mods the
+  loader progress named): the bar by step, and under it the flow's log (`progress/Log.java`): a line per step and per
+  item, newest at the bottom, older ones fading, long ones cut with an ellipsis, down to the highest of the screen's
+  own content that reaches into the column (`Overlay.blocks`); `draw/FramePump.java` hands over its own frames
   from the hooks inside the loading code, but none while the watermark's font loads and the render thread pumps on its
   own.
 - Calls that hold the game thread with no hookable point inside (comment stripping of script files, Steam's installed

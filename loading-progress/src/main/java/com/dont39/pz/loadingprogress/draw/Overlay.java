@@ -1,11 +1,13 @@
 package com.dont39.pz.loadingprogress.draw;
 
+import com.dont39.pz.loadingprogress.progress.Flow;
 import com.dont39.pz.loadingprogress.progress.Item;
 import com.dont39.pz.loadingprogress.progress.Line;
 import com.dont39.pz.loadingprogress.progress.Progress;
 import com.dont39.pz.loadingprogress.progress.Step;
 import com.dont39.pz.loadingprogress.text.Strings;
 import zombie.GameWindow;
+import zombie.ZomboidFileSystem;
 import zombie.core.Core;
 import zombie.core.SpriteRenderer;
 import zombie.core.Translator;
@@ -14,26 +16,28 @@ import zombie.gameStates.GameLoadingState;
 import zombie.ui.TextManager;
 import zombie.ui.UIFont;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Draws the bar at the end of every frame the game thread hands over while a flow shows: centered below ZombieBuddy's
- * watermark (top left, its Java mod list as wide as the screen), the bar by step, and under it the flow's log, newest
- * line at the bottom and older ones fading upwards, as many lines as fit above the loading screens' own text.
+ * Draws the bar at the end of every frame the game thread hands over while a flow shows, in a column at the right edge
+ * ({@link Column}): below ZombieBuddy's watermark (top left, its Java mod list as wide as the screen), the bar by step,
+ * and under it the flow's log, newest line at the bottom and older ones fading upwards, down to the highest of the
+ * screen's own content that reaches into the column.
  */
 public final class Overlay {
-    private static final int MAX_WIDTH = 640;
-    private static final int MARGIN = 12;
-    private static final int PAD = 8;
-    private static final int GAP = 4;
-    private static final int BAR_HEIGHT = 8;
     private static final float FILL = 0.85f;
     // the alpha of the log's top line
     private static final double FADED = 0.2;
+    // vanilla geometry (42.21): LoadingQueueUI.onresize's inset; MainScreen.lua's size for ConnectToServer
+    private static final int QUEUE_INSET = 288;
+    private static final int SMALL_SCREEN = 1024;
 
     // game thread only
     // whether this frame's UI pass draws (with the UI frame buffer, not on every frame)
@@ -44,9 +48,11 @@ public final class Overlay {
     private static int javaModsExpected;
     private static Watermark watermark;
     private static int watermarkBottom;
-    private static int largeHeight;
-    private static Room room;
-    private static int rows;
+    // kept while a font it needs loads
+    private static Measured measured;
+    // cutting a line measures it about a dozen times; kept while the Small font stays
+    private static final Map<Fit, String> fitted = new HashMap<>();
+    private static AngelCodeFont fittedFont;
 
     private Overlay() {
     }
@@ -88,8 +94,6 @@ public final class Overlay {
         Core core = Core.getInstance();
         int screenWidth = core.getScreenWidth();
         int screenHeight = core.getScreenHeight();
-        int width = Math.min(MAX_WIDTH, screenWidth * 2 / 5);
-        int x = (screenWidth - width) / 2;
         TextManager text = TextManager.instance;
         // the Small font, the only one it draws with; a Lua reset recreates the fonts and does not wait for them
         boolean fonts = text.font != null && !text.font.isLoading();
@@ -99,44 +103,47 @@ public final class Overlay {
         if (fonts) {
             watermarkBottom = watermarkBottom(text, screenWidth, lineHeight);
         }
-        // without fonts yet, at least below its icon
-        int top = Math.max(watermarkBottom, watermarkIcon(screenWidth)) + MARGIN;
-        int logTop = top + PAD + BAR_HEIGHT + GAP;
+        // its notice and wrapped mod list can reach the right edge; without fonts yet, at least below its icon
+        int top = Math.max(watermarkBottom, watermarkIcon(screenWidth)) + Column.MARGIN;
+        Screen screen = Screen.of(view);
+        Column column = Column.place(screenWidth, screenHeight, top, lineHeight, screen.panelRight(screenWidth),
+                blocks(screen, view.current(), text, screenWidth, screenHeight));
 
         // the newest lines that fit, oldest first
-        int fit = fonts ? rows(view.current(), text, screenHeight, logTop, lineHeight) : 0;
         List<Line> log = view.log();
         List<Line> shown = new ArrayList<>();
         List<String> lines = new ArrayList<>();
-        for (int i = log.size() - 1; i >= 0 && lines.size() < fit; i--) {
+        for (int i = log.size() - 1; i >= 0 && lines.size() < column.rows(); i--) {
             String line = Strings.line(log.get(i), chinese);
             if (line != null) {
                 shown.add(0, log.get(i));
                 lines.add(0, line);
             }
         }
-        int textWidth = 0;
-        int newestEnd = x;
-        for (String line : lines) {
-            newestEnd = x + text.MeasureStringX(UIFont.Small, line);
-            textWidth = Math.max(textWidth, newestEnd - x);
-        }
         boolean javaMod = view.item() == Item.JAVA_MOD;
-        if (javaMod && !lines.isEmpty()) {
-            // the interim frames' dots stay on the box
-            textWidth = Math.max(textWidth, newestEnd - x + Interim.dotsWidth(lineHeight));
+        int x = column.textLeft();
+        for (int i = 0; i < lines.size(); i++) {
+            // the interim frames' dots stay in the column
+            boolean dots = javaMod && i == lines.size() - 1;
+            lines.set(i, fit(text, lines.get(i), column.textWidth() - (dots ? Interim.dotsWidth(lineHeight) : 0)));
         }
-        int height = PAD + BAR_HEIGHT + (lines.isEmpty() ? 0 : GAP + lines.size() * lineHeight) + PAD;
+        int newestEnd = x + (lines.isEmpty() ? 0 : text.MeasureStringX(UIFont.Small, lines.get(lines.size() - 1)));
+        int height = Column.PAD + Column.BAR_HEIGHT
+                + (lines.isEmpty() ? 0 : Column.GAP + lines.size() * lineHeight) + Column.PAD;
 
         SpriteRenderer sprites = SpriteRenderer.instance;
-        sprites.renderi(null, x - PAD, top, Math.max(width, textWidth) + 2 * PAD, height, 0f, 0f, 0f, 0.6f, null);
-        sprites.renderi(null, x, top + PAD, width, BAR_HEIGHT, 0.3f, 0.3f, 0.3f, 1f, null);
-        sprites.renderi(null, x, top + PAD, (int) (width * view.fill()), BAR_HEIGHT, FILL, FILL, FILL, 1f, null);
-        int y = logTop;
+        int barTop = column.top() + Column.PAD;
+        int barWidth = column.textWidth();
+        sprites.renderi(null, column.left(), column.top(), column.right() - column.left(), height, 0f, 0f, 0f, 0.6f,
+                null);
+        sprites.renderi(null, x, barTop, barWidth, Column.BAR_HEIGHT, 0.3f, 0.3f, 0.3f, 1f, null);
+        sprites.renderi(null, x, barTop, (int) (barWidth * view.fill()), Column.BAR_HEIGHT, FILL, FILL, FILL, 1f,
+                null);
+        int y = column.logTop();
         for (int i = 0; i < lines.size(); i++) {
             // by position: the top of the log is the faintest
             int age = lines.size() - 1 - i;
-            double alpha = 1 - (1 - FADED) * age / Math.max(1, fit - 1);
+            double alpha = 1 - (1 - FADED) * age / Math.max(1, column.rows() - 1);
             double grey = shown.get(i).isStep() ? 1.0 : 0.8;
             text.DrawString(UIFont.Small, x, y, lines.get(i), grey, grey, grey, alpha);
             y += lineHeight;
@@ -148,36 +155,144 @@ public final class Overlay {
         }
     }
 
-    /**
-     * How many lines fit between the bar and the highest of the loading screens' own centered text: the epilepsy
-     * warning's first line ({@code GameWindow.doEpilepsyWarningText}, 3.5 NewLarge lines above the middle). The
-     * world-loading screen's text sits lower (its intro and errors around the middle, tips, prompts and the figure at
-     * the bottom). One line of margin. While NewLarge loads, its line height grows as its pages do: the last loaded
-     * one's counts until then, and no line shows before the first.
-     */
-    private static int rows(Step step, TextManager text, int screenHeight, int logTop, int lineHeight) {
-        // their UI starts right under the bar
-        if (step == Step.CONNECTING || step == Step.LOGIN_QUEUE) {
-            return 0;
+    /** {@code line} as {@link Column#fit} cuts it to {@code max} in the Small font. */
+    private static String fit(TextManager text, String line, int max) {
+        // a Lua reset replaces the font; old lines scroll out
+        if (text.font != fittedFont || fitted.size() > 2 * Progress.LOG_LINES) {
+            fitted.clear();
+            fittedFont = text.font;
         }
-        AngelCodeFont large = text.getFontFromEnum(UIFont.NewLarge);
-        if (large != null && !large.isLoading()) {
-            largeHeight = large.getLineHeight();
-        }
-        if (largeHeight == 0) {
-            return 0;
-        }
-        Room key = new Room(screenHeight, logTop, lineHeight, largeHeight);
-        if (!key.equals(room)) {
-            room = key;
-            int content = screenHeight / 2 - (int) (3.5f * key.largeHeight());
-            rows = Math.max(0, Math.min((content - lineHeight - PAD - logTop) / lineHeight, Progress.LOG_LINES));
-        }
-        return rows;
+        return fitted.computeIfAbsent(new Fit(line, max),
+                key -> Column.fit(line, max, cut -> text.MeasureStringX(UIFont.Small, cut)));
     }
 
-    // what the log's room depends on
-    private record Room(int screenHeight, int logTop, int lineHeight, int largeHeight) {
+    private record Fit(String line, int max) {
+    }
+
+    /** The vanilla screen a step's frames show. */
+    private enum Screen {
+        // GameWindow.doEpilepsyWarningText; the launch's own frames draw it too until the models load
+        EPILEPSY,
+        // ConnectToServer.lua: a centered panel 70 % of the screen wide (95 % up to 1024 px)
+        CONNECT,
+        // LoadingQueueUI: inset 288 px from each side
+        QUEUE,
+        // GameLoadingState.render; the own frames of the start and the mod reload are blank
+        WORLD;
+
+        static Screen of(Progress.View view) {
+            if (view.flow() == Flow.LAUNCH) {
+                return EPILEPSY;
+            }
+            return switch (view.current()) {
+                case CONNECTING -> CONNECT;
+                case LOGIN_QUEUE -> QUEUE;
+                default -> WORLD;
+            };
+        }
+
+        int panelRight(int screenWidth) {
+            return switch (this) {
+                case CONNECT -> (screenWidth + screenWidth * (screenWidth <= SMALL_SCREEN ? 95 : 70) / 100) / 2;
+                case QUEUE -> screenWidth - QUEUE_INSET;
+                default -> 0;
+            };
+        }
+    }
+
+    /** The screen's centered content as vanilla draws it; the last measured while a font it uses loads, null before. */
+    private static List<Column.Block> blocks(Screen screen, Step step, TextManager text, int screenWidth,
+                                             int screenHeight) {
+        List<Column.Block> blocks = switch (screen) {
+            case EPILEPSY -> epilepsy(text, screenWidth, screenHeight);
+            case WORLD -> world(step, text, screenWidth, screenHeight);
+            case CONNECT, QUEUE -> List.of();
+        };
+        if (blocks != null) {
+            measured = new Measured(screen, screenWidth, screenHeight, blocks);
+            return blocks;
+        }
+        return measured != null && measured.on(screen, screenWidth, screenHeight) ? measured.blocks() : null;
+    }
+
+    // eight NewLarge lines from 3.5 lines above the middle
+    private static List<Column.Block> epilepsy(TextManager text, int screenWidth, int screenHeight) {
+        AngelCodeFont large = text.getFontFromEnum(UIFont.NewLarge);
+        if (!loaded(large)) {
+            return null;
+        }
+        int height = large.getLineHeight();
+        int y = (int) (screenHeight / 2.0f - height * 3.5f);
+        List<Column.Block> blocks = new ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            blocks.add(centered(text, UIFont.NewLarge, screenWidth, y, translated("UI_EpilepsyWarning_" + i)));
+            y += height;
+        }
+        return blocks;
+    }
+
+    /**
+     * Around the middle the intro lines and the error messages; at the bottom the quick tips (any length), prompts
+     * and MP and save-conversion messages, taken as reaching across. The walking figure (196 px, centered) stays left
+     * of any column.
+     */
+    private static List<Column.Block> world(Step step, TextManager text, int screenWidth, int screenHeight) {
+        AngelCodeFont intro = text.getFontFromEnum(UIFont.Intro);
+        AngelCodeFont medium = text.getFontFromEnum(UIFont.Medium);
+        AngelCodeFont small = text.getFontFromEnum(UIFont.Small);
+        if (!loaded(intro) || !loaded(medium) || !loaded(small) || !loaded(text.getFontFromEnum(UIFont.NewSmall))) {
+            return null;
+        }
+        int middle = screenHeight / 2;
+        List<Column.Block> blocks = new ArrayList<>();
+        int introTop = middle - intro.getLineHeight() / 2;
+        for (int i = 1; i <= 3; i++) {
+            blocks.add(centered(text, UIFont.Intro, screenWidth, introTop, translated("UI_Intro" + i)));
+        }
+        // its flag is private and its text fixed: always kept clear
+        int errorTop = middle - (medium.getLineHeight() + 8 + 2 * small.getLineHeight() + 2) / 2;
+        int errorLine2 = errorTop + medium.getLineHeight() + 8;
+        blocks.add(centered(text, UIFont.Medium, screenWidth, errorTop,
+                translated("UI_GameLoad_UnexpectedError1")));
+        blocks.add(centered(text, UIFont.Small, screenWidth, errorLine2,
+                translated("UI_GameLoad_UnexpectedError2")));
+        blocks.add(centered(text, UIFont.Small, screenWidth, errorLine2 + small.getLineHeight() + 2,
+                ZomboidFileSystem.instance.getCacheDir() + File.separator + "console.txt"));
+        int lostTop = middle - (2 * medium.getLineHeight() + 2) / 2;
+        if (GameWindow.serverDisconnected) {
+            String reason = GameWindow.kickReason;
+            blocks.add(centered(text, UIFont.Medium, screenWidth, lostTop,
+                    reason != null ? reason : translated("UI_OnConnectFailed_ConnectionLost")));
+        }
+        // GameLoadingState is not loaded before its screen
+        if ((step == Step.LOADING_WORLD || step == Step.READY) && GameLoadingState.playerWrongIP
+                && GameLoadingState.gameLoadingString != null) {
+            blocks.add(centered(text, UIFont.Medium, screenWidth, lostTop, GameLoadingState.gameLoadingString));
+        }
+        int prompts = screenHeight - 40 - 2 * text.getFontHeight(UIFont.NewSmall) - 5;
+        blocks.add(new Column.Block(Math.min(prompts, screenHeight - 100), screenWidth));
+        return blocks;
+    }
+
+    // as TextManager.DrawStringCentre places it; null: not translated yet
+    private static Column.Block centered(TextManager text, UIFont font, int screenWidth, int top, String line) {
+        int width = line == null ? 0 : text.MeasureStringX(font, line);
+        return new Column.Block(top, (int) Math.ceil(screenWidth / 2.0 + width / 2.0));
+    }
+
+    // getText logs each key it lacks in debug mode, as all are in the launch's frames before the translations load
+    private static String translated(String key) {
+        return Translator.getTextOrNull(key);
+    }
+
+    private static boolean loaded(AngelCodeFont font) {
+        return font != null && !font.isLoading();
+    }
+
+    private record Measured(Screen screen, int screenWidth, int screenHeight, List<Column.Block> blocks) {
+        boolean on(Screen screen, int screenWidth, int screenHeight) {
+            return this.screen == screen && this.screenWidth == screenWidth && this.screenHeight == screenHeight;
+        }
     }
 
     /**

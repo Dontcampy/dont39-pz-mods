@@ -139,14 +139,16 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   over (epilepsy, model-loading, connect UI, login queue, `GameLoadingState.render`) and every own frame.
   `EndFrameUI` HEAD is the last point inside a frame; a RETURN hook on `GameLoadingState.render` would run after the
   frame was handed over and Zabric has no `@At("INVOKE")` (DI B6).
-- Layout (D15): centered below ZombieBuddy's watermark, the bar `min(640, 40 % of width)` wide (step n / N, D2), and
-  under it, left-aligned, the flow's log (`progress/Log.java`, cleared at each flow's begin): a line per step that
-  begins ("n / N  step") and per new item (`Progress.item`; a repeat of the current item adds none), newest at the
-  bottom, older lines fading by position, dropped by count only. Lines that fit: `Overlay.rows`, from the Small and
-  NewLarge fonts' line heights and the screen height (NewLarge's last loaded one while it loads, none before); none on
-  the connect and login-queue screens, whose UI starts right under the bar. The world-loading text is an item per change, read per frame. Text
-  needs the Small font it draws with loaded (`TextManager.instance.font`, DI risk 4); while it loads, only the bar
-  draws. Fonts are fetched per frame (`ResetLua` replaces them).
+- Layout (D16): a column at the right edge, `Column.place` (`draw/Column.java`, `ColumnTest`): `min(34 Small rows,
+  30 % of the width)` wide, below the watermark; the bar (step n / N, D2) at its top, under it the flow's log
+  (`progress/Log.java`, cleared at each flow's begin: a line per step that begins and per new item, a repeat of the
+  current item adds none), newest at the bottom, fading by position, dropped by count only, lines cut with an ellipsis
+  to the column (the newest Java-mod line leaves room for the dots). The log stops above the highest vanilla content
+  reaching into the column, measured per frame as vanilla draws it (`Overlay.blocks`); beside the connect and
+  login-queue panels the column moves into the strip right of them, bar only where that strip is under 6 rows wide.
+  The world-loading text is an item per change, read per frame. Text needs the Small font loaded
+  (`TextManager.instance.font`, DI risk 4), else only the bar draws; fonts are fetched per frame (`ResetLua` replaces
+  them).
 - Watermark rule (R7): ZombieBuddy 2.3.4's watermark (`Watermark.draw`, at `EndFrameUI` HEAD in every frame until
   the world) is an icon (128 px on screens over 2000 px, else 64) with lines right of it: the version, a notice after a
   preload change, and "N active Java mods: ..." wrapped at the screen's width, so at 4K with 14 Java mods it is three

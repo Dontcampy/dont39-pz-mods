@@ -18,7 +18,7 @@ public final class Progress {
     /** At most this often an own frame; about 20 per second. */
     static final long FRAME_INTERVAL = TimeUnit.MILLISECONDS.toNanos(50);
     /** The most lines the log keeps, and so the most it shows. */
-    public static final int LOG_LINES = 64;
+    public static final int LOG_LINES = 128;
 
     // the connection states ConnectToServer.lua treats as a failed join
     private static final Set<String> FAILED_STATES = Set.of("Failed", "Disconnected");
