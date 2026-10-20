@@ -22,7 +22,7 @@ final class LoadStatus {
     private static final String PRELOADED = "preloaded";
     private static final String LOADED = "loaded";
 
-    private record Shape(Field status, Method id, Method jarPath, Method reason) {
+    private record Shape(Field status, Method id, Method jarPath, Method reason, Method sha256) {
     }
 
     private static volatile Shape shape;
@@ -62,12 +62,13 @@ final class LoadStatus {
                 String id = (String) s.id().invoke(state);
                 Path jar = (Path) s.jarPath().invoke(state);
                 String reason = (String) s.reason().invoke(state);
+                String sha256 = (String) s.sha256().invoke(state);
                 // skip reasons are "(...)"; anything else means the meaning of the field changed
                 if (!PRELOADED.equals(reason) && !LOADED.equals(reason) && (reason == null || !reason.startsWith("("))) {
                     throw new NoSuchFieldException("the record of " + id + " has the reason '" + reason + "'");
                 }
                 if (wanted.equals(reason) && (ids == null || ids.contains(id))) {
-                    jars.add(new Loader.ModJar(id, jar));
+                    jars.add(new Loader.ModJar(id, jar, sha256));
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
@@ -98,7 +99,7 @@ final class LoadStatus {
                 accessors.put(c.getName() + " " + c.getType().getName(), c.getAccessor());
             }
             return new Shape(status, accessor(accessors, "id", String.class), accessor(accessors, "jarPath", Path.class),
-                    accessor(accessors, "reason", String.class));
+                    accessor(accessors, "reason", String.class), accessor(accessors, "sha256", String.class));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
         }

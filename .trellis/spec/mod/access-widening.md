@@ -41,14 +41,23 @@ Reference feature: `ime-keyboard-fix` (game fields).
 ## Zabric
 
 - Java and Lua only, no patches of its own: its package loads at premain, before the Kotlin runtime. Its hook runtime
-  only serves the glue other mods generate.
+  only serves the glue other mods generate. Its own advice on game code is limited to the preLaunch hook on `main`
+  (`entrypoint/PreLaunchHook.java`) and, on a launch with a one-launch folder override, the installed items' folder
+  list (`mods/impl/ItemFoldersHook.java`): a mod's hooks open too late for the startup pass, and a Kotlin mod cannot
+  run code before it.
+- Retransforming an already-loaded game class from premain describes it from its bytes (`POOL_ONLY`, so nothing loads)
+  and must ignore every other class by name only: the default ignore matcher resolves each loaded class, and a runtime
+  proxy has no class file (`ItemFoldersHook.java`; only a launch with a request showed it).
 - ZombieBuddy is used only in the loader package ([Loader Seam](./zombiebuddy-patching.md#loader-seam)); messages
   elsewhere name it through `Loader.name()`.
 - Premain and preLaunch code touches no game class and logs nothing: the classes it widens are not loaded yet, and the
   game's log is not up. Outcomes are reported at MAIN.
 - Its hooks run inside code every mod depends on (the game's `main`, ZombieBuddy's `loadMods`): they never throw out,
   and a failure stops the whole lifecycle for the session instead of running part of it (`entrypoint/Lifecycle.java`).
-- It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`).
+- It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`). It also
+  reads this launch's override folders and the folders mods registered through `WidenRoots`.
+- Files it reads at premain live under `<cache>/Zabric/`; a request is per side, since a local dedicated server shares
+  the cache folder (`mods/impl/OverrideRequest.java`), and is deleted when read, before it is checked.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)

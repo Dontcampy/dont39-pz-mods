@@ -3,14 +3,13 @@ package com.pzlauncher.zabric.loader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.pzlauncher.zabric.internal.AtomicWrite;
 import me.zed_0xff.zombie_buddy.Agent;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -72,7 +71,8 @@ final class PreloadConfig {
         }
         if (!current || !zabricFirst(preload)) {
             root.set("preload_mods", withZabricFirst(json, preload));
-            write(config, json.writerWithDefaultPrettyPrinter().writeValueAsString(root));
+            // ZombieBuddy reads the file at every launch
+            AtomicWrite.write(config, json.writerWithDefaultPrettyPrinter().writeValueAsString(root));
         }
         return new Loader.PreloadEntry(current, config);
     }
@@ -158,22 +158,6 @@ final class PreloadConfig {
             return MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e); // every JRE has SHA-256
-        }
-    }
-
-    // ZombieBuddy reads the file at every launch; never leave it half written
-    private static void write(Path target, String content) throws IOException {
-        Files.createDirectories(target.getParent());
-        Path tmp = Files.createTempFile(target.getParent(), target.getFileName().toString(), ".tmp");
-        try {
-            Files.writeString(tmp, content, StandardCharsets.UTF_8);
-            try {
-                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(tmp);
         }
     }
 }

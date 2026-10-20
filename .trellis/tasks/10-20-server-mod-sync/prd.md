@@ -67,7 +67,7 @@ the task map and the cross-child acceptance criteria; the children own the deliv
 
 | Child | Delivers | Depends on |
 |---|---|---|
-| [10-20-mod-sync-core](../10-20-mod-sync-core/prd.md) | Server manifest, HTTP service and location trailer; client mark, confirmation, download and folder swap for items whose changed files are not jars (D1-D6, D10, D12) | — |
+| [10-20-mod-sync-core](../archive/2026-10/10-20-mod-sync-core/prd.md) | Server manifest, HTTP service and location trailer; client mark, confirmation, download and folder swap for items whose changed files are not jars (D1-D6, D10, D12) | — |
 | [10-20-zabric-launch-override](../10-20-zabric-launch-override/prd.md) | Zabric: a mod folder override for one launch, accessors for loaded Java packages, widening for cache folders (D8) | — |
 | [10-20-mod-sync-java](../10-20-mod-sync-java/prd.md) | Server jars at the join, restart with a launch override, Rejoin, refused items, the dialog's Java marking (D7-D9, D11) | core, Zabric |
 

@@ -16,6 +16,7 @@ Each child goes through its own review gate before `task.py start`.
 
 - [ ] Run the parent's cross-child acceptance criteria on the Linux test server and a Windows client.
 - [ ] Vanilla client on the modded server; modded client on a vanilla server.
-- [ ] Release: Zabric release first, then Dont39 All-in-One with the feature; version bumps per
+- [ ] Release: Zabric release first (its child left the version at 0.4.1: first to ship takes 0.5.0, see
+      `10-20-zabric-launch-override` design "Compatibility"), then Dont39 All-in-One with the feature; version bumps per
       [kotlin-runtime.md](../../spec/mod/kotlin-runtime.md).
 - [ ] Spec update for the new patterns (connection-details trailer, `CheckMods` hold, folder swap).

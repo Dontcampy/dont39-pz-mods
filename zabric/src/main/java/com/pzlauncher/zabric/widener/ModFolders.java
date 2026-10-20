@@ -1,5 +1,9 @@
 package com.pzlauncher.zabric.widener;
 
+import com.pzlauncher.zabric.internal.GameFolders;
+import com.pzlauncher.zabric.mods.impl.LaunchOverrides;
+import com.pzlauncher.zabric.mods.impl.WidenRootsFile;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,30 +12,29 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Where the game finds mods, worked out without the game: at premain Steam is not up and the game has not parsed its
- * arguments. Includes folders the game may not use this session: widening too much is harmless, missing a list is not.
+ * Where the game finds mods, worked out without the game ({@link GameFolders}), plus this launch's override folders and
+ * the registered widening roots. Includes folders the game may not use this session: widening too much is harmless,
+ * missing a list is not.
  */
 final class ModFolders {
-    private static final String APP = "108600";
-    private static final String CACHE_DIR_ARG = "-cachedir=";
-
     /** A folder holding mods: {@code <dir>/<mod>}, or {@code <dir>/<item>/<itemMods>/<mod>} for Workshop items. */
     record Root(Path dir, String itemMods) {
-        List<Path> modFolders() throws IOException {
+        /** The folders that hold mod folders: {@code dir}, or each item's {@code itemMods}; only those that exist. */
+        List<Path> modsFolders() throws IOException {
             if (!Files.isDirectory(dir)) {
                 return List.of();
             }
             if (itemMods == null) {
-                return children(dir);
+                return List.of(dir);
             }
-            List<Path> mods = new ArrayList<>();
+            List<Path> folders = new ArrayList<>();
             for (Path item : children(dir)) {
                 Path dirOfMods = item.resolve(itemMods);
                 if (Files.isDirectory(dirOfMods)) {
-                    mods.addAll(children(dirOfMods));
+                    folders.add(dirOfMods);
                 }
             }
-            return mods;
+            return folders;
         }
     }
 
@@ -39,16 +42,18 @@ final class ModFolders {
     }
 
     static List<Root> roots() {
-        Path cwd = Path.of("").toAbsolutePath();
-        Path cache = cacheDir();
-        return Stream.of(
-                // client: the game folder is steamapps/common/ProjectZomboid of a Steam library
-                new Root(cwd.resolve("../../workshop/content/" + APP), "mods"),
-                // dedicated server: downloads into its own folder
-                new Root(cwd.resolve("steamapps/workshop/content/" + APP), "mods"),
-                new Root(cache.resolve("mods"), null),
-                new Root(cache.resolve("Workshop"), "Contents/mods")
-        ).map(r -> new Root(r.dir().normalize(), r.itemMods())).toList();
+        List<Path> extra = new ArrayList<>(LaunchOverrides.folders());
+        extra.addAll(WidenRootsFile.atGameStart());
+        return roots(GameFolders.workshopContent(), GameFolders.cacheDir(), extra);
+    }
+
+    static List<Root> roots(List<Path> workshopContent, Path cache, List<Path> extra) {
+        List<Root> roots = new ArrayList<>();
+        workshopContent.forEach(content -> roots.add(new Root(content, "mods")));
+        roots.add(new Root(cache.resolve("mods"), null));
+        roots.add(new Root(cache.resolve("Workshop"), "Contents/mods"));
+        extra.forEach(folder -> roots.add(new Root(folder, null)));
+        return roots.stream().map(r -> new Root(r.dir().toAbsolutePath().normalize(), r.itemMods())).toList();
     }
 
     /** Every jar under a {@code media/java} folder of the mod folder, in any version folder. */
@@ -70,26 +75,7 @@ final class ModFolders {
         return jars;
     }
 
-    // the game's -cachedir argument; the agent sees only the command line the JVM recorded
-    private static Path cacheDir() {
-        String command = System.getProperty("sun.java.command", "");
-        int at = command.indexOf(CACHE_DIR_ARG);
-        while (at > 0 && command.charAt(at - 1) != ' ') {
-            at = command.indexOf(CACHE_DIR_ARG, at + 1);
-        }
-        if (at < 0) {
-            return Path.of(System.getProperty("user.home"), "Zomboid");
-        }
-        String value = command.substring(at + CACHE_DIR_ARG.length());
-        int next = value.indexOf(" -");
-        value = (next < 0 ? value : value.substring(0, next)).strip();
-        if (value.length() > 1 && value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return Path.of(value);
-    }
-
-    private static List<Path> children(Path dir) throws IOException {
+    static List<Path> children(Path dir) throws IOException {
         try (Stream<Path> list = Files.list(dir)) {
             return list.filter(Files::isDirectory).toList();
         }

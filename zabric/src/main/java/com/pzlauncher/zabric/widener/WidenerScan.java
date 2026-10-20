@@ -11,8 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -26,38 +28,53 @@ final class WidenerScan {
 
     /**
      * {@code lists} by mod id, then by the list's sha256; {@code unreadable}: the error for each folder or jar it could
-     * not read.
+     * not read; {@code modsFolders}: the folders of mod folders it listed.
      */
-    record Found(List<Path> roots, Map<String, Map<String, Listed>> lists, Map<Path, String> unreadable) {
+    record Found(List<Path> roots, Map<String, Map<String, Listed>> lists, Map<Path, String> unreadable,
+                 Set<Path> modsFolders) {
     }
 
     private WidenerScan() {
     }
 
     static Found run() {
-        List<ModFolders.Root> roots = ModFolders.roots();
+        return run(ModFolders.roots());
+    }
+
+    static Found run(List<ModFolders.Root> roots) {
         Map<String, Map<String, Listed>> lists = new LinkedHashMap<>();
         Map<Path, String> unreadable = new LinkedHashMap<>();
+        Set<Path> modsFolders = new LinkedHashSet<>();
         for (ModFolders.Root root : roots) {
-            List<Path> mods;
+            List<Path> folders;
             try {
-                mods = root.modFolders();
+                folders = root.modsFolders();
             } catch (IOException | RuntimeException e) {
                 unreadable.put(real(root.dir()), e.toString());
                 continue;
             }
-            for (Path mod : mods) {
+            for (Path folder : folders) {
+                List<Path> mods;
                 try {
-                    for (Path jar : ModFolders.jars(mod)) {
-                        readLists(jar, lists, unreadable);
-                    }
+                    mods = ModFolders.children(folder);
                 } catch (IOException | RuntimeException e) {
-                    unreadable.put(real(mod), e.toString());
+                    unreadable.put(real(folder), e.toString());
+                    continue;
+                }
+                modsFolders.add(real(folder));
+                for (Path mod : mods) {
+                    try {
+                        for (Path jar : ModFolders.jars(mod)) {
+                            readLists(jar, lists, unreadable);
+                        }
+                    } catch (IOException | RuntimeException e) {
+                        unreadable.put(real(mod), e.toString());
+                    }
                 }
             }
         }
         List<Path> scanned = roots.stream().map(r -> real(r.dir())).toList();
-        return new Found(scanned, lists, unreadable);
+        return new Found(scanned, lists, unreadable, modsFolders);
     }
 
     private static void readLists(Path jar, Map<String, Map<String, Listed>> lists, Map<Path, String> unreadable) {

@@ -95,9 +95,9 @@ the trailer is not an error.
 ## Risks (verify in game first)
 
 - Hooks on package-private and private members and widening a nested class now have weave and widener tests
-  ([spike.md](../10-20-mod-sync-core/research/spike.md)); the real game classes are proven only in game.
+  ([spike.md](../archive/2026-10/10-20-mod-sync-core/research/spike.md)); the real game classes are proven only in game.
 - A client held before login for 5 minutes was not dropped
-  ([in-game-test.md](../10-20-mod-sync-core/research/in-game-test.md), "long hold"); longer holds are not measured.
+  ([in-game-test.md](../archive/2026-10/10-20-mod-sync-core/research/in-game-test.md), "long hold"); longer holds are not measured.
 - Texture packs are never unloaded: both copies' packs can stay in memory for the session.
 
 ## Rollback

@@ -1,5 +1,6 @@
 package com.pzlauncher.zabric.entrypoint;
 
+import com.pzlauncher.zabric.internal.GameSide;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.utility.JavaModule;
@@ -18,7 +19,7 @@ import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 /** Advice on the entry of the game's main method, client and dedicated server, which calls {@link Lifecycle#preLaunch}. */
 final class PreLaunchHook {
     /** The main classes of the client and the dedicated server ({@code ProjectZomboid64.json}). */
-    static final List<String> TARGETS = List.of("zombie.gameStates.MainScreenState", "zombie.network.GameServer");
+    static final List<String> TARGETS = List.of(GameSide.CLIENT.mainClass, GameSide.SERVER.mainClass);
 
     private static volatile Throwable error;
     private static volatile String errorType;

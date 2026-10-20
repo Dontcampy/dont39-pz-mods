@@ -9,7 +9,7 @@
 
 One Gradle build ships three Workshop items, layered as a small platform for ZombieBuddy Java mods:
 
-- **Zabric** (`zabric`), the loader layer: access widening, phased entrypoints and preload registration
+- **Zabric** (`zabric`), the loader layer: access widening, phased entrypoints, preload registration and a one-launch mod folder override
   ([Access Widening](./access-widening.md)), hooks ([Zabric Hooks](./zabric-hooks.md)), and the only runtime code
   that uses ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - **ZabricKotlin** (`zb-kt`), the Kotlin layer on Zabric, including `zb-kt-utils`

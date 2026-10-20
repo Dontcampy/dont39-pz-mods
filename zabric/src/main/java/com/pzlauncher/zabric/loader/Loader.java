@@ -23,8 +23,11 @@ public final class Loader {
     public record PreloadEntry(boolean wasCurrent, Path location) {
     }
 
-    /** A jar the loader loaded, with the id of the mod it loaded it for. */
-    public record ModJar(String modId, Path jar) {
+    /**
+     * A jar the loader loaded, with the id of the mod it loaded it for and the SHA-256 (lowercase hex) it recorded, null
+     * when it could not hash the jar.
+     */
+    public record ModJar(String modId, Path jar, String sha256) {
     }
 
     /** The loader's name, for messages. */
@@ -83,6 +86,16 @@ public final class Loader {
     /** The ids of the mod list the loader is loading; only valid inside that pass, e.g. from a mod's {@code Main}. */
     public static Set<String> currentPass() {
         return LoadStatus.currentPass();
+    }
+
+    /**
+     * Which of {@code jars} the loader's class loader serves the classes of {@code pkg} from, or null when none of them
+     * holds a class of it. Throws when they are served from more than one jar, or from a jar the class loader does not
+     * name.
+     */
+    public static Path servingJar(String pkg, Collection<Path> jars) throws IOException {
+        // the loader appends mod jars to the system class loader's search path
+        return ClassPath.servingJar(pkg, jars, ClassLoader.getSystemClassLoader());
     }
 
     /**
