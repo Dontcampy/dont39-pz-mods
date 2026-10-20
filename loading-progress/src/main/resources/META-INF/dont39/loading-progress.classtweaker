@@ -1,3 +1,6 @@
 zabric-classtweaker v1
 # the script files ScriptManager.Load is about to load, read for the script count
 accessible field zombie/scripting/ScriptManager tempFileToModMap Ljava/util/HashMap;
+# the clothing items the world's loading thread waits for, counted while it waits
+accessible field zombie/core/skinnedmodel/population/OutfitManager cachedClothingItems Ljava/util/Hashtable;
+accessible class zombie/core/skinnedmodel/population/OutfitManager$ClothingItemEntry

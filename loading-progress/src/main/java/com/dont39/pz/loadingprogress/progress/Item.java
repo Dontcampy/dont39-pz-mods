@@ -10,5 +10,13 @@ public enum Item {
     TEXTURE_PACK,
     EVENT,
     /** The world-loading screen's text. */
-    WORLD
+    WORLD,
+    /** A Lua event the world's loading thread fires. */
+    WORLD_EVENT,
+    CLOTHING_ITEM,
+    /** A map cell's lot header. */
+    MAP_CELL,
+    TILE_DEFINITIONS,
+    CHUNK,
+    ANIMATION
 }

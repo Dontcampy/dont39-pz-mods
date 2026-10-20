@@ -8,6 +8,7 @@ import com.pzlauncher.zabric.hook.CallbackInfoReturnable;
 import com.pzlauncher.zabric.hook.Hooks;
 import com.pzlauncher.zabric.hook.Inject;
 import com.pzlauncher.zabric.hook.Thrown;
+import zombie.GameWindow;
 import zombie.Lua.Event;
 import zombie.Lua.LuaEventManager;
 import zombie.Lua.LuaManager;
@@ -164,7 +165,7 @@ public final class LoadHooks {
         @Inject(method = "checkEvent", at = @At("HEAD"))
         public static void event(String event, CallbackInfoReturnable<Event> cir) {
             if (PROGRESS.active()) {
-                PROGRESS.event(event, System.nanoTime());
+                PROGRESS.event(event, Thread.currentThread() == GameWindow.gameThread, System.nanoTime());
             }
             Loading.tick();
         }

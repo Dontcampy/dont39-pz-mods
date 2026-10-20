@@ -53,7 +53,7 @@ class ProgressTest {
             progress.reach(b, at(20));
         }
         assertEquals(Step.MODELS, step());
-        progress.event("OnGameBoot", at(30));
+        progress.event("OnGameBoot", true, at(30));
         assertEquals(10, progress.view().step());
         assertEquals(new Line(Step.GAME_BOOT, Item.EVENT, 0, 0, "OnGameBoot"), newest());
         progress.launchDone(at(40));
@@ -112,7 +112,7 @@ class ProgressTest {
         assertFalse(progress.ownFrameDue(at(1000)), "the menu draws while connecting");
         progress.resetBegins(false, at(1000));
         assertEquals(Step.MODS, step());
-        progress.event("OnGameBoot", at(1500));
+        progress.event("OnGameBoot", true, at(1500));
         assertEquals(Step.LUA_EVENTS, step());
         progress.resetEnds(false, at(2000));
         assertNull(progress.view(), "no bar over character creation");
@@ -146,7 +146,7 @@ class ProgressTest {
         progress.connect(at(0));
         progress.connectionState("Connected", at(1));
         assertEquals(Step.CONNECTING, step());
-        progress.event("OnConnectFailed", at(2));
+        progress.event("OnConnectFailed", true, at(2));
         assertNull(progress.view());
         assertEquals(Progress.Outcome.STOPPED, ends.get(0).outcome());
     }
@@ -305,7 +305,7 @@ class ProgressTest {
         assertFalse(progress.ownFrameDue(at(60)));
         progress.frameHandedOver(at(1250));
         progress.reach(Boundary.TRANSLATIONS, at(1300));
-        progress.event("OnGameBoot", at(1300));
+        progress.event("OnGameBoot", true, at(1300));
         progress.launchDone(at(1400));
         Progress.End end = ends.get(0);
         assertEquals(1, end.ownFrames());
@@ -420,7 +420,7 @@ class ProgressTest {
         progress.launchDone(at(3));
         progress.connect(at(4));
         assertEquals(List.of("1 CONNECTING"), log());
-        progress.event("OnConnectFailed", at(5));
+        progress.event("OnConnectFailed", true, at(5));
         progress.worldPrepares(at(6));
         assertEquals(List.of(Line.step(Step.PREPARING_WORLD, 10, 13)), progress.view().log());
     }
@@ -447,6 +447,126 @@ class ProgressTest {
         progress.worldText("Loading chunks");
         assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "WORLD 0 Loading map", "WORLD 0 Loading chunks"),
                 log());
+    }
+
+    @Test
+    void theWorldLoadLogsTheItemsOfItsThreads() {
+        progress.worldPrepares(at(0));
+        progress.clothingItems(1, 2);
+        progress.mapCell("0_0", 1);
+        assertFalse(progress.loadsWorld(), "preparing, not loading");
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        assertTrue(progress.loadsWorld());
+        progress.clothingItems(0, 3);
+        progress.clothingItems(2, 3);
+        progress.clothingItems(2, 3);
+        progress.worldText("Loading tile definitions");
+        progress.event("OnInitWorld", false, at(2));
+        progress.event("OnTick", true, at(2));
+        progress.mapCell("26_40", 2);
+        progress.tileDefinitions("E:/pz/media/newtiledefinitions.tiles");
+        progress.mapCell("27_40", 2);
+        progress.modTileDefinitions();
+        progress.worldText("Loading tile definitions");
+        progress.chunkQueued(5);
+        progress.chunkQueued(5);
+        progress.chunks(5);
+        progress.chunks(6);
+        progress.chunks(7);
+        progress.chunks(7);
+        progress.animations(10, 20);
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "CLOTHING_ITEM 0 null", "CLOTHING_ITEM 2 null",
+                "WORLD 0 Loading tile definitions", "WORLD_EVENT 0 OnInitWorld", "MAP_CELL 1 26_40",
+                "TILE_DEFINITIONS 0 newtiledefinitions.tiles", "MAP_CELL 2 27_40", "TILE_DEFINITIONS 0 null",
+                "CHUNK 0 null", "CHUNK 1 null",
+                "CHUNK 2 null", "ANIMATION 10 null"), log());
+        progress.reach(Boundary.WORLD_READY, at(3));
+        assertFalse(progress.loadsWorld());
+    }
+
+    @Test
+    void worldEventsAndTileDefinitionsShowOncePerStep() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.tileDefinitions("E:/pz/media/tiledefinitions.tiles");
+        progress.tileDefinitions("E:/pz/media/newtiledefinitions.tiles");
+        progress.modTileDefinitions();
+        progress.tileDefinitions("E:/pz/media/tiledefinitions.tiles");
+        progress.tileDefinitions("E:/pz/media/newtiledefinitions.tiles");
+        progress.modTileDefinitions();
+        for (int i = 0; i < 3; i++) {
+            progress.event("OnWeatherPeriodStart", false, at(2));
+            progress.event("OnWeatherPeriodStop", false, at(2));
+        }
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "TILE_DEFINITIONS 0 tiledefinitions.tiles",
+                "TILE_DEFINITIONS 0 newtiledefinitions.tiles", "TILE_DEFINITIONS 0 null",
+                "WORLD_EVENT 0 OnWeatherPeriodStart", "WORLD_EVENT 0 OnWeatherPeriodStop"), log());
+        assertEquals(Item.WORLD_EVENT, progress.view().item(), "a repeat is still the current item");
+    }
+
+    @Test
+    void theNextWorldLoadShowsItsEventsAgain() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.event("OnInitWorld", false, at(2));
+        progress.reach(Boundary.WORLD_READY, at(3));
+        progress.reach(Boundary.WORLD_ENTER, at(4));
+        progress.inWorld(at(5));
+        progress.worldLeft(at(6));
+        progress.worldPrepares(at(7));
+        progress.reach(Boundary.WORLD_LOAD, at(8));
+        progress.event("OnInitWorld", false, at(9));
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "WORLD_EVENT 0 OnInitWorld"), log());
+    }
+
+    @Test
+    void gameThreadEventsShowAgainAfterOthers() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.reach(Boundary.WORLD_READY, at(2));
+        progress.reach(Boundary.WORLD_ENTER, at(3));
+        progress.event("OnCreatePlayer", true, at(4));
+        progress.event("OnGameStart", true, at(4));
+        progress.event("OnCreatePlayer", true, at(4));
+        assertEquals(List.of("EVENT 0 OnCreatePlayer", "EVENT 0 OnGameStart", "EVENT 0 OnCreatePlayer"),
+                log().subList(log().size() - 3, log().size()));
+    }
+
+    @Test
+    void worldCountsPastTheirTotalsThrow() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.mapCell("1_1", 1);
+        assertThrows(IllegalStateException.class, () -> progress.mapCell("1_2", 1));
+        assertThrows(IllegalStateException.class, () -> progress.animations(3, 2));
+        progress.chunkQueued(4);
+        assertThrows(IllegalStateException.class, () -> progress.chunks(6));
+        assertThrows(IllegalStateException.class, () -> progress.chunks(3));
+    }
+
+    @Test
+    void chunksWithoutQueuedOnesHaveNoCount() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.chunks(4);
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD"), log());
+    }
+
+    @Test
+    void theNextWorldLoadCountsAgain() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(1));
+        progress.mapCell("1_1", 1);
+        progress.chunkQueued(0);
+        progress.reach(Boundary.WORLD_READY, at(2));
+        progress.reach(Boundary.WORLD_ENTER, at(3));
+        progress.inWorld(at(4));
+        progress.worldLeft(at(5));
+        progress.worldPrepares(at(6));
+        progress.reach(Boundary.WORLD_LOAD, at(7));
+        progress.mapCell("1_1", 1);
+        progress.chunks(3);
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "MAP_CELL 1 1_1"), log());
     }
 
     @Test

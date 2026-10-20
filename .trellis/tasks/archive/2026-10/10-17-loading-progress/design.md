@@ -126,9 +126,11 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   animations, game boot (event name).
 - start (13): connecting, reloading mods, translations, scripts, models, clothing and tiles (`ResetLua` L4153-4167),
   Lua, main-menu events (`OnGameBoot`/`OnMainMenuEnter`/`OnResetLua`: event name), login queue, preparing world
-  (`GameLoadingState.enter`: server Lua i / n), loading world (item = `GameLoadingState.gameLoadingString`), ready
+  (`GameLoadingState.enter`: server Lua i / n), loading world (item = `GameLoadingState.gameLoadingString`, plus the world load's items below), ready
   (vanilla's click prompt), entering world (`IngameState.enter`: event name, MP connect wait).
   Single player skips the steps it does not run; the bar jumps.
+- Loading the world also logs the items of the threads it runs and of the asset waits it polls, counts only where
+  no name is reachable through a JDK-only call: `hooks/WorldHooks.java`; targets and gaps: `research/world-load-items.md`.
 - Steps and their order: `progress/Flow.java`, `Step.java`. A count past its total, or a step that begins out of order,
   is a mismatch: it throws and stops the hooks.
 - reload: the `ResetLua` steps of start.
@@ -141,8 +143,8 @@ Steps (keys of the mod's strings; boundaries are the DI B5 targets):
   frame was handed over and Zabric has no `@At("INVOKE")` (DI B6).
 - Layout (D16): a column at the right edge, `Column.place` (`draw/Column.java`, `ColumnTest`): `min(34 Small rows,
   30 % of the width)` wide, below the watermark; the bar (step n / N, D2) at its top, under it the flow's log
-  (`progress/Log.java`, cleared at each flow's begin: a line per step that begins and per new item, a repeat of the
-  current item adds none), newest at the bottom, fading by position, dropped by count only, lines cut with an ellipsis
+  (`progress/Log.java`, cleared at each flow's begin: a line per step that begins and per new item; a repeat of its
+  kind's last item adds none, nor a world event or tile definitions file already shown in the step), newest at the bottom, fading by position, dropped by count only, lines cut with an ellipsis
   to the column (the newest Java-mod line leaves room for the dots). The log stops above the highest vanilla content
   reaching into the column, measured per frame as vanilla draws it (`Overlay.blocks`); beside the connect and
   login-queue panels the column moves into the strip right of them, bar only where that strip is under 6 rows wide.

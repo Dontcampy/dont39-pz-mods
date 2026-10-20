@@ -55,7 +55,14 @@ public final class Strings {
             case SCRIPT -> counted(chinese ? "脚本文件" : "Script file", index, total, name, chinese);
             case LUA -> counted(chinese ? "Lua 文件" : "Lua file", index, total, name, chinese);
             case TEXTURE_PACK -> named(chinese ? "纹理包" : "Texture pack", name, chinese);
-            case EVENT -> named(chinese ? "Lua 事件" : "Lua event", name, chinese);
+            case EVENT, WORLD_EVENT -> named(chinese ? "Lua 事件" : "Lua event", name, chinese);
+            case CLOTHING_ITEM -> counted(chinese ? "服装" : "Clothing item", index, total, name, chinese);
+            case MAP_CELL -> counted(chinese ? "地图格" : "Map cell", index, total, name, chinese);
+            // no name: the mods' files
+            case TILE_DEFINITIONS -> named(chinese ? "图块定义" : "Tile definitions",
+                    name != null ? name : chinese ? "模组的文件" : "mods' files", chinese);
+            case CHUNK -> counted(chinese ? "区块" : "Chunk", index, total, name, chinese);
+            case ANIMATION -> counted(chinese ? "动画" : "Animation", index, total, name, chinese);
         };
     }
 

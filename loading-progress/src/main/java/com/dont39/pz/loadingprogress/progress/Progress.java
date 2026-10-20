@@ -1,9 +1,11 @@
 package com.dont39.pz.loadingprogress.progress;
 
 import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -22,6 +24,9 @@ public final class Progress {
 
     // the connection states ConnectToServer.lua treats as a failed join
     private static final Set<String> FAILED_STATES = Set.of("Failed", "Disconnected");
+    // kinds whose lines come back with others in between: each tile definitions file is read twice, and the
+    // climate's setup alternates two weather events
+    private static final Set<Item> ONCE_PER_STEP = EnumSet.of(Item.WORLD_EVENT, Item.TILE_DEFINITIONS);
 
     public enum Outcome {
         DONE, STOPPED, LEFT
@@ -69,6 +74,7 @@ public final class Progress {
     private volatile boolean active;
     private volatile boolean showing;
     private volatile boolean ownFrames;
+    private volatile boolean loadsWorld;
     private volatile long lastFrame;
     private volatile long loadingJar;
 
@@ -81,6 +87,10 @@ public final class Progress {
     private int index;
     private int total;
     private String name;
+    // the step's last line of each kind: polled items come again with other kinds in between
+    private final Map<Item, Line> lastLines = new EnumMap<>(Item.class);
+    // the step's lines of the kinds shown once per step
+    private final Set<Line> onceLines = new HashSet<>();
     private final Log log = new Log(LOG_LINES);
     private int ownFrameCount;
     private int interimFrameCount;
@@ -119,6 +129,10 @@ public final class Progress {
     private int luaDepth;
     private int luaRun;
     private int luaTotal;
+    private int mapCells;
+    private int chunksQueued;
+    // the game's count of loaded chunks when the first was queued
+    private int chunksBefore;
 
     /**
      * {@code client}: flows start only where it is true; {@code notClient} hears once where it is not. {@code ended}
@@ -273,8 +287,8 @@ public final class Progress {
         }
     }
 
-    /** A Lua event fires. */
-    public void event(String event, long now) {
+    /** A Lua event fires; the world load's events are those of its loading thread, not of the game thread. */
+    public void event(String event, boolean gameThread, long now) {
         if (!active) {
             return;
         }
@@ -285,7 +299,7 @@ public final class Progress {
                 default -> {
                 }
             }
-            item(Item.EVENT, 0, 0, event);
+            item(gameThread ? Item.EVENT : Item.WORLD_EVENT, 0, 0, event);
         }
     }
 
@@ -479,6 +493,71 @@ public final class Progress {
         }
     }
 
+    /** Whether the world loads: the first check of the world load's hooks, some of which run in game too. */
+    public boolean loadsWorld() {
+        return loadsWorld;
+    }
+
+    /** Polled while the world's loading thread waits for the clothing items: {@code loaded} of {@code total} are. */
+    public void clothingItems(int loaded, int total) {
+        polled(Item.CLOTHING_ITEM, loaded, total);
+    }
+
+    /** Polled while the world's loading thread waits for the animations: {@code loaded} of {@code total} are. */
+    public void animations(int loaded, int total) {
+        polled(Item.ANIMATION, loaded, total);
+    }
+
+    /** A loader thread reads the lot header of map cell {@code cell}, one of {@code total}; several run at once. */
+    public void mapCell(String cell, int total) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (loadsWorld) {
+                mapCells = counted(mapCells, total, "map cell", cell);
+                item(Item.MAP_CELL, mapCells, total, cell);
+            }
+        }
+    }
+
+    /** A tile definitions file is read; each is read twice, its properties first. */
+    public void tileDefinitions(String path) {
+        tileDefinitionsItem(fileName(path));
+    }
+
+    /** The mods' tile definitions files are read, as one item without a name; also twice. */
+    public void modTileDefinitions() {
+        tileDefinitionsItem(null);
+    }
+
+    /** The world load queued a chunk; {@code loaded}: the game's count of loaded chunks. */
+    public void chunkQueued(int loaded) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (loadsWorld && chunksQueued++ == 0) {
+                chunksBefore = loaded;
+            }
+        }
+    }
+
+    /**
+     * Polled while the chunks load: {@code loaded} is the game's count of loaded chunks. A join requests its chunks
+     * from the server without queueing them here, so it has no count.
+     */
+    public void chunks(int loaded) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (loadsWorld && chunksQueued > 0) {
+                countedItem(Item.CHUNK, loaded - chunksBefore, chunksQueued);
+            }
+        }
+    }
+
     public void texturePack(String pack) {
         if (!active) {
             return;
@@ -651,13 +730,15 @@ public final class Progress {
         return done + 1;
     }
 
-    // whether the item shows; a new one is a line of the log, a repeat (a jar that loaded, an event again) is not
+    // whether the item shows; a new one is a line of the log, a repeat of its kind's last (a jar that loaded, an
+    // event again, the same count polled) is not, nor one shown before in the step for the kinds shown once
     private boolean item(Item kind, int i, int n, String itemName) {
         if (flow == null || paused || !current().shows(kind)) {
             return false;
         }
-        if (kind != item || i != index || !Objects.equals(itemName, name)) {
-            log.add(new Line(current(), kind, i, n, itemName));
+        Line line = new Line(current(), kind, i, n, itemName);
+        if (ONCE_PER_STEP.contains(kind) ? onceLines.add(line) : !line.equals(lastLines.put(kind, line))) {
+            log.add(line);
         }
         item = kind;
         index = i;
@@ -673,6 +754,40 @@ public final class Progress {
         total = 0;
         name = null;
         loadingJar = 0;
+        lastLines.clear();
+        onceLines.clear();
+        mapCells = 0;
+        chunksQueued = 0;
+        chunksBefore = 0;
+    }
+
+    private void tileDefinitionsItem(String file) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (loadsWorld) {
+                item(Item.TILE_DEFINITIONS, 0, 0, file);
+            }
+        }
+    }
+
+    private void polled(Item kind, int done, int total) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (loadsWorld) {
+                countedItem(kind, done, total);
+            }
+        }
+    }
+
+    private void countedItem(Item kind, int done, int total) {
+        if (done < 0 || done > total) {
+            throw new IllegalStateException(flow.label() + ": " + kind + " " + done + " / " + total + " at " + current());
+        }
+        item(kind, done, total, null);
     }
 
     private void clearJavaMods() {
@@ -764,6 +879,7 @@ public final class Progress {
         active = flow != null;
         showing = active && !paused;
         ownFrames = showing && current().ownFrames();
+        loadsWorld = showing && current() == Step.LOADING_WORLD;
         if (!showing) {
             loadingJar = 0;
         }

@@ -20,7 +20,8 @@ public enum Step {
     LUA_EVENTS(true, Item.EVENT),
     LOGIN_QUEUE(false),
     PREPARING_WORLD(true, Item.LUA),
-    LOADING_WORLD(false, Item.WORLD),
+    LOADING_WORLD(false, Item.WORLD, Item.WORLD_EVENT, Item.CLOTHING_ITEM, Item.MAP_CELL, Item.TILE_DEFINITIONS,
+            Item.CHUNK, Item.ANIMATION),
     READY(false),
     ENTERING_WORLD(true, Item.EVENT);
 
