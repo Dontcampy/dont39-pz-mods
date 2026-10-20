@@ -1,0 +1,30 @@
+{
+  "id": "server-mod-sync",
+  "name": "server-mod-sync",
+  "title": "Server mod sync: Workshop when versions match, server otherwise",
+  "description": "On join, use the Workshop copy of each mod whose version matches the server's; download the server's copy of the rest",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-10-20",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-20-mod-sync-core",
+    "10-20-zabric-launch-override",
+    "10-20-mod-sync-java"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

@@ -24,6 +24,7 @@ val features = listOf(
   ":missing-anim-folders",
   ":anim-extends-case",
   ":tunnel",
+  ":mod-sync",
   ":network-status",
 )
 
