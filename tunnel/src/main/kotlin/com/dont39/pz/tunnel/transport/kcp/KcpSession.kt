@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.LinkStats
 import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.TunnelIo
@@ -200,7 +201,7 @@ internal class KcpSession(
     body()
   } catch (e: IOException) {
     // a closed session's sockets end its blocking calls this way
-    close(TunnelIo.describe(e))
+    close(describe(e))
     null
   } catch (t: Throwable) {
     fail(what, t)

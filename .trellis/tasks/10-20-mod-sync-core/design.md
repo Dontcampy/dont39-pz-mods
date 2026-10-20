@@ -12,10 +12,13 @@ features' (`MergeMedia`). JSON uses
 kotlinx-serialization, which ZabricKotlin ships. Network and bad-server-data failures are `SyncException`
 (an `IOException`): they stop the join; anything else disables the feature.
 
+Packages: `protocol/` (both ends: trailer, manifest model, paths), `server/`, `client/` with `download/` and `swap/`;
+`protocol` uses neither of the others. Shared with other features through `allinone-common`.
+
 | Part | Game-free | Notes |
 |---|---|---|
-| `Trailer` | yes | encode/decode `[payload][int][long magic]`, payload v1 = version byte + port; base address from host + port |
-| `Manifest` | yes | build from a folder walk, JSON read/write (format 1), lookup by item id + timestamp |
+| `Trailer` | yes | encode/decode `[payload][int][long magic]`, payload v1 = version byte + port; the base address from host + port is the client's `Location` |
+| `Manifest` | yes | build from a folder walk (`server/ManifestBuilder`), JSON read/write (format 1), lookup by item id + timestamp |
 | `Plan` | yes | per item: local files by hash vs manifest → copy list, download list, sizes, jar change |
 | `SafePath` | yes | normalize manifest paths against a tree root |
 | `ServerStore` | yes, folder injected | `servers.json`, as `TunnelStore` takes its folder |
@@ -24,7 +27,7 @@ kotlinx-serialization, which ZabricKotlin ships. Network and bad-server-data fai
 | `Refusal` | yes | items never taken from a server (R9) |
 | `JoinSession` | yes, Steam lookup and log injected | one per join: location, marked items, state machine polled from `CheckMods` |
 | `ModSyncServer`, `ServerHooks` | no | `GameServer.startServer` RETURN: option, co-op check, manifest from `GameServer.WorkshopItems` and their install folders, start `HttpService`; `ConnectionDetails.write` RETURN: append trailer |
-| `ModSyncClient`, `ClientHooks`, `Swap`, `JoinStatus` | no | `ConnectionDetails.parse` HEAD (in `ServerHooks`), `WorkshopItem.setState` HEAD, `ConnectToServerState.CheckMods` HEAD (cancellable), `ZomboidFileSystem.getInstalledItemModsFolders` / `getModDir` / `Reset` RETURN, leave hooks; the Lua globals |
+| `ModSyncClient`, `ClientHooks`, `Swap`, `JoinStatus` | no | `ConnectionDetails.parse` HEAD (`DetailsParse` in `client/ClientHooks.kt`), `WorkshopItem.setState` HEAD, `ConnectToServerState.CheckMods` HEAD (cancellable), `ZomboidFileSystem.getInstalledItemModsFolders` / `getModDir` / `Reset` RETURN, leave hooks; the Lua globals |
 | Lua | — | `Dont39AllInOne_ModSyncJoin.lua`: confirm dialog and progress line on the Connect screen, one poll |
 
 ## Join State Machine (`JoinSession`)

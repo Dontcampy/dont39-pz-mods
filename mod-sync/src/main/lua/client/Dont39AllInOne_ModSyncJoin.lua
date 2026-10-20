@@ -7,6 +7,8 @@ require "ISUI/ISButton"
 require "ISUI/ISRichTextPanel"
 require "ISUI/ISTickBox"
 
+local Common = require "Dont39AllInOne_Common"
+
 local PREFIX = "[Dont39AllInOne] mod sync join: "
 local KEY = "UI_Dont39AllInOne_ModSync_"
 local POLL_MS = 250 -- the status line follows the download a few times a second
@@ -15,7 +17,6 @@ local WIDTH = 560
 local KB = 1024
 local MB = 1024 * 1024
 
-local disabled = false -- after an error here; final for the session
 local lastPoll = 0
 local dialog = nil
 local asked = false -- this confirm was shown; it is not shown again before the next one
@@ -76,20 +77,14 @@ local function closeDialog()
     end
 end
 
--- [trace]: the Lua stack where the error was raised (the game's pcall returns it third).
-local function fail(what, err, trace)
-    if disabled then return end
-    disabled = true
-    pcall(function()
-        DebugType.Mod:error(PREFIX .. "disabled after an error while " .. what .. ": " .. tostring(err) .. "\n"
-            .. tostring(trace))
-    end)
+local guard = Common.guard(PREFIX, function()
     pcall(closeDialog)
     -- also outside a confirm: a later one would wait for an answer this file can no longer give
     if Dont39AllInOne_answerModSyncJoin then
         pcall(Dont39AllInOne_answerModSyncJoin, "failed")
     end
-end
+end)
+local fail = guard.fail
 
 local function answer(choice)
     closeDialog()
@@ -219,7 +214,7 @@ local function update()
 end
 
 local function onTick()
-    if disabled then return end
+    if guard.disabled then return end
     -- absent when ZombieBuddy did not load this mod's Java code: then no join waits for it
     if not Dont39AllInOne_getModSyncJoin or not Dont39AllInOne_answerModSyncJoin then return end
     local now = getTimestampMs()

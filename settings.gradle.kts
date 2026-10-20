@@ -10,6 +10,7 @@ plugins {
   id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+include(":allinone-common")
 include(":mod-options-sidebar")
 include(":ime-keyboard-fix")
 include(":missing-anim-folders")

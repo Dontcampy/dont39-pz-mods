@@ -1,13 +1,11 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.SandboxOption
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.transport.kcp.KcpTransport
 import com.dont39.pz.tunnel.transport.tcp.TcpTransport
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
-import zombie.SandboxOptions
-import zombie.config.BooleanConfigOption
-import zombie.config.ConfigOption
-import zombie.config.IntegerConfigOption
 import zombie.network.GameServer
 
 /** The dedicated server's listeners, one per transport whose port sandbox option is set. */
@@ -41,7 +39,7 @@ internal object TunnelServer : TunnelLog, TunnelOptions {
     } catch (e: IOException) {
       // the port is the owner's choice, so the other transport keeps running
       Tunnel.log {
-        "error: could not listen on ${transport.name} port $port (${TunnelIo.describe(e)}); that tunnel is off"
+        "error: could not listen on ${transport.name} port $port (${describe(e)}); that tunnel is off"
       }
       return
     }
@@ -53,15 +51,9 @@ internal object TunnelServer : TunnelLog, TunnelOptions {
     }
   }
 
-  override fun int(name: String): Int = option<IntegerConfigOption>(name, "an integer").value
+  override fun int(name: String): Int = SandboxOption.int(name)
 
-  override fun boolean(name: String): Boolean = option<BooleanConfigOption>(name, "a boolean").value
-
-  private inline fun <reified T : ConfigOption> option(name: String, kind: String): T {
-    val option = SandboxOptions.instance.getOptionByName(name)
-      ?: throw IllegalStateException("the sandbox option $name is not registered; was sandbox-options.txt loaded?")
-    return option.asConfigOption() as? T ?: throw IllegalStateException("the sandbox option $name is not $kind option")
-  }
+  override fun boolean(name: String): Boolean = SandboxOption.boolean(name)
 
   override fun info(message: () -> String) = Tunnel.log(message)
 

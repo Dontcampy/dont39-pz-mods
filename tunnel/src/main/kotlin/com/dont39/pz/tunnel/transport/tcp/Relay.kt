@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.tcp
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.TunnelIo
 import com.dont39.pz.tunnel.TunnelLog
@@ -59,7 +60,7 @@ internal class Relay(
     try {
       body()
     } catch (e: IOException) {
-      close(TunnelIo.describe(e), null)
+      close(describe(e), null)
     } catch (t: Throwable) {
       close("an unexpected error", t)
     }

@@ -17,11 +17,6 @@ function Shared.storeChanged()
     Shared.storeVersion = Shared.storeVersion + 1
 end
 
--- [prefix]: the part's own; not "tunnel: ", which prefixes the Java side's status lines. Never throws.
-function Shared.log(prefix, message)
-    pcall(function() DebugType.Mod:println(prefix .. message) end)
-end
-
 function Shared.trim(text)
     return string.match(text, "^%s*(.-)%s*$")
 end

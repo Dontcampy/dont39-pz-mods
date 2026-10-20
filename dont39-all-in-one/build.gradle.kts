@@ -34,11 +34,14 @@ val javaPkgName = pzMod.javaPkgName
 
 val bundledFeatures = configurations.dependencyScope("bundledFeatures")
 configurations.implementation { extendsFrom(bundledFeatures.get()) }
+// code the features share: bundled like them, but no feature (no descriptor, init or glue)
+val bundledLibs = configurations.dependencyScope("bundledLibs")
 // ZabricKotlin, whose version the smokeTest checks
 val kotlinLib = configurations.dependencyScope("kotlinLib")
 
 dependencies {
   features.forEach { bundledFeatures(project(it)) }
+  bundledLibs(project(":allinone-common"))
   compileOnly(project(":zb-kt-utils"))
   compileOnly(project(":zabric"))
   kotlinLib(project(":zb-kt"))
@@ -49,6 +52,8 @@ val featureResources = jvmFolders("featureResources", bundledFeatures, LibraryEl
 val featureModFiles = pzIncoming("featureModFiles", bundledFeatures, PzArtifact.MOD_FILES)
 val featureClassTweakers = pzIncoming("featureClassTweakers", bundledFeatures, PzArtifact.CLASSTWEAKER)
 val featureInfo = pzIncoming("featureInfo", bundledFeatures, PzArtifact.FEATURE)
+val libClasses = jvmFolders("libClasses", bundledLibs, LibraryElements.CLASSES)
+val libModFiles = pzIncoming("libModFiles", bundledLibs, PzArtifact.MOD_FILES)
 val kotlinLibFolder = pzIncoming("kotlinLibFolder", kotlinLib, PzArtifact.MOD_FOLDER)
 
 val generateFeatureInit = tasks.register<GenerateFeatureInit>("generateFeatureInit") {
@@ -69,7 +74,7 @@ val mergeClassTweakers = tasks.register<MergeClassTweakers>("mergeClassTweakers"
 
 tasks.jar {
   manifest { attributes("Zabric-Main" to "$javaPkgName.AllInOneMain") }
-  from(featureClasses, featureResources)
+  from(featureClasses, featureResources, libClasses)
   // build data only (the features' source .classtweaker lists)
   exclude("META-INF/dont39/**")
   // where Zabric reads it at game start
@@ -84,10 +89,10 @@ val checkGlue = tasks.register<CheckGlue>("checkGlue") {
 }
 tasks.check { dependsOn(checkGlue) }
 
-// this mod's own media files (the sandbox page's name) first, then the features' in init order
+// this mod's own media files (the sandbox page's name) first, then the shared code's, then the features' in init order
 val mergeMedia = tasks.register<MergeMedia>("mergeMedia") {
-  description = "Merges this mod's and the features' media files into the mod's 42/media."
-  folders.from("src/main/media", featureModFiles)
+  description = "Merges this mod's, the shared code's and the features' media files into the mod's 42/media."
+  folders.from("src/main/media", libModFiles, featureModFiles)
   merged = layout.buildDirectory.dir("media")
 }
 

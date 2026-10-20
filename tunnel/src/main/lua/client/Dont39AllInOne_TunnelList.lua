@@ -2,6 +2,7 @@
 
 require "OptionScreens/MultiplayerUI"
 
+local Common = require "Dont39AllInOne_Common"
 local Shared = require "Dont39AllInOne_TunnelShared"
 
 local PREFIX = "[Dont39AllInOne] tunnel server list: "
@@ -14,20 +15,12 @@ if not MultiplayerUI or not MultiplayerUI.refreshList then
 end
 
 local vanillaRefreshList = MultiplayerUI.refreshList
-local disabled = false -- after an error in the list; final for the session
+local guard = Common.guard(PREFIX)
+local fail = guard.fail
 
 -- The tags by address, read from the store on first draw; cleared whenever the store may have changed.
 local tags = nil
 local tagsVersion = nil
-
-local function fail(what, err, trace)
-    if disabled then return end
-    disabled = true
-    pcall(function()
-        DebugType.Mod:error(PREFIX .. "tunnel tags off after an error while " .. what .. ": " .. tostring(err)
-            .. "\n" .. tostring(trace))
-    end)
-end
 
 -- The tag of [server]'s address, nil when it has no tunnel.
 local function tag(server)
@@ -75,7 +68,7 @@ local function hookList(list)
     list[STATE] = true
     list.doDrawItem = function(box, y, item, alt)
         local result = draw(box, y, item, alt)
-        if not disabled then
+        if not guard.disabled then
             local ok, err, trace = pcall(drawTag, box, y, item)
             if not ok then
                 fail("drawing a server's tunnel", err, trace)
@@ -88,7 +81,7 @@ end
 function MultiplayerUI:refreshList(...)
     vanillaRefreshList(self, ...)
     tags = nil
-    if disabled then return end
+    if guard.disabled then return end
     local ok, err, trace = pcall(function()
         if not self.accountList then error("the list of saved servers (accountList) was not found") end
         hookList(self.accountList)

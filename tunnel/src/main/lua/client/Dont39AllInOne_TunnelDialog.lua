@@ -6,6 +6,7 @@ require "ISUI/ISLabel"
 require "ISUI/ISTextEntryBox"
 require "ISUI/ISComboBox"
 
+local Common = require "Dont39AllInOne_Common"
 local Shared = require "Dont39AllInOne_TunnelShared"
 
 local PREFIX = "[Dont39AllInOne] tunnel dialog: "
@@ -22,18 +23,9 @@ end
 
 local vanillaInitialise = ISMPEditServer.initialise
 local vanillaOnClick = ISMPEditServer.onClick
-local disabled = false -- after an error in the dialog; final for the session
+local guard = Common.guard(PREFIX)
+local fail = guard.fail
 local reportedNoJava = false
-
--- [trace]: the Lua stack where the error was raised (the game's pcall returns it third).
-local function fail(what, err, trace)
-    if disabled then return end
-    disabled = true
-    pcall(function()
-        DebugType.Mod:error(PREFIX .. "disabled after an error while " .. what .. ": " .. tostring(err) .. "\n"
-            .. tostring(trace))
-    end)
-end
 
 -- absent when ZombieBuddy did not load this mod's Java code
 local function javaLoaded()
@@ -164,7 +156,7 @@ local function attach(self)
     -- Tab: port, then the tunnel port when shown, then the password
     local portKey = port.onOtherKey
     port.onOtherKey = function(box, key)
-        if not disabled and key == Keyboard.KEY_TAB and st.mode ~= "off" then
+        if not guard.disabled and key == Keyboard.KEY_TAB and st.mode ~= "off" then
             local ok, err, trace = pcall(function()
                 box:unfocus()
                 entry:focus()
@@ -185,7 +177,7 @@ local function attach(self)
     local prerender = self.prerender
     self.prerender = function(dialog)
         prerender(dialog)
-        if disabled then return end
+        if guard.disabled then return end
         local ok, err, trace = pcall(validate, dialog, st)
         if not ok then
             fail("checking the tunnel port", err, trace)
@@ -198,11 +190,11 @@ end
 function ISMPEditServer:initialise(...)
     -- outside pcall, so vanilla's errors surface as without this mod
     vanillaInitialise(self, ...)
-    if disabled then return end
+    if guard.disabled then return end
     if not javaLoaded() then
         if not reportedNoJava then
             reportedNoJava = true
-            Shared.log(PREFIX, "no tunnel choice: the Java part of Dont39 All-in-One is not loaded")
+            Common.log(PREFIX, "no tunnel choice: the Java part of Dont39 All-in-One is not loaded")
         end
         return
     end
@@ -244,7 +236,7 @@ end
 function ISMPEditServer:onClick(button, ...)
     local st = self[STATE]
     local save = nil
-    if st and not disabled and button and button.internal == "SAVE" then
+    if st and not guard.disabled and button and button.internal == "SAVE" then
         local ok, result, trace = pcall(collect, self, st)
         if ok then
             save = result
@@ -255,7 +247,7 @@ function ISMPEditServer:onClick(button, ...)
 
     vanillaOnClick(self, button, ...)
 
-    if save and not disabled then
+    if save and not guard.disabled then
         local ok, err, trace = pcall(store, save)
         if not ok then
             fail("saving the tunnel to Zomboid/Lua/" .. Shared.STORE, err, trace)

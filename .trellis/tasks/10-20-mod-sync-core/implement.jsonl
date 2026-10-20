@@ -10,3 +10,4 @@
 {"file": ".trellis/tasks/10-20-server-mod-sync/research/mod-discovery.md", "reason": "Folder resolution, swap point, cache resets, leave path"}
 {"file": ".trellis/tasks/10-20-server-mod-sync/research/location-delivery.md", "reason": "Connection-details trailer on write and parse"}
 {"file": ".trellis/tasks/10-20-mod-sync-core/research/spike.md", "reason": "Exact hook signatures, leave points, cache resets, widening entries"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, comment style"}

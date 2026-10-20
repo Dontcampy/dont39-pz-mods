@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.TunnelFailed.Reason
 import java.io.IOException
 import java.net.DatagramPacket
@@ -70,7 +71,7 @@ internal class LocalChannels private constructor(
           opened += TunnelIo.datagramSocket(port)
         } catch (e: IOException) {
           opened.forEach { it.closeQuietly() }
-          val why = TunnelIo.describe(e)
+          val why = describe(e)
           throw TunnelFailed(
             Reason.LOCAL_PORT,
             listOf(port.toString(), why),

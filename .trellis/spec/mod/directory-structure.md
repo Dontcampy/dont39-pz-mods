@@ -14,8 +14,10 @@ buildSrc/src/main/kotlin/
   pz-java.gradle.kts                 every game module: pz-jvm, zb-gradle-plugin, game and ZombieBuddy jars
   pz-kotlin.gradle.kts               every Kotlin module
   pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
-  pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, descriptor variants
-  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled, KSP glue
+  pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, classtweaker variants
+  pz-bundled-feature.gradle.kts      every feature: pz-bundled plus the descriptor variant; Lua-only features apply it
+  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled-feature, KSP glue,
+                                     allinone-common compile-only
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
   pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
@@ -33,6 +35,10 @@ buildSrc/src/main/kotlin/
   src/main/media/                              other media files, e.g. its own sandbox-options.txt (copied into 42/media)
   src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
   build/generated/ksp/main/                    generated glue (read it, never edit it)
+allinone-common/                     code the features share, bundled only into dont39-all-in-one (not a feature: no
+                                     facade, hooks or glue; not in the features list)
+  src/main/kotlin/com/dont39/pz/common/        Kotlin helpers, e.g. sandbox option reads, failJoin, writeAtomically
+  src/main/lua/client/Dont39AllInOne_Common.lua   Lua helpers: Common.log, the fail-once Common.guard
 dont39-all-in-one/                   shipped mod: all features
   build.gradle.kts                   version, feature list (init order), packaging, smokeTest
   src/main/media/                    the mod's own media files, e.g. the sandbox page's name; merged with the features'
@@ -107,10 +113,12 @@ handlers are `public` (`HookReader.kt`). Compare the modifiers in the `ime-keybo
 
 `AllInOneMain.kt` and `smokeTest` need no edit.
 
-Do not put feature code inside `dont39-all-in-one`; each feature is its own module.
+Do not put feature code inside `dont39-all-in-one`; each feature is its own module. Code a second feature needs goes
+into `allinone-common` instead of a copy; a feature package with sub-packages keeps them layered (`mod-sync`:
+`protocol` is used by `server` and `client`, neither uses the other).
 
 A feature that only changes vanilla Lua UI is **Lua-only**: steps 2, 3, 7 and 8 as above, a module that applies
-`pz-bundled` instead of `pz-feature`, no facade, hooks or `init()`. Its Lua logs `<module>: ready`, which `smokeTest`
+`pz-bundled-feature` instead of `pz-feature`, no facade, hooks or `init()`. Its Lua logs `<module>: ready`, which `smokeTest`
 expects of every Lua-only feature.
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
