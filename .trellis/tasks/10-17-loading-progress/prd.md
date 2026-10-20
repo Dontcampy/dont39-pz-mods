@@ -187,3 +187,27 @@ targets, drawing, translations, build); javap of 42.21 and the 16:00 DebugLog of
   before upload.
 - Languages other than English and Chinese (CN).
 - Moving Dont39 All-in-One's tunnel open off the game thread (D8).
+
+## Outcome (2026-10-20)
+
+Evidence (consoles, DebugLogs, screenshots, timing tables) stayed in the session scratchpad; results below.
+
+| AC | Result |
+|---|---|
+| AC1 | Passed: Zabric unit tests (preLaunch opening, launch-wide, closeAll, byte check, held log, loader progress, heartbeat) |
+| AC2 | Passed as reworded (D10): `checkJdkGlue`; 0 game classes loaded from Zabric or mod code at preLaunch |
+| AC3, AC3b | Passed: 246-mod launch, Java-mod pass largest visible gap 534–645 ms; only gaps over 1 s are tile comment stripping (known call) |
+| AC4 | Passed against a local dedicated server (nosteam), with and without the mod in `Mods=`; failed join then a good one clean |
+| AC4b | Wrong tunnel port passed; successful TCP and KCP tunnel joins not run (the tunnel refuses a server on this machine) |
+| AC5 | Passed: single player with and without a mod-list change |
+| AC6 | Passed; a CN launch shows English until the CN fonts load (~16 s, by design) |
+| AC7 | Passed: launch → menu +4.4 %, join → first in-world frame +2.3 % (local server) |
+| AC8 | Passed: forced mismatch reported once, menu reached (found and fixed a second error from exit handlers); server line once, listed or only preloaded |
+| AC9 | Passed: build gate, `:loading-progress:smokeTest`, `:dont39-all-in-one:smokeTest` |
+
+Open items for the user:
+- Successful TCP and KCP tunnel joins on `myserver2` (needs the user's account there).
+- A join with a client/server version mismatch (Back must leave no bar on the menu).
+- Real art for `loading-progress/mod/42/poster.png` and `mod/workshop/preview.png` (placeholders now).
+- Release: Zabric 0.5.0 tag (Maven Central) and Workshop upload, then the sample's `zabricVersion` bump; Loading Progress Workshop upload. Consider a sentence in Zabric's author contract that exit handlers run after the hooks close (spec rule in `zabric-hooks.md`).
+- Joins with Steam on to a server on the same machine hang at "GettingServerInfo" here, without the mod too (environment).
