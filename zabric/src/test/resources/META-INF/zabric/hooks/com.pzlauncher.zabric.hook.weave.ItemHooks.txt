@@ -1,0 +1,5 @@
+zabric-hooks v1
+mod weave
+gate default
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Nested_Item_setState
+hook com.pzlauncher.zabric.hook.weave.Nested$Item setState (Lcom/pzlauncher/zabric/hook/weave/Nested$State;)V com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Nested_Item_setState

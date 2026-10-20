@@ -1,6 +1,6 @@
-// Reference glue: what zabric-processor generates for AlwaysHooks, DefaultHooks, GatedHooks and ShapeHooks (mod
-// "weave"). zabric-processor's GoldenTest checks the generator's output equals it from the package line on; WeaveTest
-// weaves it through ZombieBuddy's patch engine.
+// Reference glue: what zabric-processor generates for AlwaysHooks, DefaultHooks, GatedHooks, ItemHooks, NestedHooks
+// and ShapeHooks (mod "weave"). zabric-processor's GoldenTest checks the generator's output equals it from the package
+// line on; WeaveTest weaves it through ZombieBuddy's patch engine.
 package com.pzlauncher.zabric.hook.weave.glue;
 
 import com.pzlauncher.zabric.hook.CallbackInfo;
@@ -15,6 +15,56 @@ public final class WeaveGlue {
     public static final ModHooks MOD = ZabricHooks.mod("weave");
 
     private WeaveGlue() {
+    }
+
+    @Patch(className = "com.pzlauncher.zabric.hook.weave.Nested", methodName = "step", strictMatch = true)
+    public static final class Nested_step {
+        private Nested_step() {
+        }
+
+        @Patch.OnEnter(skipOn = true)
+        public static boolean enter(
+                @Patch.This com.pzlauncher.zabric.hook.weave.Nested self,
+                @Patch.Local("h0$active") boolean h0$active,
+                @Patch.Local("cancelled") boolean cancelled) {
+            h0$active = MOD.active(MOD.defaultGate());
+            if (h0$active) {
+                try {
+                    CallbackInfo ci = new CallbackInfo("step", true);
+                    com.pzlauncher.zabric.hook.weave.NestedHooks.hold(self, ci);
+                    if (ci.isCancelled()) {
+                        cancelled = true;
+                        return true;
+                    }
+                } catch (Throwable t) {
+                    MOD.failed(MOD.defaultGate(),
+                            "running NestedHooks.hold on com.pzlauncher.zabric.hook.weave.Nested.step", t);
+                }
+            }
+            return false;
+        }
+    }
+
+    @Patch(className = "com.pzlauncher.zabric.hook.weave.Nested$Item", methodName = "setState", strictMatch = true)
+    public static final class Nested_Item_setState {
+        private Nested_Item_setState() {
+        }
+
+        @Patch.OnEnter
+        public static void enter(
+                @Patch.This com.pzlauncher.zabric.hook.weave.Nested.Item self,
+                @Patch.Argument(value = 0, readOnly = false) com.pzlauncher.zabric.hook.weave.Nested.State arg0,
+                @Patch.Local("h0$active") boolean h0$active) {
+            h0$active = MOD.active(MOD.defaultGate());
+            if (h0$active) {
+                try {
+                    arg0 = com.pzlauncher.zabric.hook.weave.ItemHooks.takeOver(arg0, self);
+                } catch (Throwable t) {
+                    MOD.failed(MOD.defaultGate(),
+                            "running ItemHooks.takeOver on com.pzlauncher.zabric.hook.weave.Nested$Item.setState", t);
+                }
+            }
+        }
     }
 
     @Patch(className = "com.pzlauncher.zabric.hook.weave.Shapes", methodName = "<init>", strictMatch = true)
