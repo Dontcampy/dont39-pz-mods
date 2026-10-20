@@ -1,5 +1,6 @@
 package com.dont39.pz.loadingprogress.progress;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -10,6 +11,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 /**
  * The running flow, its step and item, its log and its frame gaps. Game-free: the hooks pass in what they read of the
@@ -37,11 +40,12 @@ public final class Progress {
      * between those and interim frames together: {@code largestVisibleGap} of all, {@code javaModGap} of those the
      * Java mod jars showed at (null when none showed), {@code unknownGap} the one with the most time outside
      * {@link Known} calls. {@code interimSkips}: interim frames or their copies skipped for an OpenGL error the game
-     * left pending.
+     * left pending. {@code timed}: the log's lines with their times, empty unless the report is on; {@code waitedNanos}
+     * of {@code nanos} went to waiting in the menu, in no line's time.
      */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
                       int interimFrames, int interimSkips, Gap largestGap, Gap largestVisibleGap, Gap javaModGap,
-                      Gap unknownGap) {
+                      Gap unknownGap, List<Timed> timed, long waitedNanos) {
     }
 
     /**
@@ -67,8 +71,15 @@ public final class Progress {
     }
 
     private final BooleanSupplier client;
+    private final Supplier<Settings> settingsSource;
+    private final LongSupplier clock;
     private final Runnable notClient;
     private final Consumer<End> ended;
+
+    // read at the first flow's begin, for the session
+    private Settings settings;
+    private volatile boolean display;
+    private boolean report;
 
     // read without the lock on hot paths
     private volatile boolean active;
@@ -92,6 +103,13 @@ public final class Progress {
     // the step's lines of the kinds shown once per step
     private final Set<Line> onceLines = new HashSet<>();
     private final Log log = new Log(LOG_LINES);
+    // the log's lines with their times, while the report is on; the newest still runs
+    private List<Timed> timed = new ArrayList<>();
+    private Line timing;
+    private String timingPath;
+    private long timingStarted;
+    private long waitStarted;
+    private long waited;
     private int ownFrameCount;
     private int interimFrameCount;
     private int interimSkipCount;
@@ -135,11 +153,15 @@ public final class Progress {
     private int chunksBefore;
 
     /**
-     * {@code client}: flows start only where it is true; {@code notClient} hears once where it is not. {@code ended}
-     * hears each flow's end. Both under the lock.
+     * {@code client}: flows start only where it is true; {@code notClient} hears once where it is not.
+     * {@code settings}: asked once, at the first flow's begin. {@code clock}: the time of an item's line, asked only
+     * while the report is on. {@code ended} hears each flow's end. All under the lock.
      */
-    public Progress(BooleanSupplier client, Runnable notClient, Consumer<End> ended) {
+    public Progress(BooleanSupplier client, Supplier<Settings> settings, LongSupplier clock, Runnable notClient,
+                    Consumer<End> ended) {
         this.client = client;
+        this.settingsSource = settings;
+        this.clock = clock;
         this.notClient = notClient;
         this.ended = ended;
     }
@@ -174,6 +196,18 @@ public final class Progress {
         if (flow != null) {
             finish(Outcome.STOPPED, why, now);
         }
+    }
+
+    /** Whether the bar and log show; when not, flows still run for the report and the frame-gap line. */
+    public boolean display() {
+        return display;
+    }
+
+    /** No more timing for the session: the report could not be written. */
+    public synchronized void reportOff() {
+        report = false;
+        timing = null;
+        timed = new ArrayList<>();
     }
 
     /** Whether a flow runs: a cheap first check for hooks on hot paths. */
@@ -226,6 +260,8 @@ public final class Progress {
                 // the menu shows its own screens, e.g. character creation, until the world loads
                 gaps(now);
                 paused = true;
+                timeUntil(now);
+                waitStarted = now;
                 update();
             }
         }
@@ -313,7 +349,7 @@ public final class Progress {
         }
     }
 
-    /** The mod list loads; {@link #mod} counts its mods until {@link #modsLoaded()}. */
+    /** The mod list loads; {@link #mod} counts its mods until {@link #modsLoaded}. */
     public synchronized void modsLoading(long now) {
         modsLoading = true;
         modsLoaded = 0;
@@ -340,8 +376,12 @@ public final class Progress {
         javaMod = index;
         javaModTotal = total;
         javaModLoading = !loaded;
-        if (item(Item.JAVA_MOD, index, total, id) && !loaded) {
+        // no interim frames without the overlay they copy
+        if (item(Item.JAVA_MOD, index, total, id) && !loaded && display) {
             loadingJar = ++jarCount;
+        }
+        if (loaded) {
+            runEnded(now);
         }
     }
 
@@ -393,8 +433,9 @@ public final class Progress {
         return loadingJar;
     }
 
-    public synchronized void modsLoaded() {
+    public synchronized void modsLoaded(long now) {
         modsLoading = false;
+        runEnded(now);
     }
 
     /** {@code total}: the mods the list loads. */
@@ -411,7 +452,7 @@ public final class Progress {
     }
 
     /**
-     * The script files load; {@link #script} counts them until {@link #scriptsLoaded()}. {@code path}: the game's
+     * The script files load; {@link #script} counts them until {@link #scriptsLoaded}. {@code path}: the game's
      * current script file, left from an earlier load.
      */
     public synchronized void scriptsLoading(String path, long now) {
@@ -421,8 +462,9 @@ public final class Progress {
         reachLocked(Boundary.SCRIPTS, now);
     }
 
-    public synchronized void scriptsLoaded() {
+    public synchronized void scriptsLoaded(long now) {
         scriptsLoading = false;
+        runEnded(now);
     }
 
     /** Whether {@link #script} counts: the hook reads the game's current script file only then. */
@@ -442,7 +484,7 @@ public final class Progress {
             if (scriptsLoading && flow != null && path != null && !path.equals(scriptPath)) {
                 scriptPath = path;
                 scriptsLoaded = counted(scriptsLoaded, total, "script file", path);
-                item(Item.SCRIPT, scriptsLoaded, total, file);
+                item(Item.SCRIPT, scriptsLoaded, total, file, path);
             }
         }
     }
@@ -455,8 +497,9 @@ public final class Progress {
         luaTotal = -1;
     }
 
-    public synchronized void luaLoaded() {
+    public synchronized void luaLoaded(long now) {
         luaLoading = false;
+        runEnded(now);
     }
 
     /**
@@ -474,7 +517,7 @@ public final class Progress {
             luaTotal = new HashSet<>(files).size();
         }
         luaRun = counted(luaRun, luaTotal, "Lua file", file);
-        item(Item.LUA, luaRun, luaTotal, fileName(file));
+        item(Item.LUA, luaRun, luaTotal, fileName(file), file);
     }
 
     public synchronized void luaRan() {
@@ -654,6 +697,14 @@ public final class Progress {
         if (stopped || !client()) {
             return;
         }
+        if (settings == null) {
+            settings = settingsSource.get();
+            display = settings.display();
+            report = settings.report();
+        }
+        if (!display && !report) {
+            return;
+        }
         flow = next;
         step = next.steps().indexOf(first);
         paused = false;
@@ -663,7 +714,10 @@ public final class Progress {
         clearItem();
         clearJavaMods();
         log.clear();
-        stepLine();
+        timed = new ArrayList<>();
+        timing = null;
+        waited = 0;
+        stepLine(now);
         ownFrameCount = 0;
         interimFrameCount = 0;
         interimSkipCount = 0;
@@ -695,6 +749,7 @@ public final class Progress {
                 return;
             }
             paused = false;
+            waited += now - waitStarted;
             lastFrame = now;
             lastVisible = now;
             clearKnownGap();
@@ -704,7 +759,7 @@ public final class Progress {
         if (i > step) {
             step = i;
             clearItem();
-            stepLine();
+            stepLine(now);
         }
         update();
     }
@@ -733,12 +788,20 @@ public final class Progress {
     // whether the item shows; a new one is a line of the log, a repeat of its kind's last (a jar that loaded, an
     // event again, the same count polled) is not, nor one shown before in the step for the kinds shown once
     private boolean item(Item kind, int i, int n, String itemName) {
+        return item(kind, i, n, itemName, null);
+    }
+
+    // path: a file's full path, for the report
+    private boolean item(Item kind, int i, int n, String itemName, String path) {
         if (flow == null || paused || !current().shows(kind)) {
             return false;
         }
         Line line = new Line(current(), kind, i, n, itemName);
         if (ONCE_PER_STEP.contains(kind) ? onceLines.add(line) : !line.equals(lastLines.put(kind, line))) {
             log.add(line);
+            if (report) {
+                time(line, path, clock.getAsLong());
+            }
         }
         item = kind;
         index = i;
@@ -857,8 +920,15 @@ public final class Progress {
     }
 
     private void finish(Outcome outcome, String why, long now) {
+        if (paused) {
+            waited += now - waitStarted;
+        } else {
+            timeUntil(now);
+        }
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount,
-                interimFrameCount, interimSkipCount, largestGap, largestVisibleGap, javaModGap, unknownGap);
+                interimFrameCount, interimSkipCount, largestGap, largestVisibleGap, javaModGap, unknownGap,
+                List.copyOf(timed), waited);
+        timed = new ArrayList<>();
         flow = null;
         paused = false;
         known = null;
@@ -867,8 +937,35 @@ public final class Progress {
         ended.accept(end);
     }
 
-    private void stepLine() {
-        log.add(Line.step(current(), step + 1, flow.steps().size()));
+    private void stepLine(long now) {
+        Line line = Line.step(current(), step + 1, flow.steps().size());
+        log.add(line);
+        if (report) {
+            time(line, null, now);
+        }
+    }
+
+    // a new line: the running one ends
+    private void time(Line line, String path, long now) {
+        timeUntil(now);
+        timing = line;
+        timingPath = path;
+        timingStarted = now;
+    }
+
+    // the game's loop over a kind returned: the time after its last item is the step's own again
+    private void runEnded(long now) {
+        if (timing != null && !timing.isStep()) {
+            time(Line.step(current(), step + 1, flow.steps().size()), null, now);
+        }
+    }
+
+    private void timeUntil(long now) {
+        if (timing != null) {
+            // a hook on another thread takes its time before it waits for the lock
+            timed.add(new Timed(timing, timingPath, timingStarted - started, Math.max(0, now - timingStarted)));
+            timing = null;
+        }
     }
 
     private Step current() {
@@ -878,7 +975,7 @@ public final class Progress {
     private void update() {
         active = flow != null;
         showing = active && !paused;
-        ownFrames = showing && current().ownFrames();
+        ownFrames = showing && display && current().ownFrames();
         loadsWorld = showing && current() == Step.LOADING_WORLD;
         if (!showing) {
             loadingJar = 0;

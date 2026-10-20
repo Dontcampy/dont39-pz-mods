@@ -20,8 +20,10 @@ class ProgressTest {
     private final List<Progress.End> ends = new ArrayList<>();
     private boolean client = true;
     private int notClient;
-    private final Progress progress = new Progress(() -> client, () -> notClient++, ends::add);
+    private Settings settings = Settings.DEFAULTS;
     private long now;
+    private final Progress progress = new Progress(() -> client, () -> settings, () -> now, () -> notClient++,
+            ends::add);
 
     private long at(long millis) {
         now = TimeUnit.MILLISECONDS.toNanos(millis);
@@ -46,7 +48,7 @@ class ProgressTest {
         progress.mod("B", 2);
         assertEquals(Item.MOD, progress.view().item());
         assertEquals(new Line(Step.MODS, Item.MOD, 2, 2, "B"), newest());
-        progress.modsLoaded();
+        progress.modsLoaded(now);
         for (Boundary b : List.of(Boundary.TRANSLATIONS, Boundary.SHARED_INIT, Boundary.SCRIPTS,
                 Boundary.SPRITE_MODELS, Boundary.CLOTHING, Boundary.TILES, Boundary.LUA, Boundary.WINDOW_ENTER,
                 Boundary.MODEL_MANAGER)) {
@@ -250,7 +252,7 @@ class ProgressTest {
         progress.modsLoading(at(2));
         progress.javaMod(1, 1, "A", false, now);
         progress.javaMod(1, 1, "A", true, now);
-        progress.modsLoaded();
+        progress.modsLoaded(now);
         progress.modsLoading(at(3));
         progress.javaMod(1, 1, "A", false, now);
         assertTrue(progress.loadingJar() != 0, "jar 1 loads again");
@@ -281,7 +283,7 @@ class ProgressTest {
         progress.script("a/items.txt", "items.txt", 2);
         progress.script("b/recipes.txt", "recipes.txt", 2);
         assertEquals(new Line(Step.SCRIPTS, Item.SCRIPT, 2, 2, "recipes.txt"), newest());
-        progress.scriptsLoaded();
+        progress.scriptsLoaded(now);
         assertFalse(progress.countsScripts());
     }
 
@@ -753,5 +755,236 @@ class ProgressTest {
         progress.interimSkipped();
         progress.stop("why", at(10));
         assertEquals(2, ends.get(0).interimSkips(), "none counted before the flow");
+    }
+
+    private static long ms(long millis) {
+        return TimeUnit.MILLISECONDS.toNanos(millis);
+    }
+
+    @Test
+    void eachLineLastsUntilTheNext() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(10));
+        at(20);
+        progress.mod("A", 2);
+        at(50);
+        progress.mod("B", 2);
+        progress.reach(Boundary.TRANSLATIONS, at(80));
+        progress.stop("why", at(100));
+        assertEquals(List.of(
+                new Timed(new Line(Step.MODS, null, 1, 10, null), null, 0, ms(20)),
+                new Timed(new Line(Step.MODS, Item.MOD, 1, 2, "A"), null, ms(20), ms(30)),
+                new Timed(new Line(Step.MODS, Item.MOD, 2, 2, "B"), null, ms(50), ms(30)),
+                new Timed(new Line(Step.TRANSLATIONS, null, 2, 10, null), null, ms(80), ms(20))),
+                ends.get(0).timed());
+    }
+
+    @Test
+    void aRepeatAddsNoTime() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.javaMod(1, 1, "A", false, at(10));
+        progress.javaMod(1, 1, "A", true, at(900));
+        progress.stop("why", at(1000));
+        List<Timed> timed = ends.get(0).timed();
+        assertEquals(3, timed.size(), "the step, the jar and the step again: " + timed);
+        assertEquals(ms(890), timed.get(1).nanos(), "the jar's line ends at its load");
+        assertEquals(ms(100), timed.get(2).nanos());
+    }
+
+    @Test
+    void theLastItemOfARunEndsWhereTheGameLoopReturns() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        at(10);
+        progress.mod("A", 2);
+        at(20);
+        progress.mod("B", 2);
+        progress.modsLoaded(at(30));
+        progress.reach(Boundary.SCRIPTS, at(100));
+        progress.scriptsLoading(null, now);
+        at(110);
+        progress.script("s/a.txt", "a.txt", 1);
+        progress.scriptsLoaded(at(150));
+        progress.reach(Boundary.LUA, at(200));
+        progress.luaLoading();
+        at(210);
+        progress.lua("l/a.lua", List.of("l/a.lua"));
+        progress.luaRan();
+        progress.luaLoaded(at(250));
+        progress.luaLoading();
+        at(260);
+        progress.lua("l/b.lua", List.of("l/b.lua"));
+        progress.luaRan();
+        progress.luaLoaded(at(280));
+        progress.stop("why", at(300));
+        Line mods = new Line(Step.MODS, null, 1, 10, null);
+        Line scripts = new Line(Step.SCRIPTS, null, 4, 10, null);
+        Line lua = new Line(Step.LUA, null, 7, 10, null);
+        assertEquals(List.of(
+                new Timed(mods, null, 0, ms(10)),
+                new Timed(new Line(Step.MODS, Item.MOD, 1, 2, "A"), null, ms(10), ms(10)),
+                new Timed(new Line(Step.MODS, Item.MOD, 2, 2, "B"), null, ms(20), ms(10)),
+                new Timed(mods, null, ms(30), ms(70)),
+                new Timed(scripts, null, ms(100), ms(10)),
+                new Timed(new Line(Step.SCRIPTS, Item.SCRIPT, 1, 1, "a.txt"), "s/a.txt", ms(110), ms(40)),
+                new Timed(scripts, null, ms(150), ms(50)),
+                new Timed(lua, null, ms(200), ms(10)),
+                new Timed(new Line(Step.LUA, Item.LUA, 1, 1, "a.lua"), "l/a.lua", ms(210), ms(40)),
+                new Timed(lua, null, ms(250), ms(10)),
+                new Timed(new Line(Step.LUA, Item.LUA, 1, 1, "b.lua"), "l/b.lua", ms(260), ms(20)),
+                new Timed(lua, null, ms(280), ms(20))),
+                ends.get(0).timed());
+    }
+
+    @Test
+    void aLoopReturnWithoutARunningItemAddsNothing() {
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.modsLoaded(at(10));
+        progress.stop("why", at(20));
+        assertEquals(List.of(new Timed(new Line(Step.MODS, null, 1, 10, null), null, 0, ms(20))),
+                ends.get(0).timed());
+
+        settings = new Settings(true, false);
+        Progress off = new Progress(() -> true, () -> settings, () -> now, () -> { }, ends::add);
+        off.fontsReady(at(0));
+        off.modsLoading(at(0));
+        off.mod("A", 1);
+        off.modsLoaded(at(10));
+        off.stop("why", at(20));
+        assertTrue(ends.get(1).timed().isEmpty());
+    }
+
+    @Test
+    void filesKeepTheirPathForTheReport() {
+        progress.fontsReady(at(0));
+        progress.reach(Boundary.SCRIPTS, at(1));
+        progress.scriptsLoading(null, at(1));
+        progress.script("C:/mods/A/42/media/scripts/items.txt", "items.txt", 1);
+        progress.scriptsLoaded(at(2));
+        progress.reach(Boundary.LUA, at(3));
+        progress.luaLoading();
+        progress.lua("C:/mods/A/42/media/lua/client/a.lua", List.of("C:/mods/A/42/media/lua/client/a.lua"));
+        progress.stop("why", at(4));
+        List<String> paths = ends.get(0).timed().stream().map(Timed::path).toList();
+        assertEquals(Arrays.asList(null, null, "C:/mods/A/42/media/scripts/items.txt", null, null,
+                "C:/mods/A/42/media/lua/client/a.lua"), paths);
+    }
+
+    @Test
+    void theWaitInTheMenuIsInNoLine() {
+        progress.connect(at(0));
+        progress.resetBegins(false, at(1000));
+        progress.event("OnGameBoot", true, at(1500));
+        progress.resetEnds(false, at(2000));
+        progress.reach(Boundary.LOGIN_QUEUE, at(9000));
+        progress.worldPrepares(at(9100));
+        progress.reach(Boundary.WORLD_LOAD, at(9200));
+        progress.reach(Boundary.WORLD_READY, at(9300));
+        progress.reach(Boundary.WORLD_ENTER, at(9400));
+        progress.inWorld(at(9500));
+        Progress.End end = ends.get(0);
+        assertEquals(ms(7000), end.waitedNanos());
+        long lines = end.timed().stream().mapToLong(Timed::nanos).sum();
+        assertEquals(end.nanos(), lines + end.waitedNanos());
+        Timed beforeWait = end.timed().stream().filter(t -> t.line().step() == Step.LUA_EVENTS
+                && !t.line().isStep()).findFirst().orElseThrow();
+        assertEquals(ms(500), beforeWait.nanos(), "OnGameBoot ends at the wait");
+    }
+
+    @Test
+    void aFlowThatEndsWaitingCountsTheWait() {
+        progress.connect(at(0));
+        progress.resetBegins(false, at(1000));
+        progress.resetEnds(false, at(2000));
+        progress.menu(at(5000));
+        Progress.End end = ends.get(0);
+        assertEquals(ms(3000), end.waitedNanos());
+        assertEquals(ms(2000), end.timed().stream().mapToLong(Timed::nanos).sum());
+    }
+
+    @Test
+    void eachFlowHasItsOwnLines() {
+        progress.fontsReady(at(0));
+        progress.reach(Boundary.TRANSLATIONS, at(10));
+        progress.stop("why", at(20));
+        assertEquals(2, ends.get(0).timed().size());
+        Progress other = new Progress(() -> true, () -> settings, () -> now, () -> { }, ends::add);
+        other.worldPrepares(at(100));
+        other.menu(at(150));
+        assertEquals(List.of(new Timed(new Line(Step.PREPARING_WORLD, null, 10, 13, null), null, 0, ms(50))),
+                ends.get(1).timed());
+    }
+
+    @Test
+    void withTheReportOffNothingIsTimed() {
+        settings = new Settings(true, false);
+        progress.fontsReady(at(0));
+        progress.modsLoading(at(0));
+        progress.mod("A", 1);
+        progress.stop("why", at(10));
+        assertTrue(ends.get(0).timed().isEmpty());
+    }
+
+    @Test
+    void reportOffStopsTiming() {
+        progress.fontsReady(at(0));
+        progress.reportOff();
+        progress.reach(Boundary.TRANSLATIONS, at(10));
+        progress.stop("why", at(20));
+        assertTrue(ends.get(0).timed().isEmpty());
+    }
+
+    @Test
+    void withTheDisplayOffFlowsRunWithoutFramesOfTheirOwn() {
+        settings = new Settings(false, true);
+        progress.fontsReady(at(0));
+        assertFalse(progress.display());
+        assertTrue(progress.active());
+        assertFalse(progress.ownFrames());
+        assertFalse(progress.ownFrameDue(at(1000)));
+        progress.modsLoading(at(1000));
+        progress.javaMod(1, 1, "A", false, now);
+        assertEquals(0, progress.loadingJar(), "no interim frames");
+        assertFalse(progress.takeJarFrame(now));
+        progress.frameHandedOver(at(1500));
+        progress.stop("why", at(2000));
+        Progress.End end = ends.get(0);
+        assertEquals(0, end.ownFrames());
+        assertEquals(ms(1500), end.largestGap().nanos(), "gaps still measured");
+        assertEquals(2, end.timed().size(), "the step and the jar");
+    }
+
+    @Test
+    void withBothOffNoFlowBegins() {
+        settings = new Settings(false, false);
+        progress.fontsReady(at(0));
+        progress.worldPrepares(at(1));
+        progress.connect(at(2));
+        assertFalse(progress.active());
+        assertNull(progress.view());
+        assertTrue(ends.isEmpty());
+    }
+
+    @Test
+    void settingsAreReadOncePerSession() {
+        int[] reads = {0};
+        Progress counted = new Progress(() -> true, () -> {
+            reads[0]++;
+            return Settings.DEFAULTS;
+        }, () -> now, () -> { }, ends::add);
+        counted.connect(at(0));
+        counted.menu(at(1));
+        counted.worldPrepares(at(2));
+        assertEquals(1, reads[0]);
+    }
+
+    @Test
+    void settingsAreNotReadOnADedicatedServer() {
+        client = false;
+        settings = null;
+        progress.fontsReady(at(0));
+        assertFalse(progress.active());
     }
 }

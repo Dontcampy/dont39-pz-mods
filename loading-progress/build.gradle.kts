@@ -66,6 +66,11 @@ tasks.jar {
   }
 }
 
+// the mod options page and its text
+tasks.named<Sync>("assembleMod") {
+  from("src/main/lua") { into("42/media/lua") }
+}
+
 tasks.register<GameSmokeTest>("smokeTest") {
   description = "Launches Project Zomboid until ZombieBuddy has loaded $modId, then checks the log."
   dependsOn(tasks.named("deployWorkshop"), ":zabric:deployWorkshop")

@@ -67,7 +67,10 @@ public final class Overlay {
         javaModsExpected = Math.max(javaModsExpected, total);
     }
 
-    /** At the head of {@code Core.EndFrameUI}, the last point inside a frame. */
+    /**
+     * At the head of {@code Core.EndFrameUI}, the last point inside a frame; with the display off it only times the
+     * frame and reads the world-loading text.
+     */
     public static void frameEnds(Progress progress) {
         boolean drawn = uiPass;
         uiPass = false;
@@ -85,7 +88,7 @@ public final class Overlay {
         }
         // before drawing: a drawing error must not also read as a frame without this hook
         progress.frameHandedOver(System.nanoTime());
-        if (drawn) {
+        if (drawn && progress.display()) {
             draw(view);
         }
     }

@@ -38,7 +38,7 @@ public final class LoadHooks {
 
         @Inject(method = "loadMods(Ljava/lang/String;)V", at = @At("FINALLY"))
         public static void loaded(CallbackInfo ci, @Thrown Throwable thrown) {
-            PROGRESS.modsLoaded();
+            PROGRESS.modsLoaded(System.nanoTime());
         }
 
         // the mod list is complete once loadMod runs
@@ -96,7 +96,7 @@ public final class LoadHooks {
 
         @Inject(method = "Load", at = @At("FINALLY"))
         public static void loaded(CallbackInfo ci, @Thrown Throwable thrown) {
-            PROGRESS.scriptsLoaded();
+            PROGRESS.scriptsLoaded(System.nanoTime());
         }
     }
 
@@ -140,7 +140,7 @@ public final class LoadHooks {
 
         @Inject(method = "LoadDirBase(Ljava/lang/String;Z)V", at = @At("FINALLY"))
         public static void folderLoaded(CallbackInfo ci, @Thrown Throwable thrown) {
-            PROGRESS.luaLoaded();
+            PROGRESS.luaLoaded(System.nanoTime());
         }
 
         // the overload every Lua file and require goes through

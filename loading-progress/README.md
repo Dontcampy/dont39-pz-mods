@@ -2,7 +2,8 @@
 
 A client-only Java mod that shows a progress bar and a log of what loads while Project Zomboid loads (launch to the
 main menu; server join or single-player start to the first frame in the world) and hands over frames of its own where
-the game loads without drawing, so the window keeps pumping its messages. Workshop text: `mod/workshop/workshop.txt`.
+the game loads without drawing, so the window keeps pumping its messages. It also writes a timing report per load.
+Workshop text: `mod/workshop/workshop.txt`.
 
 ## How it works
 
@@ -30,6 +31,24 @@ the game loads without drawing, so the window keeps pumping its messages. Worksh
   game's pending OpenGL errors); the largest gap between frames the game
   thread handed over, the largest counting interim frames, the largest while the Java mod jars showed, and the one
   with the most time outside known calls, each with its step, item and known-call share.
+
+## Switches and timing report
+
+- Two switches in `Dont39LoadingProgress.ini` in the game cache's `Lua` folder (`progress/Settings.java`): `display`
+  (bar, log, own and interim frames) and `report` (timing report), both on by default. Read once per session at the
+  first flow's begin; a missing file is written with the defaults, an invalid one is reported in one line and the
+  defaults apply. With `display` off flows still run for the report and the frame-gap line; with both off no flow
+  begins.
+- The mod options page (`src/main/lua/client/Dont39LoadingProgress_Options.lua`, text in `Translate/`) shows the same
+  two switches, set from the ini when the page is built, and rewrites the ini on apply; a change applies from the next
+  launch.
+- Timing: each new log line also gets a time (`progress/Timed.java`), until the next line, the return of the game's
+  loop over its kind (mod list, script files, a Lua folder, a Java mod jar), a wait in the menu or the flow's end. No
+  hook separates the last script file from the game's processing of all script files after it, so the summary names
+  that row and credits it to no mod. At the flow's end `report/Report.java` builds a summary (steps, per item kind the slowest, time per mod)
+  and a CSV with a row per line, and `report/Reports.java` writes them on a background thread to
+  `Lua/Dont39LoadingProgress/` in the cache folder, keeping the last 10 loads; `console.txt` gets the summary's path.
+  A write failure turns the report off for the session.
 
 ## Constraints
 

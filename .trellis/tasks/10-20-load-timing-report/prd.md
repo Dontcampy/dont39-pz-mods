@@ -34,7 +34,9 @@ User request (2026-10-20): 这个功能有开关吗？可以不可以加一些�
   unreadable or invalid file is reported (one line naming the file and key) and the defaults apply for that session.
 - R2: the mod options page "Loading Progress" / "加载进度条" has the two tick boxes, EN and CN text, and writes the
   settings file on apply.
-- R3: every log item and step gets a start time; an item ends when the next item or step begins (or the flow ends).
+- R3: every log item and step gets a start time; an item ends when the next item or step begins (or the flow ends),
+  or where the game's loop over its kind returns (the mod list, the script files, a Lua folder, a Java mod jar's load):
+  the time after a run's last item is the step's own, not that item's (found in the first in-game report, 2026-10-20).
   Times come from `System.nanoTime`, taken in the existing hooks; no new per-item work beyond one timestamp.
 - R4: the summary lists: flow, total time, per step time, per item kind the count, total and 20 slowest items, time per
   mod where items belong to a mod (mods, Java mods, Lua and script files by their mod), the frame-gap figures of the

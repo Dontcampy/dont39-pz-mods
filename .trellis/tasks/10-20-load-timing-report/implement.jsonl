@@ -3,3 +3,4 @@
 {"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Console line for the report path"}
 {"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook rules; JDK-only glue for a preloaded mod"}
 {"file": ".trellis/tasks/archive/2026-10/10-17-loading-progress/design.md", "reason": "Current Loading Progress design: flows, log, frames"}
+{"file": ".trellis/tasks/10-20-load-timing-report/design.md", "reason": "Design of this task"}
