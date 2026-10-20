@@ -1,0 +1,5 @@
+zabric-hooks v1
+mod weave
+gate default
+patch com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Nested_step
+hook com.pzlauncher.zabric.hook.weave.Nested step ()V com.pzlauncher.zabric.hook.weave.glue.WeaveGlue$Nested_step

@@ -1,12 +1,11 @@
 package com.dont39.pz.tunnel
 
+import com.dont39.pz.common.failJoin
 import com.dont39.pz.tunnel.TunnelStore.Mode
 import com.dont39.pz.tunnel.transport.kcp.KcpTransport
 import com.dont39.pz.tunnel.transport.tcp.TcpTransport
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import se.krka.kahlua.vm.KahluaTable
-import zombie.Lua.LuaEventManager
-import zombie.core.Translator
 import zombie.core.raknet.UdpEngine
 import zombie.core.znet.SteamUtils
 
@@ -82,13 +81,12 @@ internal object TunnelClient : TunnelLog {
   /** Shows why the join stopped, as vanilla's unknown host: the join screen shows the text and a Back button. */
   private fun stop(failed: TunnelFailed?) {
     try {
-      val text = if (failed == null) {
+      if (failed == null) {
         close("an unexpected error")
-        Translator.getText("UI_Dont39AllInOne_Tunnel_Failed_Error")
+        failJoin("UI_Dont39AllInOne_Tunnel_Failed_Error")
       } else {
-        Translator.getText("UI_Dont39AllInOne_Tunnel_Failed_${failed.reason.key}", *failed.args.toTypedArray())
+        failJoin("UI_Dont39AllInOne_Tunnel_Failed_${failed.reason.key}", failed.args)
       }
-      LuaEventManager.triggerEvent("OnConnectFailed", text)
     } catch (t: Throwable) {
       // the join stays stopped without the text; the player can still abort it
       Tunnel.disable("showing why a join stopped", t)

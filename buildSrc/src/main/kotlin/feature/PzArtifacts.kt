@@ -26,13 +26,13 @@ private fun AttributeContainer.pz(objects: ObjectFactory, kind: String) {
 
 /** Values of [PZ_ARTIFACT]. */
 object PzArtifact {
-  /** A bundled feature's Lua and media files, laid out as under the mod's `42/media` (pz-bundled). */
+  /** A bundled module's Lua and media files, laid out as under the mod's `42/media` (pz-bundled). */
   const val MOD_FILES = "mod-files"
 
-  /** A bundled feature's expanded .classtweaker list, none without a list (pz-bundled, pz-feature). */
+  /** A bundled module's expanded .classtweaker list, none without a list (pz-bundled, pz-feature). */
   const val CLASSTWEAKER = "classtweaker"
 
-  /** A bundled feature's descriptor and generated listings (pz-bundled, [FeatureInfo]). */
+  /** A bundled feature's descriptor and generated listings (pz-bundled-feature, [FeatureInfo]). */
   const val FEATURE = "feature"
 
   /** A shipped mod's assembled folder (pz-mod). */

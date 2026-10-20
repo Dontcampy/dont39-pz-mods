@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a feature module, naming, sandbox option names"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Hooks on game code, loading on client and server"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API rules, weave tests for new glue shapes"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Widening the nested WorkshopItem class and its fields"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Fail closed, network events stop the join with a reason"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines for manifest, HTTP and joins"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin feature module rules"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade, hook gate, widening checks"}
+{"file": ".trellis/tasks/10-20-server-mod-sync/research/workshop-hook-points.md", "reason": "Join state machine, setState and CheckMods hook points"}
+{"file": ".trellis/tasks/10-20-server-mod-sync/research/mod-discovery.md", "reason": "Folder resolution, swap point, cache resets, leave path"}
+{"file": ".trellis/tasks/10-20-server-mod-sync/research/location-delivery.md", "reason": "Connection-details trailer on write and parse"}
+{"file": ".trellis/tasks/10-20-mod-sync-core/research/spike.md", "reason": "Exact hook signatures, leave points, cache resets, widening entries"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, comment style"}

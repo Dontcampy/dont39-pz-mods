@@ -1,5 +1,6 @@
 package com.dont39.pz.tunnel.transport.kcp
 
+import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.LinkStats
 import com.dont39.pz.tunnel.LocalChannels
 import com.dont39.pz.tunnel.OpenTunnel
@@ -98,7 +99,7 @@ internal class KcpClient private constructor(private val session: KcpSession, pa
         }
       } catch (e: IOException) {
         // also how close() ends this thread; a closed session ignores it
-        session.close(TunnelIo.describe(e))
+        session.close(describe(e))
       } catch (t: Throwable) {
         session.fail("receiving on the KCP tunnel", t)
       }

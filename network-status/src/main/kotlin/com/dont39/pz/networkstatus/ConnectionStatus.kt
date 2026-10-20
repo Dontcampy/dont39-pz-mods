@@ -1,5 +1,6 @@
 package com.dont39.pz.networkstatus
 
+import com.dont39.pz.common.put
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import se.krka.kahlua.vm.KahluaTable
 import zombie.Lua.LuaManager
@@ -69,7 +70,4 @@ internal object ConnectionStatus {
     }
     return table
   }
-
-  // Lua numbers are doubles
-  private fun KahluaTable.put(key: String, value: Number) = rawset(key, value.toDouble())
 }

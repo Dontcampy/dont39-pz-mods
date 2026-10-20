@@ -1,0 +1,9 @@
+zabric-classtweaker v1
+# the join's Workshop item a VersionMismatch is taken over for, read and cleared by the setState hook
+accessible field zombie/gameStates/ConnectToServerState$WorkshopItem id J
+accessible field zombie/gameStates/ConnectToServerState$WorkshopItem serverTimeStamp J
+accessible field zombie/gameStates/ConnectToServerState$WorkshopItem error Ljava/lang/String;
+# Steam's name of the item, for the download dialog and the reasons
+accessible field zombie/gameStates/ConnectToServerState$WorkshopItem details Lzombie/core/znet/SteamUGCDetails;
+# named in the setState handler's signature
+accessible class zombie/gameStates/ConnectToServerState$WorkshopItemState

@@ -47,10 +47,16 @@ internal class KspResult(
 }
 
 @OptIn(ExperimentalCompilerApi::class)
-internal fun ksp(dir: File, sources: List<SourceFile>, options: Map<String, String> = OPTIONS): KspResult {
+internal fun ksp(
+  dir: File,
+  sources: List<SourceFile>,
+  options: Map<String, String> = OPTIONS,
+  classpath: List<File> = listOf(),
+): KspResult {
   val compilation = KotlinCompilation().apply {
     workingDir = dir
     inheritClassPath = true
+    classpaths += classpath
     this.sources = sources
     configureKsp {
       symbolProcessorProviders += GlueProcessorProvider()
