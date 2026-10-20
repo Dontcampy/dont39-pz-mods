@@ -618,3 +618,25 @@ Carried the 10-17 loading-progress plan onto current main and built it. Zabric 0
 ### Status
 
 [OK] **Completed**
+
+
+## Session 27: Loading Progress switches and load timing report
+<!-- trellis-session: v=2 fp=018d7aad3fc7b1d4 -->
+
+**Date**: 2026-10-20
+**Task**: Loading Progress switches and load timing report
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Two switches (bar/log, timing report) in Dont39LoadingProgress.ini and on the mod options page (EN/CN); per-load summary + CSV under Lua/Dont39LoadingProgress (last 10). In-game: reports for launch and SP start; first report showed the last item of each run taking the loop's tail, so runs now end at the game's loop return (R3 amended) and the last script file row is labelled as holding the game's script processing. Display off: 0 own/interim frames; both off: no flow. Report on vs off -0.27% over 8 launches. Build gate and smokeTest pass; user's Zomboid files restored hash-identical.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `25f5be8` | Add Loading Progress switches and a load timing report |
+
+### Status
+
+[OK] **Completed**
