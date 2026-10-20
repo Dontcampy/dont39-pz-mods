@@ -1,5 +1,4 @@
 {
-    "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
     "Sandbox_Dont39AllInOne_TunnelTcpPort": "TCP 隧道端口",
     "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "服务器在此 TCP 端口接受 UDP 丢包严重的玩家，玩家在服务器条目的“隧道”中选择 TCP 并填写此端口。0 表示关闭隧道。需要在防火墙中放行此 TCP 端口。服务器启动时生效。",
     "Sandbox_Dont39AllInOne_TunnelKcpPort": "KCP 隧道端口",
@@ -19,7 +18,5 @@
     "Sandbox_Dont39AllInOne_TunnelFecParityShards": "FEC 每组修复包数",
     "Sandbox_Dont39AllInOne_TunnelFecParityShards_tooltip": "每组附带的修复包：一组中最多这么多个丢失的数据包可以立即重建，无需等待重发。0 表示关闭 FEC。在流量少的连接上大多数组都很小，FEC 可能使带宽大约翻倍。推荐：3。",
     "Sandbox_Dont39AllInOne_TunnelFecFlushMillis": "FEC 组等待（毫秒）",
-    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "未满的组最多等待这么久就发送修复包，让发送缓慢的数据包也受保护。越低恢复越快，发送的修复包越多。推荐：20。",
-    "Sandbox_Dont39AllInOne_ModSyncPort": "模组同步端口",
-    "Sandbox_Dont39AllInOne_ModSyncPort_tooltip": "服务器在此 TCP 端口向创意工坊物品版本与服务器不同的玩家（例如服务器运行期间某个模组在创意工坊上更新了）提供服务器的物品。玩家使用服务器的版本加入，只下载不同的文件。0 表示关闭。需要在防火墙中放行此 TCP 端口。服务器启动时生效。"
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "未满的组最多等待这么久就发送修复包，让发送缓慢的数据包也受保护。越低恢复越快，发送的修复包越多。推荐：20。"
 }

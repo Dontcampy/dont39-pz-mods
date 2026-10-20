@@ -29,6 +29,3 @@ option Dont39AllInOne_Tunnel.FecParityShards
 
 option Dont39AllInOne_Tunnel.FecFlushMillis
 {type = integer, min = 1, max = 1000, default = 20, page = Dont39AllInOne, translation = Dont39AllInOne_TunnelFecFlushMillis,}
-
-option Dont39AllInOne_ModSync.Port
-{type = integer, min = 0, max = 65535, default = 0, page = Dont39AllInOne, translation = Dont39AllInOne_ModSyncPort,}

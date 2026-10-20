@@ -20,7 +20,8 @@ buildSrc/src/main/kotlin/
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
   pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
   mod/                               machine paths, mod.info, typed extensions, JVM levels, version catalog
-  feature/                           the variants projects exchange data through, feature descriptors, initFeatures()
+  feature/                           the variants projects exchange data through, feature descriptors, initFeatures(),
+                                     the merged media folder (MergeMedia.kt)
   smoke/                             smoke tests
   widening/                          target mods and widened compile jars (see access-widening.md)
   check/                             class-reference checks and checkGlue (see zombiebuddy-patching.md, kotlin-runtime.md)
@@ -28,14 +29,15 @@ buildSrc/src/main/kotlin/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hooks objects and @LuaGlobal functions
   src/main/lua/client/                         Lua glue, e.g. mod options (if any)
-  src/main/lua/shared/Translate/<LANG>/        translations (UI.json, Sandbox.json); merged into one mod folder,
-                                               where a second feature's file of the same name fails assembleMod:
-                                               merge the entries into the existing file instead
-  src/main/media/                              other media files, e.g. sandbox-options.txt (copied into 42/media)
+  src/main/lua/shared/Translate/<LANG>/        translations of its own keys (UI.json, Sandbox.json)
+  src/main/media/                              other media files, e.g. its own sandbox-options.txt (copied into 42/media)
   src/main/resources/META-INF/dont39/<module>.classtweaker   non-public members it uses (if any)
   build/generated/ksp/main/                    generated glue (read it, never edit it)
 dont39-all-in-one/                   shipped mod: all features
   build.gradle.kts                   version, feature list (init order), packaging, smokeTest
+  src/main/media/                    the mod's own media files, e.g. the sandbox page's name; merged with the features'
+                                     by MergeMedia: translations and sandbox-options.txt per name,
+                                     a key or option twice fails, as does any other file in two modules
   src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt   the mod's main entrypoint; calls the generated initFeatures()
   mod/42/                            mod.info, poster
   mod/workshop/                      workshop.txt, preview

@@ -1,5 +1,6 @@
 import buildsrc.convention.check.CheckGlue
 import buildsrc.convention.feature.GenerateFeatureInit
+import buildsrc.convention.feature.MergeMedia
 import buildsrc.convention.feature.PzArtifact
 import buildsrc.convention.feature.jvmFolders
 import buildsrc.convention.feature.pzIncoming
@@ -83,8 +84,15 @@ val checkGlue = tasks.register<CheckGlue>("checkGlue") {
 }
 tasks.check { dependsOn(checkGlue) }
 
+// this mod's own media files (the sandbox page's name) first, then the features' in init order
+val mergeMedia = tasks.register<MergeMedia>("mergeMedia") {
+  description = "Merges this mod's and the features' media files into the mod's 42/media."
+  folders.from("src/main/media", featureModFiles)
+  merged = layout.buildDirectory.dir("media")
+}
+
 tasks.named<Sync>("assembleMod") {
-  from(featureModFiles) { into("42/media") }
+  from(mergeMedia) { into("42/media") }
 }
 
 tasks.register<GameSmokeTest>("smokeTest") {

@@ -1,5 +1,4 @@
 {
-    "Sandbox_Dont39AllInOne": "Dont39 All-in-One",
     "Sandbox_Dont39AllInOne_TunnelTcpPort": "TCP tunnel port",
     "Sandbox_Dont39AllInOne_TunnelTcpPort_tooltip": "TCP port on which the server accepts players whose network drops UDP. They choose TCP under \"Tunnel\" in their server entry and enter this port. 0 turns the tunnel off. Open this TCP port in the firewall. Takes effect when the server starts.",
     "Sandbox_Dont39AllInOne_TunnelKcpPort": "KCP tunnel port",
@@ -19,7 +18,5 @@
     "Sandbox_Dont39AllInOne_TunnelFecParityShards": "FEC repair packets per group",
     "Sandbox_Dont39AllInOne_TunnelFecParityShards_tooltip": "Repair packets sent with each group: up to this many lost packets of a group are rebuilt at once, without waiting for a resend. 0 turns FEC off. On a quiet connection most groups are small, so FEC can roughly double the bandwidth. Recommended: 3.",
     "Sandbox_Dont39AllInOne_TunnelFecFlushMillis": "FEC group wait (ms)",
-    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "Longest wait before a group that is not full gets its repair packets, so packets sent slowly are protected too. Lower recovers sooner and sends more repair packets. Recommended: 20.",
-    "Sandbox_Dont39AllInOne_ModSyncPort": "Mod sync port",
-    "Sandbox_Dont39AllInOne_ModSyncPort_tooltip": "TCP port on which the server offers its Workshop items to players whose copy of an item is another version, e.g. after a mod was updated on the Workshop while the server runs. They join with the server's version, downloading only the files that differ. 0 turns it off. Open this TCP port in the firewall. Takes effect when the server starts."
+    "Sandbox_Dont39AllInOne_TunnelFecFlushMillis_tooltip": "Longest wait before a group that is not full gets its repair packets, so packets sent slowly are protected too. Lower recovers sooner and sends more repair packets. Recommended: 20."
 }

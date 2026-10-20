@@ -6,8 +6,9 @@ Contracts (trailer, HTTP, cache, swap, failure model) are the parent's
 ## Module
 
 `mod-sync/` (package `com.dont39.pz.modsync`, facade `ModSync.kt`), modeled on `tunnel/`. Game-free parts are plain
-classes with JUnit tests; game-facing parts are hook objects and thin adapters. The sandbox option and its texts live
-in `tunnel`'s `sandbox-options.txt` and `Sandbox.json`: the mod folder has one file of each name. JSON uses
+classes with JUnit tests; game-facing parts are hook objects and thin adapters. The sandbox option and its texts are in
+`mod-sync`'s own `sandbox-options.txt` and `Sandbox.json`, which the All-in-One build merges with the other
+features' (`MergeMedia`). JSON uses
 kotlinx-serialization, which ZabricKotlin ships. Network and bad-server-data failures are `SyncException`
 (an `IOException`): they stop the join; anything else disables the feature.
 
@@ -100,7 +101,7 @@ Signatures, descriptors and citations: [research/spike.md](./research/spike.md).
   `OnConnectionStateChanged("FormatMessage", …)` route: that reads `UI_servers_<message>`, outside this mod's key prefix.
 - Confirm dialog: a Lua panel listing the items that download anything (Steam's title, else the id), their sizes, and a
   "don't ask again for this server" box; the join holds in `Confirm`. Mouse only.
-- Texts in `tunnel`'s `Translate/EN` and `CN` `UI.json` (one file per name in the mod folder), keys
+- Texts in `mod-sync`'s `Translate/EN` and `CN` `UI.json`, keys
   `UI_Dont39AllInOne_ModSync_*`; the reason texts are chosen in `JoinSession` (`Step.Stop.key`).
 
 ## Decisions Made in Implementation
