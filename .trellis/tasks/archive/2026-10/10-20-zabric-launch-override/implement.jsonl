@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric premain rules, ModFolders roots, the widening scan"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader seam; retransformation of hooked classes"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Public API growth only; weave tests"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Discard an invalid request whole, report at MAIN"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "MAIN report lines"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, comment style"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Version bump and release order"}
+{"file": ".trellis/tasks/10-20-server-mod-sync/research/java-mod-restart.md", "reason": "ZombieBuddy jar resolution, load records, startup pass"}
+{"file": ".trellis/tasks/10-20-server-mod-sync/research/mod-discovery.md", "reason": "getInstalledItemModsFolders and the id to folder resolution"}

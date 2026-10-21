@@ -3,7 +3,7 @@
   "name": "server-mod-sync",
   "title": "Server mod sync: Workshop when versions match, server otherwise",
   "description": "On join, use the Workshop copy of each mod whose version matches the server's; download the server's copy of the rest",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -12,7 +12,7 @@
   "assignee": "dont39",
   "createdAt": "2026-10-20",
   "completedAt": null,
-  "branch": null,
+  "branch": "claude/mod-sync-relaunch-fce8bc",
   "base_branch": "main",
   "worktree_path": null,
   "commit": null,
@@ -21,7 +21,8 @@
   "children": [
     "10-20-mod-sync-core",
     "10-20-zabric-launch-override",
-    "10-20-mod-sync-java"
+    "10-20-mod-sync-java",
+    "10-21-mod-sync-relaunch"
   ],
   "parent": null,
   "relatedFiles": [],

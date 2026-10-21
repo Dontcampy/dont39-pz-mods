@@ -7,18 +7,29 @@ import zombie.Lua.LuaManager
 
 /**
  * The table `Dont39AllInOne_getModSyncJoin` returns, read by `Dont39AllInOne_ModSyncJoin.lua`; change both together.
- * Numbers are Lua doubles. `state` is "preparing", "confirm" or "download".
+ * Numbers are Lua doubles. `state` is "preparing", "confirm", "download" or "restart".
  * - confirm: `server` ("<host>:<port>"), `files` and `bytes` to download, and `items`, an array of tables with `name`,
- *   `files` and `bytes` of each item that downloads anything.
+ *   `files`, `bytes` and `java` (true when its jars change) of each item that downloads anything or changes a jar.
  * - download: `files`, `bytes` (totals), `filesDone`, `bytesDone`.
+ * - restart: the join stopped for a restart of the game; `stop` counts such stops, so a screen can tell them apart,
+ *   `reason` is the stop's text, and `relaunch` is true when `Dont39AllInOne_restartModSyncGame` can restart the game
+ *   now; it may turn true a moment after the stop.
  */
 internal object JoinStatus {
+  fun restart(stop: Int, reason: String, relaunch: Boolean): KahluaTable = LuaManager.platform.newTable().apply {
+    rawset("state", "restart")
+    put("stop", stop)
+    rawset("reason", reason)
+    rawset("relaunch", relaunch)
+  }
+
   /** Null while the join has not reached its mod check, or no longer waits. */
   fun table(session: JoinSession): KahluaTable? {
     val table = LuaManager.platform.newTable()
     when (val phase = session.phase) {
       Phase.Start, Phase.Over -> return null
-      is Phase.Preparing -> table.rawset("state", "preparing")
+      // the Java check after the download is still "checking the server's version"
+      is Phase.Preparing, is Phase.Checking -> table.rawset("state", "preparing")
       is Phase.Confirm -> {
         val prepared = phase.prepared
         table.rawset("state", "confirm")
@@ -26,11 +37,13 @@ internal object JoinStatus {
         table.put("files", prepared.downloadFiles)
         table.put("bytes", prepared.downloadBytes)
         val items = LuaManager.platform.newTable()
-        prepared.downloads.forEachIndexed { i, w ->
+        prepared.listed.forEachIndexed { i, w ->
+          val plan = (w as? JoinSession.Work.Build)?.plan
           val item = LuaManager.platform.newTable()
           item.rawset("name", w.marked.label)
-          item.put("files", w.plan.download.size)
-          item.put("bytes", w.plan.downloadBytes)
+          item.put("files", plan?.download?.size ?: 0)
+          item.put("bytes", plan?.downloadBytes ?: 0)
+          item.rawset("java", w.jarChanges.isNotEmpty())
           items.rawset((i + 1).toDouble(), item)
         }
         table.rawset("items", items)

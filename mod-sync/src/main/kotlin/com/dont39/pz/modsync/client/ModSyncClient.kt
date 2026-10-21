@@ -5,11 +5,18 @@ import com.dont39.pz.modsync.ModSync
 import com.dont39.pz.modsync.client.JoinSession.Answer
 import com.dont39.pz.modsync.client.JoinSession.Step
 import com.dont39.pz.modsync.client.download.Cache
+import com.dont39.pz.modsync.client.java.GameLaunch
+import com.dont39.pz.modsync.client.java.JavaMod
+import com.dont39.pz.modsync.client.java.JavaRun
+import com.dont39.pz.modsync.client.rejoin.GameHosts
+import com.dont39.pz.modsync.client.rejoin.JoinArgs
+import com.dont39.pz.modsync.client.rejoin.restartFor
 import com.dont39.pz.modsync.client.swap.Swap
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.nio.file.Path
 import se.krka.kahlua.vm.KahluaTable
 import zombie.ZomboidFileSystem
+import zombie.core.Translator
 import zombie.core.network.ByteBufferReader
 import zombie.core.znet.SteamWorkshop
 import zombie.gameStates.ConnectToServerState
@@ -33,7 +40,23 @@ internal object ModSyncClient {
   // the Lua disabled itself, which is final for the game session: no later confirm gets an answer
   private var dialogFailed = false
 
-  private val cache by lazy {
+  // how many joins stopped for a restart; the last one is shown on the Connect screen until the next join or reset
+  private var restartStops = 0
+  private var restartStopped = false
+  private var restartReason = ""
+  private var restartRelaunch = false
+
+  // this launch's arguments against the server of the last restart stop, which a restart of the game is for
+  private var restartArgs: JoinArgs.Lookup? = null
+
+  // Java mods of the swapped items that are to run from their trees once the session's mods are loaded
+  private var expected = emptyList<JavaMod>()
+
+  // the session runs some of them without the server's Java code: shown once in game, dropped when the game ends
+  // or reloads its mods
+  private var notice: List<JavaRun.Notice>? = null
+
+  val cache by lazy {
     Cache(Path.of(ZomboidFileSystem.instance.cacheDir, "Dont39AllInOne", "ModSync"))
   }
 
@@ -41,6 +64,9 @@ internal object ModSyncClient {
   @Synchronized
   fun joinStarts(details: ByteBufferReader?) {
     endSession()
+    restartStopped = false
+    expected = emptyList()
+    notice = null
     Swap.off("a new join started")
     if (!ModSync.active()) {
       return
@@ -59,6 +85,7 @@ internal object ModSyncClient {
           cache,
           // looked up when used: a client without Steam has no instance, and no Workshop step to take items from
           { id -> SteamWorkshop.instance.GetItemInstallFolder(id) },
+          GameLaunch,
         ) { ModSync.log(it) }
         ModSync.log { "join to $target: the server offers its Workshop items at ${location.base}" }
       }
@@ -111,10 +138,25 @@ internal object ModSyncClient {
         is Step.Ready -> {
           session = null
           loaded = false
+          expected = step.expected
           Swap.on(step.entries)
           false
         }
         is Step.Stop -> {
+          if (step.restart) {
+            RejoinOffer.record(s.host, s.gamePort)
+            restartStops++
+            restartStopped = true
+            restartReason = text(step.key, step.args)
+            val unavailable = GameLaunch.relaunchUnavailable()
+            restartRelaunch = unavailable == null
+            restartArgs = if (unavailable == null) {
+              JoinArgs.Lookup(GameLaunch.arguments(), s.host, s.gamePort, GameHosts) { ModSync.log(it) }
+            } else {
+              ModSync.log { "the Connect screen offers no Restart game: $unavailable" }
+              null
+            }
+          }
           stop(join, step)
           true
         }
@@ -138,13 +180,45 @@ internal object ModSyncClient {
     if (activeMods == "client") {
       loaded = true
     } else {
+      restartStopped = false
+      notice = null
       Swap.off("the game reloads its mods ($activeMods)")
     }
+  }
+
+  /**
+   * At `Core.ResetLua(String, String)` RETURN. A jar the loader skipped in the join's pass (e.g. its approval was
+   * declined) or another jar serving the package leaves the mod's Lua without the server's Java; stopping the join
+   * there is not clean, so it is reported, and the player told once in game.
+   */
+  @Synchronized
+  fun modsLoaded(activeMods: String?) {
+    if (activeMods != "client" || expected.isEmpty()) {
+      return
+    }
+    val mods = expected
+    expected = emptyList()
+    val runs = JavaRun.of(mods, GameLaunch.serverMods(), GameLaunch::servingJar)
+    runs.forEach { run ->
+      val name = run.mod.name
+      when (run) {
+        is JavaRun.FromTree -> ModSync.log { "$name runs the server's Java code from ${run.tree}" }
+        is JavaRun.NotLoaded -> ModSync.error {
+          "$name runs without the server's Java code: the game did not load ${run.tree} (see the loader's lines)"
+        }
+        is JavaRun.Other -> ModSync.error {
+          "$name runs without the server's Java code: the game runs ${run.mod.pkg} from ${run.served}, not from " +
+            "${run.tree} (see the loader's lines)"
+        }
+      }
+    }
+    notice = JavaRun.notice(runs)
   }
 
   /** At `IngameState.exit` HEAD: the game reloads the main menu's mods without `ResetLua`. */
   @Synchronized
   fun leftGame() {
+    notice = null
     Swap.off("the game ended")
   }
 
@@ -153,13 +227,14 @@ internal object ModSyncClient {
   fun joinEnded() {
     endSession()
     if (!loaded) {
+      expected = emptyList()
       Swap.off("the join ended before the server's mods were loaded")
     }
   }
 
   /**
-   * For `Dont39AllInOne_ModSyncJoin.lua`: what the Connect screen shows while the join waits; nil when it does not
-   * wait for this feature. Keys in [JoinStatus].
+   * For `Dont39AllInOne_ModSyncJoin.lua`: what the Connect screen shows while the join waits, or after it stopped for
+   * a restart; nil when it does not wait for this feature. Keys in [JoinStatus].
    */
   @LuaGlobal("Dont39AllInOne_getModSyncJoin")
   @Synchronized
@@ -167,6 +242,12 @@ internal object ModSyncClient {
     if (!ModSync.active()) return null
     return try {
       session?.let(JoinStatus::table)
+        ?: if (restartStopped) {
+          // Restart game shows once a +connect name is resolved, so that its click never waits for DNS
+          JoinStatus.restart(restartStops, restartReason, restartRelaunch && restartArgs?.result != null)
+        } else {
+          null
+        }
     } catch (t: Throwable) {
       ModSync.disable("reading the join's status", t)
       null
@@ -203,6 +284,46 @@ internal object ModSyncClient {
       ModSync.disable("taking the dialog's answer", t)
     }
   }
+
+  /**
+   * "Restart game" after a restart stop: nil once the game quits, else the text that says why it cannot. The request
+   * for the next launch stays as the stop left it.
+   */
+  @LuaGlobal("Dont39AllInOne_restartModSyncGame")
+  @Synchronized
+  fun luaRestart(): String? {
+    ModSync.whyNotActive()?.let { return restartFailed(it) }
+    return try {
+      val args = checkNotNull(restartArgs?.result) { "no join stopped for a restart, or its +connect lookup runs" }
+      restartFor(GameLaunch, args) { ModSync.log(it) }?.let(::restartFailed)
+    } catch (t: Throwable) {
+      ModSync.disable("restarting the game", t)
+      text(ERROR.key)
+    }
+  }
+
+  /**
+   * For `Dont39AllInOne_ModSyncNotice.lua`, once in game: the text that tells the player the session runs mods without
+   * the server's Java code, nil when it does not; given once.
+   */
+  @LuaGlobal("Dont39AllInOne_takeModSyncNotice")
+  @Synchronized
+  fun luaTakeNotice(): String? {
+    if (!ModSync.active()) return null
+    return try {
+      val lines = notice ?: return null
+      notice = null
+      (lines.map { text(it.key, it.args) } + text("NoticeText")).joinToString("\n")
+    } catch (t: Throwable) {
+      ModSync.disable("reading the notice about the server's Java code", t)
+      null
+    }
+  }
+
+  private fun text(key: String, args: List<String> = emptyList()) =
+    Translator.getText(JoinSession.KEY_PREFIX + key, *args.toTypedArray())
+
+  private fun restartFailed(why: String) = text("RestartFailed", listOf(why))
 
   private fun endSession() {
     session?.cancel()

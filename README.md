@@ -34,8 +34,9 @@ Project Zomboid (Build 42) mods on [ZombieBuddy](https://github.com/zed-0xff/Zom
 ## Writing Java mods on Zabric
 
 Zabric hooks are published as `com.pzlauncher:zabric` (compileOnly) and `com.pzlauncher:zabric-processor`
-(annotationProcessor). [`samples/zabric-java-hooks`](samples/zabric-java-hooks) is a complete author build; the
-Workshop text in [`zabric/mod/workshop/workshop.txt`](zabric/mod/workshop/workshop.txt) is the author contract.
+(annotationProcessor). [`samples/zabric-java-hooks`](samples/zabric-java-hooks) is a complete author build;
+[`zabric/README.md`](zabric/README.md) is the author contract, and [`zb-kt/README.md`](zb-kt/README.md) covers Kotlin
+mods on ZabricKotlin.
 
 ## Releasing Zabric
 

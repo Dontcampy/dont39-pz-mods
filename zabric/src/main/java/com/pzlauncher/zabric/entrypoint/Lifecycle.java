@@ -3,6 +3,8 @@ package com.pzlauncher.zabric.entrypoint;
 import com.pzlauncher.zabric.entrypoint.Entrypoints.Declared;
 import com.pzlauncher.zabric.hook.impl.HookRuntime;
 import com.pzlauncher.zabric.loader.Loader;
+import com.pzlauncher.zabric.mods.impl.JarHistory;
+import com.pzlauncher.zabric.mods.impl.LaunchOverrides;
 import zombie.core.Core;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
@@ -43,9 +45,11 @@ public final class Lifecycle {
     private static final List<Called> preLaunchCalls = new ArrayList<>();
     private static final Set<String> preLaunched = new HashSet<>();
 
-    private static boolean zabricLoaded;
+    // volatile: requireRunning reads them without the lock, which a pass holds while mods' entrypoints run
+    private static volatile boolean zabricLoaded;
+    private static volatile boolean zabricPreloaded;
     private static boolean started;
-    private static boolean stopped;
+    private static volatile boolean stopped;
     private static final Set<String> registered = new HashSet<>();
     private static final Set<String> mainCalled = new HashSet<>();
 
@@ -69,17 +73,23 @@ public final class Lifecycle {
         }
     }
 
-    /** Called on entry to the game's main method. Never throws into it, logs nothing and touches no game class. */
-    public static synchronized void preLaunch() {
+    /**
+     * Called on entry to the main method of {@code mainClass}. Never throws into it, logs nothing and touches no game
+     * class.
+     */
+    public static synchronized void preLaunch(String mainClass) {
         if (preLaunchRan) {
             return;
         }
         preLaunchRan = true;
+        LaunchOverrides.preLaunch(mainClass);
         if (!installed) {
             return;
         }
         try {
-            for (Loader.ModJar jar : Loader.preloadedJars()) {
+            List<Loader.ModJar> preloaded = Loader.preloadedJars();
+            JarHistory.preloaded(preloaded, Loader::recordedSha256);
+            for (Loader.ModJar jar : preloaded) {
                 Declared declared;
                 try {
                     declared = Entrypoints.declared(jar.jar());
@@ -106,6 +116,8 @@ public final class Lifecycle {
      * restart covers all of them, and runs no entrypoints.
      */
     public static synchronized void onZabricMain(boolean preloaded) {
+        // in this order: requireRunning reads zabricLoaded first
+        zabricPreloaded = preloaded;
         zabricLoaded = true;
         Preload.register("Zabric", preloaded);
         try {
@@ -151,11 +163,26 @@ public final class Lifecycle {
                         Loader.name());
                 return;
             }
-            Map<String, List<Path>> loaded = byMod(Loader.loadedThisPass(pass));
+            List<Loader.ModJar> jars = Loader.loadedThisPass(pass);
+            JarHistory.passLoaded(jars, Loader::recordedSha256);
+            Map<String, List<Path>> loaded = byMod(jars);
             HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
             loaded.forEach(Lifecycle::load);
         } catch (Throwable t) {
             stop("the main phase failed: " + t, t);
+        }
+    }
+
+    /**
+     * Throws, naming {@code call}, unless Zabric's services for mods are available: from Zabric's Main on, on a launch
+     * where Zabric ran at game start, until its entrypoints stop for the session.
+     */
+    public static void requireRunning(String call) {
+        String why = !zabricLoaded ? "Zabric's Main has not run yet"
+                : !zabricPreloaded ? "Zabric did not run at game start this launch; restart the game once"
+                : stopped ? "Zabric's entrypoints are stopped for this session (see the log)" : null;
+        if (why != null) {
+            throw new IllegalStateException(call + " is not available: " + why);
         }
     }
 

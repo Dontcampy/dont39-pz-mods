@@ -5,17 +5,23 @@ import com.dont39.pz.modsync.client.JoinSession.Answer
 import com.dont39.pz.modsync.client.JoinSession.Phase
 import com.dont39.pz.modsync.client.JoinSession.Step
 import com.dont39.pz.modsync.client.download.Cache
+import com.dont39.pz.modsync.client.java.JavaMod
+import com.dont39.pz.modsync.client.java.Launch
 import com.dont39.pz.modsync.client.swap.SwapEntry
+import com.dont39.pz.modsync.jar
 import com.dont39.pz.modsync.server.HttpService
 import com.dont39.pz.modsync.server.ManifestBuilder
+import com.dont39.pz.modsync.writeBytes
 import com.dont39.pz.modsync.writeItem
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Collections
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -28,8 +34,58 @@ class JoinSessionTest {
     const val ID = 2409333430
     const val TIMESTAMP = 1_760_000_000L
     const val CHANGED = "mods/Alpha/42/media/lua/client/Alpha.lua"
+    const val JAR = "mods/Alpha/42/media/java/alpha.jar"
+    const val JAVA_INFO = "name=Alpha\nid=Alpha\njavaJarFile=media/java/alpha.jar\njavaPkgName=com.example.alpha\n"
     const val GAME_PORT = 16261
     const val WAIT_MILLIS = 10_000L
+  }
+
+  /**
+   * This launch as Zabric would report it; a request becomes [pending]. [mods]: the Java mods of a `mods` folder, by
+   * its absolute path, as Zabric reads them while the folder exists. [jarThreads]: the threads that read jars.
+   */
+  private class FakeLaunch : Launch {
+    var current: Map<String, Path> = emptyMap()
+    var pending: Map<String, Path> = emptyMap()
+    var requests = 0
+    val serving: MutableMap<String, Path> = Collections.synchronizedMap(mutableMapOf())
+    val mods: MutableMap<Path, List<JavaMod>> = Collections.synchronizedMap(mutableMapOf())
+    var mainMenuMods: Set<String> = emptySet()
+    val jarThreads: MutableSet<Thread> = Collections.synchronizedSet(mutableSetOf())
+
+    override fun current() = current
+
+    override fun pending() = pending
+
+    override fun request(modsByItem: Map<String, Path>) {
+      requests++
+      pending = modsByItem
+    }
+
+    override fun javaMods(modsFolder: Path): List<JavaMod> {
+      jarThreads += Thread.currentThread()
+      return if (Files.isDirectory(modsFolder)) mods[modsFolder.toAbsolutePath().normalize()].orEmpty() else emptyList()
+    }
+
+    override fun servingJar(pkg: String): Path? {
+      jarThreads += Thread.currentThread()
+      return serving[pkg]
+    }
+
+    override fun mainMenuMods() = mainMenuMods
+
+    override fun relaunchUnavailable(): String? = null
+
+    override fun arguments(): List<String> = emptyList()
+
+    override fun relaunch(omitted: Set<Int>) = throw UnsupportedOperationException("a join does not restart the game")
+
+    /** The next launch, which applies the request. */
+    fun restart() {
+      current = pending
+      pending = emptyMap()
+      serving.clear()
+    }
   }
 
   @TempDir
@@ -39,6 +95,7 @@ class JoinSessionTest {
   private lateinit var service: HttpService
   private lateinit var cache: Cache
   private lateinit var install: Path
+  private val launch = FakeLaunch()
 
   @BeforeEach
   fun start() {
@@ -64,9 +121,46 @@ class JoinSessionTest {
   }
 
   private fun session(port: Int = service.port, timestamp: Long = TIMESTAMP): JoinSession =
-    JoinSession("127.0.0.1", GAME_PORT, Location.base("127.0.0.1", port), cache, { install.toString() }, {}).apply {
-      mark(JoinSession.Marked(ID, timestamp, "Alpha"))
+    JoinSession("127.0.0.1", GAME_PORT, Location.base("127.0.0.1", port), cache, { install.toString() }, launch, {})
+      .apply { mark(JoinSession.Marked(ID, timestamp, "Alpha")) }
+
+  /**
+   * The server's Alpha has another jar than the client's. Each copy's mod.info names it ([named]), and Zabric reads
+   * Alpha as loading at game start in the copies marked so.
+   */
+  private fun javaItem(clientPreload: Boolean = false, serverPreload: Boolean = false, named: Boolean = true) {
+    service.close()
+    val info = "mods/Alpha/42/mod.info" to if (named) JAVA_INFO else "name=Alpha\nid=Alpha\n"
+    val server = writeItem(folder.resolve("java-server/$ID"), SERVER_FILES + info)
+    writeBytes(server.resolve(JAR), jar(entry = "v2"))
+    serve(server)
+    install = writeItem(folder.resolve("java-client/$ID"), SERVER_FILES + info)
+    writeBytes(install.resolve(JAR), jar(entry = "v1"))
+    if (named) {
+      val installMods = install.resolve("mods").toAbsolutePath().normalize()
+      launch.mods[installMods] = listOf(alpha(installMods, clientPreload))
+      launch.mods[treeMods()] = listOf(alpha(treeMods(), serverPreload))
     }
+  }
+
+  private fun alpha(mods: Path, preload: Boolean) =
+    JavaMod("Alpha", "Alpha", mods.resolve("Alpha/42/media/java/alpha.jar"), "com.example.alpha", preload)
+
+  private fun treeMods(): Path {
+    val source = ManifestBuilder.Source(ID, TIMESTAMP, folder.resolve("java-server/$ID"))
+    val served = ManifestBuilder.build(listOf(source))
+    val item = served.manifest.item(ID, TIMESTAMP)
+    return cache.tree("127.0.0.1", GAME_PORT, item).resolve("mods").toAbsolutePath().normalize()
+  }
+
+  /** Asks, as every join with a jar change does, and answers. */
+  private fun confirmed(session: JoinSession, answer: Answer = Answer.ACCEPT): Step {
+    assertEquals(Step.Hold, run(session))
+    val confirm = session.phase as Phase.Confirm
+    assertTrue(confirm.prepared.listed.single().jarChanges.isNotEmpty())
+    session.answer(answer)
+    return run(session)
+  }
 
   /** Polls as the hold does each frame, until a step other than [Step.Hold] or the dialog's question. */
   private fun run(session: JoinSession): Step {
@@ -128,17 +222,143 @@ class JoinSessionTest {
   }
 
   @Test
-  fun `a changed jar stops the join, also with a ready tree`() {
-    Files.writeString(install.resolve("mods/Alpha/42/media/java/alpha.jar"), "jar v2")
-    val stop = run(session()) as Step.Stop
-    assertEquals("Failed_Jar", stop.key)
-    assertEquals(listOf("\"Alpha\" ($ID)", "mods/Alpha/42/media/java/alpha.jar"), stop.args)
+  fun `a changed jar asks, downloads, requests the override and stops for a restart`() {
+    javaItem()
+    launch.pending = mapOf("1" to folder.resolve("other/mods"))
+    val stop = confirmed(session()) as Step.Stop
+    assertEquals("Failed_Restart", stop.key)
+    assertTrue(stop.restart)
+    assertEquals(listOf("\"Alpha\" ($ID)"), stop.args)
+    // another server's pending request stays
+    assertEquals(mapOf("1" to folder.resolve("other/mods"), "$ID" to treeMods()), launch.pending)
+    assertTrue(Files.isRegularFile(treeMods().resolve("Alpha/42/media/java/alpha.jar")))
+  }
 
-    Files.writeString(install.resolve("mods/Alpha/42/media/java/alpha.jar"), "jar v1")
-    cache.servers.remember("127.0.0.1", GAME_PORT)
+  @Test
+  fun `jars are read off the polling thread`() {
+    javaItem()
+    confirmed(session())
+    launch.restart()
+    launch.serving["com.example.alpha"] = treeMods().resolve("Alpha/42/media/java/alpha.jar").toRealPath()
     assertTrue(run(session()) is Step.Ready)
-    Files.writeString(install.resolve("mods/Alpha/42/media/java/alpha.jar"), "jar v2")
-    assertEquals("Failed_Jar", (run(session()) as Step.Stop).key)
+    assertTrue(launch.jarThreads.isNotEmpty())
+    assertFalse(Thread.currentThread() in launch.jarThreads)
+  }
+
+  @Test
+  fun `a Back during the Java check leaves no request`() {
+    javaItem()
+    val session = session()
+    assertEquals(Step.Hold, run(session))
+    session.answer(Answer.ACCEPT)
+    val until = System.currentTimeMillis() + WAIT_MILLIS
+    while (session.phase !is Phase.Checking && System.currentTimeMillis() < until) {
+      assertEquals(Step.Hold, session.poll())
+      Thread.sleep(5)
+    }
+    val checking = session.phase as Phase.Checking
+    session.cancel()
+    checking.worker.await(WAIT_MILLIS)
+    assertEquals(0, launch.requests)
+  }
+
+  @Test
+  fun `a remembered server still asks for a jar change, also for a ready tree`() {
+    javaItem()
+    cache.servers.remember("127.0.0.1", GAME_PORT)
+    assertEquals("Failed_Restart", (confirmed(session(), Answer.REMEMBER) as Step.Stop).key)
+    // a next launch without the override: the ready tree still asks, downloading nothing
+    launch.pending = emptyMap()
+    val session = session()
+    assertEquals(Step.Hold, run(session))
+    val prepared = (session.phase as Phase.Confirm).prepared
+    assertEquals(0, prepared.downloadFiles)
+    assertTrue(prepared.listed.single() is JoinSession.Work.Reused)
+  }
+
+  @Test
+  fun `the launch after the restart joins with the tree without asking`() {
+    javaItem()
+    confirmed(session())
+    launch.restart()
+    val ready = run(session()) as Step.Ready
+    assertEquals(treeMods(), ready.entries.single().treeMods)
+    assertEquals("com.example.alpha", ready.expected.single().pkg)
+    assertEquals(1, launch.requests)
+
+    // the startup pass loaded it from the tree
+    launch.serving["com.example.alpha"] = treeMods().resolve("Alpha/42/media/java/alpha.jar").toRealPath()
+    launch.mainMenuMods = setOf("Alpha")
+    assertTrue(run(session()) is Step.Ready)
+  }
+
+  @Test
+  fun `a jar of the item served from elsewhere stops the join`() {
+    javaItem()
+    confirmed(session())
+    launch.restart()
+    launch.serving["com.example.alpha"] = install.resolve(JAR)
+    val stop = run(session()) as Step.Stop
+    assertEquals("Failed_NotServed", stop.key)
+    assertEquals(listOf("Alpha", install.resolve(JAR).toString()), stop.args)
+    assertFalse(stop.restart)
+  }
+
+  @Test
+  fun `a mod of the main menu whose jar the game did not load stops the join`() {
+    javaItem()
+    confirmed(session())
+    launch.restart()
+    launch.mainMenuMods = setOf("Alpha")
+    val stop = run(session()) as Step.Stop
+    assertEquals("Failed_NotLoaded", stop.key)
+    assertEquals(listOf("Alpha", "\"Alpha\" ($ID)"), stop.args)
+  }
+
+  @Test
+  fun `a mod only another mod's require pulls in, with nothing served, goes on to the join's pass`() {
+    javaItem()
+    confirmed(session())
+    launch.restart()
+    // Beta requires Alpha: the game loads Alpha, the loader never looked at it
+    launch.mainMenuMods = setOf("Beta")
+    val ready = run(session()) as Step.Ready
+    assertEquals("Alpha", ready.expected.single().id)
+  }
+
+  @Test
+  fun `an item overridden with another tree takes the restart path again`() {
+    javaItem()
+    launch.current = mapOf("$ID" to folder.resolve("items/older/mods"))
+    assertEquals("Failed_Restart", (confirmed(session()) as Step.Stop).key)
+    assertEquals(mapOf("$ID" to treeMods()), launch.pending)
+  }
+
+  @Test
+  fun `a preload mod in the client's copy is refused before any download`() {
+    javaItem(clientPreload = true)
+    val stop = run(session()) as Step.Stop
+    assertEquals("Failed_Preload", stop.key)
+    assertEquals(listOf("Alpha", "\"Alpha\" ($ID)"), stop.args)
+    assertFalse(Files.exists(treeMods()))
+    assertEquals(0, launch.requests)
+  }
+
+  @Test
+  fun `a preload mod in the server's copy is refused after the download, without a request`() {
+    javaItem(serverPreload = true)
+    assertEquals("Failed_Preload", (confirmed(session()) as Step.Stop).key)
+    assertTrue(Files.isDirectory(treeMods()))
+    assertEquals(0, launch.requests)
+  }
+
+  @Test
+  fun `a jar no mod names still takes the restart path`() {
+    javaItem(named = false)
+    assertEquals("Failed_Restart", (confirmed(session()) as Step.Stop).key)
+    launch.restart()
+    val ready = run(session()) as Step.Ready
+    assertEquals(emptyList<Any>(), ready.expected)
   }
 
   @Test

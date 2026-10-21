@@ -57,7 +57,13 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
    the game port and the server's UDPPort, and join 127.0.0.1. RakNet's main traffic goes to the UDPPort the server
    announces, so a server-side proxy in front of the game port alone sees none of it. Tunnels are proxied on the
    server in front of the tunnel port. The proxy must not hold the local ports a tunnel client listens on.
-7. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.
+7. Driving the game without a person: a temporary Lua file in the deployed mod that acts through the real buttons'
+   callbacks and writes its state with `getFileWriter` (under `~/Zomboid/Lua/`). `console.txt` can lag or stop
+   while the game runs; the main menu fires `OnFETick`, not `OnTick`; a window in the background loads the world
+   very slowly. A Workshop upload asks for a native confirmation that a person must click.
+8. A real client launch goes through `ProjectZomboid64.exe` (JNI), not `java`: `smokeTest` does not show what differs
+   there (e.g. `sun.java.command` is empty at premain).
+9. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.
 
 If an in-game check was not done, say so in the task report.
 
@@ -89,6 +95,7 @@ into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for
 | `zb-kt-utils` classes in any jar but ZabricKotlin's | Duplicated on the shared classpath ([ZabricKotlin Utils](./zb-kt-utils.md)) |
 | Relocating `kotlin.*` | Not needed; ZabricKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
+| Non-ASCII string literals in Lua source | The game does not read Lua source as UTF-8, so `"。"` never equals a translation's `。`; compare code points (`string.byte`), as `breakable` in `Dont39AllInOne_Common.lua` does, and keep text in translations |
 
 ## Release Checklist
 

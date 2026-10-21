@@ -108,7 +108,8 @@ handlers are `public` (`HookReader.kt`). Compare the modifiers in the `ime-keybo
    generated. Add a Lua file in
    `src/main/lua/` if the feature has options.
 6. Declare target mods in `dont39-all-in-one/mod/42/mod.info` (load order).
-7. Add a section for the feature to `dont39-all-in-one/mod/workshop/workshop.txt`, following the existing one.
+7. Add one line for the feature to the list in `dont39-all-in-one/mod/workshop/workshop.txt`: what it does for a player and
+   what a server sets, no details.
 8. Bump the version in `dont39-all-in-one/build.gradle.kts` when releasing.
 
 `AllInOneMain.kt` and `smokeTest` need no edit.

@@ -38,9 +38,7 @@ internal object TunnelServer : TunnelLog, TunnelOptions {
       transport.listen(port, GameServer.defaultPort, GameServer.udpPort, this, this)
     } catch (e: IOException) {
       // the port is the owner's choice, so the other transport keeps running
-      Tunnel.log {
-        "error: could not listen on ${transport.name} port $port (${describe(e)}); that tunnel is off"
-      }
+      Tunnel.error { "could not listen on ${transport.name} port $port (${describe(e)}); that tunnel is off" }
       return
     }
     listeners += listener

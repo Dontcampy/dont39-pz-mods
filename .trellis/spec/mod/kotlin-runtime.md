@@ -46,7 +46,7 @@
 ## Version Bumps
 
 - Versions come only from `gradle/libs.versions.toml`.
-- After a bump, update the version text in `zb-kt/mod/workshop/workshop.txt` and run `smokeTest`. The
+- After a bump, update the version text in `zb-kt/README.md` and run `smokeTest`. The
   ready line must show the new versions.
 - Upload ZabricKotlin before any mod update that needs the new version.
 - KSP is versioned independently of Kotlin. After a Kotlin bump, `./gradlew build` must still run KSP; if it does not,
