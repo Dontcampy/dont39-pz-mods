@@ -58,6 +58,8 @@ zb-kt-utils-processor/               KSP front end on zabric-processor's generat
 zb-skip-online-checks/               Java mod that skips ZombieBuddy's network requests; targets the loader itself (see zombiebuddy-patching.md#loader-seam)
 loading-progress/                    shipped mod: client-only Java mod, preloaded with launch-wide hooks; loading bar, own
                                      frames and a timing report per load, switches on a mod options page (its README)
+faster-loading/                      shipped mod: client-only Java mod, preloaded with launch-wide hooks; load-time fixes,
+                                     one switch each in its ini and options page (its README)
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua

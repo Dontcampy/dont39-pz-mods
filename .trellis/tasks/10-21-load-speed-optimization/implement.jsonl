@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer rules and guide index"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook API, gates, generated glue"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "report and disable, never hide a mismatch"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate and in-game verification"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "widened game members for hooks"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "log prefix and lifecycle lines"}
+{"file": ".trellis/tasks/10-21-load-speed-optimization/research/asset-wait.md", "reason": "asset wait internals, hook points, levers"}
+{"file": ".trellis/tasks/10-21-load-speed-optimization/research/launch-items.md", "reason": "index of launch-item research and per-item verdict"}
+{"file": ".trellis/tasks/10-21-load-speed-optimization/research/zabric-hook-model.md", "reason": "hook kinds, preload, JDK-only glue, switches"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "new module layout and naming"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "preload and client-only loading"}

@@ -64,9 +64,14 @@ abstract class GameSmokeTest : DefaultTask() {
   @get:Input
   abstract val luaTargeted: ListProperty<String>
 
+  /** Whether the mod ships an access widener list, whose report line must then say ok. */
+  @get:Input
+  abstract val widener: Property<Boolean>
+
   init {
     group = "verification"
     hooks.convention(false)
+    widener.convention(true)
     luaTargeted.convention(emptyList())
   }
 
@@ -95,9 +100,12 @@ abstract class GameSmokeTest : DefaultTask() {
     checkPlatformLog(log, console, "smokeTest")
     val logPrefix = "[$modId] "
     val widenerPrefix = "${logPrefix}access widener: "
-    val widener = log.lines().lastOrNull { widenerPrefix in it }?.substringAfter(widenerPrefix)
-    if (widener?.startsWith("ok") != true) {
-      throw GradleException("$console: the access widener is not in effect: ${widener ?: "no access widener line"}")
+    val widenerLine = log.lines().lastOrNull { widenerPrefix in it }?.substringAfter(widenerPrefix)
+    if (widener.get() && widenerLine?.startsWith("ok") != true) {
+      throw GradleException("$console: the access widener is not in effect: ${widenerLine ?: "no access widener line"}")
+    }
+    if (!widener.get() && widenerLine != null) {
+      throw GradleException("$console: the mod ships no access widener list, yet logged: $widenerLine")
     }
     // GameWindow.init loads client Lua before ZombieBuddy exits
     val noticePrefix = "[$zabric] restart notice: "

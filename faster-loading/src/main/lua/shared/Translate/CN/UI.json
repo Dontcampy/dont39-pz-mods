@@ -1,0 +1,5 @@
+{
+    "UI_Dont39FasterLoading_Options": "加快加载",
+    "UI_Dont39FasterLoading_StripComments": "更快地去除脚本文件中的注释",
+    "UI_Dont39FasterLoading_StripCommentsTooltip": "一次扫描去除脚本和图块文件中的注释，结果与游戏本身完全相同。每次启动游戏、加入服务器或读取存档约节省 2 秒。下次启动游戏时生效。"
+}

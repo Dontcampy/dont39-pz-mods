@@ -1,0 +1,5 @@
+{
+    "UI_Dont39FasterLoading_Options": "Faster Loading",
+    "UI_Dont39FasterLoading_StripComments": "Faster comment removal in script files",
+    "UI_Dont39FasterLoading_StripCommentsTooltip": "Removes the comments of script and tile files in one pass, with the same result as the game. Saves about 2 seconds at each game start and each join or save load. Applies from the next launch of the game."
+}

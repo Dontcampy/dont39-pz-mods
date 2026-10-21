@@ -1,0 +1,550 @@
+Loading Progress 0.2.0: load timing report
+Load: game start, done
+Game 42.21.0 4a0e9546ec; 246 mods in the mod list; 16 Java mods in its Java mod pass
+Total 111974 ms, of it waiting in the menu 530 ms
+console.txt: game start: done after 112.0 s at step 13 / 13 (Entering the world); 587 own frames, 0 interim frames; largest frame gap 1285 ms in Loading mods (Mod 220 / 246: PZVoxelStudioViewpoint); largest visible gap 1285 ms in Loading mods (Mod 220 / 246: PZVoxelStudioViewpoint); in the Java mods 245 ms in Loading mods (Java mod 1 / 16: Zabric); outside known calls 1285 ms in Loading mods (Mod 220 / 246: PZVoxelStudioViewpoint)
+
+Steps
+     469 ms  1 / 13  Connecting to the server
+   12715 ms  2 / 13  Loading mods  (outside its items 5615 ms)
+     872 ms  3 / 13  Loading translations
+    2369 ms  4 / 13  Loading scripts  (outside its items 314 ms)
+      95 ms  5 / 13  Loading models and animations
+    1493 ms  6 / 13  Loading clothing, tiles and furniture
+    5539 ms  7 / 13  Loading Lua  (outside its items 3907 ms)
+    1555 ms  8 / 13  Running mods' start-up code  (outside its items 0 ms)
+      35 ms  9 / 13  Waiting in the login queue
+    1110 ms  10 / 13  Preparing the world  (outside its items 599 ms)
+   74284 ms  11 / 13  Loading the world  (outside its items 260 ms)
+     736 ms  12 / 13  Loaded
+   10174 ms  13 / 13  Entering the world  (outside its items 96 ms)
+
+Asset wait: the world load waits until the game's file tasks are done (bWaitForAssetLoadingToFinish2 in the game's log)
+   50181 ms  from 00:14:41.759 to 00:15:31.939, 50874 ms after the load began
+  3090 frames pumped the file queue, one per 16 ms on average
+  At its first frame 4993 file tasks queued: 4977 waiting for a worker, 16 at the workers
+  4993 file tasks done during it; 4 worker threads busy 199584 ms (99% of their time)
+  Texture decoders waited for the upload budget 115544 ms, 1302 times longer than a moment; part of their tasks' worker time
+  By type: worker time and tasks
+    158669 ms  FileTask_LoadPackImage: 1677 tasks
+     20586 ms  TileDepthTextures$LoadTask: 900 tasks
+     19708 ms  FileTask_LoadAnimation: 2265 tasks
+       319 ms  FileTask_LoadImageData: 68 tasks
+       313 ms  FileTask_LoadMesh: 53 tasks
+        44 ms  FileTask_LoadPhysicsShape: 30 tasks
+  The 20 slowest tasks on a worker
+       755 ms  FileTask_LoadPackImage  newburbs/newburbs87
+       510 ms  FileTask_LoadPackImage  Tiles2x/Tiles2x345
+       469 ms  FileTask_LoadPackImage  Tiles2x/Tiles2x353
+       440 ms  FileTask_LoadPackImage  melos_tiles_for_miles2/melos_tiles_for_miles2155
+       422 ms  FileTask_LoadPackImage  cathaya/cathaya0
+       412 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1490
+       397 ms  FileTask_LoadPackImage  melos_tiles_for_miles2/melos_tiles_for_miles2264
+       396 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles181
+       391 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1269
+       386 ms  FileTask_LoadPackImage  melos_tiles_for_miles2/melos_tiles_for_miles2339
+       382 ms  FileTask_LoadPackImage  Chinatown_EX/Chinatown_EX10
+       378 ms  FileTask_LoadPackImage  HavenFall/HavenFall36
+       370 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1304
+       368 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1317
+       366 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1463
+       352 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1493
+       346 ms  FileTask_LoadPackImage  melos_tiles_for_miles1/melos_tiles_for_miles1479
+       345 ms  FileTask_LoadPackImage  tikitown_tiles/tikitown_tiles36
+       341 ms  FileTask_LoadPackImage  nekoneko/nekoneko1
+       339 ms  FileTask_LoadPackImage  newburbs/newburbs115
+  Worker time per mod, by the folder that holds the task's file
+      3649 ms  melos_tiles_for_miles_pack  (144 tasks)
+      2261 ms  tikitown_tiles  (116 tasks)
+      1778 ms  UnofficialMappersCommunityTilePack  (102 tasks)
+      1770 ms  TryhonestyTiles  (55 tasks)
+      1546 ms  TrueActionsDancing  (75 tasks)
+       770 ms  ThermoNewburbs  (27 tasks)
+       669 ms  HavenFall  (32 tasks)
+       464 ms  PertsPartyTiles  (28 tasks)
+       436 ms  Nettle Township B42 version  (26 tasks)
+       426 ms  OujinjinTiles  (24 tasks)
+       339 ms  RaccoonCityB42  (16 tasks)
+       245 ms  Estate 39  (16 tasks)
+       201 ms  Willowbrook Bastion! 2  (11 tasks)
+       181 ms  Roccos_Tiles  (18 tasks)
+       180 ms  GunsOfMarz  (14 tasks)
+       177 ms  LiuDing_Tiles  (12 tasks)
+       162 ms  OujinjinTilesV2  (10 tasks)
+       148 ms  SapphCooking_B42  (17 tasks)
+       141 ms  TombWardrobeALTVanilla  (40 tasks)
+       130 ms  IrisEyot  (6 tasks)
+       122 ms  Ladders42204  (3 tasks)
+       122 ms  Nekomata Ridge  (11 tasks)
+       103 ms  damnlib  (15 tasks)
+        99 ms  Greenleaf B42 version  (8 tasks)
+        78 ms  ModernFirearmsSystem  (8 tasks)
+        49 ms  Xixi's Serene Cottage  (12 tasks)
+        46 ms  Clover Lake  (3 tasks)
+        28 ms  TableSaw  (2 tasks)
+        26 ms  SpnCloth  (18 tasks)
+         9 ms  AliceGear  (1 task)
+         8 ms  tikitown  (1 task)
+         5 ms  BuildingCraftEstate39  (1 task)
+         2 ms  ShootToThrillMultiplayer  (1 task)
+         1 ms  BuildingCraft  (1 task)
+         1 ms  AnruisiTown  (2 tasks)
+    183268 ms  in no mod's folder: the game's own, and tasks named without one  (4117 tasks)
+
+Items by kind: count, total time and the 20 slowest
+  Java mod: 16, 5 ms
+         1 ms  Java mod 1 / 16: Zabric
+         0 ms  Java mod 14 / 16: ProjectViewpointShelves
+         0 ms  Java mod 2 / 16: ZBSkipOnlineChecks
+         0 ms  Java mod 7 / 16: Viewpoint
+         0 ms  Java mod 3 / 16: Dont39LoadingProgress
+         0 ms  Java mod 15 / 16: ProjectViewpointNearVegetation
+         0 ms  Java mod 9 / 16: ViewpointTrueWeathers
+         0 ms  Java mod 4 / 16: Dont39FasterLoading
+         0 ms  Java mod 8 / 16: aparosa_vpmo_RaccoonCityB42
+         0 ms  Java mod 5 / 16: ZabricKotlin
+         0 ms  Java mod 13 / 16: PV-modmapbakefix
+         0 ms  Java mod 16 / 16: ShootToThrillMultiplayer
+         0 ms  Java mod 11 / 16: Construction1PViewpoint
+         0 ms  Java mod 12 / 16: ViewpointBloodFX
+         0 ms  Java mod 10 / 16: ViewpointTrueWeathersGameplay
+         0 ms  Java mod 6 / 16: Dont39AllInOne
+  mod: 246, 7095 ms
+      3417 ms  Mod 220 / 246: PZVoxelStudioViewpoint
+       348 ms  Mod 242 / 246: ModernFirearmsSystem
+       199 ms  Mod 235 / 246: ProjectViewpointShelves
+       118 ms  Mod 63 / 246: SapphCooking_B42
+       113 ms  Mod 243 / 246: MiSans
+       112 ms  Mod 99 / 246: TombWardrobeALTVanilla
+        99 ms  Mod 237 / 246: ShootToThrillMultiplayer
+        93 ms  Mod 239 / 246: ShadowCatTacticsGuardian
+        89 ms  Mod 103 / 246: NewMusic
+        62 ms  Mod 65 / 246: MREfood4213
+        50 ms  Mod 98 / 246: GanydeBielovzki's Frockin Splendor!
+        49 ms  Mod 76 / 246: GunsOfMarz
+        48 ms  Mod 119 / 246: damnlib
+        47 ms  Mod 233 / 246: B42Trans_CN
+        44 ms  Mod 114 / 246: tsarslib
+        44 ms  Mod 66 / 246: CompanionDogs
+        42 ms  Mod 61 / 246: PSR
+        39 ms  Mod 2 / 246: Spawn Location_CN
+        38 ms  Mod 25 / 246: MiniHealthPanel
+        36 ms  Mod 80 / 246: LKB42
+  script files: 3137, 2055 ms
+      1350 ms  Script file 3137 / 3137: ZZZ_NM_Headphones_Override.txt  (and the game's processing of all script files after it)
+        53 ms  Script file 467 / 3137: clothing.txt
+        23 ms  Script file 475 / 3137: normal.txt
+        16 ms  Script file 488 / 3137: models_items.txt
+        13 ms  Script file 470 / 3137: food.txt
+        12 ms  Script file 477 / 3137: weapon.txt
+         9 ms  Script file 1927 / 3137: SCTD_Invis.txt  [ShadowCatTacticsDispatch]
+         7 ms  Script file 484 / 3137: models_food.txt
+         6 ms  Script file 856 / 3137: vehicle_car_modern_model.txt
+         6 ms  Script file 472 / 3137: literature.txt
+         4 ms  Script file 468 / 3137: container.txt
+         4 ms  Script file 490 / 3137: models_weapons.txt
+         3 ms  Script file 3121 / 3137: WorldModels_SapphCooking.txt  [SapphCooking_B42]
+         2 ms  Script file 677 / 3137: sounds_melee_bluntlong.txt
+         2 ms  Script file 2612 / 3137: vcf_recipes_cooking.txt  [VanillaCraftableFoods]
+         2 ms  Script file 1729 / 3137: attachments.txt  [IrisEyot]
+         2 ms  Script file 474 / 3137: moveable.txt
+         2 ms  Script file 2658 / 3137: StaticModels_SapphCooking.txt  [SapphCooking_B42]
+         2 ms  Script file 2557 / 3137: Clip.txt  [ModernFirearmsSystem]
+         2 ms  Script file 1974 / 3137: tomb_clothingitems.txt  [TombWardrobeALTVanilla]
+  Lua files: 4142, 2142 ms
+        56 ms  Lua file 1838 / 2012: LingLi_ClothingRecycle.lua  [ShadowCatTacticsDispatch]
+        29 ms  Lua file 82 / 2012: ISDebugMenu.lua
+        27 ms  Lua file 455 / 2012: ISWorldObjectContextMenu.lua
+        27 ms  Lua file 1275 / 2012: NMClientMain.lua  [NewMusic]
+        25 ms  Lua file 598 / 2012: ServerSettingsScreen.lua
+        24 ms  Lua file 99 / 1004: ProceduralDistributions.lua
+        23 ms  Lua file 1014 / 1126: aparosa_vpmo_RaccoonCityB42.lua  [aparosa_vpmo_RaccoonCityB42]
+        19 ms  Lua file 1752 / 2012: MirageWardrobeWindow.lua  [MirageWardrobe42]
+        19 ms  Lua file 158 / 1004: Priorities.lua
+        18 ms  Lua file 1919 / 2012: EFK_Mod_Options.lua  [ModernFirearmsSystem]
+        18 ms  Lua file 934 / 2012: MS_BundledPresets.lua  [ModernStatus]
+        18 ms  Lua file 135 / 1126: recorded_media.lua
+        17 ms  Lua file 1883 / 2012: ContainerRail.lua  [RPGInventory]
+        15 ms  Lua file 89 / 1004: Distributions.lua
+        13 ms  Lua file 617 / 2012: FishWindow.lua
+        13 ms  Lua file 313 / 1004: LGEEGrid.lua  [LGExtendedElectricity]
+        12 ms  Lua file 1031 / 1126: LingLi_SCTD_Recipes.lua  [ShadowCatTacticsDispatch]
+        11 ms  Lua file 817 / 1004: Building_Data_BuildDecoration.lua  [BuildingCraft]
+        11 ms  Lua file 874 / 2012: NR_Patch.lua  [Neat_Rocco]
+        10 ms  Lua file 826 / 1004: Building_Data_Wall.lua  [BuildingCraft]
+  Lua events: 748, 11633 ms
+      7063 ms  Lua event: OnGameStart
+      1883 ms  Lua event: OnServerCommand
+       780 ms  Lua event: OnCreateLivingCharacter
+       681 ms  Lua event: OnGameBoot
+        85 ms  Lua event: OnMainMenuEnter
+        84 ms  Lua event: OnLoad
+        46 ms  Lua event: OnClimateTick
+        43 ms  Lua event: LoadGridsquare
+        43 ms  Lua event: LoadGridsquare
+        15 ms  Lua event: OnReceiveGlobalModData
+         9 ms  Lua event: LoadChunk
+         9 ms  Lua event: OnChallengeQuery
+         8 ms  Lua event: LoadChunk
+         7 ms  Lua event: LoadChunk
+         6 ms  Lua event: LoadGridsquare
+         6 ms  Lua event: LoadChunk
+         6 ms  Lua event: LoadGridsquare
+         6 ms  Lua event: LoadChunk
+         6 ms  Lua event: LoadGridsquare
+         6 ms  Lua event: LoadGridsquare
+  world-loading text: 5, 3998 ms
+      3797 ms  加载地图中…
+        77 ms  已收到 IGUI_RequestID_ZombieOutfitDescriptors 的 100% 了.
+        74 ms  已收到 电台数据 的 100% 了.
+        45 ms  从硬盘加载区块定义文件…
+         5 ms  初始化地图…
+  world-loading Lua events: 25, 5962 ms
+      2647 ms  Lua event: OnLoadMapZones
+       787 ms  Lua event: OnInitGlobalModData
+       559 ms  Lua event: OnClimateManagerInit
+       426 ms  Lua event: onAddForageDefs
+       366 ms  Lua event: OnInitSeasons
+       239 ms  Lua event: OnLoadedTileDefinitions
+       225 ms  Lua event: OnPostMapLoad
+       222 ms  Lua event: OnInitWorld
+       195 ms  Lua event: LogLevelPerk
+        88 ms  Lua event: OnCreateLivingCharacter
+        60 ms  Lua event: preAddItemDefs
+        60 ms  Lua event: OnSave
+        42 ms  Lua event: OnPreDistributionMerge
+        16 ms  Lua event: OnTemplateTextInit
+        14 ms  Lua event: OnWeatherPeriodStop
+         9 ms  Lua event: OnInitRecordedMedia
+         3 ms  Lua event: OnCGlobalObjectSystemInit
+         1 ms  Lua event: OnGameTimeLoaded
+         1 ms  Lua event: preAddCatDefs
+         0 ms  Lua event: OnLoadedMapZones
+  clothing items: 190, 9425 ms
+      8040 ms  Clothing item 87 / 3090
+        44 ms  Clothing item 3090 / 3090
+        30 ms  Clothing item 100 / 3090
+        24 ms  Clothing item 114 / 3090
+         7 ms  Clothing item 1024 / 3090
+         7 ms  Clothing item 768 / 3090
+         7 ms  Clothing item 1792 / 3090
+         7 ms  Clothing item 592 / 3090
+         7 ms  Clothing item 2128 / 3090
+         7 ms  Clothing item 1664 / 3090
+         7 ms  Clothing item 736 / 3090
+         7 ms  Clothing item 2256 / 3090
+         7 ms  Clothing item 1200 / 3090
+         7 ms  Clothing item 2400 / 3090
+         7 ms  Clothing item 2544 / 3090
+         7 ms  Clothing item 2928 / 3090
+         7 ms  Clothing item 448 / 3090
+         7 ms  Clothing item 1520 / 3090
+         7 ms  Clothing item 2048 / 3090
+         7 ms  Clothing item 2512 / 3090
+  map cells: 4109, 2231 ms
+       896 ms  Map cell 4109 / 4109: 77_59
+        29 ms  Map cell 141 / 4109: 55_12
+        13 ms  Map cell 1 / 4109: 45_4
+        12 ms  Map cell 3666 / 4109: 72_54
+        10 ms  Map cell 2412 / 4109: 55_40
+         9 ms  Map cell 657 / 4109: 9_22
+         6 ms  Map cell 3 / 4109: 47_4
+         6 ms  Map cell 1201 / 4109: 73_23
+         5 ms  Map cell 5 / 4109: 49_4
+         5 ms  Map cell 1865 / 4109: 3_38
+         5 ms  Map cell 6 / 4109: 50_4
+         4 ms  Map cell 4 / 4109: 48_4
+         4 ms  Map cell 7 / 4109: 51_4
+         4 ms  Map cell 2 / 4109: 46_4
+         3 ms  Map cell 8 / 4109: 52_4
+         2 ms  Map cell 10 / 4109: 54_4
+         2 ms  Map cell 27 / 4109: 71_4
+         2 ms  Map cell 9 / 4109: 53_4
+         2 ms  Map cell 15 / 4109: 59_4
+         2 ms  Map cell 1602 / 4109: 46_30
+  tile definitions: 8, 2228 ms
+      2212 ms  Tile definitions: mods' files
+        11 ms  Tile definitions: newtiledefinitions.tiles
+         2 ms  Tile definitions: tiledefinitions_noiseworks.patch.tiles
+         1 ms  Tile definitions: tiledefinitions_erosion.tiles
+         1 ms  Tile definitions: jumbo_trees_big.tiles
+         1 ms  Tile definitions: tiledefinitions_overlays.tiles
+         0 ms  Tile definitions: tiledefinitions_b42chunkcaching.tiles
+         0 ms  Tile definitions: jumbo_trees.tiles
+  animations: 680, 44843 ms
+     39919 ms  Animation 26 / 2291
+       111 ms  Animation 1261 / 2291
+        28 ms  Animation 2214 / 2291
+        21 ms  Animation 1286 / 2291
+        21 ms  Animation 2192 / 2291
+        14 ms  Animation 2239 / 2291
+        14 ms  Animation 2201 / 2291
+        14 ms  Animation 2194 / 2291
+        14 ms  Animation 2206 / 2291
+        14 ms  Animation 2197 / 2291
+        14 ms  Animation 2193 / 2291
+        14 ms  Animation 2252 / 2291
+        14 ms  Animation 2215 / 2291
+        14 ms  Animation 2196 / 2291
+        14 ms  Animation 1290 / 2291
+         7 ms  Animation 677 / 2291
+         7 ms  Animation 1186 / 2291
+         7 ms  Animation 928 / 2291
+         7 ms  Animation 2285 / 2291
+         7 ms  Animation 970 / 2291
+  asset wait: 2, 5338 ms
+      5331 ms  Waiting for assets to finish loading
+         7 ms  Waiting for assets to finish loading
+Times of the world load's items run from one line to the next: its threads load at once.
+
+Time per mod: its Java mod, its load in the mod list, and the Lua and script files in its folder
+    3417 ms  PZVoxelStudioViewpoint  (mod 3417 ms, Lua files 0 ms)
+     516 ms  ModernFirearmsSystem  (mod 348 ms, Lua files 98 ms, script files 70 ms)
+     235 ms  NewMusic  (mod 89 ms, Lua files 143 ms, script files 3 ms)
+     200 ms  ProjectViewpointShelves  (Java mod 0 ms, mod 199 ms, Lua files 0 ms)
+     167 ms  ShadowCatTacticsDispatch  (mod 31 ms, Lua files 126 ms, script files 9 ms)
+     144 ms  SapphCooking_B42  (mod 118 ms, Lua files 6 ms, script files 20 ms)
+     119 ms  ShootToThrillMultiplayer  (Java mod 0 ms, mod 99 ms, Lua files 19 ms, script files 1 ms)
+     118 ms  TombWardrobeALTVanilla  (mod 112 ms, Lua files 4 ms, script files 2 ms)
+     117 ms  ShadowCatTacticsGuardian  (mod 93 ms, Lua files 4 ms, script files 20 ms)
+     113 ms  MiSans  (mod 113 ms)
+     102 ms  CompanionDogs  (mod 44 ms, Lua files 57 ms, script files 1 ms)
+      91 ms  BuildingCraft  (mod 7 ms, Lua files 84 ms)
+      78 ms  GunsOfMarz  (mod 49 ms, Lua files 12 ms, script files 17 ms)
+      76 ms  ModernStatus  (mod 21 ms, Lua files 55 ms)
+      72 ms  tsarslib  (mod 44 ms, Lua files 21 ms, script files 8 ms)
+      71 ms  MREfood4213  (mod 62 ms, Lua files 4 ms, script files 6 ms)
+      67 ms  damnlib  (mod 48 ms, Lua files 8 ms, script files 11 ms)
+      63 ms  PSR  (mod 42 ms, Lua files 20 ms, script files 1 ms)
+      60 ms  Willowbrook Bastion! 2  (mod 27 ms, Lua files 29 ms, script files 3 ms)
+      59 ms  Neat_Crafting  (mod 30 ms, Lua files 29 ms, script files 0 ms)
+      56 ms  Project_Cook  (mod 31 ms, Lua files 26 ms)
+      53 ms  LGExtendedElectricity  (mod 24 ms, Lua files 29 ms)
+      52 ms  GanydeBielovzki's Frockin Splendor!  (mod 50 ms, Lua files 1 ms, script files 1 ms)
+      52 ms  RPGInventory  (mod 8 ms, Lua files 44 ms)
+      49 ms  B42Trans_CN  (mod 47 ms, Lua files 2 ms)
+      44 ms  LGExtendedPlumbing  (mod 23 ms, Lua files 21 ms)
+      43 ms  NeatUI_Hairstyler  (mod 28 ms, Lua files 15 ms)
+      40 ms  MiniHealthPanel  (mod 38 ms, Lua files 2 ms)
+      39 ms  Neat_Rocco  (mod 9 ms, Lua files 30 ms)
+      39 ms  Spawn Location_CN  (mod 39 ms)
+      39 ms  LKB42  (mod 36 ms, Lua files 1 ms, script files 2 ms)
+      38 ms  tikitown  (mod 29 ms, Lua files 6 ms, script files 3 ms)
+      38 ms  MirageWardrobe42  (mod 4 ms, Lua files 33 ms, script files 1 ms)
+      37 ms  SkillRecoveryJournal  (mod 30 ms, Lua files 6 ms, script files 1 ms)
+      37 ms  76chevyKseries  (mod 24 ms, Lua files 4 ms, script files 10 ms)
+      37 ms  NEVLib  (mod 11 ms, Lua files 24 ms, script files 1 ms)
+      37 ms  UsefulBarrelsMP  (mod 32 ms, Lua files 5 ms)
+      37 ms  93chevySuburban  (mod 24 ms, Lua files 3 ms, script files 10 ms)
+      36 ms  VehicleRepairOverhaul  (mod 14 ms, Lua files 21 ms, script files 1 ms)
+      32 ms  SpnOpenCloth  (mod 23 ms, Lua files 6 ms, script files 3 ms)
+      31 ms  ShadowCatTacticsFordCVPI  (mod 20 ms, Lua files 8 ms, script files 3 ms)
+      31 ms  SWMG  (mod 9 ms, Lua files 22 ms, script files 0 ms)
+      30 ms  twistmapimprovements  (mod 23 ms, Lua files 7 ms, script files 0 ms)
+      29 ms  FH  (mod 29 ms)
+      29 ms  aparosa_vpmo_RaccoonCityB42  (Java mod 0 ms, mod 5 ms, Lua files 24 ms)
+      29 ms  SpnCloth  (mod 26 ms, Lua files 2 ms, script files 1 ms)
+      29 ms  TrueActionsDancing  (mod 26 ms, Lua files 2 ms, script files 1 ms)
+      28 ms  86chevyCUCV  (mod 19 ms, Lua files 3 ms, script files 6 ms)
+      27 ms  RaccoonCityB42  (mod 18 ms, Lua files 8 ms, script files 2 ms)
+      27 ms  AMGeneralTankerFunctionality  (mod 24 ms, Lua files 3 ms, script files 0 ms)
+      27 ms  87fordB700  (mod 16 ms, Lua files 2 ms, script files 8 ms)
+      27 ms  LTWB42  (mod 24 ms, Lua files 2 ms, script files 1 ms)
+      26 ms  TheShortcut  (mod 18 ms, Lua files 8 ms)
+      25 ms  LBB42  (mod 24 ms, Lua files 1 ms, script files 1 ms)
+      25 ms  ProjectViewpointNearVegetation  (Java mod 0 ms, mod 25 ms, Lua files 0 ms)
+      25 ms  89defender  (mod 17 ms, Lua files 2 ms, script files 6 ms)
+      25 ms  TchernoLib  (mod 15 ms, Lua files 10 ms, script files 0 ms)
+      24 ms  KI5campers  (mod 15 ms, Lua files 2 ms, script files 6 ms)
+      23 ms  twistbettercharacterinfo  (mod 16 ms, Lua files 7 ms)
+      23 ms  Nekomata Ridge  (mod 17 ms, Lua files 5 ms, script files 1 ms)
+      23 ms  93fordF350  (mod 15 ms, Lua files 2 ms, script files 6 ms)
+      22 ms  86fordE150  (mod 13 ms, Lua files 2 ms, script files 6 ms)
+      22 ms  AliceGear  (mod 20 ms, Lua files 1 ms, script files 1 ms)
+      22 ms  CleanHotBar  (mod 14 ms, Lua files 8 ms)
+      21 ms  LDB42  (mod 19 ms, Lua files 1 ms, script files 1 ms)
+      21 ms  NM_KessokuBand  (mod 17 ms, Lua files 3 ms, script files 1 ms)
+      21 ms  BladesmithSystemB42  (mod 14 ms, Lua files 3 ms, script files 4 ms)
+      21 ms  Ladders42204  (mod 19 ms, Lua files 1 ms, script files 0 ms)
+      20 ms  STA_PryOpen  (mod 17 ms, Lua files 3 ms)
+      19 ms  84merc  (mod 13 ms, Lua files 2 ms, script files 4 ms)
+      19 ms  LCB42  (mod 18 ms, Lua files 1 ms, script files 1 ms)
+      19 ms  ATA_Jeep  (mod 7 ms, Lua files 11 ms, script files 1 ms)
+      18 ms  SpnHair  (mod 18 ms, Lua files 0 ms)
+      18 ms  82porsche911  (mod 13 ms, Lua files 2 ms, script files 4 ms)
+      18 ms  alicesWeaponSling  (mod 15 ms, Lua files 2 ms, script files 1 ms)
+      18 ms  KFC_Food  (mod 15 ms, Lua files 0 ms, script files 3 ms)
+      18 ms  PROJECTRVInterior42  (mod 15 ms, Lua files 3 ms)
+      18 ms  Daisy County B42 version  (mod 11 ms, Lua files 7 ms, script files 0 ms)
+      17 ms  B42RainsAxesAndBlades4220  (mod 9 ms, Lua files 7 ms, script files 2 ms)
+      17 ms  Balloons  (mod 14 ms, Lua files 1 ms, script files 2 ms)
+      17 ms  SHDEquipment  (mod 15 ms, Lua files 1 ms, script files 1 ms)
+      17 ms  69fordMustang  (mod 10 ms, Lua files 2 ms, script files 5 ms)
+      17 ms  BackpackSystemB42  (mod 10 ms, Lua files 7 ms, script files 1 ms)
+      17 ms  Atlanta  (mod 16 ms, Lua files 1 ms, script files 0 ms)
+      17 ms  VehicleSalvageOverhaulB42  (mod 14 ms, Lua files 2 ms, script files 0 ms)
+      17 ms  LFB42  (mod 15 ms, Lua files 1 ms, script files 1 ms)
+      17 ms  CompanionCat  (mod 14 ms, Lua files 2 ms, script files 0 ms)
+      16 ms  91range  (mod 11 ms, Lua files 2 ms, script files 4 ms)
+      16 ms  LSB42  (mod 15 ms, Lua files 1 ms, script files 1 ms)
+      16 ms  69charger  (mod 10 ms, Lua files 2 ms, script files 4 ms)
+      16 ms  63Type2Van  (mod 9 ms, Lua files 2 ms, script files 5 ms)
+      16 ms  89trooper  (mod 11 ms, Lua files 1 ms, script files 4 ms)
+      16 ms  VanillaGearExpanded  (mod 15 ms, Lua files 1 ms, script files 0 ms)
+      16 ms  92fordCVPI  (mod 9 ms, Lua files 2 ms, script files 4 ms)
+      15 ms  STA_BetterHutches  (mod 13 ms, Lua files 2 ms, script files 0 ms)
+      15 ms  IrisEyot  (mod 8 ms, Lua files 5 ms, script files 3 ms)
+      15 ms  ATA_VanDeRumbaGardenia  (mod 8 ms, Lua files 6 ms, script files 1 ms)
+      15 ms  HavenFall  (mod 12 ms, Lua files 2 ms, script files 1 ms)
+      15 ms  Ivmakk_MilkThemAll  (mod 9 ms, Lua files 6 ms)
+      15 ms  78lamboCountach  (mod 9 ms, Lua files 2 ms, script files 4 ms)
+      15 ms  melos_tiles_for_miles_pack  (mod 8 ms, Lua files 6 ms)
+      14 ms  92amgeneralM998  (mod 9 ms, Lua files 1 ms, script files 4 ms)
+      14 ms  ATA_Mustang  (mod 5 ms, Lua files 8 ms, script files 2 ms)
+      14 ms  WANSANGsEXILIUM  (mod 11 ms, Lua files 2 ms, script files 1 ms)
+      14 ms  mapmodmanager  (mod 3 ms, Lua files 11 ms)
+      14 ms  EFTBP  (mod 12 ms, Lua files 1 ms, script files 1 ms)
+      14 ms  92nissanGTR  (mod 9 ms, Lua files 1 ms, script files 3 ms)
+      13 ms  78amgeneralM35A2  (mod 9 ms, Lua files 2 ms, script files 3 ms)
+      13 ms  59meteor  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      13 ms  97bushmaster  (mod 7 ms, Lua files 2 ms, script files 4 ms)
+      13 ms  91fordRanger  (mod 8 ms, Lua files 2 ms, script files 4 ms)
+      13 ms  85chevyStepVan  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      13 ms  69mini  (mod 8 ms, Lua files 2 ms, script files 3 ms)
+      13 ms  AnruisiTown  (mod 10 ms, Lua files 2 ms, script files 1 ms)
+      13 ms  90pierceArrow  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      12 ms  67commando  (mod 9 ms, Lua files 1 ms, script files 2 ms)
+      12 ms  TikitownPower  (mod 6 ms, Lua files 6 ms, script files 1 ms)
+      12 ms  KI5trailers  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      12 ms  83amgeneralM923  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      12 ms  84gageV300  (mod 7 ms, Lua files 2 ms, script files 3 ms)
+      12 ms  90fordF350ambulance  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      12 ms  Greenleaf B42 version  (mod 11 ms, Lua files 1 ms, script files 0 ms)
+      12 ms  Xixi's Serene Cottage  (mod 10 ms, Lua files 1 ms, script files 1 ms)
+      12 ms  98stagea  (mod 7 ms, Lua files 2 ms, script files 3 ms)
+      12 ms  67gt500  (mod 8 ms, Lua files 1 ms, script files 3 ms)
+      12 ms  ChuckleberryFinnAlertSystem  (mod 10 ms, Lua files 2 ms)
+      12 ms  Nettle Township B42 version  (mod 11 ms, Lua files 1 ms)
+      12 ms  SpnOpenClothBase  (mod 11 ms, Lua files 1 ms)
+      11 ms  GardeniaTranslate_CN  (mod 11 ms)
+      11 ms  96lancerEVO  (mod 7 ms, Lua files 1 ms, script files 3 ms)
+      11 ms  XingHeMods_ItemAndWeaponDetailsDisplay  (mod 6 ms, Lua files 5 ms)
+      11 ms  UnofficialMappersCommunityTilePack  (mod 8 ms, Lua files 3 ms)
+      11 ms  81deloreanDMC12  (mod 7 ms, Lua files 1 ms, script files 2 ms)
+      11 ms  isoContainers  (mod 8 ms, Lua files 1 ms, script files 2 ms)
+      10 ms  62daimlerFerret  (mod 7 ms, Lua files 2 ms, script files 2 ms)
+      10 ms  ReloadAllMagazines  (mod 10 ms, Lua files 0 ms)
+      10 ms  ViewpointTrueWeathers  (Java mod 0 ms, mod 5 ms, Lua files 5 ms)
+      10 ms  BetterWorldMap  (mod 7 ms, Lua files 2 ms)
+      10 ms  B42ModTrans_CN  (mod 10 ms, Lua files 0 ms)
+      10 ms  better-auto-mechanics  (mod 7 ms, Lua files 3 ms)
+      10 ms  NeatUI_Framework  (mod 7 ms, Lua files 3 ms)
+      10 ms  VaultTec B42 version  (mod 10 ms, Lua files 0 ms)
+       9 ms  newhartburg  (mod 9 ms, Lua files 1 ms)
+       9 ms  TableSaw  (mod 6 ms, Lua files 3 ms, script files 0 ms)
+       9 ms  PertsPartyTiles  (mod 8 ms, Lua files 1 ms)
+       9 ms  LeanAndLie  (mod 4 ms, Lua files 5 ms)
+       9 ms  VanillaCraftableFoods  (mod 6 ms, script files 3 ms)
+       9 ms  twisttool  (mod 5 ms, Lua files 4 ms)
+       9 ms  86fordE150expanded  (mod 5 ms, Lua files 2 ms, script files 1 ms)
+       8 ms  MapLegendUI  (mod 8 ms, Lua files 0 ms)
+       8 ms  ThermoNewburbs  (mod 8 ms)
+       8 ms  twistimso  (mod 6 ms, Lua files 3 ms)
+       8 ms  BetterBeltsB42  (mod 6 ms, Lua files 2 ms, script files 1 ms)
+       8 ms  Daisy County B42 version(items part)  (mod 6 ms, script files 2 ms)
+       8 ms  Yanghu Town  (mod 6 ms, Lua files 2 ms, script files 0 ms)
+       8 ms  NEV_LiL6  (mod 6 ms, Lua files 0 ms, script files 1 ms)
+       8 ms  tikitown_tiles  (mod 7 ms, Lua files 1 ms)
+       7 ms  CompanionDogsDoberman  (mod 6 ms, Lua files 1 ms, script files 0 ms)
+       7 ms  ModLoadOrderSorter_b42  (mod 4 ms, Lua files 3 ms)
+       7 ms  Cathaya Valley 2.0 B42 version  (mod 5 ms, Lua files 2 ms)
+       7 ms  TryhonestyTiles  (mod 5 ms, Lua files 2 ms, script files 0 ms)
+       7 ms  Constown42  (mod 7 ms, Lua files 0 ms)
+       7 ms  CompanionDogsLabrador  (mod 6 ms, Lua files 1 ms, script files 0 ms)
+       7 ms  CompanionDogsRottweiler  (mod 6 ms, Lua files 1 ms, script files 0 ms)
+       7 ms  P4TidyUpMeister  (mod 5 ms, Lua files 2 ms)
+       7 ms  InjuryIndicator  (mod 6 ms, Lua files 0 ms)
+       7 ms  [B42][MP]MoreMenuOptions  (mod 3 ms, Lua files 3 ms)
+       7 ms  93chevySuburbanExpanded  (mod 3 ms, Lua files 1 ms, script files 2 ms)
+       7 ms  Estate 39  (mod 6 ms, Lua files 1 ms, script files 0 ms)
+       6 ms  Dont39AllInOne  (Java mod 0 ms, mod 2 ms, Lua files 4 ms)
+       6 ms  RetroDashboard  (mod 4 ms, Lua files 2 ms)
+       6 ms  Roccos_Tiles  (mod 4 ms, Lua files 1 ms, script files 1 ms)
+       6 ms  AMMS_Standalone  (mod 6 ms, Lua files 1 ms)
+       6 ms  Viewpoint  (Java mod 0 ms, mod 1 ms, Lua files 4 ms)
+       5 ms  OujinjinTiles  (mod 5 ms, Lua files 1 ms)
+       5 ms  85chevyStepVanexpanded  (mod 4 ms, Lua files 1 ms, script files 0 ms)
+       5 ms  Chinatown Expansion B42 version (Less Traffic Jam)  (mod 5 ms, Lua files 0 ms)
+       5 ms  vac_mod_b42_13  (mod 2 ms, Lua files 3 ms)
+       5 ms  simpleLockpicking  (mod 4 ms, Lua files 0 ms, script files 0 ms)
+       5 ms  SafeWayHamlet  (mod 5 ms, Lua files 0 ms, script files 0 ms)
+       5 ms  OujinjinTilesV2  (mod 4 ms, Lua files 1 ms)
+       5 ms  BuildingCraftEstate39  (mod 3 ms, Lua files 2 ms)
+       5 ms  CustomMapLabels  (mod 3 ms, Lua files 2 ms)
+       5 ms  ATA_VanDeRumbaGardeniaSkin  (mod 4 ms, script files 0 ms)
+       4 ms  moodlesinlua  (mod 3 ms, Lua files 1 ms)
+       4 ms  Nettle Township B42 version(items part)  (mod 4 ms, script files 0 ms)
+       4 ms  Begonia_Town  (mod 4 ms)
+       4 ms  Chinatown B42 version  (mod 4 ms, Lua files 0 ms)
+       4 ms  DBFaster80  (mod 4 ms)
+       4 ms  Lucille  (mod 3 ms, Lua files 0 ms, script files 0 ms)
+       4 ms  errorMagnifier  (mod 2 ms, Lua files 2 ms)
+       4 ms  Atlanta - Safe Zone-Chinese Survivors’ Community  (mod 4 ms)
+       4 ms  LiuDing_Tiles  (mod 3 ms, Lua files 1 ms, script files 0 ms)
+       4 ms  Clover Lake  (mod 3 ms, Lua files 0 ms)
+       4 ms  MapSymbolsPlusDeonHand  (mod 3 ms, Lua files 0 ms)
+       3 ms  P4AlarmSyndrome  (mod 3 ms, Lua files 1 ms)
+       3 ms  ViewpointTrueWeathersGameplay  (Java mod 0 ms, mod 2 ms, Lua files 1 ms)
+       3 ms  Construction1PViewpoint  (Java mod 0 ms, mod 2 ms, Lua files 1 ms)
+       3 ms  BuildingCraftRaccoonCity  (mod 1 ms, Lua files 2 ms)
+       3 ms  PlaceAnywhereMod  (mod 2 ms, Lua files 1 ms)
+       3 ms  ItemSpawnBlocker  (mod 2 ms, Lua files 1 ms)
+       3 ms  dawn_town  (mod 3 ms, Lua files 0 ms)
+       3 ms  NepHighBeams  (mod 1 ms, Lua files 1 ms)
+       3 ms  Clover Lake Highway KY-316  (mod 2 ms, Lua files 0 ms)
+       2 ms  JumboTreeIndoorFix  (mod 1 ms, Lua files 1 ms)
+       2 ms  ZombieBuddy  (mod 2 ms, Lua files 0 ms)
+       2 ms  SimpleMoodleIndicators  (mod 2 ms, Lua files 0 ms)
+       2 ms  Cathaya Valley 2.0 B42 version highway  (mod 2 ms)
+       2 ms  Zabric  (Java mod 1 ms, mod 1 ms, Lua files 1 ms)
+       2 ms  ClientModsToServer  (mod 1 ms, Lua files 1 ms)
+       2 ms  69fordMustangExtra  (mod 2 ms, Lua files 0 ms)
+       2 ms  twistmapimprovementsIcons  (mod 2 ms, Lua files 0 ms)
+       2 ms  drivestraight  (mod 2 ms, Lua files 0 ms)
+       2 ms  ViewpointBloodFX  (Java mod 0 ms, mod 1 ms, Lua files 1 ms)
+       2 ms  78amgeneralM35A2extra  (mod 2 ms, Lua files 0 ms)
+       2 ms  AdvancedSoundCNB4220  (mod 2 ms, Lua files 0 ms)
+       2 ms  QRBG  (mod 2 ms, Lua files 0 ms)
+       2 ms  modtag  (mod 2 ms, Lua files 0 ms)
+       2 ms  Self_MaterialWeightReduction  (mod 1 ms, Lua files 1 ms)
+       2 ms  83amgeneralM923extra  (mod 2 ms, Lua files 0 ms)
+       2 ms  FixedLightOnBeltAF  (mod 1 ms, Lua files 0 ms, script files 0 ms)
+       1 ms  LPTestDriver  (mod 1 ms, Lua files 1 ms)
+       1 ms  ECTO1  (mod 1 ms, Lua files 0 ms)
+       1 ms  86fordE150dnd  (mod 1 ms, Lua files 0 ms)
+       1 ms  FixBlowTorchPropaneTank  (mod 1 ms, Lua files 0 ms)
+       1 ms  TrailerStayAttachedB4220Fix  (mod 1 ms, Lua files 1 ms)
+       1 ms  92amgeneralM998extra  (mod 1 ms, Lua files 0 ms)
+       1 ms  Animalsdonotattackothermale  (mod 1 ms, Lua files 0 ms)
+       1 ms  GlassHats  (mod 1 ms, Lua files 0 ms)
+       1 ms  CharacterOutfitPresetFix  (mod 1 ms, Lua files 0 ms)
+       1 ms  Animalsdonotattackplayer  (mod 1 ms, Lua files 0 ms)
+       1 ms  86fordE150pd  (mod 1 ms, Lua files 0 ms)
+       1 ms  PV-modmapbakefix  (Java mod 0 ms, mod 1 ms)
+       1 ms  Animalsdonotattackbuildings  (mod 1 ms, Lua files 0 ms)
+       1 ms  78amgeneralM50A3  (mod 1 ms, Lua files 0 ms)
+       1 ms  78amgeneralM49A2C  (mod 1 ms, Lua files 0 ms)
+       1 ms  StableCorpseDriving  (mod 1 ms, Lua files 0 ms)
+       1 ms  69mini_MrBean  (mod 1 ms, Lua files 0 ms)
+       1 ms  78amgeneralM62  (mod 1 ms, Lua files 0 ms)
+       1 ms  81deloreanDMC12BTTF  (mod 1 ms, Lua files 0 ms)
+       1 ms  RYGProgressIndicatorSegmented  (mod 1 ms)
+       1 ms  ZBSkipOnlineChecks  (Java mod 0 ms, mod 1 ms)
+       1 ms  ZabricKotlin  (Java mod 0 ms, mod 1 ms)
+       1 ms  KRMLN_BagFriendlyWindows  (mod 1 ms, Lua files 0 ms)
+       1 ms  MapAllKnownFix  (mod 1 ms, Lua files 0 ms)
+       1 ms  WeldingGlasses42-3  (mod 1 ms, script files 0 ms)
+       0 ms  Dont39LoadingProgress  (Java mod 0 ms)
+       0 ms  Dont39FasterLoading  (Java mod 0 ms)
+    1051 ms  Lua and script files in no mod's folder (the game's own)
+    1350 ms  the last script file and the game's processing of all script files after it, in no mod

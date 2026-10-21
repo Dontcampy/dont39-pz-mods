@@ -52,6 +52,10 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   support it. This repo uses none.
 - No `priority`: a cross-mod order needs a runtime dispatcher that breaks on failed weaves, unsafe patches in between
   and recursion. Across mods, ZombieBuddy's load order decides.
+- Replacing a method's result where another mod also hooks the method: rewrite the argument (`@ModifyVariable` at
+  HEAD) or the return value instead of cancelling. A cancel by the outer advice skips the inner mod's advice, and which
+  is outer depends on preload order (`ScriptHooks.java` in `faster-loading`, which keeps Loading Progress's
+  `stripComments` timing).
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
   tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 

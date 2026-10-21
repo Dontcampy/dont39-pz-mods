@@ -1,0 +1,31 @@
+{
+  "id": "load-speed-optimization",
+  "name": "load-speed-optimization",
+  "title": "Load speed optimization",
+  "description": "Use Loading Progress timing and PZ_Optimization ideas to find and cut load-time costs",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-10-21",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-21-asset-wait-breakdown",
+    "10-21-faster-loading-strip-comments",
+    "10-21-lua-folder-walk",
+    "10-21-asset-wait-speedup"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

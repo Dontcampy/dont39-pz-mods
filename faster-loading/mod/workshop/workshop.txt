@@ -1,0 +1,42 @@
+version=1
+title=Faster Loading
+description=[h1]Faster Loading[/h1]
+description=Shorter loading screens: the game does the same work, only faster, at game start, when joining a server and when loading a save. 中文说明在下方。
+description=
+description=[list]
+description=[*]Faster comment removal in script files: the game removes the comments of its script and tile files in a way that gets very slow on large files. This mod does it in one pass with exactly the same result. About 2 seconds saved at each game start and each load, more with mods that add tiles.
+description=[/list]
+description=Each speed-up has its own switch in Options > Mods > Faster Loading, all on by default (takes effect the next time you start the game). Turned off, that part of loading is exactly as without this mod.
+description=
+description=Made for Project Zomboid 42.21. On another game version it does nothing and says so in console.txt until it is updated.
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=After enabling it, restart the game once when the main menu asks. Only you need it; servers do not.
+description=
+description=[h1]加快加载[/h1]
+description=缩短加载时间：游戏做的事情不变，只是更快。适用于启动游戏、加入服务器和读取存档。
+description=
+description=[list]
+description=[*]更快地去除脚本文件中的注释：游戏去除脚本和图块文件注释的方式在大文件上非常慢。本模组一次扫描完成，结果与游戏完全相同。每次启动游戏和每次加载约节省 2 秒，添加图块的模组越多节省越多。
+description=[/list]
+description=每项加速都可在 选项 > 模组 > 加快加载 中单独开关，默认全部开启（下次启动游戏时生效）。关闭后，该部分加载与未安装本模组时完全相同。
+description=
+description=为 Project Zomboid 42.21 制作。在其他游戏版本上本模组不做任何事，并在 console.txt 中说明，直到更新为止。
+description=
+description=[h2]前置要求[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+（按提示批准本模组的 Java 代码）
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=启用后，按主菜单提示重启一次游戏。只需自己安装，服务器不需要。
+description=
+description=[h2]Feedback / 反馈[/h2]
+description=Comment below or on [url=https://github.com/Dontcampy/dont39-pz-mods]GitHub[/url]. 欢迎在下方留言。
+tags=Build 42;QoL
+visibility=public
