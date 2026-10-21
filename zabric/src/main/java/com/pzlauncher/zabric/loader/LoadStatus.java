@@ -22,10 +22,12 @@ final class LoadStatus {
     private static final String PRELOADED = "preloaded";
     private static final String LOADED = "loaded";
 
-    private record Shape(Field status, Method id, Method jarPath, Method reason, Method sha256) {
+    // the accessors every caller needs; the hash is read apart, so that a change to it fails only its own callers
+    private record Shape(Field status, Class<?> state, Method id, Method jarPath, Method reason) {
     }
 
     private static volatile Shape shape;
+    private static volatile Method hashAccessor;
 
     private LoadStatus() {
     }
@@ -62,19 +64,41 @@ final class LoadStatus {
                 String id = (String) s.id().invoke(state);
                 Path jar = (Path) s.jarPath().invoke(state);
                 String reason = (String) s.reason().invoke(state);
-                String sha256 = (String) s.sha256().invoke(state);
                 // skip reasons are "(...)"; anything else means the meaning of the field changed
                 if (!PRELOADED.equals(reason) && !LOADED.equals(reason) && (reason == null || !reason.startsWith("("))) {
                     throw new NoSuchFieldException("the record of " + id + " has the reason '" + reason + "'");
                 }
                 if (wanted.equals(reason) && (ids == null || ids.contains(id))) {
-                    jars.add(new Loader.ModJar(id, jar, sha256));
+                    jars.add(new Loader.ModJar(id, jar));
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
         }
         return jars;
+    }
+
+    static Map<Path, String> sha256() {
+        Shape s = shape();
+        Map<Path, String> hashes = new HashMap<>();
+        try {
+            Method hash = sha256Accessor(s);
+            for (Object state : ((Map<?, ?>) s.status().get(null)).values()) {
+                hashes.put((Path) s.jarPath().invoke(state), (String) hash.invoke(state));
+            }
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
+        }
+        return hashes;
+    }
+
+    private static Method sha256Accessor(Shape s) throws NoSuchFieldException {
+        Method m = hashAccessor;
+        if (m == null) {
+            m = accessor(accessors(s.state()), "sha256", String.class);
+            hashAccessor = m;
+        }
+        return m;
     }
 
     private static Shape shape() {
@@ -94,15 +118,20 @@ final class LoadStatus {
             if (!state.isRecord()) {
                 throw new NoSuchFieldException(state.getName() + " is not a record");
             }
-            Map<String, Method> accessors = new HashMap<>();
-            for (RecordComponent c : state.getRecordComponents()) {
-                accessors.put(c.getName() + " " + c.getType().getName(), c.getAccessor());
-            }
-            return new Shape(status, accessor(accessors, "id", String.class), accessor(accessors, "jarPath", Path.class),
-                    accessor(accessors, "reason", String.class), accessor(accessors, "sha256", String.class));
+            Map<String, Method> accessors = accessors(state);
+            return new Shape(status, state, accessor(accessors, "id", String.class),
+                    accessor(accessors, "jarPath", Path.class), accessor(accessors, "reason", String.class));
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             throw new IllegalStateException(mismatch("g_jarLoadStatus", e.toString()), e);
         }
+    }
+
+    private static Map<String, Method> accessors(Class<?> state) {
+        Map<String, Method> accessors = new HashMap<>();
+        for (RecordComponent c : state.getRecordComponents()) {
+            accessors.put(c.getName() + " " + c.getType().getName(), c.getAccessor());
+        }
+        return accessors;
     }
 
     private static Field staticField(String name, Class<?> type) throws NoSuchFieldException {

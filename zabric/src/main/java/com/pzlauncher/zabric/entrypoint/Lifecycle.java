@@ -87,7 +87,7 @@ public final class Lifecycle {
         }
         try {
             List<Loader.ModJar> preloaded = Loader.preloadedJars();
-            JarHistory.preloaded(preloaded);
+            JarHistory.preloaded(preloaded, Loader::recordedSha256);
             for (Loader.ModJar jar : preloaded) {
                 Declared declared;
                 try {
@@ -162,7 +162,7 @@ public final class Lifecycle {
                 return;
             }
             List<Loader.ModJar> jars = Loader.loadedThisPass(pass);
-            JarHistory.passLoaded(jars);
+            JarHistory.passLoaded(jars, Loader::recordedSha256);
             Map<String, List<Path>> loaded = byMod(jars);
             HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
             loaded.forEach(Lifecycle::load);

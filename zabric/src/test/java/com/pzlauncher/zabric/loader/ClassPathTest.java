@@ -27,9 +27,9 @@ class ClassPathTest {
         Path first = jar("first.jar", "a/b/Main.class", "a/b/sub/Other.class");
         Path second = jar("second.jar", "a/b/Main.class");
         try (URLClassLoader loader = loader(first, second)) {
-            assertEquals(first.toRealPath(), ClassPath.servingJar("a.b", List.of(second, first), loader));
+            assertEquals(first.toRealPath(), ClassPath.of(List.of(second, first), loader).servingJar("a.b"));
             // a subpackage is another package
-            assertEquals(first.toRealPath(), ClassPath.servingJar("a.b.sub", List.of(first, second), loader));
+            assertEquals(first.toRealPath(), ClassPath.of(List.of(first, second), loader).servingJar("a.b.sub"));
         }
     }
 
@@ -39,7 +39,7 @@ class ClassPathTest {
         Path second = jar("second.jar", "a/b/Main.class", "a/b/OnlyHere.class");
         try (URLClassLoader loader = loader(first, second)) {
             IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> ClassPath.servingJar("a.b", List.of(first, second), loader));
+                    () -> ClassPath.of(List.of(first, second), loader).servingJar("a.b"));
             assertTrue(e.getMessage().startsWith("the classes of a.b are served from more than one jar: "),
                     e.getMessage());
         }
@@ -49,8 +49,8 @@ class ClassPathTest {
     void noJarHoldingThePackageIsNull() throws Exception {
         Path jar = jar("m.jar", "a/b/Main.class", "a/bc/Main.class");
         try (URLClassLoader loader = loader(jar)) {
-            assertNull(ClassPath.servingJar("a", List.of(jar), loader));
-            assertNull(ClassPath.servingJar("a.b.c", List.of(jar), loader));
+            assertNull(ClassPath.of(List.of(jar), loader).servingJar("a"));
+            assertNull(ClassPath.of(List.of(jar), loader).servingJar("a.b.c"));
         }
     }
 
@@ -58,14 +58,21 @@ class ClassPathTest {
     void aJarTheClassLoaderDoesNotSearchIsAnError() throws Exception {
         Path jar = jar("m.jar", "a/b/Main.class");
         try (URLClassLoader loader = loader()) {
-            assertThrows(IllegalStateException.class, () -> ClassPath.servingJar("a.b", List.of(jar), loader));
+            assertThrows(IllegalStateException.class, () -> ClassPath.of(List.of(jar), loader).servingJar("a.b"));
         }
     }
 
     @Test
+    void aJarThatDoesNotReadIsAnErrorNamingIt() throws Exception {
+        Path jar = Files.writeString(dir.resolve("broken.jar"), "no jar");
+        IOException e = assertThrows(IOException.class, () -> ClassPath.of(List.of(jar), loader()));
+        assertTrue(e.getMessage().contains(jar.toString()), e.getMessage());
+    }
+
+    @Test
     void notAPackageName() {
-        assertThrows(IllegalArgumentException.class, () -> ClassPath.servingJar("a/b", List.of(), loader()));
-        assertThrows(IllegalArgumentException.class, () -> ClassPath.servingJar("", List.of(), loader()));
+        assertThrows(IllegalArgumentException.class, () -> ClassPath.of(List.of(), loader()).servingJar("a/b"));
+        assertThrows(IllegalArgumentException.class, () -> ClassPath.of(List.of(), loader()).servingJar(""));
     }
 
     private static URLClassLoader loader(Path... jars) throws IOException {

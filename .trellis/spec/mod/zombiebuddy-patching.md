@@ -38,7 +38,8 @@ agent) rewrites those two and rebuilds every mod on Zabric:
   `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
   Which jars the loader loaded, and which one serves a package, is that API
   ([`com.pzlauncher.zabric.mods`](../../../zabric/src/main/java/com/pzlauncher/zabric/mods/package-info.java)): the
-  loader's records keep stale jars and no package, so ask `JavaMods.servingJar`, not the records.
+  loader's records keep stale jars and no package, so ask `JavaMods.servingJar`, not the records. Which mods of a folder
+  it would load is `JavaMods.inFolder`; do not read `mod.info` for Java keys yourself.
 - Hooks: the glue `zabric-processor`'s generator writes, through javac or KSP ([Zabric Hooks](./zabric-hooks.md)).
   Mod code uses only Zabric's hook API
   ([`com.pzlauncher.zabric.hook`](../../../zabric/src/main/java/com/pzlauncher/zabric/hook/package-info.java)).

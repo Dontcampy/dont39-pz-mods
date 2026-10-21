@@ -6,6 +6,6 @@ public enum LoadPhase {
     PRELOAD,
     /** In the first pass over the mod list: the main menu's mods on a client, the server's on a dedicated server. */
     STARTUP,
-    /** In a later pass: joining a server, leaving one. */
+    /** In any later pass over the mod list: joining or leaving a server, and the main menu's mod reloads. */
     LATER
 }

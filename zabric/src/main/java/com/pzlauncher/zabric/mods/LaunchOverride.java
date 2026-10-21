@@ -22,8 +22,8 @@ import java.util.Map;
  * it over. A request that is not valid at that start is discarded whole, with an error in the log. Items that hold
  * ZombieBuddy, Zabric or ZabricKotlin are refused: they run before the first pass.
  * <p>
- * Call on the main thread, from a main entrypoint or later. Every method throws when Zabric did not run at game start
- * or its entrypoints are stopped for the session.
+ * Call from a main entrypoint or later, on any thread. Every method throws when Zabric did not run at game start or
+ * its entrypoints are stopped for the session.
  */
 public final class LaunchOverride {
     private LaunchOverride() {

@@ -13,7 +13,7 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars, merged list | `buildSrc/src/main/kotlin/widening/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts` |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/`: facade and per-mod status `AccessWidener.java`, scan `WidenerScan.java` / `ModFolders.java`, modifier changes `WidenerTransform.java` |
-| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list hook) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java` |
+| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list hook, `mod.info` rules) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java`, `ModInfo.java` |
 | Entrypoints, preload registration | `zabric/.../entrypoint/Lifecycle.java` (phases), `Entrypoints.java` (manifest, instantiation), `Preload.java`, `PreLaunchHook.java` |
 | Helpers shared by Zabric's packages (`[Zabric]` log prefix, jar reading) | `zabric/.../internal/` |
 | Hook runtime for other mods' glue | `zabric/.../hook/` ([Zabric Hooks](./zabric-hooks.md)) |
@@ -80,8 +80,9 @@ Reference feature: `ime-keyboard-fix` (game fields).
   helper included; `Relaunch.unavailable()` names the reason, and callers keep their manual path.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
-- After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
-  and the `loadMods` hook (`ModsLoadedHook.java`).
+- After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`),
+  the `loadMods` hook (`ModsLoadedHook.java`), and its `mod.info` and jar rules, which `ModInfo.java` re-implements
+  (ZombieBuddy's parser is private; `LaunchOverride`'s refusal and `JavaMods.inFolder` use it).
 
 ## Entrypoints and Preload Registration
 

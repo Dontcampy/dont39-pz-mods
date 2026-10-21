@@ -55,7 +55,7 @@ internal object GameLaunch : Launch {
 
   override fun request(modsByItem: Map<String, Path>) = LaunchOverride.request(modsByItem)
 
-  override fun servingJar(pkg: String): Path? = JavaMods.servingJar(pkg)?.path
+  override fun servingJar(pkg: String): Path? = JavaMods.servingJar(pkg)?.path()
 
   // loadMods("default") fills this list from default.txt and passes the same list to loadMods(List)
   override fun mainMenuMods(): Set<String> = ActiveMods.getById("default").mods.toSet()

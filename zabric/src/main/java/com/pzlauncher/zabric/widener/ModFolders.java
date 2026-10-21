@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.pzlauncher.zabric.internal.Folders.children;
+
 /**
  * Where the game finds mods, worked out without the game ({@link GameFolders}), plus this launch's override folders and
  * the registered widening roots. Includes folders the game may not use this session: widening too much is harmless,
@@ -73,11 +75,5 @@ final class ModFolders {
             }
         }
         return jars;
-    }
-
-    static List<Path> children(Path dir) throws IOException {
-        try (Stream<Path> list = Files.list(dir)) {
-            return list.filter(Files::isDirectory).toList();
-        }
     }
 }

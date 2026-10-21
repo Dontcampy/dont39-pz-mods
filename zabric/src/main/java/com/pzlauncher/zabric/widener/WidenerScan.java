@@ -2,6 +2,7 @@ package com.pzlauncher.zabric.widener;
 
 import com.pzlauncher.zabric.classtweaker.ClassTweaker;
 import com.pzlauncher.zabric.classtweaker.ClassTweaker.Entry;
+import com.pzlauncher.zabric.internal.Folders;
 import com.pzlauncher.zabric.internal.Jars;
 
 import java.io.IOException;
@@ -56,7 +57,7 @@ final class WidenerScan {
             for (Path folder : folders) {
                 List<Path> mods;
                 try {
-                    mods = ModFolders.children(folder);
+                    mods = Folders.children(folder);
                 } catch (IOException | RuntimeException e) {
                     unreadable.put(real(folder), e.toString());
                     continue;

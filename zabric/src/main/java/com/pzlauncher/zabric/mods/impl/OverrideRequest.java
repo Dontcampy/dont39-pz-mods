@@ -3,6 +3,7 @@ package com.pzlauncher.zabric.mods.impl;
 import com.pzlauncher.zabric.internal.AtomicWrite;
 import com.pzlauncher.zabric.internal.GameFolders;
 import com.pzlauncher.zabric.internal.GameSide;
+import com.pzlauncher.zabric.loader.Loader;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -11,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +23,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * The request file of a launch override: Workshop item id = absolute path of the folder of mod folders that replaces
@@ -74,10 +75,13 @@ public final class OverrideRequest {
 
     /** The request in {@code file}, empty when there is none; throws when the file does not read as one. */
     public static Map<String, Path> read(Path file) throws IOException {
-        if (!Files.exists(file)) {
+        String content;
+        try {
+            content = Files.readString(file, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
             return Map.of();
         }
-        return parse(file, Files.readString(file, StandardCharsets.UTF_8));
+        return parse(file, content);
     }
 
     /** A request file as game start read it: its bytes, and the request in them. */
@@ -149,7 +153,7 @@ public final class OverrideRequest {
                 return;
             }
             try {
-                Map<Path, Set<String>> mods = mods(folder);
+                Map<Path, Set<String>> mods = Loader.modIds(folder);
                 if (mods.isEmpty()) {
                     problems.add("item " + id + ": " + folder + " holds no mod folder (one with common/mod.info or"
                             + " a version folder's mod.info)");
@@ -165,8 +169,8 @@ public final class OverrideRequest {
                     continue;
                 }
                 try {
-                    refused(mods(installed)).forEach(modId -> problems.add("item " + id + ": its installed copy "
-                            + installed + " holds the mod " + modId + ", which cannot be overridden"));
+                    refused(Loader.modIds(installed)).forEach(modId -> problems.add("item " + id + ": its installed"
+                            + " copy " + installed + " holds the mod " + modId + ", which cannot be overridden"));
                 } catch (IOException | RuntimeException e) {
                     problems.add("item " + id + ": cannot read its installed copy " + installed + ": " + e);
                 }
@@ -179,44 +183,5 @@ public final class OverrideRequest {
         Set<String> refused = new LinkedHashSet<>();
         mods.values().forEach(ids -> ids.stream().filter(REFUSED::contains).forEach(refused::add));
         return refused;
-    }
-
-    // the mod folders the game would find in a folder of mod folders, with every id their mod.info files name
-    private static Map<Path, Set<String>> mods(Path modsFolder) throws IOException {
-        Map<Path, Set<String>> mods = new TreeMap<>();
-        for (Path mod : children(modsFolder)) {
-            Set<String> ids = new LinkedHashSet<>();
-            boolean found = false;
-            for (Path version : children(mod)) {
-                Path inf = version.resolve("mod.info");
-                if (Files.isRegularFile(inf)) {
-                    found = true;
-                    ids.addAll(ids(inf));
-                }
-            }
-            if (found) {
-                mods.put(mod, ids);
-            }
-        }
-        return mods;
-    }
-
-    private static List<String> ids(Path inf) throws IOException {
-        // the ids that matter are ASCII; this never fails on another encoding
-        String text = new String(Files.readAllBytes(inf), StandardCharsets.ISO_8859_1);
-        List<String> ids = new ArrayList<>();
-        text.lines().forEach(line -> {
-            int eq = line.indexOf('=');
-            if (eq > 0 && line.substring(0, eq).strip().equalsIgnoreCase("id")) {
-                ids.add(line.substring(eq + 1).strip());
-            }
-        });
-        return ids;
-    }
-
-    private static List<Path> children(Path dir) throws IOException {
-        try (Stream<Path> list = Files.list(dir)) {
-            return list.filter(Files::isDirectory).toList();
-        }
     }
 }

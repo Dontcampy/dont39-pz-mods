@@ -86,9 +86,9 @@ public final class Relaunch {
     /**
      * Quits the game to start it again, without the arguments at {@code omitted} (indices into {@link #arguments()}),
      * which are cut from the command line together with the space before them; the rest stays as it is. Returns once
-     * the game is quitting. Throws, and leaves the game running, when the restart cannot be set up:
-     * {@link #unavailable()} names a reason, an index is not in {@link #arguments()}, or the helper process did not
-     * start.
+     * the game is quitting; until then it blocks the main thread while the helper starts, up to 10 s. Throws, and
+     * leaves the game running, when the restart cannot be set up: {@link #unavailable()} names a reason, an index is
+     * not in {@link #arguments()}, or the helper process did not start.
      */
     public static void restart(Set<Integer> omitted) throws IOException {
         Lifecycle.requireRunning("Relaunch.restart");

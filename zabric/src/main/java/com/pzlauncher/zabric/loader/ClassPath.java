@@ -6,32 +6,69 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/** Which jar a class loader takes a package's classes from; the loader's records name jars, not packages. */
-final class ClassPath {
-    private ClassPath() {
+/**
+ * Which jar a class loader takes a package's classes from, for a fixed set of jars; the loader's records name jars, not
+ * packages.
+ */
+public final class ClassPath {
+    private final ClassLoader loader;
+    // package folder → jar → its classes in that folder
+    private final Map<String, Map<Path, List<String>>> classes;
+
+    private ClassPath(ClassLoader loader, Map<String, Map<Path, List<String>>> classes) {
+        this.loader = loader;
+        this.classes = classes;
     }
 
-    static Path servingJar(String pkg, Collection<Path> jars, ClassLoader loader) throws IOException {
+    static ClassPath of(Collection<Path> jars, ClassLoader loader) throws IOException {
+        Map<String, Map<Path, List<String>>> classes = new HashMap<>();
+        for (Path jar : jars) {
+            try (ZipFile zip = new ZipFile(jar.toFile())) {
+                for (ZipEntry entry : Collections.list(zip.entries())) {
+                    String name = entry.getName();
+                    int slash = name.lastIndexOf('/');
+                    if (slash > 0 && name.endsWith(".class")) {
+                        classes.computeIfAbsent(name.substring(0, slash + 1), k -> new LinkedHashMap<>())
+                                .computeIfAbsent(jar, k -> new ArrayList<>()).add(name);
+                    }
+                }
+            } catch (IOException e) {
+                throw new IOException("cannot list the classes of " + jar + ": " + e.getMessage(), e);
+            }
+        }
+        return new ClassPath(loader, classes);
+    }
+
+    /**
+     * Which jar the class loader serves the classes of {@code pkg} (exactly that package) from, or null when none of the
+     * jars holds a class of it. Throws when they are served from more than one jar, or from a jar the class loader does
+     * not name.
+     */
+    public Path servingJar(String pkg) throws IOException {
         if (pkg.isEmpty() || pkg.startsWith(".") || pkg.endsWith(".") || pkg.contains("/")) {
             throw new IllegalArgumentException("'" + pkg + "' is not a Java package name");
         }
-        String dir = pkg.replace('.', '/') + "/";
         // every class: a jar later on the search path still serves the classes the earlier ones lack
         Set<Path> servedFrom = new LinkedHashSet<>();
-        for (Path jar : jars) {
-            for (String entry : classes(jar, dir)) {
+        for (Map.Entry<Path, List<String>> jar : classes.getOrDefault(pkg.replace('.', '/') + "/", Map.of())
+                .entrySet()) {
+            for (String entry : jar.getValue()) {
                 URL url = loader.getResource(entry);
                 if (url == null) {
-                    throw new IllegalStateException("the class loader does not find " + entry + ", which " + jar
-                            + " holds");
+                    throw new IllegalStateException("the class loader does not find " + entry + ", which "
+                            + jar.getKey() + " holds");
                 }
                 servedFrom.add(jarOf(url));
             }
@@ -41,15 +78,6 @@ final class ClassPath {
                     + servedFrom);
         }
         return servedFrom.isEmpty() ? null : servedFrom.iterator().next();
-    }
-
-    private static List<String> classes(Path jar, String dir) throws IOException {
-        try (ZipFile zip = new ZipFile(jar.toFile())) {
-            return Collections.list(zip.entries()).stream()
-                    .map(ZipEntry::getName)
-                    .filter(n -> n.startsWith(dir) && n.endsWith(".class") && n.indexOf('/', dir.length()) < 0)
-                    .toList();
-        }
     }
 
     private static Path jarOf(URL url) throws IOException {

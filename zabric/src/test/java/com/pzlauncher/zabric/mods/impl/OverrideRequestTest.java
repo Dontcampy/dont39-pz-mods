@@ -86,6 +86,18 @@ class OverrideRequestTest {
     }
 
     @Test
+    void theRefusalReadsEveryVersionFolderAndEveryIdLine() throws Exception {
+        Path folder = modsFolder("w/mods", "Wrapper", "42");
+        Path old = folder.resolve("Wrapper/41/mod.info");
+        Files.createDirectories(old.getParent());
+        Files.writeString(old, " ID = ZombieBuddy \nid=Wrapper\n");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> OverrideRequest.write(file(),
+                Map.of("111", folder), content()));
+        assertEquals("launch override not requested: item 111: " + folder + " holds the mod ZombieBuddy, which cannot"
+                + " be overridden", e.getMessage());
+    }
+
+    @Test
     void peekingChecksAndKeepsTheFileTakingDeletesIt() throws Exception {
         Path file = file();
         assertNull(OverrideRequest.peek(file, content()));
