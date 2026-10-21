@@ -114,6 +114,25 @@ class JarHistoryTest {
     }
 
     @Test
+    void anIndexReadAcrossAPassIsNotKept() throws Exception {
+        List<List<Path>> indexed = new ArrayList<>();
+        JarHistory.indexer = jars -> {
+            indexed.add(jars);
+            if (indexed.size() == 1) {
+                // a pass on the main thread while a worker reads the jars
+                JarHistory.passLoaded(List.of(MOD, SERVERS_MOD), HASHES);
+            }
+            return pkg -> MOD.jar();
+        };
+        JarHistory.passLoaded(List.of(MOD), HASHES);
+        assertEquals("m", JarHistory.servingJar("m").modId());
+        JarHistory.servingJar("m");
+        assertEquals(List.of(List.of(MOD.jar()), List.of(MOD.jar(), SERVERS_MOD.jar())), indexed);
+        JarHistory.servingJar("m");
+        assertEquals(2, indexed.size());
+    }
+
+    @Test
     void aServingJarTheLoaderDidNotRecordIsAnError() {
         JarHistory.indexer = jars -> pkg -> Path.of("/elsewhere/other.jar");
         JarHistory.passLoaded(List.of(MOD), HASHES);

@@ -66,9 +66,10 @@ public final class JavaMods {
 
     /**
      * A mod whose jar the loader loads on a client, as the files in its folder say: {@link #folder()} the mod folder,
-     * {@link #id()} its mod id (null when its {@code mod.info} has none), {@link #name()} its name (its id or folder name
-     * when it has none), {@link #jar()} the jar its {@code javaJarFile} names, {@link #pkg()} its {@code javaPkgName}.
-     * {@link #preload()}: the loader or Zabric runs it at game start, before any pass over the mod list.
+     * {@link #id()} its mod id (null when its {@code mod.info} has none), {@link #name()} its name (its id or folder
+     * name when it has none), {@link #jar()} the jar its {@code javaJarFile} names, {@link #pkg()} its
+     * {@code javaPkgName}. {@link #preload()}: the loader or Zabric runs it at game start, before any pass over the
+     * mod list.
      */
     public static final class Mod {
         private final Loader.JavaMod mod;
@@ -121,7 +122,10 @@ public final class JavaMods {
     private JavaMods() {
     }
 
-    /** Every jar the loader loaded this JVM, in the order it loaded them. */
+    /**
+     * Every jar the loader loaded this JVM, in the order it loaded them. Throws when the loader's records did not give
+     * the SHA-256 of one of them.
+     */
     public static List<Jar> loaded() {
         Lifecycle.requireRunning("JavaMods.loaded");
         return JarHistory.loaded().stream().map(Jar::new).toList();
@@ -129,7 +133,8 @@ public final class JavaMods {
 
     /**
      * The jars the loader approved and loaded for the mods of the latest pass over the mod list, including those it
-     * had loaded in an earlier pass. Mods preloaded at game start count only when they are in that mod list.
+     * had loaded in an earlier pass. Mods preloaded at game start count only when they are in that mod list. Throws
+     * when no pass has finished yet, or as {@link #loaded} does.
      */
     public static List<Jar> lastPass() {
         Lifecycle.requireRunning("JavaMods.lastPass");
@@ -138,8 +143,8 @@ public final class JavaMods {
 
     /**
      * The loaded jar whose classes of {@code pkg} (exactly that package, not its subpackages) the game runs, or null
-     * when no loaded jar holds a class of it. Throws when they come from more than one jar, or from a jar the loader did
-     * not record loading.
+     * when no loaded jar holds a class of it. Throws when they come from more than one jar, or from a jar the loader
+     * did not record loading, and naming a loaded jar that cannot be read.
      */
     public static Jar servingJar(String pkg) throws IOException {
         Lifecycle.requireRunning("JavaMods.servingJar");

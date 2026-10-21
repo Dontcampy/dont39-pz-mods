@@ -45,10 +45,11 @@ public final class Lifecycle {
     private static final List<Called> preLaunchCalls = new ArrayList<>();
     private static final Set<String> preLaunched = new HashSet<>();
 
-    private static boolean zabricLoaded;
-    private static boolean zabricPreloaded;
+    // volatile: requireRunning reads them without the lock, which a pass holds while mods' entrypoints run
+    private static volatile boolean zabricLoaded;
+    private static volatile boolean zabricPreloaded;
     private static boolean started;
-    private static boolean stopped;
+    private static volatile boolean stopped;
     private static final Set<String> registered = new HashSet<>();
     private static final Set<String> mainCalled = new HashSet<>();
 
@@ -115,8 +116,9 @@ public final class Lifecycle {
      * restart covers all of them, and runs no entrypoints.
      */
     public static synchronized void onZabricMain(boolean preloaded) {
-        zabricLoaded = true;
+        // in this order: requireRunning reads zabricLoaded first
         zabricPreloaded = preloaded;
+        zabricLoaded = true;
         Preload.register("Zabric", preloaded);
         try {
             if (preloaded) {
@@ -175,7 +177,7 @@ public final class Lifecycle {
      * Throws, naming {@code call}, unless Zabric's services for mods are available: from Zabric's Main on, on a launch
      * where Zabric ran at game start, until its entrypoints stop for the session.
      */
-    public static synchronized void requireRunning(String call) {
+    public static void requireRunning(String call) {
         String why = !zabricLoaded ? "Zabric's Main has not run yet"
                 : !zabricPreloaded ? "Zabric did not run at game start this launch; restart the game once"
                 : stopped ? "Zabric's entrypoints are stopped for this session (see the log)" : null;

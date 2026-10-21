@@ -43,6 +43,7 @@ public final class JarHistory {
     private static int passes;
     // the loaded jars change only with a pass, so their packages are read once per pass
     private static Packages packages;
+    private static int changes;
     private static final Indexer LOADER = jars -> Loader.classPath(jars)::servingJar;
     static Indexer indexer = LOADER;
 
@@ -57,6 +58,7 @@ public final class JarHistory {
         Hashes hashes = Hashes.read(sha256);
         jars.forEach(j -> loaded.putIfAbsent(j.jar(), hashes.entry(j, LoadPhase.PRELOAD)));
         packages = null;
+        changes++;
     }
 
     /** After each pass over the mod list, with the jars the loader loaded for its mods. */
@@ -68,6 +70,7 @@ public final class JarHistory {
         jars.forEach(j -> pass.add(loaded.computeIfAbsent(j.jar(), k -> hashes.entry(j, phase))));
         lastPass = List.copyOf(pass);
         packages = null;
+        changes++;
     }
 
     public static synchronized List<Entry> loaded() {
@@ -82,20 +85,43 @@ public final class JarHistory {
     }
 
     /** The loaded jar the game runs the classes of {@code pkg} from, or null when no loaded jar holds a class of it. */
-    public static synchronized Entry servingJar(String pkg) throws IOException {
-        if (packages == null) {
-            packages = indexer.index(List.copyOf(loaded.keySet()));
-        }
-        Path serving = packages.servingJar(pkg);
+    public static Entry servingJar(String pkg) throws IOException {
+        Path serving = packages().servingJar(pkg);
         if (serving == null) {
             return null;
         }
-        Entry jar = loaded.get(serving);
+        Entry jar;
+        synchronized (JarHistory.class) {
+            jar = loaded.get(serving);
+        }
         if (jar == null) {
             throw new IllegalStateException("the classes of " + pkg + " come from " + serving + ", which "
                     + Loader.name() + " " + Loader.version() + " did not record loading");
         }
         return jar;
+    }
+
+    // read outside the lock, so that a worker reading jars does not hold up a pass on the main thread
+    private static Packages packages() throws IOException {
+        List<Path> jars;
+        Indexer by;
+        int at;
+        synchronized (JarHistory.class) {
+            if (packages != null) {
+                return packages;
+            }
+            jars = List.copyOf(loaded.keySet());
+            by = indexer;
+            at = changes;
+        }
+        Packages read = by.index(jars);
+        synchronized (JarHistory.class) {
+            // a pass meanwhile: this call still uses what it read, the next one reads again
+            if (changes == at) {
+                packages = read;
+            }
+        }
+        return read;
     }
 
     private static List<Entry> checked(List<Entry> jars) {
@@ -127,6 +153,7 @@ public final class JarHistory {
         lastPass = null;
         passes = 0;
         packages = null;
+        changes = 0;
         indexer = LOADER;
     }
 }

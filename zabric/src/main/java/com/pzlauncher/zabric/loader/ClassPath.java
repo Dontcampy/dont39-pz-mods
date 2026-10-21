@@ -52,9 +52,9 @@ public final class ClassPath {
     }
 
     /**
-     * Which jar the class loader serves the classes of {@code pkg} (exactly that package) from, or null when none of the
-     * jars holds a class of it. Throws when they are served from more than one jar, or from a jar the class loader does
-     * not name.
+     * Which jar the class loader serves the classes of {@code pkg} (exactly that package) from, or null when none of
+     * the jars holds a class of it. Throws when they are served from more than one jar, or from a jar the class loader
+     * does not name.
      */
     public Path servingJar(String pkg) throws IOException {
         if (pkg.isEmpty() || pkg.startsWith(".") || pkg.endsWith(".") || pkg.contains("/")) {
