@@ -7,11 +7,12 @@ import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 
 import java.lang.instrument.Instrumentation;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,12 +22,20 @@ import java.util.function.Supplier;
 import static com.pzlauncher.zabric.internal.Log.PREFIX;
 
 /**
- * This launch's override of Workshop item folders: read from the request file at premain, applied by
- * {@link ItemFoldersHook} to every pass over the mod list, reported at MAIN.
+ * This launch's override of Workshop item folders. Premain cannot tell a client from a dedicated server, so it reads
+ * both sides' request files, widens their folders and installs {@link ItemFoldersHook}; the game's main method (the
+ * preLaunch hook) takes its own side's file, and only then does the hook replace anything. Reported at MAIN.
  */
 public final class LaunchOverrides {
     static final String TARGET = "zombie.ZomboidFileSystem";
 
+    /** A request file found at premain: its bytes and request when valid, else why not. */
+    private record Seen(Path file, byte[] content, Map<String, Path> request, String problem, Throwable error) {
+    }
+
+    private static volatile Path zabricDir;
+    private static volatile Map<GameSide, Seen> seen = Map.of();
+    private static volatile boolean sideKnown;
     private static volatile Map<String, Path> request = Map.of();
     private static volatile String discarded;
     private static volatile Throwable discardedError;
@@ -40,66 +49,111 @@ public final class LaunchOverrides {
     }
 
     /**
-     * Called by Zabric's PreMain before the widener scans, which reads the requested folders' lists. Never throws,
-     * logs nothing and touches no game class.
+     * Called by Zabric's PreMain before the widener scans, which reads the requested folders' lists. Deletes nothing.
+     * Never throws, logs nothing and touches no game class.
      */
     public static void read() {
         try {
-            read(GameSide.command(), GameFolders.zabricDir(), GameFolders.workshopContent());
+            read(GameFolders.zabricDir(), GameFolders.workshopContent());
         } catch (Throwable t) {
-            request = Map.of();
             discarded = "no request read: " + t;
             discardedError = t;
         }
     }
 
-    static void read(String command, Path zabricDir, List<Path> workshopContent) {
-        GameSide side = GameSide.ofCommand(command);
-        if (side == null) {
-            // without a request file there is nothing this launch could get wrong
-            if (Arrays.stream(GameSide.values()).anyMatch(s -> Files.exists(OverrideRequest.file(zabricDir, s)))) {
-                // reading the other side's request would apply it to the wrong process
-                discarded = "no request read: cannot tell a client from a dedicated server by the main class of '"
-                        + command + "' (expected " + GameSide.CLIENT.mainClass + " or " + GameSide.SERVER.mainClass
-                        + ")";
+    static void read(Path dir, List<Path> workshopContent) {
+        zabricDir = dir;
+        Map<GameSide, Seen> found = new EnumMap<>(GameSide.class);
+        for (GameSide side : GameSide.values()) {
+            Path file = OverrideRequest.file(dir, side);
+            try {
+                OverrideRequest.Peeked peeked = OverrideRequest.peek(file, workshopContent);
+                if (peeked != null) {
+                    found.put(side, new Seen(file, peeked.content(), peeked.request(), null, null));
+                }
+            } catch (OverrideRequest.Invalid e) {
+                found.put(side, new Seen(file, null, Map.of(), e.getMessage(), null));
+            } catch (Throwable t) {
+                found.put(side, new Seen(file, null, Map.of(), t.toString(), t));
             }
-            request = Map.of();
-            return;
         }
-        Path file = OverrideRequest.file(zabricDir, side);
-        try {
-            request = OverrideRequest.consume(file, workshopContent);
-        } catch (OverrideRequest.Invalid e) {
-            request = Map.of();
-            discarded = "discarded the request in " + file + ", so nothing is applied: " + e.getMessage();
-        } catch (Throwable t) {
-            request = Map.of();
-            discarded = "discarded the request in " + file + ", so nothing is applied: " + t;
-            discardedError = t;
-        }
+        seen = found;
     }
 
-    /** Called by Zabric's PreMain; installs the hook only when there is a request. Never throws and logs nothing. */
+    /**
+     * Called by Zabric's PreMain; installs the hook only when a side has a valid request. Never throws and logs
+     * nothing.
+     */
     public static void install() {
         install(Loader::instrumentation, TARGET);
     }
 
     static void install(Supplier<Instrumentation> instrumentation, String target) {
-        Map<String, Path> r = request;
-        if (r.isEmpty()) {
+        if (folders().isEmpty()) {
             return;
         }
         try {
-            ItemFoldersHook.install(instrumentation.get(), target, r);
+            ItemFoldersHook.install(instrumentation.get(), target);
         } catch (Throwable t) {
             fail(new IllegalStateException("cannot install its hook on " + target + "." + ItemFoldersHook.METHOD
                     + ": " + t, t));
         }
     }
 
-    /** The folders of this launch's request, valid or none; empty when premain did not read one. */
+    /** The folders of both sides' valid requests, for the widener at premain: widening too much is harmless. */
     public static List<Path> folders() {
-        return List.copyOf(request.values());
+        Set<Path> folders = new LinkedHashSet<>();
+        seen.values().forEach(s -> folders.addAll(s.request().values()));
+        return List.copyOf(folders);
+    }
+
+    /**
+     * Called on entry to the game's main method, before the startup pass lists any mod folder: takes the request file
+     * of {@code mainClass}'s side and applies the request premain checked. The other side's file stays. Never throws,
+     * logs nothing and touches no game class.
+     */
+    public static synchronized void preLaunch(String mainClass) {
+        if (sideKnown) {
+            return;
+        }
+        sideKnown = true;
+        GameSide side = GameSide.ofMainClass(mainClass);
+        Path dir = zabricDir;
+        if (side == null || dir == null) {
+            if (!seen.isEmpty()) {
+                discarded = "no request read: " + (side == null ? mainClass + " is neither the client's nor the"
+                        + " server's main class" : "Zabric did not read the request files at game start");
+            }
+            return;
+        }
+        Path file = OverrideRequest.file(dir, side);
+        String why = "discarded the request in " + file + ", so nothing is applied: ";
+        byte[] now;
+        try {
+            now = OverrideRequest.take(file);
+        } catch (Throwable t) {
+            discarded = why + t;
+            discardedError = t;
+            return;
+        }
+        Seen at = seen.get(side);
+        if (at == null) {
+            if (now != null) {
+                discarded = why + "it was written after game start, so the mods in its folders were not widened";
+            }
+            return;
+        }
+        if (at.problem() != null) {
+            discarded = why + at.problem();
+            discardedError = at.error();
+            return;
+        }
+        if (now == null || !Arrays.equals(now, at.content())) {
+            discarded = why + "it changed between game start and the game's main method";
+            return;
+        }
+        request = at.request();
+        ItemFoldersHook.activate(request);
     }
 
     /** The requested items the game listed, with their folders. Throws when the override failed this launch. */
@@ -123,6 +177,11 @@ public final class LaunchOverrides {
             return;
         }
         reported = true;
+        if (!sideKnown && !seen.isEmpty()) {
+            DebugType.Mod.error(PREFIX + "launch override: no request applied: Zabric's preLaunch hook did not run, so"
+                    + " it could not tell a client from a dedicated server; the request files stay: %s",
+                    seen.values().stream().map(Seen::file).toList());
+        }
         if (discarded != null) {
             if (discardedError != null) {
                 DebugType.Mod.printException(discardedError, PREFIX + "launch override: " + discarded,
@@ -187,7 +246,11 @@ public final class LaunchOverrides {
 
     // tests start from a launch without a request
     static synchronized void reset() {
+        zabricDir = null;
+        seen = Map.of();
+        sideKnown = false;
         request = Map.of();
+        ItemFoldersHook.activate(Map.of());
         discarded = null;
         discardedError = null;
         listed.clear();

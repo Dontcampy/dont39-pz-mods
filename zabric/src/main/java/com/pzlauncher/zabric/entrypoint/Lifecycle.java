@@ -4,6 +4,7 @@ import com.pzlauncher.zabric.entrypoint.Entrypoints.Declared;
 import com.pzlauncher.zabric.hook.impl.HookRuntime;
 import com.pzlauncher.zabric.loader.Loader;
 import com.pzlauncher.zabric.mods.impl.JarHistory;
+import com.pzlauncher.zabric.mods.impl.LaunchOverrides;
 import zombie.core.Core;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
@@ -71,12 +72,16 @@ public final class Lifecycle {
         }
     }
 
-    /** Called on entry to the game's main method. Never throws into it, logs nothing and touches no game class. */
-    public static synchronized void preLaunch() {
+    /**
+     * Called on entry to the main method of {@code mainClass}. Never throws into it, logs nothing and touches no game
+     * class.
+     */
+    public static synchronized void preLaunch(String mainClass) {
         if (preLaunchRan) {
             return;
         }
         preLaunchRan = true;
+        LaunchOverrides.preLaunch(mainClass);
         if (!installed) {
             return;
         }

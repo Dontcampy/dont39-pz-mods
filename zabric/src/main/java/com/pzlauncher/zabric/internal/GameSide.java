@@ -18,25 +18,13 @@ public enum GameSide {
         this.id = id;
     }
 
-    /**
-     * The side whose main class starts {@code command} (the JVM's {@code sun.java.command}), or null. Without the game:
-     * at premain the main class is not loaded yet.
-     */
-    public static GameSide ofCommand(String command) {
-        String first = command.strip();
-        int space = first.indexOf(' ');
-        // a native launcher may name the class in its internal form
-        String mainClass = (space < 0 ? first : first.substring(0, space)).replace('/', '.');
+    /** The side whose main class is named {@code mainClass}, or null. */
+    public static GameSide ofMainClass(String mainClass) {
         for (GameSide side : values()) {
             if (side.mainClass.equals(mainClass)) {
                 return side;
             }
         }
         return null;
-    }
-
-    /** This JVM's command line, for {@link #ofCommand}. */
-    public static String command() {
-        return System.getProperty("sun.java.command", "");
     }
 }

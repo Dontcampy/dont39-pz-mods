@@ -50,10 +50,7 @@ public final class ItemFoldersHook {
      * describe. Throws when the class is loaded and could not be hooked; a later failure goes to
      * {@link LaunchOverrides#fail}.
      */
-    static void install(Instrumentation inst, String target, Map<String, Path> request) {
-        Map<String, String> byItem = new HashMap<>();
-        request.forEach((id, folder) -> byItem.put(id, folder.toString()));
-        folders = Map.copyOf(byItem);
+    static void install(Instrumentation inst, String target) {
         AtomicBoolean transformed = new AtomicBoolean();
         Set<Class<?>> loaded = new HashSet<>();
         for (Class<?> c : inst.getAllLoadedClasses()) {
@@ -96,6 +93,13 @@ public final class ItemFoldersHook {
         if (!loaded.isEmpty() && !transformed.get()) {
             throw new IllegalStateException(target + "." + METHOD + " was not hooked");
         }
+    }
+
+    /** Makes the advice put {@code request}'s folders in place; until then it replaces nothing. */
+    static void activate(Map<String, Path> request) {
+        Map<String, String> byItem = new HashMap<>();
+        request.forEach((id, folder) -> byItem.put(id, folder.toString()));
+        folders = Map.copyOf(byItem);
     }
 
     /** How often the game listed its installed items' folders. */

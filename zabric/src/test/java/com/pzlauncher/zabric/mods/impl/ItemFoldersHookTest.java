@@ -38,7 +38,7 @@ class ItemFoldersHookTest {
                     (self, method, args) -> null);
             assertTrue(Proxy.isProxyClass(proxy.getClass()));
             LaunchOverrides.reset();
-            ItemFoldersHook.install(Weaving.instrumentation(), FolderListHost.class.getName(), Map.of("111", OVERRIDE));
+            ItemFoldersHook.install(Weaving.instrumentation(), FolderListHost.class.getName());
             assertFalse(LaunchOverrides.failed(), "classes other than the target do not fail the hook");
             installed = true;
         }
@@ -47,6 +47,15 @@ class ItemFoldersHookTest {
     @BeforeEach
     void launchWithTheRequest() {
         LaunchOverrides.reset();
+        ItemFoldersHook.activate(Map.of("111", OVERRIDE));
+    }
+
+    @Test
+    void beforeTheSideIsKnownNothingIsReplaced() {
+        ItemFoldersHook.activate(Map.of());
+        List<String> folders = list();
+        assertEquals(STAGED, folders.get(0));
+        assertEquals(item("111"), folders.get(1));
     }
 
     @Test

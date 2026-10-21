@@ -16,7 +16,10 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.namedOneOf;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
-/** Advice on the entry of the game's main method, client and dedicated server, which calls {@link Lifecycle#preLaunch}. */
+/**
+ * Advice on the entry of the game's main method, client and dedicated server, which calls {@link Lifecycle#preLaunch}
+ * with the main class: the first point at which Zabric knows which side it runs on.
+ */
 final class PreLaunchHook {
     /** The main classes of the client and the dedicated server ({@code ProjectZomboid64.json}). */
     static final List<String> TARGETS = List.of(GameSide.CLIENT.mainClass, GameSide.SERVER.mainClass);
@@ -70,8 +73,8 @@ final class PreLaunchHook {
 
     private static final class Enter {
         @Advice.OnMethodEnter(suppress = Throwable.class)
-        static void enter() {
-            Lifecycle.preLaunch();
+        static void enter(@Advice.Origin("#t") String mainClass) {
+            Lifecycle.preLaunch(mainClass);
         }
     }
 }

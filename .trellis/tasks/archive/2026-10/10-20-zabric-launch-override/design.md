@@ -60,29 +60,35 @@ author contract in `workshop.txt` gains one line per class.
 - `<cache>/Zabric/launch-override-client.properties` and `-server.properties` (the game's `-cachedir`): key = Workshop
   item id, value = absolute path of a folder holding mod folders. `java.util.Properties`, written to a temp file and
   moved into place. One file per side, because a dedicated server on the same machine shares the cache folder and
-  would otherwise consume the client's request: `request` writes its own side's file, premain reads the file of the
-  side its main class names (`sun.java.command`, `PreLaunchHook.TARGETS`); an unknown main class reads none, an error at
-  MAIN only when a request file of either side exists (R6). `request(Map.of())` withdraws a pending request.
+  would otherwise consume the client's request: `request` writes its own side's file (`GameServer.server`).
+  `request(Map.of())` withdraws a pending request.
+- Premain cannot know the side: a launch through `ProjectZomboid64.exe` (JNI) has an empty `sun.java.command`, and its
+  main class comes from `ProjectZomboid64.json`. The side is decided where Zabric first knows it, the preLaunch hook on
+  the main class's `main` (`PreLaunchHook.TARGETS`), before the startup pass lists any folder.
 - `request` checks before writing: each folder exists and holds at least one mod folder (`common/mod.info` or a
   version folder's `mod.info`); no mod in the folder, nor in the client's installed copy of that item, has the id
   `ZombieBuddy`, `Zabric` or `ZabricKotlin` (R5). Failing items throw and nothing is written.
-- Premain, in order: read the request, `AccessWidener.install` (so that it scans the override folders, R4), install the
-  advice, `Lifecycle.install`. The request is read and the file deleted before anything else, so a crash later in this launch cannot carry it over (R1). Then the same checks as `request` with
-  plain file IO. Any failure discards the whole request (nothing applied) and is reported at MAIN as an error naming
-  the item; there is no partial apply.
-- The advice is installed only when a valid request was read.
+- Premain, in order: read both sides' files without deleting them and check each as `request` does, with plain file
+  IO; `AccessWidener.install`, which scans the folders of both valid requests (widening too much is harmless, R4);
+  install the advice when either side has a valid request; `Lifecycle.install`.
+- preLaunch, first thing in the game's `main`: read and delete its own side's file, so a crash later in this launch
+  cannot carry it over (R1), then activate the request premain checked. The other side's file stays. A file that was
+  invalid at premain, changed since, or appeared after it is discarded whole (nothing applied) and reported at MAIN;
+  there is no partial apply. Without a preLaunch call nothing is applied and both files stay, an error at MAIN.
+  [LaunchOverrides.java](../../../../../zabric/src/main/java/com/pzlauncher/zabric/mods/impl/LaunchOverrides.java)
 
 ## Advice
 
 `getInstalledItemModsFolders(List<String>)` RETURN (signature checked with `javap`): of the entries this call added,
 one whose normalized path is `<x>/<id>/mods` for a requested id is replaced by the requested folder; entries already in
-the list (other roots) are left alone. `ZomboidFileSystem` is already loaded at Zabric's premain (ZombieBuddy patches it
-first; [spike.md](../archive/2026-10/10-20-mod-sync-core/research/spike.md), `zombie.ZomboidFileSystem`), so the advice is
+the list (other roots) are left alone. It replaces nothing until preLaunch activates its side's request.
+`ZomboidFileSystem` is already loaded at Zabric's premain (ZombieBuddy patches it first;
+[spike.md](../10-20-mod-sync-core/research/spike.md), `zombie.ZomboidFileSystem`), so the advice is
 installed by retransformation, like `ModsLoadedHook` on ZombieBuddy's `Loader`: class described from its bytes
 (`POOL_ONLY`) so no game class loads, no class format changes, fail-fast. The transformer stays registered, so a later
 ZombieBuddy retransformation (a mod's hooks on `ZomboidFileSystem`, such as the core child's `FolderSwap`) gets the
 advice again beneath its own: their RETURN advice sees the list after the override
-([ItemFoldersHook.java](../../../zabric/src/main/java/com/pzlauncher/zabric/mods/impl/ItemFoldersHook.java)). With the core swap on for the
+([ItemFoldersHook.java](../../../../../zabric/src/main/java/com/pzlauncher/zabric/mods/impl/ItemFoldersHook.java)). With the core swap on for the
 same item and the same tree, `Swap.apply` finds no install folder to map and `Swap.verify` finds the tree, so both
 agree; `mod-sync-java` requests the tree the core child built.
 

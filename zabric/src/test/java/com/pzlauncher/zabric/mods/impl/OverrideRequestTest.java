@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,30 +86,32 @@ class OverrideRequestTest {
     }
 
     @Test
-    void consumingDeletesTheFileWhetherOrNotTheRequestIsValid() throws Exception {
+    void peekingChecksAndKeepsTheFileTakingDeletesIt() throws Exception {
         Path file = file();
-        assertEquals(Map.of(), OverrideRequest.consume(file, content()));
+        assertNull(OverrideRequest.peek(file, content()));
+        assertNull(OverrideRequest.take(file));
 
         Path folder = modsFolder("tree/111/mods", "Spiffo", "common");
         OverrideRequest.write(file, Map.of("111", folder), content());
-        assertEquals(Map.of("111", folder), OverrideRequest.consume(file, content()));
+        OverrideRequest.Peeked peeked = OverrideRequest.peek(file, content());
+        assertEquals(Map.of("111", folder), peeked.request());
+        assertArrayEquals(Files.readAllBytes(file), peeked.content());
+        assertArrayEquals(peeked.content(), OverrideRequest.take(file));
         assertFalse(Files.exists(file));
 
         // valid when written, not at the next start
         OverrideRequest.write(file, Map.of("111", folder), content());
         Files.delete(folder.resolve("Spiffo/common/mod.info"));
         OverrideRequest.Invalid e = assertThrows(OverrideRequest.Invalid.class,
-                () -> OverrideRequest.consume(file, content()));
+                () -> OverrideRequest.peek(file, content()));
         assertTrue(e.getMessage().contains("holds no mod folder"), e.getMessage());
-        assertFalse(Files.exists(file));
 
         Files.writeString(file, "111=\\u00zz\n");
-        assertThrows(IllegalStateException.class, () -> OverrideRequest.consume(file, content()));
-        assertFalse(Files.exists(file));
+        assertThrows(IllegalStateException.class, () -> OverrideRequest.peek(file, content()));
 
         Files.write(file, new byte[]{'1', '=', (byte) 0xff});
-        assertThrows(IOException.class, () -> OverrideRequest.consume(file, content()));
-        assertFalse(Files.exists(file));
+        assertThrows(IOException.class, () -> OverrideRequest.peek(file, content()));
+        assertTrue(Files.exists(file), "only the game's main method deletes it");
     }
 
     private Path file() {

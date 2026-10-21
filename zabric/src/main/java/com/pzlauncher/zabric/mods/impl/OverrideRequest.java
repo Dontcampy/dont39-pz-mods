@@ -80,23 +80,38 @@ public final class OverrideRequest {
         return parse(file, Files.readString(file, StandardCharsets.UTF_8));
     }
 
+    /** A request file as game start read it: its bytes, and the request in them. */
+    record Peeked(byte[] content, Map<String, Path> request) {
+    }
+
     /**
-     * At premain: reads the request and deletes the file before anything else, so that a crash later in the launch
-     * cannot apply it again, then checks it. Throws when anything is wrong with it: no partial request.
+     * At premain, which cannot tell which side it runs on: reads and checks the request without deleting it; null when
+     * there is no file. Throws when anything is wrong with it: no partial request.
      */
-    static Map<String, Path> consume(Path file, List<Path> workshopContent) throws IOException {
+    static Peeked peek(Path file, List<Path> workshopContent) throws IOException {
         if (!Files.exists(file)) {
-            return Map.of();
+            return null;
         }
         byte[] content = Files.readAllBytes(file);
-        Files.delete(file);
-        // decoded only now, so that a file that does not decode is gone too
         Map<String, Path> request = parse(file, utf8(content));
         List<String> problems = problems(request, workshopContent);
         if (!problems.isEmpty()) {
             throw new Invalid(String.join("; ", problems));
         }
-        return request;
+        return new Peeked(content, request);
+    }
+
+    /**
+     * At the start of the game's main method: the file's bytes, deleted before anything else, so that a crash later in
+     * the launch cannot apply it again; null when there is no file.
+     */
+    static byte[] take(Path file) throws IOException {
+        if (!Files.exists(file)) {
+            return null;
+        }
+        byte[] content = Files.readAllBytes(file);
+        Files.delete(file);
+        return content;
     }
 
     private static String utf8(byte[] bytes) throws CharacterCodingException {

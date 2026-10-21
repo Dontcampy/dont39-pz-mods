@@ -57,7 +57,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - It applies the lists of every installed mod: premain cannot see the game's mod list (`ModFolders.java`). It also
   reads this launch's override folders and the folders mods registered through `WidenRoots`.
 - Files it reads at premain live under `<cache>/Zabric/`; a request is per side, since a local dedicated server shares
-  the cache folder (`mods/impl/OverrideRequest.java`), and is deleted when read, before it is checked.
+  the cache folder. Premain cannot know the side, so the side is decided at preLaunch, which takes (deletes) its own
+  side's file before applying it (`mods/impl/LaunchOverrides.java`).
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
