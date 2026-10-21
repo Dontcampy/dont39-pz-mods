@@ -16,8 +16,9 @@ buildSrc/src/main/kotlin/
   pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
   pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, classtweaker variants
   pz-bundled-feature.gradle.kts      every feature: pz-bundled plus the descriptor variant; Lua-only features apply it
-  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled-feature, KSP glue,
+  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled-feature, pz-widening, KSP glue,
                                      allinone-common compile-only
+  pz-widening.gradle.kts             pzTargets and the module's .classtweaker: widened compile jars (access-widening.md)
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
   pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
@@ -26,7 +27,8 @@ buildSrc/src/main/kotlin/
                                      the merged media folder (MergeMedia.kt)
   smoke/                             smoke tests
   widening/                          target mods and widened compile jars (see access-widening.md)
-  check/                             class-reference checks and checkGlue (see zombiebuddy-patching.md, kotlin-runtime.md)
+  check/                             class-reference checks, checkGlue, checkJdkGlue (see zombiebuddy-patching.md,
+                                     kotlin-runtime.md, zabric-hooks.md)
 <feature-module>/                    one per feature, e.g. ime-keyboard-fix/
   build.gradle.kts                   the pz-feature plugin line, plus pzTargets for target mods
   src/main/kotlin/com/dont39/pz/<featurepkg>/  feature logic, with @Hooks objects and @LuaGlobal functions
@@ -54,6 +56,8 @@ zb-kt/                               shipped mod: Kotlin runtime library (see ko
 zb-kt-utils/                         shared Kotlin runtime, shipped in zb-kt's jar (see zb-kt-utils.md)
 zb-kt-utils-processor/               KSP front end on zabric-processor's generator, plus the Lua bridge; compile time only
 zb-skip-online-checks/               Java mod that skips ZombieBuddy's network requests; targets the loader itself (see zombiebuddy-patching.md#loader-seam)
+loading-progress/                    shipped mod: client-only Java mod, preloaded with launch-wide hooks; loading bar, own
+                                     frames and a timing report per load, switches on a mod options page (its README)
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua

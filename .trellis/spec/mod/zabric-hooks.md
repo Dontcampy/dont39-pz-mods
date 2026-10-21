@@ -35,12 +35,18 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   drops advice that fails verification without an error, so before release only a weave test catches it.
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
+- A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
+  weave check); Zabric loads a target's member types before retransforming it (`WeaveCheck.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers
   together; a change old readers must understand takes a new header version.
+- A preloaded mod's glue names only JDK types: ZombieBuddy loads advice signature types at premain, and the glue binds
+  every argument of a hooked method (`CheckJdkGlue.kt`).
 - Handlers never catch or gate; failures go to the hook class's gate (`HookGate.java`). Kotlin hook objects are gated by
   the module's facade ([ZabricKotlin Utils](./zb-kt-utils.md)).
+- Exit handlers also run after the hooks closed during the call; one that changes state other calls read checks
+  `ModHooks.open()` (`WeaveTest.exitPairsWithItsCallsEnter`).
 - Zabric's hook log lines are a contract: `smokeTest` and players' `console.txt` read them.
 - A hand-written ZombieBuddy `@Patch` is rejected unless marked `@UnsafeLoaderPatch`, a disclaimer that Zabric does not
   support it. This repo uses none.

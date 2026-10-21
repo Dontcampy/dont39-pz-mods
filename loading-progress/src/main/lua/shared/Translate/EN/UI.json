@@ -1,0 +1,7 @@
+{
+    "UI_Dont39LoadingProgress_Options": "Loading Progress",
+    "UI_Dont39LoadingProgress_Display": "Show the progress bar and log",
+    "UI_Dont39LoadingProgress_DisplayTooltip": "The bar and the log of what loads at the right edge of the screen, and frames of its own where the game loads without drawing. When off, loading looks as without this mod. Applies from the next launch of the game.",
+    "UI_Dont39LoadingProgress_Report": "Write a load timing report",
+    "UI_Dont39LoadingProgress_ReportTooltip": "After each load, writes how long each step, Java mod, mod, Lua and script file, map cell and Lua event took to Zomboid/Lua/Dont39LoadingProgress/, keeping the last 10 loads. Applies from the next launch of the game."
+}

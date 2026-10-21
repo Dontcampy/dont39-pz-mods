@@ -1,0 +1,13 @@
+name=Loading Progress
+id=Dont39LoadingProgress
+author=Dont39
+modversion=@VERSION@
+poster=poster.png
+description=Shows a progress bar and what is loading while the game starts and while it loads into a game, keeps the window responding, and writes a timing report per load. Client only.
+require=\ZombieBuddy,\Zabric
+loadModAfter=\Zabric
+javaJarFile=media/java/client/Dont39LoadingProgress.jar
+javaPkgName=com.dont39.pz.loadingprogress
+javaPreload=true
+ZBVersionMin=2.3.4
+versionMin=42.21.0

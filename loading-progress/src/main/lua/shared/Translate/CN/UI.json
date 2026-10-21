@@ -1,0 +1,7 @@
+{
+    "UI_Dont39LoadingProgress_Options": "加载进度条",
+    "UI_Dont39LoadingProgress_Display": "显示进度条和加载日志",
+    "UI_Dont39LoadingProgress_DisplayTooltip": "在屏幕右侧显示进度条和加载内容日志，并在游戏加载而不绘制画面时自行绘制画面。关闭后，加载画面与未安装本模组时相同。下次启动游戏时生效。",
+    "UI_Dont39LoadingProgress_Report": "写入加载耗时报告",
+    "UI_Dont39LoadingProgress_ReportTooltip": "每次加载后，把各步骤、Java 模组、模组、Lua 和脚本文件、地图格和 Lua 事件的耗时写入 Zomboid/Lua/Dont39LoadingProgress/，保留最近 10 次加载。下次启动游戏时生效。"
+}

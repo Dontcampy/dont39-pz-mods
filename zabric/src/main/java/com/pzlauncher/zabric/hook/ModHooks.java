@@ -2,7 +2,8 @@ package com.pzlauncher.zabric.hook;
 
 /**
  * One mod's hooks, as the generated glue sees them; implemented by Zabric only. Open while the mod is in the last mod
- * list Zabric processed and has not stopped.
+ * list Zabric processed and has not stopped. A mod Zabric keeps preloaded opens at preLaunch, before the first mod
+ * list, and with launch-wide hooks stays open on every mod list ({@code Lifecycle}).
  */
 public interface ModHooks {
     String modId();

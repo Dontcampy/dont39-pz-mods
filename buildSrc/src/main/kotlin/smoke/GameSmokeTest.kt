@@ -13,6 +13,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -20,8 +21,8 @@ import org.gradle.api.tasks.UntrackedTask
 
 /**
  * Starts the game the way ProjectZomboid64.exe would, with ZombieBuddy's exit_after_game_init, then checks the console
- * log for the platform mods and every bundled feature. Needs Steam running; loads whichever mods are enabled in the
- * game's mod list.
+ * log for the platform mods, the mod and every bundled feature. Needs Steam running; loads whichever mods are enabled
+ * in the game's mod list.
  */
 @UntrackedTask(because = "launches the game")
 abstract class GameSmokeTest : DefaultTask() {
@@ -40,13 +41,19 @@ abstract class GameSmokeTest : DefaultTask() {
   @get:Input
   abstract val zabricId: Property<String>
 
-  /** ZabricKotlin's assembled mod folder: its mod.info has the version the log must show. */
+  /** ZabricKotlin's assembled mod folder, for a Kotlin mod: its mod.info has the version the log must show. */
   @get:InputFiles
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val kotlinMod: ConfigurableFileCollection
 
+  /** Set with [kotlinMod]. */
   @get:Input
+  @get:Optional
   abstract val kotlinVersions: Property<String>
+
+  /** Whether the mod has hooks of its own, outside [featureFolders]. */
+  @get:Input
+  abstract val hooks: Property<Boolean>
 
   /** The bundled features' descriptor folders. */
   @get:InputFiles
@@ -59,14 +66,21 @@ abstract class GameSmokeTest : DefaultTask() {
 
   init {
     group = "verification"
+    hooks.convention(false)
+    luaTargeted.convention(emptyList())
   }
 
   @TaskAction
   fun run() {
     val modId = modId.get()
     val zabric = zabricId.get()
-    val kotlinModInfo = kotlinMod.singleFile.resolve("42/mod.info")
-    val kotlinVersion = modInfoValue(kotlinModInfo.readLines(), "modversion", kotlinModInfo)
+    val kotlinLines = if (kotlinMod.isEmpty) {
+      emptyList()
+    } else {
+      val kotlinModInfo = kotlinMod.singleFile.resolve("42/mod.info")
+      val kotlinVersion = modInfoValue(kotlinModInfo.readLines(), "modversion", kotlinModInfo)
+      listOf("[ZabricKotlin] $kotlinVersion loaded", "[ZabricKotlin] ready: ${kotlinVersions.get()}")
+    }
     val features = featureFolders.files.map(FeatureInfo::read)
     val targeted = luaTargeted.get()
     val luaOnly = features.filter { it.facade == null }.map { it.name }
@@ -93,10 +107,7 @@ abstract class GameSmokeTest : DefaultTask() {
     }
     // in this order: ZabricKotlin's Main logs Kotlin's state before ZombieBuddy reaches the mods that require it,
     // and the main entrypoints run after the pass
-    val ordered = listOf(
-      "[$zabric] access widener: ok (",
-      "[ZabricKotlin] $kotlinVersion loaded",
-      "[ZabricKotlin] ready: ${kotlinVersions.get()}",
+    val ordered = listOf("[$zabric] access widener: ok (") + kotlinLines + listOf(
       "[$zabric] main: $modId",
       "$logPrefix${version.get()} loaded",
     )
@@ -134,7 +145,8 @@ abstract class GameSmokeTest : DefaultTask() {
       status(name)
       "$logPrefix$name: "
     }
-    val hooksReady = listOf("[$zabric] $modId: hooks ready (").filter { features.any { it.hookLines.isNotEmpty() } }
+    val hooksReady = listOf("[$zabric] $modId: hooks ready (")
+      .filter { hooks.get() || features.any { it.hookLines.isNotEmpty() } }
     requireLines(log, "$console", (ordered + generated + luaReady + luaStatus + hooksReady).distinct())
     // any mod's, not only this one's: their hooks run inside the same game methods
     val stopped = log.lines().filter { "[$zabric] " in it && ": hooks stopped" in it }

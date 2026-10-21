@@ -584,6 +584,16 @@ Surveyed the repo (no true god class; hook package is all public API). Build: ty
 [OK] **Completed**
 
 
+## Session 25: Loading progress mod and Zabric 0.5.0 preLaunch hooks
+<!-- trellis-session: v=2 fp=6dc7ecbf6c6fbbdf -->
+
+**Date**: 2026-10-20
+**Task**: Loading progress mod and Zabric 0.5.0 preLaunch hooks
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Carried the 10-17 loading-progress plan onto current main and built it. Zabric 0.5.0: preloaded mods' hooks open at preLaunch (byte-checked targets, held log, Zabric-Hooks: launch opt-in), never retransform at preLaunch (nested class loads skip every transformer of the agent), LoaderProgress per-jar listener and heartbeat. New client-only plain-Java mod Dont39LoadingProgress: step bar + item sub-bar over launch and game start, own frames on MainThread, render-thread interim frames inside a Java mod jar's patching (bind-based GL copy), JDK-only glue (checkJdkGlue), below ZombieBuddy's watermark, EN/CN. Build: pz-widening plugin, pz-mod jar folder. Acceptance: launch/SP/local-server joins/CN-EN/timing (+4.4 % launch, +2.3 % join)/forced mismatch pass; open: myserver2 TCP/KCP tunnel joins, version-mismatch join, Workshop art, releases.
 ## Session 26: Server mod sync core (PR #21)
 <!-- trellis-session: v=2 fp=96fcedb4331b5669 -->
 
@@ -599,6 +609,43 @@ New mod-sync feature: a client whose Workshop copy differs from the dedicated se
 
 | Hash | Message |
 |------|---------|
+| `6e111f8` | Plan loading progress and a responsive window during loads |
+| `0680c6e` | Drop the server smoke test from the loading progress plan; the mod is client only |
+| `93488b8` | Open preloaded mods' hooks at preLaunch, with a launch-wide opt-in |
+| `a5a07f6` | Loading progress plan: JDK-only glue for the progress mod; task started |
+| `a27e3ea` | Add Loading Progress, a client mod with a progress bar for loads |
+| `ad5a1b2` | Never retransform at preLaunch; load a target's member types before retransforming |
+| `628d819` | Loading progress plan: cover mod discovery and ZombieBuddy's Java-mod pass (D10, D11) |
+| `e2bc6e4` | Report loader progress per Java mod jar; cover launch discovery |
+| `fa38a45` | Show interim frames from the render thread inside a Java mod jar's patching |
+| `a43c892` | Loading progress research: the remaining launch gaps |
+| `b8e788d` | Loading progress plan: known gaps, item sub-bar, interim frames without DSA (D12-D14) |
+| `28e538e` | Add the item sub-bar, more load triggers and a bind-based interim copy |
+| `60fff51` | Keep the watermark clean while fonts load; burst jar frames; skip interim frames on the game's GL errors |
+| `d0af4f0` | Log the dedicated-server line once, also when only preloaded; end flows when Zabric closed the hooks |
+| `f576c5c` | Loading progress: record the acceptance results and open items |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 27: Loading Progress switches and load timing report
+<!-- trellis-session: v=2 fp=018d7aad3fc7b1d4 -->
+
+**Date**: 2026-10-20
+**Task**: Loading Progress switches and load timing report
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Two switches (bar/log, timing report) in Dont39LoadingProgress.ini and on the mod options page (EN/CN); per-load summary + CSV under Lua/Dont39LoadingProgress (last 10). In-game: reports for launch and SP start; first report showed the last item of each run taking the loop's tail, so runs now end at the game's loop return (R3 amended) and the last script file row is labelled as holding the game's script processing. Display off: 0 own/interim frames; both off: no flow. Report on vs off -0.27% over 8 launches. Build gate and smokeTest pass; user's Zomboid files restored hash-identical.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `25f5be8` | Add Loading Progress switches and a load timing report |
 | `5902e6d` | Prove hooks on private and nested-class methods weave and widen |
 | `371fbe7` | Take a Workshop item from the server when its version differs from the player's |
 | `43253dc` | Give each feature its own translation and sandbox option files |
@@ -674,6 +721,32 @@ Planned (D1 waiter process, D2 failures never silent, D3 one branch with the cac
 | `ea65324` | Offer "Restart game" on mod-sync's restart stop |
 | `f9c5449` | Show a failed restart above the main menu's rejoin offer |
 | `10a8378` | chore(spec): Zabric relaunch rules; parent D9 now restarts the game |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 31: PR #20 merges, review fixes and Workshop staging
+<!-- trellis-session: v=2 fp=6ff89c80d2883fab -->
+
+**Date**: 2026-10-21
+**Task**: PR #20 merges, review fixes and Workshop staging
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Merged main twice into PR #20 (#21 mod sync, #22 Java mod restart); resolved conflicts in pz-feature (pz-bundled-feature + pz-widening), specs, journal index, Lifecycle; Zabric author contract moved to zabric/README.md, so this branch's additions (launch-wide hooks, hooks from game start, loader progress) went there. zabric-v0.5.0 was already tagged on main, so Zabric goes out as 0.6.0 (PR title/body updated). Reviewed the PR (architecture/performance/generality, three parallel reviewers) and fixed the four pre-release items: LoaderProgress.listen checks the listener's jar against the mod id's records; JarLoadHook checks each pass loaded every recorded jar and ends a jar whose load throws (onThrowable); Zabric-Hooks: launch without preLaunch fails like an invalid value; Loading Progress ends a join failed on RakNet's thread at the game thread's next frame and asserts flows end on the game thread. Build gate, 255 tests, both smoke tests and a full launch pass. Rewrote the Loading Progress Workshop text for players and staged Zabric 0.6.0 and Loading Progress 0.1.0 into ~/Zomboid/Workshop for the user's upload. Open: merge PR, tag zabric-v0.6.0 + Maven Central, sample zabricVersion bump, write Loading Progress's new Workshop id into workshop.txt. Archived 10-20-server-mod-sync (done on main).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bcf8059` | Merge remote-tracking branch 'origin/main' into claude/trellis-loading-progress-tasks-67a636 |
+| `9d16c7c` | Merge origin/main into claude/trellis-loading-progress-tasks-67a636 |
+| `8ca0216` | Check loader progress listeners, pass ends and launch-wide hooks |
+| `8233d10` | Shorten the Loading Progress Workshop text |
+| `0cb3f78` | Write the Loading Progress Workshop text for players |
 
 ### Status
 

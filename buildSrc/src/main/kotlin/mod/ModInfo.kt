@@ -6,13 +6,17 @@ import org.gradle.api.file.RegularFile
 import java.io.File
 
 /** What the build reads of a mod's `mod/42/mod.info`. */
-class ModInfo(val id: String, val javaPkgName: String)
+class ModInfo(val id: String, val javaPkgName: String, val javaJarFile: String)
 
 /** Reads [file] at configuration time, as an input of the configuration cache. */
 fun Project.readModInfo(file: RegularFile): ModInfo {
   val text = providers.fileContents(file).asText.orNull ?: throw GradleException("${file.asFile} does not exist")
   val lines = text.lines()
-  return ModInfo(modInfoValue(lines, "id", file.asFile), modInfoValue(lines, "javaPkgName", file.asFile))
+  return ModInfo(
+    modInfoValue(lines, "id", file.asFile),
+    modInfoValue(lines, "javaPkgName", file.asFile),
+    modInfoValue(lines, "javaJarFile", file.asFile),
+  )
 }
 
 /** The mod.info of the mod module in [dir] (relative to the root), read as a file rather than from its project. */

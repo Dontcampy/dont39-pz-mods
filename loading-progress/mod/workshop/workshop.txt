@@ -1,0 +1,45 @@
+version=1
+id=3823987147
+title=Loading Progress
+description=[h1]Loading Progress[/h1]
+description=Long loading screens with lots of mods? See how far along the game is and what it is loading right now. 中文说明在下方。
+description=
+description=[list]
+description=[*]A progress bar on the right side of the screen, from game start to the main menu, and from joining a server or loading a save until you are in the world.
+description=[*]Under it, a list of what is loading: mods, scripts, map parts and more. If loading gets stuck, you can see where.
+description=[*]No more "Not Responding" window during long loads.
+description=[*]Optional: a report after each load that shows which mods take the longest, in Zomboid/Lua/Dont39LoadingProgress/.
+description=[/list]
+description=Turn the bar or the report off in Options > Mods > Loading Progress (takes effect the next time you start the game).
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=After enabling it, restart the game once when the main menu asks. Only you need it; servers do not.
+description=
+description=[h1]加载进度条[/h1]
+description=模组一多，加载就要等很久？这个模组让你看到加载到哪了、正在加载什么。
+description=
+description=[list]
+description=[*]从启动游戏到主菜单、从加入服务器或读取存档到进入世界，屏幕右侧都会显示进度条。
+description=[*]进度条下方列出正在加载的内容：模组、脚本、地图等。加载卡住时能看到卡在哪里。
+description=[*]长时间加载时窗口不再显示"未响应"。
+description=[*]可选：每次加载后生成一份报告，告诉你哪些模组加载最慢，位于 Zomboid/Lua/Dont39LoadingProgress/。
+description=[/list]
+description=可在 选项 > 模组 > 加载进度条 中关闭进度条或报告（下次启动游戏时生效）。
+description=
+description=[h2]前置要求[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+（按提示批准本模组的 Java 代码）
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=启用后，按主菜单提示重启一次游戏。只需自己安装，服务器不需要。
+description=
+description=[h2]Feedback / 反馈[/h2]
+description=Comment below or on [url=https://github.com/Dontcampy/dont39-pz-mods]GitHub[/url]. 欢迎在下方留言。
+tags=Build 42;Interface
+visibility=public

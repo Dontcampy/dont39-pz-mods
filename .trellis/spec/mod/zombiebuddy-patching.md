@@ -26,6 +26,8 @@ The docs do not cover every annotation option or loader rule. The source is auth
 
 When the docs and the source disagree, trust the source (see the package rule below).
 
+After a ZombieBuddy update, recheck its `Watermark.java` against `loading-progress` (`Overlay`, `FramePump`).
+
 ---
 
 ## Loader Seam
@@ -73,7 +75,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
-| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
+| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one` and `loading-progress`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
 ---
@@ -84,7 +86,7 @@ What is not behind the seam and needs rework when switching loaders:
   `server/`, so it loads on clients and dedicated servers (ModdingGuide "Client/server JAR paths";
   `JavaModInfo.validateAndCreate` has the check, though ZombieBuddy 2.3.4 on the user's Linux server loaded a
   `client/` jar anyway: do not rely on either behavior). A client-only feature therefore goes idle on a server in
-  `problem()` (`ImeKeyboardFix.kt`).
+  `problem()` (`ImeKeyboardFix.kt`); a client-only mod with a `client/` jar checks it too (`pzMod.jarFolder`).
 - Entry point: `dont39-all-in-one/src/main/kotlin/com/dont39/pz/allinone/AllInOneMain.kt`, a Zabric main entrypoint,
   calls each feature's `init()` through the generated `initFeatures()` (`GenerateFeatureInit` in `FeatureInfo.kt`);
   `init()` does not hook anything. No class named `Main` in `javaPkgName`: ZombieBuddy runs one as its own entry point.
@@ -228,5 +230,7 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
 - Read main-thread state once into a local on the render thread (`ImeWindow.kt`).
 - Win32 calls on the game window run on the thread that calls `Display.processMessages()`, including their undo
   (`ImeWindow.kt`).
+- GL outside the game's frames restores every state it changes and leaves the game's cached GL state alone
+  (`Interim.java` in `loading-progress`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on. Know how often the patched method is called before adding work to it.
