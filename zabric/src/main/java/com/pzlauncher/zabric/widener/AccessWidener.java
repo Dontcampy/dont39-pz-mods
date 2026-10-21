@@ -110,6 +110,19 @@ public final class AccessWidener {
         return outcome.why();
     }
 
+    /**
+     * Whether the game-start scan listed the mod folders in {@code modsFolder}. Throws when there was no scan this
+     * launch.
+     */
+    public static boolean scanned(Path modsFolder) {
+        Scan s = scan;
+        if (s == null) {
+            throw new IllegalStateException("Zabric's widener did not scan at game start: "
+                    + (failure == null ? NOT_PRELOADED : failure), failureError);
+        }
+        return s.found().modsFolders().contains(WidenerScan.real(modsFolder));
+    }
+
     /** Logs what the game-start widening found across all installed mods, as one line. */
     public static void report() {
         Scan s = scan;

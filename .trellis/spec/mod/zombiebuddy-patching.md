@@ -38,6 +38,10 @@ agent) rewrites those two and rebuilds every mod on Zabric:
 - Runtime services: Zabric's loader package
   ([`Loader.java`](../../../zabric/src/main/java/com/pzlauncher/zabric/loader/Loader.java)). The rest of Zabric and
   `zb-kt` call it; other mods go through Zabric's public API and entrypoints ([Access Widening](./access-widening.md)).
+  Which jars the loader loaded, and which one serves a package, is that API
+  ([`com.pzlauncher.zabric.mods`](../../../zabric/src/main/java/com/pzlauncher/zabric/mods/package-info.java)): the
+  loader's records keep stale jars and no package, so ask `JavaMods.servingJar`, not the records. Which mods of a folder
+  it would load is `JavaMods.inFolder`; do not read `mod.info` for Java keys yourself.
 - Hooks: the glue `zabric-processor`'s generator writes, through javac or KSP ([Zabric Hooks](./zabric-hooks.md)).
   Mod code uses only Zabric's hook API
   ([`com.pzlauncher.zabric.hook`](../../../zabric/src/main/java/com/pzlauncher/zabric/hook/package-info.java)).
@@ -65,7 +69,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
-| Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |
+| Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
@@ -126,6 +130,12 @@ What is not behind the seam and needs rework when switching loaders:
   that feature's Lua global, read from its own Lua, and still works when the global is absent or returns nil:
   `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus`, whose keys `TunnelStatus.kt` lists. A
   table shared this way has its keys written down once, at the writer.
+- A feature that holds a join after vanilla's Workshop step shows the Connect screen again: `ServerWorkshopItemScreen`
+  hides it for a download and never restores it, so a dialog or a stop's reason would have no screen
+  (`restoreScreen` in `Dont39AllInOne_ModSyncJoin.lua`).
+- CN text in a rich text panel wraps through `Common.breakable` (`allinone-common`'s `Dont39AllInOne_Common.lua`), which
+  breaks only at spaces and keeps closing punctuation off a line start: write no space between an ASCII word and CJK
+  text.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 
@@ -142,6 +152,24 @@ For what a server owner sets. Reference: `tunnel` (`ServerStart.kt`, `TunnelServ
 - A dedicated server writes no `map_sand.bin`; it reads `<server>_SandboxVars.lua` on every start, so "edit the file and
   restart" is the documented way to change it (measured in task `10-17-tcp-connection`, `research/in-game-test.md`).
 - Skip co-op host processes (`GameServer.coop`) unless the feature is meant for them.
+
+---
+
+## Extending the Join
+
+For a feature that adds to the multiplayer join. Reference: `mod-sync`.
+
+- Server-to-client data rides as a versioned trailer after the connection-details the server writes: vanilla clients
+  stop reading before it, and the client reads it backwards from the buffer's limit before the join reads the buffer
+  (`protocol/Trailer.kt`). A new field is a new payload version, never a change to version 1.
+- Work the join waits for is held at a `CheckMods` `HEAD` hook that returns true for each frame; the handler fails
+  closed and stops the join with a reason on the Connect screen (`ModSyncClient.hold`,
+  [Error Handling](./error-handling.md)). Vanilla's Workshop step hides the Connect screen and never shows it again, so
+  a held join shows it itself (`Dont39AllInOne_ModSyncJoin.lua`).
+- A mod's folder taken from elsewhere for one session is answered where the game builds its folder list, from state
+  that is immutable and volatile (the list is built off the game thread), and turned off on every way out: Back, a lost
+  connection, the game's end (`client/swap/Swap.kt`, `ClientHooks.kt`). For the next launch, use Zabric's
+  `LaunchOverride` instead.
 
 ---
 

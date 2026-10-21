@@ -6,8 +6,10 @@ import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * The Java mod loader Zabric runs on (ZombieBuddy). This package is the only code that uses the loader's own types;
@@ -25,6 +27,14 @@ public final class Loader {
 
     /** A jar the loader loaded, with the id of the mod it loaded it for. */
     public record ModJar(String modId, Path jar) {
+    }
+
+    /**
+     * A mod whose jar the loader loads on a client: {@code folder} the mod folder, {@code id} its mod id (null when its
+     * {@code mod.info} has none), {@code jar} the jar {@code javaJarFile} names, {@code pkg} its {@code javaPkgName}.
+     * {@code preload}: the loader or Zabric loads it at game start.
+     */
+    public record JavaMod(Path folder, String id, String name, Path jar, String pkg, boolean preload) {
     }
 
     /** The loader's name, for messages. */
@@ -83,6 +93,38 @@ public final class Loader {
     /** The ids of the mod list the loader is loading; only valid inside that pass, e.g. from a mod's {@code Main}. */
     public static Set<String> currentPass() {
         return LoadStatus.currentPass();
+    }
+
+    /**
+     * The SHA-256 (lowercase hex) the loader recorded for each jar it decided on, null for a jar it could not hash.
+     * Throws naming the loader version when its records do not have them; {@link #preloadedJars} and
+     * {@link #loadedThisPass} do not depend on this part of the records.
+     */
+    public static Map<Path, String> recordedSha256() {
+        return LoadStatus.sha256();
+    }
+
+    /** The packages of {@code jars}, as the loader's class loader serves them. Reads each jar once. */
+    public static ClassPath classPath(Collection<Path> jars) throws IOException {
+        // the loader appends mod jars to the system class loader's search path
+        return ClassPath.of(jars, ClassLoader.getSystemClassLoader());
+    }
+
+    /**
+     * The mods in {@code modsFolder} whose jar the loader loads on a client, read by its rules. {@code versionFolder}:
+     * the name of the version folder the game uses for a mod folder ({@code ZomboidFileSystem.getModVersionDirName}).
+     * Throws naming the file that cannot be read.
+     */
+    public static List<JavaMod> javaMods(Path modsFolder, Function<Path, String> versionFolder) throws IOException {
+        return ModInfo.javaMods(modsFolder, versionFolder);
+    }
+
+    /**
+     * Every mod folder in {@code modsFolder} with a {@code mod.info} in any of its folders, with every id those files
+     * may name, read more widely than the game does. For refusals: no version folder is known at premain.
+     */
+    public static Map<Path, Set<String>> modIds(Path modsFolder) throws IOException {
+        return ModInfo.modIds(modsFolder);
     }
 
     /**

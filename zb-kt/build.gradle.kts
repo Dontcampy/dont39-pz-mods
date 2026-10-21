@@ -17,7 +17,7 @@ plugins {
   id("buildsrc.convention.pz-bootstrap")
 }
 
-version = "0.5.0"
+version = "0.6.0"
 
 val pkgDir = "com/dont39/pz/zbkt"
 

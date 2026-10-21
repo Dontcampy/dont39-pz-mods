@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Hooks, loader seam, Zabric public API for jars (JavaMods)"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook handler rules for any new hook"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Every case stops the join with a reason; Broken disables"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines for the decision and restart path"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Feature module layout, Lua globals, texts"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade, shared helpers (atomic write, server key, failJoin)"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, comment style, in-game verification"}
+{"file": ".trellis/tasks/10-20-mod-sync-java/research/java-integration.md", "reason": "Seams, ZombieBuddy mod.info rules, Rejoin and Connect screen details"}
+{"file": ".trellis/tasks/archive/2026-10/10-20-mod-sync-core/design.md", "reason": "Hold state machine, swap, cache layout"}
+{"file": ".trellis/tasks/archive/2026-10/10-20-zabric-launch-override/design.md", "reason": "LaunchOverride, JavaMods, WidenRoots contracts"}

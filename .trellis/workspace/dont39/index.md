@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 27
-- **Last Active**: 2026-10-20
+- **Total Sessions**: 30
+- **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~656 | Active |
+| `journal-1.md` | ~727 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 30 | 2026-10-21 | mod-sync-relaunch: restart the game with this launch's command line | `a3727aa`, `c558aa8`, `ea65324`, `f9c5449`, `10a8378` | `claude/mod-sync-relaunch-fce8bc` |
+| 29 | 2026-10-21 | mod-sync-java: server Java mods after one restart | `394ec65`, `790281a` | `claude/trellis-main-update-subtasks-6c01f8` |
+| 28 | 2026-10-21 | Zabric one-launch mod folder override | `8560834` | `claude/trellis-main-update-subtasks-6c01f8` |
 | 27 | 2026-10-20 | Loading Progress switches and load timing report | `25f5be8` | `claude/trellis-loading-progress-tasks-67a636` |
 | 26 | 2026-10-20 | Server mod sync core (PR #21) | `5902e6d`, `371fbe7`, `43253dc`, `a4c9b25` | `claude/server-sync-mod-33c0e3` |
 | 25 | 2026-10-20 | Loading progress mod and Zabric 0.5.0 preLaunch hooks | `6e111f8`, `0680c6e`, `93488b8`, `a5a07f6`, `a27e3ea`, `ad5a1b2`, `628d819`, `e2bc6e4`, `fa38a45`, `a43c892`, `b8e788d`, `28e538e`, `60fff51`, `d0af4f0`, `f576c5c` | `claude/trellis-loading-progress-tasks-67a636` |

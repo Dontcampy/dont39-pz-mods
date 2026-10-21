@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -71,8 +72,33 @@ class AccessWidenerTest {
         assertFalse(outcome.restart());
     }
 
+    @Test
+    void aListInAnOverrideFolderOrARegisteredRootIsInEffect(@TempDir Path dir) throws Exception {
+        Path extra = dir.resolve("tree/111/mods");
+        Path jar = jar(extra.resolve("m/media/java"), LIST);
+        List<ModFolders.Root> roots = ModFolders.roots(List.of(dir.resolve("content")), dir.resolve("cache"),
+                List.of(extra));
+        assertTrue(roots.contains(new ModFolders.Root(extra.toAbsolutePath().normalize(), null)), roots.toString());
+
+        Found found = WidenerScan.run(roots);
+        assertTrue(found.modsFolders().contains(WidenerScan.real(extra)));
+        assertFalse(found.modsFolders().contains(WidenerScan.real(dir.resolve("cache/mods"))), "does not exist");
+        Outcome outcome = check(new Scan(found, 1), jar);
+        assertNull(outcome.why());
+        assertEquals(1, outcome.directives());
+    }
+
+    @Test
+    void aWorkshopItemsModsFolderCountsAsScanned(@TempDir Path dir) throws Exception {
+        Path item = Files.createDirectories(dir.resolve("content/111/mods/m"));
+        Found found = WidenerScan.run(ModFolders.roots(List.of(dir.resolve("content")), dir.resolve("cache"),
+                List.of()));
+        assertTrue(found.modsFolders().contains(WidenerScan.real(item.getParent())));
+        assertFalse(found.modsFolders().contains(WidenerScan.real(dir.resolve("content"))));
+    }
+
     private static Scan scan(Path root, Map<String, Map<String, Listed>> lists, Map<Path, String> unreadable) {
-        return new Scan(new Found(List.of(WidenerScan.real(root)), lists, unreadable), 0);
+        return new Scan(new Found(List.of(WidenerScan.real(root)), lists, unreadable, Set.of()), 0);
     }
 
     // asks from a class loaded out of the jar, as a mod does

@@ -2,44 +2,10 @@ version=1
 id=3820726385
 title=Zabric
 description=[h1]Zabric[/h1]
-description=A small loader layer for ZombieBuddy Java mods, made by Dont39. It is not made by ZombieBuddy's author.
-description=It does nothing on its own. Mods that need it require it; subscribe to it along with them and enable it.
+description=A library for ZombieBuddy Java mods, made by Dont39. Subscribe to it and enable it when a mod requires it; it does nothing on its own.
 description=
-description=[h2]What it does[/h2]
-description=[list]
-description=[*]Opens up game and mod internals that installed mods list, so they can use them directly. This happens at game start, before the game loads them, so for every installed mod's list, enabled or not.
-description=[*]Runs the code that mods built on it declare, in two phases: at game start and when the mod list loads, in any mod list order. A mod with code for game start is kept running then: Zabric registers it with ZombieBuddy on its first launch.
-description=[*]Runs the hooks those mods put into game and mod code while the mod is in the mod list, and from game start for a mod kept running then. A failing hook switches off that mod's hooks instead of breaking the game, and console.txt says which hook failed.
-description=[*]When a mod takes effect only after a restart (just registered, or installed or updated while the game ran), the main menu lists it; a dedicated server logs it.
-description=[*]Changes no game files and nothing in your saves.
-description=[/list]
+description=Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked) and Project Zomboid 42.21. Load after ZombieBuddy. On first launch, restart the game once when the main menu asks.
 description=
-description=[h2]Requirements[/h2]
-description=[list]
-description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4 or newer with its Java loader installed (it asks you once to approve this mod's Java code).
-description=[*]Project Zomboid 42.21
-description=[/list]
-description=Load order: after ZombieBuddy; mods built on it need no order for Zabric. On the first launch Zabric registers itself and those mods with ZombieBuddy and asks you to restart the game once.
-description=
-description=[h2]Note on approval[/h2]
-description=ZombieBuddy asks you to approve a mod's Java code when it loads with the mod list. Code run at game start comes first: after an update of Zabric, or of a mod registered through it, the new version runs at the next game start before ZombieBuddy asks. Zabric registers only mods whose Java code ZombieBuddy approved and loaded.
-description=
-description=[h2]For mod authors[/h2]
-description=[list]
-description=[*]Opening up members: put a list at META-INF/zabric/<your mod id>.classtweaker in your jar. The first line is "zabric-classtweaker v1", then one directive per line, Fabric access widener style with internal names and JVM descriptors: "accessible class", "accessible field", "mutable field", and "accessible method" for constructors (<init>) only. com.pzlauncher.zabric.widener.AccessWidener.problem(modId, aClassInYourJar) is null when your list is in effect, otherwise the reason.
-description=[*]Entrypoints: name your classes in your jar's manifest; no ZombieBuddy Main or PreMain needed. "Zabric-Main: <class>" (implements com.pzlauncher.zabric.entrypoint.MainEntrypoint) is called once per session, after ZombieBuddy loaded the mod list, if it approved and loaded your mod. "Zabric-PreLaunch: <class>" (implements PreLaunchEntrypoint) is called once per launch, after ZombieBuddy preloaded every jar and before the game starts: plain Java, no Kotlin, game classes or game log; report from your main entrypoint. The class is a Kotlin object or has a public no-arg constructor. Order within a phase is undefined; a failing one is logged and the others still run. ZombieBuddy-only mods run their Main before any main entrypoint: publish nothing they need before then.
-description=[*]Running at game start: a preLaunch entrypoint also needs javaPreload=true in mod.info and "ZB-Preload: true" in your manifest; Zabric then keeps your mod preloaded, under the mod id ZombieBuddy recorded for your jar. Require Zabric in mod.info; entrypoints need no load order. Classes do: ZombieBuddy loads every class of your javaPkgName and applies your hooks jar by jar, so if that code uses another mod's classes, load after it (loadModAfter). Zabric's classes are always there on a launch that runs entrypoints.
-description=[*]Hooks, setup: compileOnly "com.pzlauncher:zabric:<version>" and annotationProcessor "com.pzlauncher:zabric-processor:<same version>" (Maven Central), plus the game jar and ZombieBuddy.jar (compileOnly). Processor options: zabric.modId, zabric.javaPkgName (the glue goes there), and zabric.glueClass when one mod is built from several compilations.
-description=[*]Hooks, API (package com.pzlauncher.zabric.hook; Mixin and MixinExtras names): @Hooks(Target.class) marks a final class of static handlers (targets = "a.b.C" for classes you cannot name; in Kotlin a top-level object). @Inject(method = "name", at = @At("HEAD" or "RETURN")) runs a handler there, with a CallbackInfo; cancellable lets it skip the target at HEAD or set the return value. @ModifyReturnValue and @ModifyVariable(at = @At("HEAD"), argsOnly = true) return a new return value or argument. @Share("key") LocalRef passes a value between the handlers of one call. Zabric only: @Self is the target's this; @At("FINALLY") runs after the target returns, throws or was cancelled (@Thrown Throwable), to undo what HEAD changed; always = true runs a handler while its gate is inactive too. Overloads need "name(descriptor)". Anything else (other @At values, @Redirect, ...) is a compile error.
-description=[*]Hooks, gates: a hook class without a gate uses your mod's default gate: the first exception from a handler, or a hook ZombieBuddy did not weave, stops all your mod's hooks for the session ("[Zabric] <mod id>: hooks stopped ..."). For a smaller scope, name a gate in @Hooks(gate = ...): a HookGate with a public static final INSTANCE, or a Kotlin object. Its active() is checked on every call; its failed() gets handler exceptions and unwoven hooks, for a preloaded mod also before the game's log is up. A handler's exception never reaches the hooked method, which runs on. Zabric checks the targets of default-gate hooks itself; a gate of your own calls ZabricHooks.gateProblem(gate) before it turns active, no earlier than your main entrypoint (it loads the targets).
-description=[*]Hooks, timing and order: hooks run while your mod is in the mod list, from the first one Zabric processes (when main entrypoints run). A mod kept running at game start has them on after its preLaunch entrypoint, whatever the list, then follows the list (from the first list on its first launch, or in a class ZombieBuddy loaded unwoven). "Zabric-Hooks: launch" in its manifest keeps them on for lists that lack it too, e.g. a server's: for client-side UI only, as they also act on servers and saves without your mod. Without a preLaunch entrypoint it is ignored with an error; another value fails like an empty entrypoint class. Across mods, load order decides which hook wraps which (no priority). Within your mod, hook classes run by name and handlers in declaration order.
-description=[*]Hooks from game start: as Zabric cannot load game classes or log yet, it checks default-gate targets from class files: methods as each class loads (a mismatch stops your hooks before its code runs), classes at the first list, when it logs what it held. ZombieBuddy, though, loads the glue's signature types when it preloads your jar (each target's argument and return types, arrays excepted, and the target class with @Self): to leave game classes to the game, hook methods whose signatures name only JDK types, without @Self.
-description=[*]Loader progress: LoaderProgress.listen(modId, listener) hears each Java mod jar ZombieBuddy loads for a mod list (index, total, mod id; before and after) on the game thread while your hooks are on; register at preLaunch for the first list. If it throws, or Zabric cannot follow ZombieBuddy, your hooks stop.
-description=[*]Hand-written ZombieBuddy @Patch classes are rejected; @UnsafeLoaderPatch lets one compile with a warning: unsupported, with no Zabric gate, error catching or target check.
-description=[/list]
-description=
-description=[h2]Source and feedback[/h2]
-description=Source code: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url]
-description=Problems and suggestions: comments below or GitHub issues.
+description=For mod authors: [url=https://github.com/Dontcampy/dont39-pz-mods/blob/main/zabric/README.md]zabric/README.md[/url]. Source and feedback: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url].
 tags=Build 42;Framework
 visibility=public

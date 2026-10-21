@@ -39,7 +39,7 @@ internal object ModSyncServer {
         "built in $millis ms"
     }
     val events = object : HttpService.Events {
-      override fun ioFailed(message: String) = ModSync.log { message }
+      override fun ioFailed(message: String) = ModSync.error { message }
 
       override fun failed(t: Throwable) = stop("serving the Workshop items", t)
     }
@@ -47,7 +47,7 @@ internal object ModSyncServer {
       HttpService.start(InetSocketAddress(port), served.json, served.files, events)
     } catch (e: IOException) {
       // the port is the owner's choice: the server runs on, and clients join as without the mod
-      ModSync.log { "error: could not listen on TCP port $port ($e); mod sync is off" }
+      ModSync.error { "could not listen on TCP port $port ($e); mod sync is off" }
       return
     }
     trailer = Trailer.encode(port)

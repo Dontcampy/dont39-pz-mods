@@ -1,18 +1,19 @@
 -- Dont39 All-in-One: mod sync on the Connect screen. While a join waits for the server's version of its Workshop
 -- items, the screen's status line shows what it does, and a dialog asks before downloading from a server that is not
--- remembered. The Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are listed in JoinStatus.kt.
+-- remembered or taking Java code from it. After a join stopped for a restart, the screen offers to restart the game,
+-- where the Java side can, and to quit it. The Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are
+-- listed in JoinStatus.kt.
 
-require "ISUI/ISPanel"
 require "ISUI/ISButton"
-require "ISUI/ISRichTextPanel"
 require "ISUI/ISTickBox"
 
 local Common = require "Dont39AllInOne_Common"
+local Shared = require "Dont39AllInOne_ModSyncShared"
 
 local PREFIX = "[Dont39AllInOne] mod sync join: "
-local KEY = "UI_Dont39AllInOne_ModSync_"
+local KEY = Shared.KEY
 local POLL_MS = 250 -- the status line follows the download a few times a second
-local PAD = 10
+local PAD = Shared.PAD
 local WIDTH = 560
 local KB = 1024
 local MB = 1024 * 1024
@@ -20,6 +21,12 @@ local MB = 1024 * 1024
 local lastPoll = 0
 local dialog = nil
 local asked = false -- this confirm was shown; it is not shown again before the next one
+local quit = nil -- the Quit button, on the Connect screen it was added to
+local restart = nil -- the Restart button, likewise
+local dismissed = nil -- the restart stop whose screen the player left; its buttons are not shown again
+local buttonsFor = nil -- the restart stop the buttons are shown for
+local restarted = nil -- the restart stop whose Restart was clicked; it stays disabled for that stop
+local screenFor = nil -- "join", or the restart stop's number, once the Connect screen was there for it
 
 -- as text: the Java side's numbers are Lua doubles
 local function count(n)
@@ -39,35 +46,6 @@ local function size(bytes)
     return tenths(bytes, MB) .. " MB"
 end
 
--- the rich text panel breaks lines only at spaces, and Chinese text has none: split longer runs to the width
-local function breakable(text, font, width)
-    local tm = getTextManager()
-    local words = {}
-    for word in string.gmatch(text, "%S+") do
-        if tm:MeasureStringX(font, word) <= width then
-            words[#words + 1] = word
-        else
-            local piece = ""
-            for i = 1, string.len(word) do
-                local c = string.sub(word, i, i)
-                if piece ~= "" and tm:MeasureStringX(font, piece .. c) > width then
-                    words[#words + 1] = piece
-                    piece = c
-                else
-                    piece = piece .. c
-                end
-            end
-            words[#words + 1] = piece
-        end
-    end
-    return table.concat(words, " ")
-end
-
--- the rich text panel reads " <...> " as a tag
-local function plain(text)
-    return (string.gsub(string.gsub(tostring(text), "<", "("), ">", ")"))
-end
-
 local function closeDialog()
     if dialog then
         local d = dialog
@@ -77,8 +55,14 @@ local function closeDialog()
     end
 end
 
+local function hideButtons()
+    if quit then quit:setVisible(false) end
+    if restart then restart:setVisible(false) end
+end
+
 local guard = Common.guard(PREFIX, function()
     pcall(closeDialog)
+    pcall(hideButtons)
     -- also outside a confirm: a later one would wait for an answer this file can no longer give
     if Dont39AllInOne_answerModSyncJoin then
         pcall(Dont39AllInOne_answerModSyncJoin, "failed")
@@ -91,80 +75,46 @@ local function answer(choice)
     Dont39AllInOne_answerModSyncJoin(choice)
 end
 
-local Dialog = ISPanel:derive("Dont39AllInOne_ModSyncDialog")
-
-function Dialog:createChildren()
-    ISPanel.createChildren(self)
-    local font = UIFont.Small
-    local buttonHeight = math.max(25, getTextManager():getFontHeight(font) + 6)
-
-    local text = ISRichTextPanel:new(PAD, PAD, self.width - 2 * PAD, 10)
-    text:initialise()
-    text:instantiate()
-    text:noBackground()
-    text:setMargins(0, 0, 0, 0)
-    self:addChild(text)
-    text.text = self.body
-    text:paginate()
-
-    local tick = ISTickBox:new(PAD, text:getBottom() + PAD, self.width - 2 * PAD, buttonHeight, "", nil, nil)
-    tick:initialise()
-    tick:instantiate()
-    self:addChild(tick)
-    tick:addOption(getText(KEY .. "DontAsk"))
-    self.tick = tick
-
-    local y = tick:getBottom() + PAD * 2
-    local buttonWidth = (self.width - 3 * PAD) / 2
-    local download = ISButton:new(PAD, y, buttonWidth, buttonHeight, getText(KEY .. "Download"), self, Dialog.onDownload)
-    download:initialise()
-    download:instantiate()
-    download:enableAcceptColor()
-    self:addChild(download)
-    local cancel = ISButton:new(PAD * 2 + buttonWidth, y, buttonWidth, buttonHeight, getText(KEY .. "Cancel"), self,
-        Dialog.onCancel)
-    cancel:initialise()
-    cancel:instantiate()
-    cancel:enableCancelColor()
-    self:addChild(cancel)
-
-    self:setHeight(y + buttonHeight + PAD)
-    self:setY((getCore():getScreenHeight() - self:getHeight()) / 2)
-end
-
-function Dialog:onDownload()
-    local remember = self.tick:isSelected(1)
+local function onDownload(d)
+    local remember = d.tick:isSelected(1)
     local ok, err, trace = pcall(answer, remember and "remember" or "accept")
     if not ok then fail("taking the answer", err, trace) end
 end
 
-function Dialog:onCancel()
+local function onCancel()
     local ok, err, trace = pcall(answer, "decline")
     if not ok then fail("taking the answer", err, trace) end
 end
 
-function Dialog:new(body)
-    local x = (getCore():getScreenWidth() - WIDTH) / 2
-    local o = ISPanel:new(x, 0, WIDTH, 100)
-    setmetatable(o, self)
-    self.__index = self
-    o.body = body
-    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
-    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
-    o.moveWithMouse = true
-    return o
+-- the "don't ask again" choice, between the text and the buttons
+local function addTick(d, y, height)
+    local tick = ISTickBox:new(PAD, y, d.width - 2 * PAD, height, "", nil, nil)
+    tick:initialise()
+    tick:instantiate()
+    d:addChild(tick)
+    tick:addOption(getText(KEY .. "DontAsk"))
+    d.tick = tick
+    return tick:getBottom()
 end
 
 local function confirmText(status)
     local width = WIDTH - 2 * PAD
-    local function text(s) return breakable(plain(s), UIFont.NewSmall, width) end
+    local function text(s) return Common.breakable(Common.plain(s), UIFont.NewSmall, width) end
     local lines = {
-        " <H2> " .. breakable(plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
+        " <H2> " .. Common.breakable(Common.plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
         " <TEXT> " .. text(getText(KEY .. "ConfirmText", status.server)),
         "",
     }
     for _, item in ipairs(status.items) do
-        lines[#lines + 1] = text(getText(KEY .. "ConfirmItem", item.name, size(item.bytes), count(item.files)))
+        if item.files > 0 then
+            lines[#lines + 1] = text(getText(KEY .. "ConfirmItem", item.name, size(item.bytes), count(item.files)))
+        else
+            lines[#lines + 1] = text(getText(KEY .. "ConfirmItemNoDownload", item.name))
+        end
+        if item.java then
+            local java = Common.breakable(Common.plain(getText(KEY .. "ConfirmJava")), UIFont.NewSmall, width - PAD)
+            lines[#lines + 1] = " <INDENT:" .. PAD .. "> " .. java .. " <INDENT:0> "
+        end
     end
     lines[#lines + 1] = ""
     lines[#lines + 1] = text(getText(KEY .. "ConfirmTotal", size(status.bytes), count(status.files)))
@@ -175,10 +125,11 @@ local function openDialog(status)
     if type(status.items) ~= "table" or type(status.server) ~= "string" then
         error("the join asks without its items or server")
     end
-    dialog = Dialog:new(confirmText(status))
-    dialog:initialise()
-    dialog:addToUIManager()
-    dialog:setAlwaysOnTop(true)
+    dialog = Shared.Dialog:new(WIDTH, confirmText(status), {
+        { title = getText(KEY .. "Download"), onClick = onDownload, accept = true },
+        { title = getText(KEY .. "Cancel"), onClick = onCancel },
+    }, addTick)
+    dialog:open()
 end
 
 -- the Connect screen's line under the server name, which vanilla also writes the join's states to
@@ -189,13 +140,111 @@ local function setLine(text)
     screen.connectLabel.name = text
 end
 
-local function update()
-    local status = Dont39AllInOne_getModSyncJoin()
+local function onQuit()
+    local ok, err, trace = pcall(function() getCore():quitToDesktop() end)
+    if not ok then fail("quitting the game", err, trace) end
+end
+
+local function onRestart()
+    local ok, err, trace = pcall(function()
+        -- for the rest of the stop: a click while the game quits would start a second helper process
+        restarted = buttonsFor
+        restart:setEnable(false)
+        local why = Dont39AllInOne_restartModSyncGame()
+        if why then setLine(why) end
+    end)
+    if not ok then fail("restarting the game", err, trace) end
+end
+
+-- [button]: the one shown before, which is made again for another screen
+local function addButton(button, screen, back, title, onClick, accept)
+    if button and button.parent == screen then return button end
+    button = ISButton:new(0, 0, 100, back:getHeight(), title, nil, onClick)
+    button:initialise()
+    button:instantiate()
+    -- before any setEnable, which keeps these colours for the enabled state
+    if accept then button:enableAcceptColor() end
+    button:setAnchorLeft(true)
+    button:setAnchorRight(false)
+    button:setAnchorTop(false)
+    button:setAnchorBottom(true)
+    button:setWidthToTitle(100)
+    screen:addChild(button)
+    return button
+end
+
+-- next to the screen's Back button, which vanilla moves on resize
+local function placeButtons(screen, status)
+    local back = screen.backBtn
+    if not back then error("the Connect screen has no Back button (backBtn)") end
+    local x = back:getRight() + PAD
+    if type(status.relaunch) ~= "boolean" then error("the restart stop does not say whether the game can restart") end
+    if status.relaunch then
+        restart = addButton(restart, screen, back, getText(KEY .. "RestartGame"), onRestart, true)
+        local enable = restarted ~= status.stop
+        if restart.enable ~= enable then restart:setEnable(enable) end
+        restart:setX(x)
+        restart:setY(back:getY())
+        restart:setVisible(true)
+        x = restart:getRight() + PAD
+    elseif restart then
+        restart:setVisible(false)
+    end
+    quit = addButton(quit, screen, back, getText(KEY .. "QuitGame"), onQuit)
+    quit:setX(x)
+    quit:setY(back:getY())
+    quit:setVisible(true)
+end
+
+-- [status]: the restart stop the Java side reports, nil when there is none
+local function updateButtons(status)
+    local screen = ConnectToServer and ConnectToServer.instance
+    local stop = status and status.stop
+    local shown = quit ~= nil and quit:getIsVisible()
+    if stop and stop ~= dismissed and screen and screen:getIsVisible() and not screen.connecting then
+        buttonsFor = stop
+        placeButtons(screen, status)
+        return
+    end
+    -- Back or a new connect left the stop's screen
+    if shown and stop then dismissed = stop end
+    hideButtons()
+end
+
+-- The join's Workshop step hides the Connect screen behind ServerWorkshopItemScreen and, once the items are in, only
+-- hides that one again: vanilla goes on into the game, while this feature holds the join with no screen, and the
+-- screen's OnConnectFailed shows nothing while it is hidden. Shown again once per join, and once per restart stop,
+-- so that Back still leaves it.
+local function restoreScreen(status)
+    if not status then
+        screenFor = nil
+        return
+    end
+    local key = status.state == "restart" and status.stop or "join"
+    if screenFor == key then return end
+    local screen = ConnectToServer and ConnectToServer.instance
+    if not screen then return end
+    if not screen:getIsVisible() then
+        local workshop = ServerWorkshopItemScreen and ServerWorkshopItemScreen.instance
+        if workshop and workshop:getIsVisible() then return end
+        screen:setVisible(true, JoypadState.getMainMenuJoypad())
+        -- the stop's reason was dropped while the screen was hidden
+        if status.state == "restart" then
+            if type(status.reason) ~= "string" then error("the restart stop has no reason") end
+            screen:OnConnectFailed(status.reason)
+        end
+        Common.log(PREFIX, "showed the Connect screen again, which the Workshop step had left hidden")
+    end
+    screenFor = key
+end
+
+local function update(status)
     local state = status and status.state
     if state ~= "confirm" then
         closeDialog()
         asked = false
     end
+    updateButtons(state == "restart" and status or nil)
     if not status then return end
     if state == "preparing" then
         setLine(getText(KEY .. "Preparing"))
@@ -208,7 +257,7 @@ local function update()
     elseif state == "download" then
         setLine(getText(KEY .. "Progress", count(status.filesDone), count(status.files), size(status.bytesDone),
             size(status.bytes)))
-    else
+    elseif state ~= "restart" then -- the stop's reason is on the status line already
         error("unknown join state " .. tostring(state))
     end
 end
@@ -217,10 +266,15 @@ local function onTick()
     if guard.disabled then return end
     -- absent when ZombieBuddy did not load this mod's Java code: then no join waits for it
     if not Dont39AllInOne_getModSyncJoin or not Dont39AllInOne_answerModSyncJoin then return end
-    local now = getTimestampMs()
-    if now - lastPoll < POLL_MS then return end
-    lastPoll = now
-    local ok, err, trace = pcall(update)
+    local ok, err, trace = pcall(function()
+        -- every frame: a stop in the next frame needs the screen for its reason
+        local status = Dont39AllInOne_getModSyncJoin()
+        restoreScreen(status)
+        local now = getTimestampMs()
+        if now - lastPoll < POLL_MS then return end
+        lastPoll = now
+        update(status)
+    end)
     if not ok then fail("showing the join's state", err, trace) end
 end
 

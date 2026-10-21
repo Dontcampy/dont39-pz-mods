@@ -654,3 +654,74 @@ Two switches (bar/log, timing report) in Dont39LoadingProgress.ini and on the mo
 ### Status
 
 [OK] **Completed**
+
+
+## Session 28: Zabric one-launch mod folder override
+<!-- trellis-session: v=2 fp=97ef697910cf7c11 -->
+
+**Date**: 2026-10-21
+**Task**: Zabric one-launch mod folder override
+**Branch**: `claude/trellis-main-update-subtasks-6c01f8`
+
+### Summary
+
+Updated main; planned and implemented child 10-20-zabric-launch-override (Zabric LaunchOverride, JavaMods, WidenRoots); in-game check found and fixed a retransformation bug on runtime proxies; release deferred to the parent's integration review. Next: plan 10-20-mod-sync-java.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8560834` | Let a mod load a Workshop item from another folder for one launch, and tell which jar serves a package |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 29: mod-sync-java: server Java mods after one restart
+<!-- trellis-session: v=2 fp=e226d61509aa582d -->
+
+**Date**: 2026-10-21
+**Task**: mod-sync-java: server Java mods after one restart
+**Branch**: `claude/trellis-main-update-subtasks-6c01f8`
+
+### Summary
+
+Planned (J1 always restart, J3 refuse preload mods, J4 always ask on jar changes) and implemented 10-20-mod-sync-java; in-game rounds on the Linux test server found and fixed Zabric's premain side detection (empty sun.java.command on exe launches), the core's blank screen after a Workshop download, and CN line breaks. All three children done; next: the parent's integration review and release (Zabric first).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `394ec65` | Decide Zabric's launch override side at the game's main, not from sun.java.command |
+| `790281a` | Take a server's changed Java mod after one restart, then offer Rejoin |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 30: mod-sync-relaunch: restart the game with this launch's command line
+<!-- trellis-session: v=2 fp=f4c8446a20c88d96 -->
+
+**Date**: 2026-10-21
+**Task**: mod-sync-relaunch: restart the game with this launch's command line
+**Branch**: `claude/mod-sync-relaunch-fce8bc`
+
+### Summary
+
+Planned (D1 waiter process, D2 failures never silent, D3 one branch with the cachedir fix merged, D4 Windows only, D5 +connect by case) and implemented 10-21-mod-sync-relaunch: Zabric Relaunch (helper on the game's javaw, raw GetCommandLineW to CreateProcessW, failure log/marker/message box, main-menu notice) and mod-sync's Restart game. In game on the Linux test server: identical command line after relaunch (ZombieBuddy on the command line), override applied, Rejoin with the server's jar, +connect kept/cut per D5, both failure paths, Steam stayed Running; fixed the notice being covered by the Rejoin offer. Next: the parent's integration review and release (Zabric 0.5.0 first).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a3727aa` | Merge claude/cranky-pike-68a148: read -cachedir from the process |
+| `c558aa8` | Let Zabric restart the game with this launch's command line |
+| `ea65324` | Offer "Restart game" on mod-sync's restart stop |
+| `f9c5449` | Show a failed restart above the main menu's rejoin offer |
+| `10a8378` | chore(spec): Zabric relaunch rules; parent D9 now restarts the game |
+
+### Status
+
+[OK] **Completed**

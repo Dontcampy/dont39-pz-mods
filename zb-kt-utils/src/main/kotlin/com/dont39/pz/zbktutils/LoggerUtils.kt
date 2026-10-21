@@ -24,4 +24,10 @@ object LoggerUtils {
       warn(message())
     }
   }
+
+  inline fun DebugType.lzError(message: () -> String) {
+    if (isEnabled(LogSeverity.Error)) {
+      error(message())
+    }
+  }
 }

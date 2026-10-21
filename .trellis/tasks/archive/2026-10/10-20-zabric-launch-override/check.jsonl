@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, in-game verification"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Premain touches no game class and logs nothing"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "No me.zed_0xff outside the loader package"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No partial apply, no silent fallback"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "API only grows"}

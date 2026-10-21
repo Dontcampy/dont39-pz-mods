@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric's premain/preLaunch rules, GameArgs, <cache>/Zabric files, LaunchOverride"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Zabric public API packages, Lua globals from exactly javaPkgName"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Refused relaunch reported with a reason, never a silent degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines for the relaunch and its failures"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua globals, texts in EN and CN, source sets"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "LuaGlobal bridge, feature facade for mod-sync"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, comment style, in-game verification"}
+{"file": ".trellis/tasks/archive/2026-10/10-20-zabric-launch-override/design.md", "reason": "LaunchOverride contracts the relaunch must keep"}
+{"file": ".trellis/tasks/archive/2026-10/10-20-mod-sync-java/design.md", "reason": "Restart stop, Connect screen buttons, Rejoin"}
