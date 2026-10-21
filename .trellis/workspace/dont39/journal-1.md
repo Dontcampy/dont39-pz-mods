@@ -629,3 +629,26 @@ Updated main; planned and implemented child 10-20-zabric-launch-override (Zabric
 ### Status
 
 [OK] **Completed**
+
+
+## Session 29: mod-sync-java: server Java mods after one restart
+<!-- trellis-session: v=2 fp=e226d61509aa582d -->
+
+**Date**: 2026-10-21
+**Task**: mod-sync-java: server Java mods after one restart
+**Branch**: `claude/trellis-main-update-subtasks-6c01f8`
+
+### Summary
+
+Planned (J1 always restart, J3 refuse preload mods, J4 always ask on jar changes) and implemented 10-20-mod-sync-java; in-game rounds on the Linux test server found and fixed Zabric's premain side detection (empty sun.java.command on exe launches), the core's blank screen after a Workshop download, and CN line breaks. All three children done; next: the parent's integration review and release (Zabric first).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `394ec65` | Decide Zabric's launch override side at the game's main, not from sun.java.command |
+| `790281a` | Take a server's changed Java mod after one restart, then offer Rejoin |
+
+### Status
+
+[OK] **Completed**
