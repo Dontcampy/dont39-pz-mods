@@ -53,6 +53,7 @@ internal object ModSyncClient {
   private var expected = emptyList<JavaMod>()
 
   // the session runs some of them without the server's Java code: shown once in game, dropped when the game ends
+  // or reloads its mods
   private var notice: List<JavaRun.Notice>? = null
 
   val cache by lazy {
@@ -180,6 +181,7 @@ internal object ModSyncClient {
       loaded = true
     } else {
       restartStopped = false
+      notice = null
       Swap.off("the game reloads its mods ($activeMods)")
     }
   }

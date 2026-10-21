@@ -32,7 +32,7 @@ local function onOk()
 end
 
 local function show()
-    if guard.disabled then return end
+    if guard.disabled or not isClient() then return end
     -- absent when ZombieBuddy did not load this mod's Java code
     if not Dont39AllInOne_takeModSyncNotice then return end
     local text = Dont39AllInOne_takeModSyncNotice()

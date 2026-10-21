@@ -16,9 +16,9 @@ Each child goes through its own review gate before `task.py start`.
 
 - [x] Run the parent's cross-child acceptance criteria on the Linux test server and a Windows client.
 - [x] Vanilla client on the modded server; modded client on a vanilla server.
-- [ ] Release: Zabric release first (its child left the version at 0.4.1: first to ship takes 0.5.0, see
-      `10-20-zabric-launch-override` design "Compatibility"), then Dont39 All-in-One with the feature; version bumps per
-      [kotlin-runtime.md](../../spec/mod/kotlin-runtime.md).
+- [ ] Release: Zabric 0.5.0 first (its child left the version at 0.4.1: first to ship takes 0.5.0, see
+      `10-20-zabric-launch-override` design "Compatibility"), then ZabricKotlin 0.6.0 (`Feature.error`, review F2), then
+      Dont39 All-in-One 0.12.0 with the feature; version bumps per [kotlin-runtime.md](../../spec/mod/kotlin-runtime.md).
 - [x] Spec update for the new patterns (connection-details trailer, `CheckMods` hold, folder swap):
       [zombiebuddy-patching.md "Extending the Join"](../../spec/mod/zombiebuddy-patching.md#extending-the-join).
 
@@ -71,15 +71,15 @@ reset leave it out) and window messages for "click to start" and the in-game men
 
 Review: another session's report on PR #22 (architecture, performance, reuse; no blocking bug). User: "M1 选保留，F1 到 F6 一起做".
 
-1. [ ] Zabric: M1 keep `JavaMods`/`LoadPhase`/`WidenRoots` as API (option 2): `LoadPhase.LATER` and `workshop.txt` say
+1. [x] Zabric: M1 keep `JavaMods`/`LoadPhase`/`WidenRoots` as API (option 2): `LoadPhase.LATER` and `workshop.txt` say
        every later pass, main-menu reloads included; `JavaMods.Jar` a final class; `sha256` read only for
        `loaded()`/`lastPass()`, not in the `LoadStatus` shape the other reads share. F1 one reader of ZombieBuddy's
        Java-mod rules in `loader/`, used by `OverrideRequest`'s refusal and exposed for mod-sync; on the "recheck after
        a ZombieBuddy update" list. F3 `servingJar`/`pending`/`request`/`current` callable from any thread; packages
        indexed once per pass. F4 `Relaunch.restart` documents that it blocks up to the handshake. F6 one `children`.
-2. [ ] mod-sync: `ModInfo.kt` replaced by Zabric's reader; jar/manifest reads and `servingJar` off the game thread (the
+2. [x] mod-sync: `ModInfo.kt` replaced by Zabric's reader; jar/manifest reads and `servingJar` off the game thread (the
        join's worker); `JoinArgs` compares IP literals first and resolves names off the game thread. F5 `breakable`,
        `plain`, `lines` into `Dont39AllInOne_Common.lua`; one dialog helper for the join and rejoin Lua.
-3. [ ] F2: an error level on zb-kt-utils' `Feature` (ZabricKotlin 0.6.0); the post-pass "served by another jar" per
-       the user's choice.
+3. [x] F2: an error level on zb-kt-utils' `Feature` (ZabricKotlin 0.6.0); the post-pass "served by another jar" per
+       the user's choice (A: error log and a one-time notice in game; the join goes on).
 4. [ ] Gate: `build`, smokeTest, in-game spot check (restart stop, Rejoin, relaunch); push to PR #22.
