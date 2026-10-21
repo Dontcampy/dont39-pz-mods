@@ -18,6 +18,7 @@
 | Helpers shared by Zabric's packages (`[Zabric]` log prefix, jar reading) | `zabric/.../internal/` |
 | Hook runtime for other mods' glue | `zabric/.../hook/` ([Zabric Hooks](./zabric-hooks.md)) |
 | Restart notice | `zabric/.../restart/RestartList.java`, `RestartNotice.java`, `src/main/lua/client/Zabric_RestartNotice.lua` |
+| Game restart with this launch's command line (Windows clients) | `zabric/.../relaunch/Relaunch.java`; helper and failure record `relaunch/impl/`; `CreateProcessW` / `MessageBoxW` in `src/ffm/java/.../internal/WindowsProcess.java` |
 | Feature side: gating on the widening state | `Widening.kt`, `Feature.kt` in `zb-kt-utils` |
 
 Reference feature: `ime-keyboard-fix` (game fields).
@@ -61,6 +62,22 @@ Reference feature: `ime-keyboard-fix` (game fields).
   side's file before applying it (`mods/impl/LaunchOverrides.java`).
 - Premain reads the game's arguments from the process (`internal/GameArgs.java`), never `sun.java.command`: the
   game's native launcher starts the JVM through JNI, which leaves that property unset.
+- FFM code (Windows calls) lives in the `ffm` source set, compiled at release 22 and packed into the jar; the rest
+  stays at Zabric's release, since raising it breaks Gradle variant resolution for authors' release-17 builds
+  (`zabric/build.gradle.kts`).
+- A restart hands the game's own command line to a helper as the raw `GetCommandLineW` string and starts it with
+  `CreateProcessW`: re-quoting split arguments (`ProcessBuilder`) does not round-trip every line. A caller drops
+  arguments by index into `Relaunch.arguments()`, cut by span (`GameArgs.spansWindows`); `JoinArgs.kt` in `mod-sync`
+  is the reference caller.
+- The helper runs on the game's `javaw` from Zabric's jar, without `_JAVA_OPTIONS` / `JAVA_TOOL_OPTIONS` /
+  `JDK_JAVA_OPTIONS` (they would load ZombieBuddy and the game's heap into it), uses no game class, and loads every
+  class it needs before it answers: a Workshop update can replace the jar once the game quit
+  (`relaunch/impl/Waiter.java`).
+- Nothing after the game quit fails silently: the helper writes `<cache>/Zabric/relaunch.log` and a marker, shows a
+  message box, and the next main menu shows the marker once, above the middle where a mod's own dialog for the same
+  restart would cover it (`relaunch/impl/RelaunchFailure.java`, `Zabric_RestartNotice.lua`).
+- Windows clients only: Steam's Linux runtime container ends the other processes in it when the game exits, the
+  helper included; `Relaunch.unavailable()` names the reason, and callers keep their manual path.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
