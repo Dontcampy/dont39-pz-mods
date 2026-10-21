@@ -36,15 +36,15 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
 
     init {
       val found = scan(args)
-      val target = found.target
-      val known = if (target == null) false else compare(target, host, port, hosts)
+      val targetHost = found.target?.let { targetHost(it, port, hosts) }
+      val known = if (targetHost == null) false else compare(targetHost, host)
       if (known != null) {
         now = found.against(known)
         worker = null
       } else {
         now = null
         worker = Worker("Dont39AllInOne mod-sync +connect lookup") {
-          found.against(resolved(checkNotNull(target), host, port, hosts, log))
+          found.against(resolved(checkNotNull(targetHost), host, port, hosts, log))
         }.start()
       }
     }
@@ -75,7 +75,8 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
     // MainScreenState.main takes the next argument as the value of these, so it is never one of them itself
     private val TAKE_VALUE = setOf(CONNECT, PASSWORD, "-modfolders")
 
-    private val IPV4 = Regex("""\d{1,3}(\.\d{1,3}){3}""")
+    private val IPV4 = Regex("""[0-9]{1,3}(\.[0-9]{1,3}){3}""")
+    private val HEX = ('0'..'9') + ('a'..'f') + ('A'..'F')
 
     /**
      * [args]: this launch's arguments after the program; [host] and [port]: the server, as the join had them. JVM
@@ -84,8 +85,8 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
      */
     fun of(args: List<String>, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit): JoinArgs {
       val found = scan(args)
-      val target = found.target ?: return found.against(false)
-      return found.against(compare(target, host, port, hosts) ?: resolved(target, host, port, hosts, log))
+      val targetHost = found.target?.let { targetHost(it, port, hosts) } ?: return found.against(false)
+      return found.against(compare(targetHost, host) ?: resolved(targetHost, host, port, hosts, log))
     }
 
     private fun scan(args: List<String>): Found {
@@ -111,9 +112,8 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
       return Found(target, joinArgs)
     }
 
-    /** Whether [target] points at [host]:[port], or null when only resolving a host name can tell. */
-    private fun compare(target: String, host: String, port: Int, hosts: Hosts): Boolean? {
-      val targetHost = targetHost(target, port, hosts) ?: return false
+    /** Whether [targetHost] is [host], or null when only resolving a host name can tell. */
+    private fun compare(targetHost: String, host: String): Boolean? {
       if (targetHost == host.trim()) {
         return true
       }
@@ -140,19 +140,19 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
       fun addresses(name: String) = literal(name)?.let(::setOf) ?: try {
         hosts.resolve(name)
       } catch (e: UnknownHostException) {
-        log { "cannot resolve $name to compare this launch's +connect $target with $host:$port: $e" }
+        log { "cannot resolve $name to compare this launch's +connect $target:$port with $host:$port: $e" }
         emptySet()
       }
-      val targetHost = checkNotNull(targetHost(target, port, hosts)) { "+connect $target joins no host at $port" }
-      return addresses(targetHost).intersect(addresses(host.trim())).isNotEmpty()
+      return addresses(target).intersect(addresses(host.trim())).isNotEmpty()
     }
 
     /** [host] as an IP address, read without DNS; null when it is a name. */
     private fun literal(host: String): InetAddress? = when {
       IPV4.matches(host) -> host.split('.').map { it.toInt() }.takeIf { o -> o.all { it <= 255 } }
         ?.let { o -> InetAddress.getByAddress(ByteArray(4) { o[it].toByte() }) }
-      // Java parses such a host as an IPv6 literal and throws when it is none, never looking it up
-      ':' in host && (host[0] == ':' || Character.digit(host[0], 16) != -1) -> try {
+      // Java parses such a host as an IPv6 literal and throws when it is none, never looking it up; a non-ASCII digit
+      // first is looked up
+      ':' in host && (host[0] == ':' || host[0] in HEX) -> try {
         InetAddress.getByName(host)
       } catch (e: UnknownHostException) {
         null

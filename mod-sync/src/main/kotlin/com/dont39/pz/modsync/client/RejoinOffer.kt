@@ -34,6 +34,8 @@ internal object RejoinOffer {
     val user = checkNotNull(GameClient.username) { "the join has no user name" }
     val name = GameClient.serverName?.takeIf { it.isNotBlank() } ?: serverKey(host, port)
     store.write(RejoinStore.Rejoin(host, port, user, name, launchStart))
+    // replaces the server a +connect lookup may still compare, which a later answer would drop with this one
+    waiting = null
     ModSync.log { "the main menu offers to rejoin $name after the restart" }
   }
 

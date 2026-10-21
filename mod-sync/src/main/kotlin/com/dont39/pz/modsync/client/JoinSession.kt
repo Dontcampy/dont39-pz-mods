@@ -55,7 +55,7 @@ internal class JoinSession(
 
   /**
    * [overridden]: the items of [java] whose tree this launch already uses, through Zabric's override. [clientPreload]:
-   * why the client's own copy of an item of [java] cannot be taken over, null when it can.
+   * why the client's own copy of an item of [java] cannot be taken over or read, null when it can.
    */
   class Prepared(
     val fetcher: Fetcher,
@@ -182,8 +182,12 @@ internal class JoinSession(
       if (ready) Work.Reused(m, tree, install, plan.jarChanges) else Work.Build(m, tree, install, local, plan)
     }
     val java = work.filter { it.jarChanges.isNotEmpty() }
-    // before any download: the client's copy already tells
-    val clientPreload = javaReads { preloadStop(java) { it.install.resolve(SafePath.MODS) } }
+    // before any download: the client's copy already tells; stopped once the items are logged
+    val clientPreload = try {
+      preloadStop(java) { it.install.resolve(SafePath.MODS) }
+    } catch (e: IOException) {
+      javaUnreadable(e)
+    }
     return Prepared(fetcher, work, cache.servers.remembered(host, gamePort), overridden(java), clientPreload)
   }
 
