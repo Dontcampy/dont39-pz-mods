@@ -82,4 +82,7 @@ Review: another session's report on PR #22 (architecture, performance, reuse; no
        `plain`, `lines` into `Dont39AllInOne_Common.lua`; one dialog helper for the join and rejoin Lua.
 3. [x] F2: an error level on zb-kt-utils' `Feature` (ZabricKotlin 0.6.0); the post-pass "served by another jar" per
        the user's choice (A: error log and a one-time notice in game; the join goes on).
-4. [ ] Gate: `build`, smokeTest, in-game spot check (restart stop, Rejoin, relaunch); push to PR #22.
+4. [x] Gate: `build`, smokeTest, in-game spot check (restart stop, Rejoin, relaunch); push to PR #22.
+       Spot check (myserver2 on v8, client v9 uploaded by the user): the shared confirm dialog (下载并加入 / 取消) →
+       download → the Java check ("preparing") → restart stop with Restart game → relaunch → override at start → the
+       shared Rejoin dialog (重新加入 / 暂不) → "runs the server's Java code" → in game with no notice; no Lua error.
