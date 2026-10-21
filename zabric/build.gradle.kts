@@ -19,7 +19,10 @@ sourceSets.main {
   compileClasspath += ffm.output
   runtimeClasspath += ffm.output
 }
-sourceSets.test { runtimeClasspath += ffm.output }
+sourceSets.test {
+  compileClasspath += ffm.output
+  runtimeClasspath += ffm.output
+}
 tasks.jar { from(ffm.output) }
 tasks.named<Jar>("sourcesJar") { from(ffm.allSource) }
 

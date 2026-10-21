@@ -21,31 +21,50 @@ public final class GameArgs {
                 .orElseThrow(() -> new IllegalStateException("cannot read this process's arguments"));
     }
 
-    /** {@code line} split as the C runtime and {@code CommandLineToArgvW} split it. */
+    /** An argument of a Windows command line: its value, and its text {@code line.substring(start, end)}. */
+    public record Span(String value, int start, int end) {
+    }
+
+    /** {@code line} split as the C runtime splits it ({@code CommandLineToArgvW} too, for any usual program path). */
     static List<String> splitWindows(String line) {
-        List<String> args = new ArrayList<>();
+        return spansWindows(line).stream().map(Span::value).toList();
+    }
+
+    /** {@code line} split as {@link #splitWindows} splits it, with each argument's place in the line. */
+    public static List<Span> spansWindows(String line) {
+        List<Span> args = new ArrayList<>();
         StringBuilder arg = new StringBuilder();
-        boolean inArg = false;
+        int start = -1;
         boolean quoted = false;
         int i = 0;
         while (i < line.length()) {
             char c = line.charAt(i);
             if (!quoted && (c == ' ' || c == '\t')) {
-                if (inArg) {
-                    args.add(arg.toString());
+                if (start >= 0) {
+                    args.add(new Span(arg.toString(), start, i));
                     arg.setLength(0);
-                    inArg = false;
+                    start = -1;
                 }
                 i++;
                 continue;
             }
-            inArg = true;
-            if (c == '\\') {
-                int start = i;
+            if (start < 0) {
+                start = i;
+            }
+            if (args.isEmpty()) {
+                // the program name has no escapes: a path's backslash before a quote is a backslash
+                if (c == '"') {
+                    quoted = !quoted;
+                } else {
+                    arg.append(c);
+                }
+                i++;
+            } else if (c == '\\') {
+                int from = i;
                 while (i < line.length() && line.charAt(i) == '\\') {
                     i++;
                 }
-                int n = i - start;
+                int n = i - from;
                 boolean beforeQuote = i < line.length() && line.charAt(i) == '"';
                 arg.append("\\".repeat(beforeQuote ? n / 2 : n));
                 if (beforeQuote && n % 2 == 1) {
@@ -65,8 +84,8 @@ public final class GameArgs {
                 i++;
             }
         }
-        if (inArg) {
-            args.add(arg.toString());
+        if (start >= 0) {
+            args.add(new Span(arg.toString(), start, line.length()));
         }
         return args;
     }
