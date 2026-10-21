@@ -48,17 +48,29 @@ again themself" (user, 2026-10-21).
   `WindowsCommandLine`.
 - D4. Windows clients only (user, 2026-10-21). On Linux and macOS the restart stop shows "Quit game" only, as today,
   and the log says why there is no "Restart game".
+- D5. Join arguments are handled by case (user, 2026-10-21). The game takes the argument after each `+connect` /
+  `+password` as the join target / password (`MainScreenState.main`; the main menu opens vanilla's connect popup for
+  it, which needs no saved server entry). Against the server the restart is for (same port, and the same host string
+  or the same resolved address):
+  - no `+connect`: the command line as it is; Rejoin as today.
+  - `+connect` to this server: kept, with `+password`; the main menu of a launch whose `+connect` points at the
+    server to rejoin drops the Rejoin record instead of offering it, so there is one way back.
+  - `+connect` elsewhere (another server, a co-op host's Steam ID): `+connect`, `+password` and their values are cut
+    from the raw command line, the rest unchanged; Rejoin as today.
+  `+password` without `+connect` stays.
 
 ## Requirements
 
 - R1. A Zabric API that restarts the game (client, Windows): it starts the waiter (D1), and quits the game only once
   the waiter acknowledged; anything that fails before that throws with the reason and leaves the game running. It also
   answers whether a relaunch is possible here, with the reason when not (D4).
+- R1a. Zabric exposes this launch's arguments (after the program) and restarts with chosen arguments omitted, cut
+  from the raw command line so the rest stays byte for byte.
 - R2. The waiter starts the game with the old process's exe, raw command line, working folder and environment once the
   old process exited, and reports every failure after the quit as D2 says.
 - R3. mod-sync's restart stop shows "Restart game" next to "Quit game" where R1 says a relaunch is possible. A refused
   relaunch shows its reason on the Connect screen; "Quit game" keeps working and the override request stays as it was.
-  The Rejoin offer after the relaunch is unchanged.
+  The Rejoin offer after the relaunch is unchanged, except as D5 says.
 - R4. The next launch's main menu shows a failure the waiter recorded (D2), once.
 
 ## Acceptance Criteria
@@ -68,6 +80,9 @@ again themself" (user, 2026-10-21).
       and Rejoin joins with the server's jar.
 - [ ] ZombieBuddy given on the command line (as Steam launch options give it, `-agentlib:zbNative --`) is still
       loaded after the relaunch.
+- [ ] A launch with `+connect` to the stopping server relaunches with it and shows vanilla's connect popup, no
+      Rejoin; with `+connect` to another server the relaunched command line lacks `+connect`/`+password` and is
+      otherwise the same (D5; unit-tested for all cases, the first two checked in game).
 - [ ] A relaunch refused before the quit shows its reason on the Connect screen, and "Quit game" then works.
 - [ ] A failure after the quit (old process kept alive past the wait, or the start failing) shows a message box,
       writes `relaunch.log`, and the next launch's main menu shows it once.

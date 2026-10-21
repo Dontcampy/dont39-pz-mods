@@ -6,11 +6,11 @@ Requirements and decisions: [prd.md](./prd.md). Parent contracts: [../10-20-serv
 
 | Layer | Owns |
 |---|---|
-| Zabric `relaunch` (API) | `Relaunch.unavailable()`, `Relaunch.restart()`: what this launch is, the waiter's start and handshake, the quit |
+| Zabric `relaunch` (API) | `Relaunch.unavailable()`, `arguments()`, `restart(omitted)`: what this launch is, the waiter's start and handshake, the quit |
 | Zabric `relaunch.impl` | `LaunchSpec` (what to start, its wire form), `Waiter` (the waiter's `main`), `RelaunchFailure` (log, marker) |
 | Zabric `ffm` source set | `WindowsProcess` (`CreateProcessW`, `MessageBoxW`), next to `WindowsCommandLine` |
 | Zabric `RestartNotice` + Lua | `Zabric_relaunchFailure()` and the main-menu dialog for D2's marker |
-| mod-sync | `Launch.relaunchUnavailable()` / `relaunch()`, the status table's `relaunch` key, the Lua button |
+| mod-sync | `Launch.relaunchUnavailable()` / `arguments()` / `relaunch(omitted)`, `JoinArgs` (D5), the status table's `relaunch` key, the Lua button, the Rejoin check |
 
 The public API is a new package `com.pzlauncher.zabric.relaunch` (Zabric's API packages are by subject: `mods`,
 `entrypoint`, `hook`); it needs a Zabric minor version at the parent's release.
@@ -21,8 +21,13 @@ The public API is a new package `com.pzlauncher.zabric.relaunch` (Zabric's API p
 public final class Relaunch {
     /** Why this launch cannot restart itself, or null when it can. */
     public static String unavailable();
-    /** Starts the waiter, then quits the game. Throws with the reason, and leaves the game running, when it cannot. */
-    public static void restart() throws IOException;
+    /** This launch's arguments after the program, as the game got them (GameArgs.read()); any OS. */
+    public static List<String> arguments();
+    /**
+     * Starts the waiter, then quits the game; the next launch omits the arguments at these indices of arguments(). Throws
+     * with the reason, and leaves the game running, when it cannot.
+     */
+    public static void restart(Set<Integer> omitted) throws IOException;
 }
 ```
 
@@ -30,8 +35,11 @@ public final class Relaunch {
 - `unavailable()`: not Windows (D4); a dedicated server; the exe path (`ProcessHandle.current().info().command()`) or
   the command line (`WindowsCommandLine.read()`) unreadable; `java.home/bin/javaw.exe` missing; the Zabric classes not
   from a jar file. Each a distinct reason. Read each time (cheap), so a later call sees the same answer as `restart()`.
-- `restart()`:
-  1. builds the `LaunchSpec` of this launch: pid, exe, raw command line, working folder (`user.dir`), environment
+- Omitting: the raw line is split by the CRT rules with each argument's span (`GameArgs` gains the span form; the
+  string form stays its projection); the omitted arguments' spans are cut together with the whitespace before them.
+  The rest of the line is untouched. An index outside the list throws.
+- `restart(omitted)`:
+  1. builds the `LaunchSpec` of this launch: pid, exe, the raw command line minus the omitted spans, working folder (`user.dir`), environment
      (`System.getenv()`, the JVM's snapshot of the launch's environment), the Zabric folder (`GameFolders.zabricDir()`).
   2. starts `javaw.exe --enable-native-access=ALL-UNNAMED -cp <Zabric.jar> com.pzlauncher.zabric.relaunch.impl.Waiter`
      with the environment minus `_JAVA_OPTIONS`, `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS` (D1), working folder the
@@ -77,16 +85,22 @@ the next.
   existing fake pattern.
 - `JoinStatus.restart(...)` gains `relaunch` (true when `relaunchUnavailable()` is null). The reason when false is
   logged once per stop.
-- `@LuaGlobal("Dont39AllInOne_restartModSyncGame")`: calls `relaunch()`; returns nil once the game is quitting, the
+- `JoinArgs` (pure, tested): from the argument list and the stopped server's host and port, with a resolver passed in,
+  the `+connect` target and whether it points at that server (same port; same trimmed host, or both resolve to one
+  address; a Steam ID never matches), and the indices to omit (D5: `+connect`/`+password` and their values when the
+  target is elsewhere, none otherwise).
+- `@LuaGlobal("Dont39AllInOne_restartModSyncGame")`: calls `relaunch(JoinArgs...omitted)` for the stop's server; returns nil once the game is quitting, the
   reason text otherwise (logged). The override request is untouched either way.
+- `RejoinOffer.luaOffer`: when this launch's `+connect` points at the server to rejoin (`JoinArgs`), drop the record
+  and log it instead of offering: vanilla's connect popup is the way back (D5).
 - Lua: the restart stop shows "Restart game" (accept colour) and "Quit game" side by side, next to Back. A click
   disables "Restart game"; a returned reason goes to the status line (`connectLabel`) and the button stays disabled
   for that stop. New keys `UI_Dont39AllInOne_ModSync_RestartGame`, `..._RestartFailed` (EN, CN).
 
 ## Compatibility and risks
 
-- Exactness: the raw command line and exe go to `CreateProcessW` unchanged, so quoting cannot drift. A launch that
-  came with `+connect`/`+password` (a Steam invite) repeats them, as the goal asks for the exact command line.
+- Exactness: the raw command line and exe go to `CreateProcessW` unchanged apart from D5's cut spans, so quoting
+  cannot drift.
 - Steam: the inherited `SteamAppId` keeps `SteamAPI_RestartAppIfNecessary` from bouncing; the waiter is a child of
   the game, the new game its child. Whether Steam keeps "in game" and playtime is observed in the in-game check
   (registry `HKCU\Software\Valve\Steam\Apps\108600\Running`), not required.
