@@ -725,3 +725,29 @@ Planned (D1 waiter process, D2 failures never silent, D3 one branch with the cac
 ### Status
 
 [OK] **Completed**
+
+
+## Session 31: PR #20 merges, review fixes and Workshop staging
+<!-- trellis-session: v=2 fp=6ff89c80d2883fab -->
+
+**Date**: 2026-10-21
+**Task**: PR #20 merges, review fixes and Workshop staging
+**Branch**: `claude/trellis-loading-progress-tasks-67a636`
+
+### Summary
+
+Merged main twice into PR #20 (#21 mod sync, #22 Java mod restart); resolved conflicts in pz-feature (pz-bundled-feature + pz-widening), specs, journal index, Lifecycle; Zabric author contract moved to zabric/README.md, so this branch's additions (launch-wide hooks, hooks from game start, loader progress) went there. zabric-v0.5.0 was already tagged on main, so Zabric goes out as 0.6.0 (PR title/body updated). Reviewed the PR (architecture/performance/generality, three parallel reviewers) and fixed the four pre-release items: LoaderProgress.listen checks the listener's jar against the mod id's records; JarLoadHook checks each pass loaded every recorded jar and ends a jar whose load throws (onThrowable); Zabric-Hooks: launch without preLaunch fails like an invalid value; Loading Progress ends a join failed on RakNet's thread at the game thread's next frame and asserts flows end on the game thread. Build gate, 255 tests, both smoke tests and a full launch pass. Rewrote the Loading Progress Workshop text for players and staged Zabric 0.6.0 and Loading Progress 0.1.0 into ~/Zomboid/Workshop for the user's upload. Open: merge PR, tag zabric-v0.6.0 + Maven Central, sample zabricVersion bump, write Loading Progress's new Workshop id into workshop.txt. Archived 10-20-server-mod-sync (done on main).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bcf8059` | Merge remote-tracking branch 'origin/main' into claude/trellis-loading-progress-tasks-67a636 |
+| `9d16c7c` | Merge origin/main into claude/trellis-loading-progress-tasks-67a636 |
+| `8ca0216` | Check loader progress listeners, pass ends and launch-wide hooks |
+| `8233d10` | Shorten the Loading Progress Workshop text |
+| `0cb3f78` | Write the Loading Progress Workshop text for players |
+
+### Status
+
+[OK] **Completed**

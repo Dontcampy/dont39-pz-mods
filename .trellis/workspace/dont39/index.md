@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 30
+- **Total Sessions**: 31
 - **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~727 | Active |
+| `journal-1.md` | ~753 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 31 | 2026-10-21 | PR #20 merges, review fixes and Workshop staging | `bcf8059`, `9d16c7c`, `8ca0216`, `8233d10`, `0cb3f78` | `claude/trellis-loading-progress-tasks-67a636` |
 | 30 | 2026-10-21 | mod-sync-relaunch: restart the game with this launch's command line | `a3727aa`, `c558aa8`, `ea65324`, `f9c5449`, `10a8378` | `claude/mod-sync-relaunch-fce8bc` |
 | 29 | 2026-10-21 | mod-sync-java: server Java mods after one restart | `394ec65`, `790281a` | `claude/trellis-main-update-subtasks-6c01f8` |
 | 28 | 2026-10-21 | Zabric one-launch mod folder override | `8560834` | `claude/trellis-main-update-subtasks-6c01f8` |
