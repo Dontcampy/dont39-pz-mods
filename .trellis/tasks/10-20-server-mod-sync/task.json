@@ -21,7 +21,8 @@
   "children": [
     "10-20-mod-sync-core",
     "10-20-zabric-launch-override",
-    "10-20-mod-sync-java"
+    "10-20-mod-sync-java",
+    "10-21-mod-sync-relaunch"
   ],
   "parent": null,
   "relatedFiles": [],
