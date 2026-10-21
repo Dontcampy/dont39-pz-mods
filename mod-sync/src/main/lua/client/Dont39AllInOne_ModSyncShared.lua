@@ -5,11 +5,15 @@ local Shared = {}
 Shared.KEY = "UI_Dont39AllInOne_ModSync_"
 Shared.PAD = 10
 
--- a line never starts with these: the break moves one character earlier
-local CLOSING = "，。、；：？！）」』》"
+-- a line never starts with these: the break moves one character earlier. As code points: the game does not read
+-- Lua source as UTF-8, so a literal never equals the translations' characters
+local CLOSING = {
+    [0xFF0C] = true, [0x3002] = true, [0x3001] = true, [0xFF1B] = true, [0xFF1A] = true, [0xFF1F] = true, -- ，。、；：？
+    [0xFF01] = true, [0xFF09] = true, [0x300D] = true, [0x300F] = true, [0x300B] = true, -- ！）」』》
+}
 
 local function closing(c)
-    return string.find(CLOSING, c, 1, true) ~= nil
+    return CLOSING[string.byte(c)] == true
 end
 
 -- the rich text panel breaks lines only at spaces, and Chinese text has none: split longer runs to the width

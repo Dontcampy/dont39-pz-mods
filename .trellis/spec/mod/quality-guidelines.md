@@ -95,6 +95,7 @@ into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for
 | `zb-kt-utils` classes in any jar but ZabricKotlin's | Duplicated on the shared classpath ([ZabricKotlin Utils](./zb-kt-utils.md)) |
 | Relocating `kotlin.*` | Not needed; ZabricKotlin installs the current stdlib |
 | Feature code inside `dont39-all-in-one` | Each feature is its own module |
+| Non-ASCII string literals in Lua source | The game does not read Lua source as UTF-8, so `"。"` never equals a translation's `。`; compare code points (`string.byte`), as `Dont39AllInOne_ModSyncShared.lua` does, and keep text in translations |
 
 ## Release Checklist
 
