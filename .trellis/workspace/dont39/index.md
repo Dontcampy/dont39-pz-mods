@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 29
+- **Total Sessions**: 30
 - **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~654 | Active |
+| `journal-1.md` | ~680 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 30 | 2026-10-21 | mod-sync-relaunch: restart the game with this launch's command line | `a3727aa`, `c558aa8`, `ea65324`, `f9c5449`, `10a8378` | `claude/mod-sync-relaunch-fce8bc` |
 | 29 | 2026-10-21 | mod-sync-java: server Java mods after one restart | `394ec65`, `790281a` | `claude/trellis-main-update-subtasks-6c01f8` |
 | 28 | 2026-10-21 | Zabric one-launch mod folder override | `8560834` | `claude/trellis-main-update-subtasks-6c01f8` |
 | 26 | 2026-10-20 | Server mod sync core (PR #21) | `5902e6d`, `371fbe7`, `43253dc`, `a4c9b25` | `claude/server-sync-mod-33c0e3` |
