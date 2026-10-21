@@ -131,8 +131,9 @@ What is not behind the seam and needs rework when switching loaders:
 - A feature that holds a join after vanilla's Workshop step shows the Connect screen again: `ServerWorkshopItemScreen`
   hides it for a download and never restores it, so a dialog or a stop's reason would have no screen
   (`restoreScreen` in `Dont39AllInOne_ModSyncJoin.lua`).
-- CN text in a rich text panel wraps through `breakable` (`Dont39AllInOne_ModSyncShared.lua`), which breaks only at
-  spaces and keeps closing punctuation off a line start: write no space between an ASCII word and CJK text.
+- CN text in a rich text panel wraps through `Common.breakable` (`allinone-common`'s `Dont39AllInOne_Common.lua`), which
+  breaks only at spaces and keeps closing punctuation off a line start: write no space between an ASCII word and CJK
+  text.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 

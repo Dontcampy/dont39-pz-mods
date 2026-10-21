@@ -1,63 +1,77 @@
--- Dont39 All-in-One: mod sync. What the join screen and the rejoin offer share: text for the rich text panel.
+-- Dont39 All-in-One: mod sync. What the join screen and the rejoin offer share: keys and their dialog.
+
+require "ISUI/ISPanel"
+require "ISUI/ISButton"
+require "ISUI/ISRichTextPanel"
 
 local Shared = {}
 
 Shared.KEY = "UI_Dont39AllInOne_ModSync_"
 Shared.PAD = 10
 
--- a line never starts with these: the break moves one character earlier. As code points: the game does not read
--- Lua source as UTF-8, so a literal never equals the translations' characters
-local CLOSING = {
-    [0xFF0C] = true, [0x3002] = true, [0x3001] = true, [0xFF1B] = true, [0xFF1A] = true, [0xFF1F] = true, -- ，。、；：？
-    [0xFF01] = true, [0xFF09] = true, [0x300D] = true, [0x300F] = true, [0x300B] = true, -- ！）」』》
-}
+local PAD = Shared.PAD
 
-local function closing(c)
-    return CLOSING[string.byte(c)] == true
+-- Rich text [body] over a row of [buttons], each { title, onClick, accept }, side by side; onClick gets the dialog.
+-- [extra], if given, adds a child between them: extra(dialog, y, rowHeight) returns its bottom. Centred, and opened
+-- by dialog:open().
+local Dialog = ISPanel:derive("Dont39AllInOne_ModSyncDialog")
+Shared.Dialog = Dialog
+
+function Dialog:new(width, body, buttons, extra)
+    local x = (getCore():getScreenWidth() - width) / 2
+    local o = ISPanel:new(x, 0, width, 100)
+    setmetatable(o, self)
+    self.__index = self
+    o.body = body
+    o.buttons = buttons
+    o.extra = extra
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
+    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+    o.moveWithMouse = true
+    return o
 end
 
--- the rich text panel breaks lines only at spaces, and Chinese text has none: split longer runs to the width
-function Shared.breakable(text, font, width)
-    local tm = getTextManager()
-    local words = {}
-    for word in string.gmatch(text, "%S+") do
-        if tm:MeasureStringX(font, word) <= width then
-            words[#words + 1] = word
-        else
-            local piece = ""
-            for i = 1, string.len(word) do
-                local c = string.sub(word, i, i)
-                if piece ~= "" and tm:MeasureStringX(font, piece .. c) > width then
-                    local n = string.len(piece)
-                    if closing(c) and n > 1 then
-                        words[#words + 1] = string.sub(piece, 1, n - 1)
-                        piece = string.sub(piece, n, n) .. c
-                    else
-                        words[#words + 1] = piece
-                        piece = c
-                    end
-                else
-                    piece = piece .. c
-                end
-            end
-            words[#words + 1] = piece
-        end
+function Dialog:createChildren()
+    ISPanel.createChildren(self)
+    local buttonHeight = math.max(25, getTextManager():getFontHeight(UIFont.Small) + 6)
+
+    local text = ISRichTextPanel:new(PAD, PAD, self.width - 2 * PAD, 10)
+    text:initialise()
+    text:instantiate()
+    text:noBackground()
+    text:setMargins(0, 0, 0, 0)
+    self:addChild(text)
+    text.text = self.body
+    text:paginate()
+
+    local bottom = text:getBottom()
+    if self.extra then bottom = self.extra(self, bottom + PAD, buttonHeight) end
+
+    local y = bottom + PAD * 2
+    local n = #self.buttons
+    local buttonWidth = (self.width - (n + 1) * PAD) / n
+    for i, b in ipairs(self.buttons) do
+        local button = ISButton:new(PAD + (i - 1) * (buttonWidth + PAD), y, buttonWidth, buttonHeight, b.title, self,
+            Dialog.onButton)
+        button.answer = b
+        button:initialise()
+        button:instantiate()
+        if b.accept then button:enableAcceptColor() else button:enableCancelColor() end
+        self:addChild(button)
     end
-    return table.concat(words, " ")
+
+    self:setHeight(y + buttonHeight + PAD)
+    self:setY((getCore():getScreenHeight() - self:getHeight()) / 2)
 end
 
--- the rich text panel reads " <...> " as a tag
-function Shared.plain(text)
-    return (string.gsub(string.gsub(tostring(text), "<", "("), ">", ")"))
+function Dialog:onButton(button)
+    button.answer.onClick(self)
 end
 
--- [text] as rich text lines that fit [width] in the panel's small font
-function Shared.lines(text, width)
-    local lines = {}
-    for line in string.gmatch(tostring(text) .. "\n", "(.-)\n") do
-        lines[#lines + 1] = Shared.breakable(Shared.plain(line), UIFont.NewSmall, width)
-    end
-    return table.concat(lines, " <LINE> ")
+function Dialog:open()
+    self:initialise()
+    self:addToUIManager()
+    self:setAlwaysOnTop(true)
 end
 
 return Shared

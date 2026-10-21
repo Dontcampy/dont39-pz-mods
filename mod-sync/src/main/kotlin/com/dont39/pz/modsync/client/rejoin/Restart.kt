@@ -4,12 +4,11 @@ import com.dont39.pz.modsync.client.java.Launch
 import java.io.IOException
 
 /**
- * Restarts the game for a join to [host]:[port] that stopped for a restart. Null once the game quits; otherwise why it
- * cannot restart, and the game runs on. A refusal is no error of this feature: the player can still quit and start the
- * game themself.
+ * Restarts the game for a join that stopped for a restart, [args] being this launch's arguments against its server.
+ * Null once the game quits; otherwise why it cannot restart, and the game runs on. A refusal is no error of this
+ * feature: the player can still quit and start the game themself.
  */
-internal fun restartFor(launch: Launch, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit): String? {
-  val args = JoinArgs.of(launch.arguments(), host, port, hosts, log)
+internal fun restartFor(launch: Launch, args: JoinArgs, log: (() -> String) -> Unit): String? {
   when {
     args.target == null -> {}
     args.toServer -> log { "the restarted game keeps +connect ${args.target}, which is this server" }

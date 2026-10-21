@@ -2,10 +2,6 @@
 -- menu of a later launch offers to join that server again, through the vanilla join with its saved entry and account.
 -- The Java side keeps the server; Dont39AllInOne_getModSyncRejoin's keys are listed in RejoinOffer.kt.
 
-require "ISUI/ISPanel"
-require "ISUI/ISButton"
-require "ISUI/ISRichTextPanel"
-
 local Common = require "Dont39AllInOne_Common"
 local Shared = require "Dont39AllInOne_ModSyncShared"
 
@@ -15,6 +11,7 @@ local PAD = Shared.PAD
 local WIDTH = 460
 
 local dialog = nil
+local waiting = false -- the Java side still decides whether to offer; asked again every frame
 
 local function closeDialog()
     if dialog then
@@ -30,69 +27,29 @@ local guard = Common.guard(PREFIX, function()
 end)
 local fail = guard.fail
 
-local Dialog = ISPanel:derive("Dont39AllInOne_ModSyncRejoinDialog")
+-- closed first: the answer may open the server list
+local function answered(onClick)
+    return function()
+        closeDialog()
+        local ok, err, trace = pcall(onClick)
+        if not ok then fail("taking the answer", err, trace) end
+    end
+end
 
 -- [buttons]: { title, onClick, accept } each, side by side
-function Dialog:new(body, buttons)
-    local x = (getCore():getScreenWidth() - WIDTH) / 2
-    local o = ISPanel:new(x, 0, WIDTH, 100)
-    setmetatable(o, self)
-    self.__index = self
-    o.body = body
-    o.buttons = buttons
-    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
-    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
-    o.moveWithMouse = true
-    return o
-end
-
-function Dialog:createChildren()
-    ISPanel.createChildren(self)
-    local buttonHeight = math.max(25, getTextManager():getFontHeight(UIFont.Small) + 6)
-
-    local text = ISRichTextPanel:new(PAD, PAD, self.width - 2 * PAD, 10)
-    text:initialise()
-    text:instantiate()
-    text:noBackground()
-    text:setMargins(0, 0, 0, 0)
-    self:addChild(text)
-    text.text = self.body
-    text:paginate()
-
-    local y = text:getBottom() + PAD * 2
-    local n = #self.buttons
-    local buttonWidth = (self.width - (n + 1) * PAD) / n
-    for i, b in ipairs(self.buttons) do
-        local button = ISButton:new(PAD + (i - 1) * (buttonWidth + PAD), y, buttonWidth, buttonHeight, b.title, self,
-            Dialog.onButton)
-        button.answer = b
-        button:initialise()
-        button:instantiate()
-        if b.accept then button:enableAcceptColor() else button:enableCancelColor() end
-        self:addChild(button)
-    end
-
-    self:setHeight(y + buttonHeight + PAD)
-    self:setY((getCore():getScreenHeight() - self:getHeight()) / 2)
-end
-
-function Dialog:onButton(button)
-    closeDialog()
-    local ok, err, trace = pcall(button.answer.onClick)
-    if not ok then fail("taking the answer", err, trace) end
-end
-
 local function open(title, text, buttons)
     local width = WIDTH - 2 * PAD
     local head = " <TEXT> "
     if title then
-        head = " <H2> " .. Shared.breakable(Shared.plain(title), UIFont.Medium, width) .. " <LINE> <TEXT> "
+        head = " <H2> " .. Common.breakable(Common.plain(title), UIFont.Medium, width) .. " <LINE> <TEXT> "
     end
-    local body = head .. Shared.lines(text, width)
-    dialog = Dialog:new(body, buttons)
-    dialog:initialise()
-    dialog:addToUIManager()
-    dialog:setAlwaysOnTop(true)
+    local body = head .. Common.lines(text, width)
+    local row = {}
+    for i, b in ipairs(buttons) do
+        row[i] = { title = b.title, onClick = answered(b.onClick), accept = b.accept }
+    end
+    dialog = Shared.Dialog:new(WIDTH, body, row)
+    dialog:open()
 end
 
 local function trim(s)
@@ -126,12 +83,18 @@ local function rejoin(server, account)
 end
 
 local function offer()
+    waiting = false
     if guard.disabled then return end
     -- absent when ZombieBuddy did not load this mod's Java code
     if not Dont39AllInOne_getModSyncRejoin or not Dont39AllInOne_dropModSyncRejoin then return end
     if MainScreen.instance and MainScreen.instance.inGame then return end
     local o = Dont39AllInOne_getModSyncRejoin()
     if not o then return end
+    -- a +connect host name is still resolved, off the game thread
+    if o.pending then
+        waiting = true
+        return
+    end
     if type(o.host) ~= "string" or type(o.port) ~= "number" or type(o.user) ~= "string" or type(o.name) ~= "string" then
         error("the server to rejoin lacks its host, port, user or name")
     end
@@ -150,7 +113,13 @@ local function offer()
     })
 end
 
-Events.OnMainMenuEnter.Add(function()
+local function tryOffer()
     local ok, err, trace = pcall(offer)
     if not ok then fail("offering to rejoin", err, trace) end
+end
+
+Events.OnMainMenuEnter.Add(tryOffer)
+
+Events.OnFETick.Add(function()
+    if waiting then tryOffer() end
 end)

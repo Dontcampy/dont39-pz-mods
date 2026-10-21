@@ -4,9 +4,7 @@
 -- where the Java side can, and to quit it. The Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are
 -- listed in JoinStatus.kt.
 
-require "ISUI/ISPanel"
 require "ISUI/ISButton"
-require "ISUI/ISRichTextPanel"
 require "ISUI/ISTickBox"
 
 local Common = require "Dont39AllInOne_Common"
@@ -77,75 +75,33 @@ local function answer(choice)
     Dont39AllInOne_answerModSyncJoin(choice)
 end
 
-local Dialog = ISPanel:derive("Dont39AllInOne_ModSyncDialog")
-
-function Dialog:createChildren()
-    ISPanel.createChildren(self)
-    local font = UIFont.Small
-    local buttonHeight = math.max(25, getTextManager():getFontHeight(font) + 6)
-
-    local text = ISRichTextPanel:new(PAD, PAD, self.width - 2 * PAD, 10)
-    text:initialise()
-    text:instantiate()
-    text:noBackground()
-    text:setMargins(0, 0, 0, 0)
-    self:addChild(text)
-    text.text = self.body
-    text:paginate()
-
-    local tick = ISTickBox:new(PAD, text:getBottom() + PAD, self.width - 2 * PAD, buttonHeight, "", nil, nil)
-    tick:initialise()
-    tick:instantiate()
-    self:addChild(tick)
-    tick:addOption(getText(KEY .. "DontAsk"))
-    self.tick = tick
-
-    local y = tick:getBottom() + PAD * 2
-    local buttonWidth = (self.width - 3 * PAD) / 2
-    local download = ISButton:new(PAD, y, buttonWidth, buttonHeight, getText(KEY .. "Download"), self, Dialog.onDownload)
-    download:initialise()
-    download:instantiate()
-    download:enableAcceptColor()
-    self:addChild(download)
-    local cancel = ISButton:new(PAD * 2 + buttonWidth, y, buttonWidth, buttonHeight, getText(KEY .. "Cancel"), self,
-        Dialog.onCancel)
-    cancel:initialise()
-    cancel:instantiate()
-    cancel:enableCancelColor()
-    self:addChild(cancel)
-
-    self:setHeight(y + buttonHeight + PAD)
-    self:setY((getCore():getScreenHeight() - self:getHeight()) / 2)
-end
-
-function Dialog:onDownload()
-    local remember = self.tick:isSelected(1)
+local function onDownload(d)
+    local remember = d.tick:isSelected(1)
     local ok, err, trace = pcall(answer, remember and "remember" or "accept")
     if not ok then fail("taking the answer", err, trace) end
 end
 
-function Dialog:onCancel()
+local function onCancel()
     local ok, err, trace = pcall(answer, "decline")
     if not ok then fail("taking the answer", err, trace) end
 end
 
-function Dialog:new(body)
-    local x = (getCore():getScreenWidth() - WIDTH) / 2
-    local o = ISPanel:new(x, 0, WIDTH, 100)
-    setmetatable(o, self)
-    self.__index = self
-    o.body = body
-    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.9 }
-    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
-    o.moveWithMouse = true
-    return o
+-- the "don't ask again" choice, between the text and the buttons
+local function addTick(d, y, height)
+    local tick = ISTickBox:new(PAD, y, d.width - 2 * PAD, height, "", nil, nil)
+    tick:initialise()
+    tick:instantiate()
+    d:addChild(tick)
+    tick:addOption(getText(KEY .. "DontAsk"))
+    d.tick = tick
+    return tick:getBottom()
 end
 
 local function confirmText(status)
     local width = WIDTH - 2 * PAD
-    local function text(s) return Shared.breakable(Shared.plain(s), UIFont.NewSmall, width) end
+    local function text(s) return Common.breakable(Common.plain(s), UIFont.NewSmall, width) end
     local lines = {
-        " <H2> " .. Shared.breakable(Shared.plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
+        " <H2> " .. Common.breakable(Common.plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
         " <TEXT> " .. text(getText(KEY .. "ConfirmText", status.server)),
         "",
     }
@@ -156,7 +112,7 @@ local function confirmText(status)
             lines[#lines + 1] = text(getText(KEY .. "ConfirmItemNoDownload", item.name))
         end
         if item.java then
-            local java = Shared.breakable(Shared.plain(getText(KEY .. "ConfirmJava")), UIFont.NewSmall, width - PAD)
+            local java = Common.breakable(Common.plain(getText(KEY .. "ConfirmJava")), UIFont.NewSmall, width - PAD)
             lines[#lines + 1] = " <INDENT:" .. PAD .. "> " .. java .. " <INDENT:0> "
         end
     end
@@ -169,10 +125,11 @@ local function openDialog(status)
     if type(status.items) ~= "table" or type(status.server) ~= "string" then
         error("the join asks without its items or server")
     end
-    dialog = Dialog:new(confirmText(status))
-    dialog:initialise()
-    dialog:addToUIManager()
-    dialog:setAlwaysOnTop(true)
+    dialog = Shared.Dialog:new(WIDTH, confirmText(status), {
+        { title = getText(KEY .. "Download"), onClick = onDownload, accept = true },
+        { title = getText(KEY .. "Cancel"), onClick = onCancel },
+    }, addTick)
+    dialog:open()
 end
 
 -- the Connect screen's line under the server name, which vanilla also writes the join's states to

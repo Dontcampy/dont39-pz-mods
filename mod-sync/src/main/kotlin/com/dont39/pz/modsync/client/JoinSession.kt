@@ -8,7 +8,6 @@ import com.dont39.pz.modsync.client.download.Plan
 import com.dont39.pz.modsync.client.download.Progress
 import com.dont39.pz.modsync.client.java.JavaMod
 import com.dont39.pz.modsync.client.java.Launch
-import com.dont39.pz.modsync.client.java.ModInfo
 import com.dont39.pz.modsync.client.swap.SwapEntry
 import com.dont39.pz.modsync.protocol.SafePath
 import com.dont39.pz.modsync.protocol.SyncException
@@ -18,8 +17,9 @@ import java.nio.file.Path
 
 /**
  * One join to a server that offers its Workshop items, from its connection-details to the end of the `CheckMods`
- * hold. Polled on the game thread, which alone touches it; its workers only report through their outcome. Game-free:
- * the install folder lookup, this launch's Java side and the log are passed in.
+ * hold. Polled on the game thread, which alone touches it; its workers do the network and file work, jars included,
+ * and only report through their outcome. Game-free: the install folder lookup, this launch's Java side and the log are
+ * passed in.
  *
  * An item whose server copy changes a jar is never loaded at the join: Java classes cannot be unloaded, so the next
  * launch takes the item from its tree through Zabric's override, and the join stops for that restart.
@@ -53,7 +53,17 @@ internal class JoinSession(
       Work(marked, tree, install, plan.jarChanges)
   }
 
-  class Prepared(val fetcher: Fetcher, val items: List<Work>, val remembered: Boolean) {
+  /**
+   * [overridden]: the items of [java] whose tree this launch already uses, through Zabric's override. [clientPreload]:
+   * why the client's own copy of an item of [java] cannot be taken over, null when it can.
+   */
+  class Prepared(
+    val fetcher: Fetcher,
+    val items: List<Work>,
+    val remembered: Boolean,
+    val overridden: Set<Long>,
+    val clientPreload: Step.Stop?,
+  ) {
     val builds: List<Work.Build> = items.filterIsInstance<Work.Build>()
     val java: List<Work> = items.filter { it.jarChanges.isNotEmpty() }
 
@@ -63,6 +73,9 @@ internal class JoinSession(
     val downloadBytes: Long = builds.sumOf { it.plan.downloadBytes }
     val copyFiles: Int = builds.sumOf { it.plan.copy.size }
   }
+
+  /** What the trees' Java mods say: [expected] as [Step.Ready.expected]; [notYet] need a restart. */
+  class Checked(val expected: List<JavaMod>, val notYet: List<Work>)
 
   /** Thrown on a worker: the join stops as [stop] says. */
   class StopJoin(val stop: Step.Stop) : Exception(stop.why)
@@ -93,6 +106,8 @@ internal class JoinSession(
     class Confirm(val prepared: Prepared) : Phase
 
     class Building(val worker: Worker<Unit>, val prepared: Prepared) : Phase
+
+    class Checking(val worker: Worker<Checked>, val prepared: Prepared) : Phase
 
     data object Over : Phase
   }
@@ -133,6 +148,8 @@ internal class JoinSession(
     is Phase.Confirm -> confirmed(p.prepared)
     is Phase.Building -> p.worker.outcome?.let { o -> outcome(o, "downloading the server's Workshop items") { built(p) } }
       ?: Step.Hold
+    is Phase.Checking -> p.worker.outcome?.let { o -> outcome(o, JAVA_CHECK) { checked(p.prepared, it) } }
+      ?: Step.Hold
     Phase.Over -> throw IllegalStateException("the join was polled after its hold ended")
   }
 
@@ -140,6 +157,7 @@ internal class JoinSession(
     when (val p = phase) {
       is Phase.Preparing -> p.worker.cancel()
       is Phase.Building -> p.worker.cancel()
+      is Phase.Checking -> p.worker.cancel()
       else -> {}
     }
     phase = Phase.Over
@@ -163,7 +181,10 @@ internal class JoinSession(
       val plan = Plan.of(compared, local)
       if (ready) Work.Reused(m, tree, install, plan.jarChanges) else Work.Build(m, tree, install, local, plan)
     }
-    return Prepared(fetcher, work, cache.servers.remembered(host, gamePort))
+    val java = work.filter { it.jarChanges.isNotEmpty() }
+    // before any download: the client's copy already tells
+    val clientPreload = javaReads { preloadStop(java) { it.install.resolve(SafePath.MODS) } }
+    return Prepared(fetcher, work, cache.servers.remembered(host, gamePort), overridden(java), clientPreload)
   }
 
   private fun prepared(prepared: Prepared): Step {
@@ -181,24 +202,20 @@ internal class JoinSession(
         log { "${w.marked.label}: the server's version has other jars: ${w.jarChanges.joinToString(", ")}" }
       }
     }
-    return decide {
-      // before any download: the client's copy already tells
-      preloadStop(prepared.java) { it.install.resolve(SafePath.MODS) }?.let { return@decide stop(it) }
-      // Java code from a server always asks; the Rejoin after the restart was answered before it
-      val overridden = overridden(prepared.java)
-      val askJava = prepared.java.any { it.marked.id !in overridden }
-      when {
-        askJava || (prepared.downloadFiles > 0 && !prepared.remembered) -> {
-          log {
-            "asking whether to download ${prepared.downloadBytes} bytes from $host:$gamePort" +
-              if (askJava) " and run Java code from it" else ""
-          }
-          phase = Phase.Confirm(prepared)
-          Step.Hold
+    prepared.clientPreload?.let { return stop(it) }
+    // Java code from a server always asks; the Rejoin after the restart was answered before it
+    val askJava = prepared.java.any { it.marked.id !in prepared.overridden }
+    return when {
+      askJava || (prepared.downloadFiles > 0 && !prepared.remembered) -> {
+        log {
+          "asking whether to download ${prepared.downloadBytes} bytes from $host:$gamePort" +
+            if (askJava) " and run Java code from it" else ""
         }
-        prepared.builds.isEmpty() -> ready(prepared)
-        else -> build(prepared, remember = false)
+        phase = Phase.Confirm(prepared)
+        Step.Hold
       }
+      prepared.builds.isEmpty() -> check(prepared)
+      else -> build(prepared, remember = false)
     }
   }
 
@@ -232,25 +249,43 @@ internal class JoinSession(
   private fun built(building: Phase.Building): Step {
     val progress = building.worker.progress
     log { "downloaded ${progress.filesDone} files (${progress.bytesDone} bytes)" }
-    return ready(building.prepared)
+    return check(building.prepared)
   }
 
   /** Once every tree is built: the Java side of the items that change a jar decides how the join goes on. */
-  private fun ready(prepared: Prepared): Step = decide {
-    val overridden = overridden(prepared.java)
-    val mainMenu by lazy { launch.mainMenuMods() }
-    val expected = prepared.java.filter { it.marked.id in overridden }.flatMap { w ->
-      javaMods(w.treeMods).onEach { mod -> notServed(w, mod, mainMenu)?.let { return@decide stop(it) } }
+  private fun check(prepared: Prepared): Step {
+    if (prepared.java.isEmpty()) {
+      return ready(prepared, emptyList())
     }
-    val notYet = prepared.java.filter { it.marked.id !in overridden }
-    if (notYet.isNotEmpty()) {
-      return@decide restart(prepared.java, notYet)
-    }
-    phase = Phase.Over
-    Step.Ready(prepared.items.map { w -> SwapEntry.of(w.marked.id, w.install, w.tree) }, expected)
+    // the game's mod list on the game thread; the jars on the worker
+    val mainMenu = launch.mainMenuMods()
+    val worker = Worker("Dont39AllInOne mod-sync Java check") { javaCheck(prepared, mainMenu) }
+    phase = Phase.Checking(worker.start(), prepared)
+    return Step.Hold
   }
 
-  /** The items of [java] whose tree this launch already uses, through Zabric's override. */
+  /** On the worker: reads the trees' Java mods; a reason to stop is thrown as [StopJoin]. */
+  private fun javaCheck(prepared: Prepared, mainMenu: Set<String>): Checked = javaReads {
+    val expected = prepared.java.filter { it.marked.id in prepared.overridden }.flatMap { w ->
+      launch.javaMods(w.treeMods).onEach { mod -> notServed(w, mod, mainMenu)?.let { throw StopJoin(it) } }
+    }
+    val notYet = prepared.java.filter { it.marked.id !in prepared.overridden }
+    if (notYet.isNotEmpty()) {
+      // the server's mod.info may differ from the client's, which was checked before the download
+      preloadStop(prepared.java) { it.treeMods }?.let { throw StopJoin(it) }
+    }
+    Checked(expected, notYet)
+  }
+
+  private fun checked(prepared: Prepared, checked: Checked): Step =
+    if (checked.notYet.isNotEmpty()) restart(prepared.java, checked.notYet) else ready(prepared, checked.expected)
+
+  private fun ready(prepared: Prepared, expected: List<JavaMod>): Step {
+    phase = Phase.Over
+    return Step.Ready(prepared.items.map { w -> SwapEntry.of(w.marked.id, w.install, w.tree) }, expected)
+  }
+
+  /** On a worker: the items of [java] whose tree this launch already uses, through Zabric's override. */
   private fun overridden(java: List<Work>): Set<Long> {
     if (java.isEmpty()) {
       return emptySet()
@@ -260,7 +295,7 @@ internal class JoinSession(
       .mapTo(hashSetOf()) { it.marked.id }
   }
 
-  /** Why [mod] of an overridden item does not run from its tree at this join; null when it does or will. */
+  /** On the worker: why [mod] of an overridden item will not run from its tree at this join, or null. */
   private fun notServed(w: Work, mod: JavaMod, mainMenu: Set<String>): Step.Stop? {
     val served = launch.servingJar(mod.pkg)
     val tree = mod.jar.toRealPath()
@@ -286,21 +321,20 @@ internal class JoinSession(
 
   /**
    * Sets up the next launch to take every item of [java] from its tree, keeping what another server requested, and
-   * stops the join; [notYet] are those this launch does not take from there yet.
+   * stops the join; [notYet] are those this launch does not take from there yet. On the game thread, so that a join
+   * Back ended never leaves a request behind.
    */
-  private fun restart(java: List<Work>, notYet: List<Work>): Step {
-    // the server's mod.info may differ from the client's, which was checked before the download
-    preloadStop(java) { it.treeMods }?.let { return stop(it) }
+  private fun restart(java: List<Work>, notYet: List<Work>): Step = decide {
     val request = launch.pending() + java.associate { it.marked.id.toString() to it.treeMods }
     launch.request(request)
     log { "requested for the next launch: ${request.entries.joinToString(", ") { (id, mods) -> "$id from $mods" }}" }
     val labels = notYet.joinToString(", ") { it.marked.label }
-    return stop(Step.Stop("Failed_Restart", listOf(labels), "$labels need a restart for their Java code", true))
+    stop(Step.Stop("Failed_Restart", listOf(labels), "$labels need a restart for their Java code", true))
   }
 
   private fun preloadStop(items: List<Work>, modsFolder: (Work) -> Path): Step.Stop? {
     items.forEach { w ->
-      javaMods(modsFolder(w)).firstOrNull { it.preload }?.let { mod ->
+      launch.javaMods(modsFolder(w)).firstOrNull { it.preload }?.let { mod ->
         return Step.Stop(
           "Failed_Preload",
           listOf(mod.name, w.marked.label),
@@ -311,17 +345,25 @@ internal class JoinSession(
     return null
   }
 
-  private fun javaMods(modsFolder: Path): List<JavaMod> = ModInfo.javaMods(modsFolder, launch::versionFolder)
+  /** On a worker: a Java mod's file that cannot be read stops the join, not as a network failure. */
+  private inline fun <T> javaReads(body: () -> T): T = try {
+    body()
+  } catch (e: IOException) {
+    throw StopJoin(javaUnreadable(e))
+  }
 
-  /** A file that cannot be read stops the join; anything else is an error of the feature. */
+  /** On the game thread: a file that cannot be read stops the join; anything else is an error of the feature. */
   private inline fun decide(body: () -> Step): Step = try {
     body()
   } catch (e: IOException) {
-    describe(e).let { stop(Step.Stop("Failed", listOf(it), "checking the server's Java mods: $it")) }
+    stop(javaUnreadable(e))
   } catch (t: Throwable) {
     phase = Phase.Over
-    Step.Broken("checking the server's Java mods", t)
+    Step.Broken(JAVA_CHECK, t)
   }
+
+  private fun javaUnreadable(e: IOException): Step.Stop =
+    describe(e).let { Step.Stop("Failed", listOf(it), "$JAVA_CHECK: $it") }
 
   private fun <T> outcome(outcome: Worker.Outcome<T>, what: String, done: (T) -> Step): Step = when (outcome) {
     is Worker.Outcome.Done -> done(outcome.value)
@@ -347,5 +389,6 @@ internal class JoinSession(
 
   companion object {
     const val KEY_PREFIX = "UI_Dont39AllInOne_ModSync_"
+    private const val JAVA_CHECK = "checking the server's Java mods"
   }
 }

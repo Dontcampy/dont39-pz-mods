@@ -1,5 +1,6 @@
 package com.dont39.pz.modsync.client.rejoin
 
+import com.dont39.pz.modsync.client.java.JavaMod
 import com.dont39.pz.modsync.client.java.Launch
 import java.io.IOException
 import java.net.InetAddress
@@ -30,11 +31,11 @@ class RestartTest {
 
     override fun request(modsByItem: Map<String, Path>) = unused()
 
+    override fun javaMods(modsFolder: Path): List<JavaMod> = unused()
+
     override fun servingJar(pkg: String): Path? = unused()
 
     override fun mainMenuMods(): Set<String> = unused()
-
-    override fun versionFolder(modFolder: Path): String = unused()
 
     private fun unused(): Nothing = throw UnsupportedOperationException("a restart does not ask this")
   }
@@ -47,7 +48,10 @@ class RestartTest {
 
   private val logged = mutableListOf<String>()
 
-  private fun restart(launch: Launch) = restartFor(launch, "play.example.com", 16261, NoNames) { logged += it() }
+  private fun restart(launch: Launch): String? {
+    val args = JoinArgs.of(launch.arguments(), "play.example.com", 16261, NoNames) { logged += it() }
+    return restartFor(launch, args) { logged += it() }
+  }
 
   @Test
   fun `the restart keeps a +connect to this server`() {

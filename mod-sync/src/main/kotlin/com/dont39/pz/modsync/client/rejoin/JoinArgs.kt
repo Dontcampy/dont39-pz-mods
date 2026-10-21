@@ -1,5 +1,6 @@
 package com.dont39.pz.modsync.client.rejoin
 
+import com.dont39.pz.modsync.client.Worker
 import java.net.InetAddress
 import java.net.UnknownHostException
 import zombie.core.znet.SteamUtils
@@ -25,6 +26,48 @@ internal object GameHosts : Hosts {
  * indices a restart leaves out, so that it does not join another server than the one it restarts for.
  */
 internal data class JoinArgs(val target: String?, val toServer: Boolean, val omitted: Set<Int>) {
+  /**
+   * [JoinArgs.of] for the game thread, which never waits for DNS: done at once unless a host name must be resolved,
+   * which a worker does. Its [log] may run on the worker.
+   */
+  class Lookup(args: List<String>, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit) {
+    private val now: JoinArgs?
+    private val worker: Worker<JoinArgs>?
+
+    init {
+      val found = scan(args)
+      val target = found.target
+      val known = if (target == null) false else compare(target, host, port, hosts)
+      if (known != null) {
+        now = found.against(known)
+        worker = null
+      } else {
+        now = null
+        worker = Worker("Dont39AllInOne mod-sync +connect lookup") {
+          found.against(resolved(checkNotNull(target), host, port, hosts, log))
+        }.start()
+      }
+    }
+
+    /** Null while the lookup runs; throws what it threw. */
+    val result: JoinArgs?
+      get() = now ?: when (val o = checkNotNull(worker).outcome) {
+        null -> null
+        is Worker.Outcome.Done -> o.value
+        is Worker.Outcome.Failed -> throw IllegalStateException("comparing this launch's +connect failed", o.error)
+        Worker.Outcome.Cancelled -> throw IllegalStateException("the +connect lookup was cancelled")
+      }
+  }
+
+  /** The last `+connect`'s value and the indices of every `+connect` and `+password` with their values. */
+  private class Found(val target: String?, val joinArgs: Set<Int>) {
+    fun against(toServer: Boolean) = when {
+      target == null -> JoinArgs(null, false, emptySet())
+      toServer -> JoinArgs(target, true, emptySet())
+      else -> JoinArgs(target, false, joinArgs)
+    }
+  }
+
   companion object {
     private const val CONNECT = "+connect"
     private const val PASSWORD = "+password"
@@ -32,11 +75,20 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
     // MainScreenState.main takes the next argument as the value of these, so it is never one of them itself
     private val TAKE_VALUE = setOf(CONNECT, PASSWORD, "-modfolders")
 
+    private val IPV4 = Regex("""\d{1,3}(\.\d{1,3}){3}""")
+
     /**
      * [args]: this launch's arguments after the program; [host] and [port]: the server, as the join had them. JVM
-     * options in [args] are scanned too: none can be one of these words, which the JVM would refuse.
+     * options in [args] are scanned too: none can be one of these words, which the JVM would refuse. Resolves host
+     * names on the calling thread; see [Lookup].
      */
     fun of(args: List<String>, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit): JoinArgs {
+      val found = scan(args)
+      val target = found.target ?: return found.against(false)
+      return found.against(compare(target, host, port, hosts) ?: resolved(target, host, port, hosts, log))
+    }
+
+    private fun scan(args: List<String>): Found {
       var target: String? = null
       val joinArgs = mutableSetOf<Int>()
       var i = 0
@@ -56,33 +108,56 @@ internal data class JoinArgs(val target: String?, val toServer: Boolean, val omi
         }
         i++
       }
-      if (target == null) {
-        return JoinArgs(null, false, emptySet())
-      }
-      val toServer = pointsAt(target, host, port, hosts, log)
-      return JoinArgs(target, toServer, if (toServer) emptySet() else joinArgs)
+      return Found(target, joinArgs)
     }
 
-    private fun pointsAt(target: String, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit): Boolean {
+    /** Whether [target] points at [host]:[port], or null when only resolving a host name can tell. */
+    private fun compare(target: String, host: String, port: Int, hosts: Hosts): Boolean? {
+      val targetHost = targetHost(target, port, hosts) ?: return false
+      if (targetHost == host.trim()) {
+        return true
+      }
+      val a = literal(targetHost)
+      val b = literal(host.trim())
+      return if (a != null && b != null) a == b else null
+    }
+
+    /** [target]'s host when it is one the main menu joins at [port], trimmed; null when it is not. */
+    private fun targetHost(target: String, port: Int, hosts: Hosts): String? {
       // split as the main menu's Lua splits it (Java's String.split: no trailing empty parts), which joins two parts only
       val parts = target.split(':').dropLastWhile { it.isEmpty() }
       if (parts.size != 2) {
-        return false
+        return null
       }
       val targetHost = parts[0]
       if (parts[1].trim().toIntOrNull() != port || targetHost.isBlank() || hosts.isSteamId(targetHost)) {
-        return false
+        return null
       }
-      if (targetHost.trim() == host.trim()) {
-        return true
-      }
-      fun addresses(name: String) = try {
-        hosts.resolve(name.trim())
+      return targetHost.trim()
+    }
+
+    private fun resolved(target: String, host: String, port: Int, hosts: Hosts, log: (() -> String) -> Unit): Boolean {
+      fun addresses(name: String) = literal(name)?.let(::setOf) ?: try {
+        hosts.resolve(name)
       } catch (e: UnknownHostException) {
         log { "cannot resolve $name to compare this launch's +connect $target with $host:$port: $e" }
         emptySet()
       }
-      return addresses(targetHost).intersect(addresses(host)).isNotEmpty()
+      val targetHost = checkNotNull(targetHost(target, port, hosts)) { "+connect $target joins no host at $port" }
+      return addresses(targetHost).intersect(addresses(host.trim())).isNotEmpty()
+    }
+
+    /** [host] as an IP address, read without DNS; null when it is a name. */
+    private fun literal(host: String): InetAddress? = when {
+      IPV4.matches(host) -> host.split('.').map { it.toInt() }.takeIf { o -> o.all { it <= 255 } }
+        ?.let { o -> InetAddress.getByAddress(ByteArray(4) { o[it].toByte() }) }
+      // Java parses such a host as an IPv6 literal and throws when it is none, never looking it up
+      ':' in host && (host[0] == ':' || Character.digit(host[0], 16) != -1) -> try {
+        InetAddress.getByName(host)
+      } catch (e: UnknownHostException) {
+        null
+      }
+      else -> null
     }
   }
 }

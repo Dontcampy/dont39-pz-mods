@@ -8,6 +8,7 @@ import com.dont39.pz.modsync.client.download.Cache
 import com.dont39.pz.modsync.client.java.GameLaunch
 import com.dont39.pz.modsync.client.java.JavaMod
 import com.dont39.pz.modsync.client.rejoin.GameHosts
+import com.dont39.pz.modsync.client.rejoin.JoinArgs
 import com.dont39.pz.modsync.client.rejoin.restartFor
 import com.dont39.pz.modsync.client.swap.Swap
 import com.dont39.pz.zbktutils.glue.LuaGlobal
@@ -44,9 +45,8 @@ internal object ModSyncClient {
   private var restartReason = ""
   private var restartRelaunch = false
 
-  // the server of the last restart stop, which a restart of the game is for
-  private var restartHost: String? = null
-  private var restartPort = 0
+  // this launch's arguments against the server of the last restart stop, which a restart of the game is for
+  private var restartArgs: JoinArgs.Lookup? = null
 
   // Java mods of the swapped items that are to run from their trees once the session's mods are loaded
   private var expected = emptyList<JavaMod>()
@@ -142,12 +142,13 @@ internal object ModSyncClient {
             restartStops++
             restartStopped = true
             restartReason = Translator.getText(JoinSession.KEY_PREFIX + step.key, *step.args.toTypedArray())
-            restartHost = s.host
-            restartPort = s.gamePort
             val unavailable = GameLaunch.relaunchUnavailable()
             restartRelaunch = unavailable == null
-            if (unavailable != null) {
+            restartArgs = if (unavailable == null) {
+              JoinArgs.Lookup(GameLaunch.arguments(), s.host, s.gamePort, GameHosts) { ModSync.log(it) }
+            } else {
               ModSync.log { "the Connect screen offers no Restart game: $unavailable" }
+              null
             }
           }
           stop(join, step)
@@ -230,7 +231,12 @@ internal object ModSyncClient {
     if (!ModSync.active()) return null
     return try {
       session?.let(JoinStatus::table)
-        ?: if (restartStopped) JoinStatus.restart(restartStops, restartReason, restartRelaunch) else null
+        ?: if (restartStopped) {
+          // Restart game shows once a +connect name is resolved, so that its click never waits for DNS
+          JoinStatus.restart(restartStops, restartReason, restartRelaunch && restartArgs?.result != null)
+        } else {
+          null
+        }
     } catch (t: Throwable) {
       ModSync.disable("reading the join's status", t)
       null
@@ -277,8 +283,8 @@ internal object ModSyncClient {
   fun luaRestart(): String? {
     ModSync.whyNotActive()?.let { return restartFailed(it) }
     return try {
-      val host = checkNotNull(restartHost) { "no join stopped for a restart" }
-      restartFor(GameLaunch, host, restartPort, GameHosts) { ModSync.log(it) }?.let(::restartFailed)
+      val args = checkNotNull(restartArgs?.result) { "no join stopped for a restart, or its +connect lookup runs" }
+      restartFor(GameLaunch, args) { ModSync.log(it) }?.let(::restartFailed)
     } catch (t: Throwable) {
       ModSync.disable("restarting the game", t)
       Translator.getText(JoinSession.KEY_PREFIX + ERROR.key)

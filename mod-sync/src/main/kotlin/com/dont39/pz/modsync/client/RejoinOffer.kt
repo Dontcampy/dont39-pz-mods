@@ -25,6 +25,9 @@ internal object RejoinOffer {
 
   private val store by lazy { RejoinStore(ModSyncClient.cache.root) }
 
+  // the server to offer while this launch's +connect is compared with it
+  private var waiting: Pair<RejoinStore.Rejoin, JoinArgs.Lookup>? = null
+
   /** When a join to [host]:[port] stops for a restart. */
   @Synchronized
   fun record(host: String, port: Int) {
@@ -37,7 +40,7 @@ internal object RejoinOffer {
   /**
    * The server to offer, once per launch, never in the launch that stopped for it nor in one whose `+connect` joins it:
    * a table with `host`, `port`, `user` (the account's user name) and `name` (the server list's name); nil when there
-   * is none.
+   * is none. While a `+connect` host name is resolved, a table with only `pending` = true: ask again later.
    */
   @LuaGlobal("Dont39AllInOne_getModSyncRejoin")
   @Synchronized
@@ -46,10 +49,15 @@ internal object RejoinOffer {
     return try {
       // a join loading the server's mods reloads the main menu's Lua too
       if (offered || GameClient.connection != null) return null
-      val rejoin = store.read() ?: return null
-      if (rejoin.written == launchStart) return null
+      val (rejoin, lookup) = waiting ?: run {
+        val rejoin = store.read() ?: return null
+        if (rejoin.written == launchStart) return null
+        val lookup = JoinArgs.Lookup(GameLaunch.arguments(), rejoin.host, rejoin.port, GameHosts) { ModSync.log(it) }
+        (rejoin to lookup).also { waiting = it }
+      }
+      val args = lookup.result ?: return LuaManager.platform.newTable().apply { rawset("pending", true) }
+      waiting = null
       offered = true
-      val args = JoinArgs.of(GameLaunch.arguments(), rejoin.host, rejoin.port, GameHosts) { ModSync.log(it) }
       if (args.toServer) {
         // vanilla's popup for the launch's +connect is the way back
         store.drop()

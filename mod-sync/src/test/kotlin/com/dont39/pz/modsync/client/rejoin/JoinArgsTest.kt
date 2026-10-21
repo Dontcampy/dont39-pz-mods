@@ -2,7 +2,10 @@ package com.dont39.pz.modsync.client.rejoin
 
 import java.net.InetAddress
 import java.net.UnknownHostException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -117,4 +120,76 @@ class JoinArgsTest {
     assertEquals(JoinArgs("unknown:$PORT", true, emptySet()), of("+connect", "unknown:$PORT", host = "unknown"))
     assertTrue(logged.isEmpty())
   }
+
+  /** Records every lookup, and fails none: [names] or an unknown host. */
+  private class CountingHosts(private val names: Map<String, Set<InetAddress>> = emptyMap()) : Hosts {
+    val resolved = mutableListOf<String>()
+
+    override fun isSteamId(host: String) = false
+
+    override fun resolve(host: String): Set<InetAddress> {
+      resolved += host
+      return names[host] ?: throw UnknownHostException(host)
+    }
+  }
+
+  @Test
+  fun `two IP literals compare without a lookup`() {
+    val counting = CountingHosts()
+    fun of(target: String, host: String) = of("+connect", "$target:$PORT", host = host, hosts = counting)
+    assertEquals(JoinArgs("203.0.113.05:$PORT", true, emptySet()), of("203.0.113.05", "203.0.113.5"))
+    assertEquals(JoinArgs("203.0.113.6:$PORT", false, setOf(0, 1)), of("203.0.113.6", "203.0.113.5"))
+    assertEquals(JoinArgs("127.0.0.1:$PORT", false, setOf(0, 1)), of("127.0.0.1", "::1"))
+    assertEquals(emptyList<String>(), counting.resolved)
+    assertTrue(logged.isEmpty())
+  }
+
+  @Test
+  fun `a literal against a name resolves only the name`() {
+    val counting = CountingHosts(mapOf(HOST to setOf(ADDRESS)))
+    assertEquals(JoinArgs("203.0.113.5:$PORT", true, emptySet()), of("+connect", "203.0.113.5:$PORT", hosts = counting))
+    assertEquals(listOf(HOST), counting.resolved)
+  }
+
+  @Test
+  fun `a dotted host out of range is a name`() {
+    val counting = CountingHosts()
+    assertEquals(
+      JoinArgs("999.0.113.5:$PORT", false, setOf(0, 1)),
+      of("+connect", "999.0.113.5:$PORT", host = "203.0.113.5", hosts = counting),
+    )
+    assertEquals(listOf("999.0.113.5"), counting.resolved)
+  }
+
+  @Test
+  fun `a lookup needing no DNS is done at once`() {
+    val counting = CountingHosts()
+    assertEquals(JoinArgs(null, false, emptySet()), lookup(listOf("-debug"), counting).result)
+    assertEquals(JoinArgs("$HOST:$PORT", true, emptySet()), lookup(listOf("+connect", "$HOST:$PORT"), counting).result)
+    assertEquals(JoinArgs("$HOST:1", false, setOf(0, 1)), lookup(listOf("+connect", "$HOST:1"), counting).result)
+    assertEquals(emptyList<String>(), counting.resolved)
+  }
+
+  @Test
+  fun `a lookup that resolves a name runs off the calling thread`() {
+    val release = CountDownLatch(1)
+    val blocking = object : Hosts {
+      override fun isSteamId(host: String) = false
+
+      override fun resolve(host: String): Set<InetAddress> {
+        check(release.await(10, TimeUnit.SECONDS)) { "the test did not release the lookup" }
+        return setOf(ADDRESS)
+      }
+    }
+    val lookup = lookup(listOf("+connect", "203.0.113.5:$PORT"), blocking)
+    assertNull(lookup.result)
+    release.countDown()
+    val until = System.currentTimeMillis() + 10_000
+    while (lookup.result == null && System.currentTimeMillis() < until) {
+      Thread.sleep(5)
+    }
+    assertEquals(JoinArgs("203.0.113.5:$PORT", true, emptySet()), lookup.result)
+  }
+
+  private fun lookup(args: List<String>, hosts: Hosts) = JoinArgs.Lookup(args, HOST, PORT, hosts) { logged += it() }
 }
