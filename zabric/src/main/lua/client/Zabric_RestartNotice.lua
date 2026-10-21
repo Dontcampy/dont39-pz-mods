@@ -27,11 +27,12 @@ else
     log("pending: " .. table.concat(mods, ", "))
 end
 
-local function dialog(text, lines)
+-- [high]: above the middle, where a mod's own centred dialog for the same restart (a rejoin offer) would cover it
+local function dialog(text, lines, high)
     local h = 110 + 20 * lines
     local core = getCore()
-    local modal = ISModalDialog:new((core:getScreenWidth() - WIDTH) / 2, (core:getScreenHeight() - h) / 2, WIDTH, h,
-        text, false, nil, nil)
+    local y = high and math.floor(core:getScreenHeight() * 0.12) or (core:getScreenHeight() - h) / 2
+    local modal = ISModalDialog:new((core:getScreenWidth() - WIDTH) / 2, y, WIDTH, h, text, false, nil, nil)
     modal:initialise()
     modal:setAlwaysOnTop(true)
     modal:addToUIManager()
@@ -91,7 +92,7 @@ local function showRelaunchFailure()
     end
     log("the last restart failed: " .. reason)
     local lines = wrap(reason)
-    dialog(RELAUNCH_TEXT .. "\n" .. table.concat(lines, "\n"), 1 + #lines)
+    dialog(RELAUNCH_TEXT .. "\n" .. table.concat(lines, "\n"), 1 + #lines, true)
 end
 
 if mods ~= nil then
