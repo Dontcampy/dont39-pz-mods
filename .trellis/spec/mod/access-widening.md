@@ -59,6 +59,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - Files it reads at premain live under `<cache>/Zabric/`; a request is per side, since a local dedicated server shares
   the cache folder. Premain cannot know the side, so the side is decided at preLaunch, which takes (deletes) its own
   side's file before applying it (`mods/impl/LaunchOverrides.java`).
+- Premain reads the game's arguments from the process (`internal/GameArgs.java`), never `sun.java.command`: the
+  game's native launcher starts the JVM through JNI, which leaves that property unset.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`)
