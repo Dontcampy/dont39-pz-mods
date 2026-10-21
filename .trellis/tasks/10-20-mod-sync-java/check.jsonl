@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, tests, in-game verification"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No silent fallback; every stop has a reason"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "No me.zed_0xff outside Zabric; Zabric API only"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Texts in EN and CN, Lua globals prefixed"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Logging rules"}

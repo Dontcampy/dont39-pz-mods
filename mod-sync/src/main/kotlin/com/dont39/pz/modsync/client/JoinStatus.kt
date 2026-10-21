@@ -7,12 +7,20 @@ import zombie.Lua.LuaManager
 
 /**
  * The table `Dont39AllInOne_getModSyncJoin` returns, read by `Dont39AllInOne_ModSyncJoin.lua`; change both together.
- * Numbers are Lua doubles. `state` is "preparing", "confirm" or "download".
+ * Numbers are Lua doubles. `state` is "preparing", "confirm", "download" or "restart".
  * - confirm: `server` ("<host>:<port>"), `files` and `bytes` to download, and `items`, an array of tables with `name`,
- *   `files` and `bytes` of each item that downloads anything.
+ *   `files`, `bytes` and `java` (true when its jars change) of each item that downloads anything or changes a jar.
  * - download: `files`, `bytes` (totals), `filesDone`, `bytesDone`.
+ * - restart: the join stopped for a restart of the game; `stop` counts such stops, so a screen can tell them apart,
+ *   and `reason` is the stop's text.
  */
 internal object JoinStatus {
+  fun restart(stop: Int, reason: String): KahluaTable = LuaManager.platform.newTable().apply {
+    rawset("state", "restart")
+    put("stop", stop)
+    rawset("reason", reason)
+  }
+
   /** Null while the join has not reached its mod check, or no longer waits. */
   fun table(session: JoinSession): KahluaTable? {
     val table = LuaManager.platform.newTable()
@@ -26,11 +34,13 @@ internal object JoinStatus {
         table.put("files", prepared.downloadFiles)
         table.put("bytes", prepared.downloadBytes)
         val items = LuaManager.platform.newTable()
-        prepared.downloads.forEachIndexed { i, w ->
+        prepared.listed.forEachIndexed { i, w ->
+          val plan = (w as? JoinSession.Work.Build)?.plan
           val item = LuaManager.platform.newTable()
           item.rawset("name", w.marked.label)
-          item.put("files", w.plan.download.size)
-          item.put("bytes", w.plan.downloadBytes)
+          item.put("files", plan?.download?.size ?: 0)
+          item.put("bytes", plan?.downloadBytes ?: 0)
+          item.rawset("java", w.jarChanges.isNotEmpty())
           items.rawset((i + 1).toDouble(), item)
         }
         table.rawset("items", items)

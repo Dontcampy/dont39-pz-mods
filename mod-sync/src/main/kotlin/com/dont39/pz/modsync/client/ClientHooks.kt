@@ -63,6 +63,15 @@ internal object LuaReset {
   }
 }
 
+/** After the join's pass over its mod list loaded the jars. */
+@Hooks(Core::class)
+internal object LuaResetDone {
+  @Inject(method = ["ResetLua(Ljava/lang/String;Ljava/lang/String;)V"], at = [At("RETURN")])
+  fun reset(activeMods: String?, reason: String?, ci: CallbackInfo) {
+    ModSyncClient.modsLoaded(activeMods)
+  }
+}
+
 @Hooks(IngameState::class)
 internal object GameExit {
   @Inject(method = ["exit"], at = [At("HEAD")], always = true)

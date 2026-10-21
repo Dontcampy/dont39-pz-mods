@@ -1,7 +1,10 @@
 {
     "UI_Dont39AllInOne_ModSync_Failed": "Cannot join with the server's version of its Workshop items: %1",
     "UI_Dont39AllInOne_ModSync_Failed_Network": "Cannot download the server's Workshop items from %1:\n%2\nAsk the server owner whether its mod sync port is open.",
-    "UI_Dont39AllInOne_ModSync_Failed_Jar": "The server's version of %1 has other Java code (%2), which cannot be taken from the server while the game runs.\nAsk the server owner to restart the server, which updates the item.",
+    "UI_Dont39AllInOne_ModSync_Failed_Restart": "To use the server's version of %1, restart the game: Java code can only be loaded when the game starts.\nQuit, start the game again and choose Rejoin on the main menu.",
+    "UI_Dont39AllInOne_ModSync_Failed_Preload": "%1 (in %2) loads at game start and cannot be taken from a server.\nAsk the server owner to restart the server, which updates the item.",
+    "UI_Dont39AllInOne_ModSync_Failed_NotServed": "The game runs the Java code of %1 from %2, not the server's version (details in console.txt).\nRestart the game and join again.",
+    "UI_Dont39AllInOne_ModSync_Failed_NotLoaded": "The game did not load the Java code of %1 (%2) when it started, so it cannot run the server's version. Was it declined in ZombieBuddy's dialog? (details in console.txt)\nRestart the game and join again.",
     "UI_Dont39AllInOne_ModSync_Failed_Refused": "%1 carries %2, which is never taken from the server.\nAsk the server owner to restart the server, which updates the item.",
     "UI_Dont39AllInOne_ModSync_Failed_Declined": "The join stopped: you chose not to download the server's version of its Workshop items.",
     "UI_Dont39AllInOne_ModSync_Failed_Dialog": "The download dialog of Dont39 All-in-One failed (details in console.txt).",
@@ -13,8 +16,16 @@
     "UI_Dont39AllInOne_ModSync_ConfirmTitle": "Download the server's Workshop items?",
     "UI_Dont39AllInOne_ModSync_ConfirmText": "Your copy of these Workshop items is another version than the one the server %1 runs. To join, the files that differ are downloaded from the server and kept for later joins. Your own copy stays as it is for single player and other servers.",
     "UI_Dont39AllInOne_ModSync_ConfirmItem": "%1: %2 in %3 files",
+    "UI_Dont39AllInOne_ModSync_ConfirmItemNoDownload": "%1: nothing to download",
+    "UI_Dont39AllInOne_ModSync_ConfirmJava": "Contains Java code from the server, which will run on your computer. In the launch of the game that uses it, single player and other servers use this version too.",
     "UI_Dont39AllInOne_ModSync_ConfirmTotal": "Total: %1 in %2 files",
     "UI_Dont39AllInOne_ModSync_DontAsk": "Don't ask again for this server",
     "UI_Dont39AllInOne_ModSync_Download": "Download and join",
-    "UI_Dont39AllInOne_ModSync_Cancel": "Cancel"
+    "UI_Dont39AllInOne_ModSync_Cancel": "Cancel",
+    "UI_Dont39AllInOne_ModSync_QuitGame": "Quit game",
+    "UI_Dont39AllInOne_ModSync_RejoinTitle": "Rejoin %1?",
+    "UI_Dont39AllInOne_ModSync_RejoinText": "The game restarted to use this server's version of its Workshop items.",
+    "UI_Dont39AllInOne_ModSync_Rejoin": "Rejoin",
+    "UI_Dont39AllInOne_ModSync_NotNow": "Not now",
+    "UI_Dont39AllInOne_ModSync_RejoinNoEntry": "%1 is not in your saved servers, so it cannot be rejoined from here. Join it from the server list."
 }

@@ -1,6 +1,7 @@
 -- Dont39 All-in-One: mod sync on the Connect screen. While a join waits for the server's version of its Workshop
 -- items, the screen's status line shows what it does, and a dialog asks before downloading from a server that is not
--- remembered. The Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are listed in JoinStatus.kt.
+-- remembered or taking Java code from it. After a join stopped for a restart, the screen offers to quit the game. The
+-- Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are listed in JoinStatus.kt.
 
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
@@ -8,11 +9,12 @@ require "ISUI/ISRichTextPanel"
 require "ISUI/ISTickBox"
 
 local Common = require "Dont39AllInOne_Common"
+local Shared = require "Dont39AllInOne_ModSyncShared"
 
 local PREFIX = "[Dont39AllInOne] mod sync join: "
-local KEY = "UI_Dont39AllInOne_ModSync_"
+local KEY = Shared.KEY
 local POLL_MS = 250 -- the status line follows the download a few times a second
-local PAD = 10
+local PAD = Shared.PAD
 local WIDTH = 560
 local KB = 1024
 local MB = 1024 * 1024
@@ -20,6 +22,9 @@ local MB = 1024 * 1024
 local lastPoll = 0
 local dialog = nil
 local asked = false -- this confirm was shown; it is not shown again before the next one
+local quit = nil -- the Quit button, on the Connect screen it was added to
+local dismissed = nil -- the restart stop whose screen the player left; its button is not shown again
+local screenFor = nil -- "join", or the restart stop's number, once the Connect screen was there for it
 
 -- as text: the Java side's numbers are Lua doubles
 local function count(n)
@@ -39,35 +44,6 @@ local function size(bytes)
     return tenths(bytes, MB) .. " MB"
 end
 
--- the rich text panel breaks lines only at spaces, and Chinese text has none: split longer runs to the width
-local function breakable(text, font, width)
-    local tm = getTextManager()
-    local words = {}
-    for word in string.gmatch(text, "%S+") do
-        if tm:MeasureStringX(font, word) <= width then
-            words[#words + 1] = word
-        else
-            local piece = ""
-            for i = 1, string.len(word) do
-                local c = string.sub(word, i, i)
-                if piece ~= "" and tm:MeasureStringX(font, piece .. c) > width then
-                    words[#words + 1] = piece
-                    piece = c
-                else
-                    piece = piece .. c
-                end
-            end
-            words[#words + 1] = piece
-        end
-    end
-    return table.concat(words, " ")
-end
-
--- the rich text panel reads " <...> " as a tag
-local function plain(text)
-    return (string.gsub(string.gsub(tostring(text), "<", "("), ">", ")"))
-end
-
 local function closeDialog()
     if dialog then
         local d = dialog
@@ -77,8 +53,13 @@ local function closeDialog()
     end
 end
 
+local function hideQuit()
+    if quit then quit:setVisible(false) end
+end
+
 local guard = Common.guard(PREFIX, function()
     pcall(closeDialog)
+    pcall(hideQuit)
     -- also outside a confirm: a later one would wait for an answer this file can no longer give
     if Dont39AllInOne_answerModSyncJoin then
         pcall(Dont39AllInOne_answerModSyncJoin, "failed")
@@ -157,14 +138,22 @@ end
 
 local function confirmText(status)
     local width = WIDTH - 2 * PAD
-    local function text(s) return breakable(plain(s), UIFont.NewSmall, width) end
+    local function text(s) return Shared.breakable(Shared.plain(s), UIFont.NewSmall, width) end
     local lines = {
-        " <H2> " .. breakable(plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
+        " <H2> " .. Shared.breakable(Shared.plain(getText(KEY .. "ConfirmTitle")), UIFont.Medium, width),
         " <TEXT> " .. text(getText(KEY .. "ConfirmText", status.server)),
         "",
     }
     for _, item in ipairs(status.items) do
-        lines[#lines + 1] = text(getText(KEY .. "ConfirmItem", item.name, size(item.bytes), count(item.files)))
+        if item.files > 0 then
+            lines[#lines + 1] = text(getText(KEY .. "ConfirmItem", item.name, size(item.bytes), count(item.files)))
+        else
+            lines[#lines + 1] = text(getText(KEY .. "ConfirmItemNoDownload", item.name))
+        end
+        if item.java then
+            local java = Shared.breakable(Shared.plain(getText(KEY .. "ConfirmJava")), UIFont.NewSmall, width - PAD)
+            lines[#lines + 1] = " <INDENT:" .. PAD .. "> " .. java .. " <INDENT:0> "
+        end
     end
     lines[#lines + 1] = ""
     lines[#lines + 1] = text(getText(KEY .. "ConfirmTotal", size(status.bytes), count(status.files)))
@@ -189,13 +178,78 @@ local function setLine(text)
     screen.connectLabel.name = text
 end
 
-local function update()
-    local status = Dont39AllInOne_getModSyncJoin()
+local function onQuit()
+    local ok, err, trace = pcall(function() getCore():quitToDesktop() end)
+    if not ok then fail("quitting the game", err, trace) end
+end
+
+-- next to the screen's Back button, which vanilla moves on resize
+local function placeQuit(screen)
+    local back = screen.backBtn
+    if not back then error("the Connect screen has no Back button (backBtn)") end
+    if not quit or quit.parent ~= screen then
+        quit = ISButton:new(0, 0, 100, back:getHeight(), getText(KEY .. "QuitGame"), nil, onQuit)
+        quit:initialise()
+        quit:instantiate()
+        quit:setAnchorLeft(true)
+        quit:setAnchorRight(false)
+        quit:setAnchorTop(false)
+        quit:setAnchorBottom(true)
+        quit:setWidthToTitle(100)
+        screen:addChild(quit)
+    end
+    quit:setX(back:getRight() + PAD)
+    quit:setY(back:getY())
+    quit:setVisible(true)
+end
+
+-- [stop]: the restart stop the Java side reports, nil when there is none
+local function updateQuit(stop)
+    local screen = ConnectToServer and ConnectToServer.instance
+    local shown = quit ~= nil and quit:getIsVisible()
+    if stop and stop ~= dismissed and screen and screen:getIsVisible() and not screen.connecting then
+        placeQuit(screen)
+        return
+    end
+    -- Back or a new connect left the stop's screen
+    if shown and stop then dismissed = stop end
+    hideQuit()
+end
+
+-- The join's Workshop step hides the Connect screen behind ServerWorkshopItemScreen and, once the items are in, only
+-- hides that one again: vanilla goes on into the game, while this feature holds the join with no screen, and the
+-- screen's OnConnectFailed shows nothing while it is hidden. Shown again once per join, and once per restart stop,
+-- so that Back still leaves it.
+local function restoreScreen(status)
+    if not status then
+        screenFor = nil
+        return
+    end
+    local key = status.state == "restart" and status.stop or "join"
+    if screenFor == key then return end
+    local screen = ConnectToServer and ConnectToServer.instance
+    if not screen then return end
+    if not screen:getIsVisible() then
+        local workshop = ServerWorkshopItemScreen and ServerWorkshopItemScreen.instance
+        if workshop and workshop:getIsVisible() then return end
+        screen:setVisible(true, JoypadState.getMainMenuJoypad())
+        -- the stop's reason was dropped while the screen was hidden
+        if status.state == "restart" then
+            if type(status.reason) ~= "string" then error("the restart stop has no reason") end
+            screen:OnConnectFailed(status.reason)
+        end
+        Common.log(PREFIX, "showed the Connect screen again, which the Workshop step had left hidden")
+    end
+    screenFor = key
+end
+
+local function update(status)
     local state = status and status.state
     if state ~= "confirm" then
         closeDialog()
         asked = false
     end
+    updateQuit(state == "restart" and status.stop or nil)
     if not status then return end
     if state == "preparing" then
         setLine(getText(KEY .. "Preparing"))
@@ -208,7 +262,7 @@ local function update()
     elseif state == "download" then
         setLine(getText(KEY .. "Progress", count(status.filesDone), count(status.files), size(status.bytesDone),
             size(status.bytes)))
-    else
+    elseif state ~= "restart" then -- the stop's reason is on the status line already
         error("unknown join state " .. tostring(state))
     end
 end
@@ -217,10 +271,15 @@ local function onTick()
     if guard.disabled then return end
     -- absent when ZombieBuddy did not load this mod's Java code: then no join waits for it
     if not Dont39AllInOne_getModSyncJoin or not Dont39AllInOne_answerModSyncJoin then return end
-    local now = getTimestampMs()
-    if now - lastPoll < POLL_MS then return end
-    lastPoll = now
-    local ok, err, trace = pcall(update)
+    local ok, err, trace = pcall(function()
+        -- every frame: a stop in the next frame needs the screen for its reason
+        local status = Dont39AllInOne_getModSyncJoin()
+        restoreScreen(status)
+        local now = getTimestampMs()
+        if now - lastPoll < POLL_MS then return end
+        lastPoll = now
+        update(status)
+    end)
     if not ok then fail("showing the join's state", err, trace) end
 end
 

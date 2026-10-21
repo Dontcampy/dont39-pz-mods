@@ -5,11 +5,14 @@ import com.dont39.pz.modsync.ModSync
 import com.dont39.pz.modsync.client.JoinSession.Answer
 import com.dont39.pz.modsync.client.JoinSession.Step
 import com.dont39.pz.modsync.client.download.Cache
+import com.dont39.pz.modsync.client.java.GameLaunch
+import com.dont39.pz.modsync.client.java.JavaMod
 import com.dont39.pz.modsync.client.swap.Swap
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.nio.file.Path
 import se.krka.kahlua.vm.KahluaTable
 import zombie.ZomboidFileSystem
+import zombie.core.Translator
 import zombie.core.network.ByteBufferReader
 import zombie.core.znet.SteamWorkshop
 import zombie.gameStates.ConnectToServerState
@@ -33,7 +36,15 @@ internal object ModSyncClient {
   // the Lua disabled itself, which is final for the game session: no later confirm gets an answer
   private var dialogFailed = false
 
-  private val cache by lazy {
+  // how many joins stopped for a restart; the last one is shown on the Connect screen until the next join or reset
+  private var restartStops = 0
+  private var restartStopped = false
+  private var restartReason = ""
+
+  // Java mods of the swapped items that are to run from their trees once the session's mods are loaded
+  private var expected = emptyList<JavaMod>()
+
+  val cache by lazy {
     Cache(Path.of(ZomboidFileSystem.instance.cacheDir, "Dont39AllInOne", "ModSync"))
   }
 
@@ -41,6 +52,8 @@ internal object ModSyncClient {
   @Synchronized
   fun joinStarts(details: ByteBufferReader?) {
     endSession()
+    restartStopped = false
+    expected = emptyList()
     Swap.off("a new join started")
     if (!ModSync.active()) {
       return
@@ -59,6 +72,7 @@ internal object ModSyncClient {
           cache,
           // looked up when used: a client without Steam has no instance, and no Workshop step to take items from
           { id -> SteamWorkshop.instance.GetItemInstallFolder(id) },
+          GameLaunch,
         ) { ModSync.log(it) }
         ModSync.log { "join to $target: the server offers its Workshop items at ${location.base}" }
       }
@@ -111,10 +125,17 @@ internal object ModSyncClient {
         is Step.Ready -> {
           session = null
           loaded = false
+          expected = step.expected
           Swap.on(step.entries)
           false
         }
         is Step.Stop -> {
+          if (step.restart) {
+            RejoinOffer.record(s.host, s.gamePort)
+            restartStops++
+            restartStopped = true
+            restartReason = Translator.getText(JoinSession.KEY_PREFIX + step.key, *step.args.toTypedArray())
+          }
           stop(join, step)
           true
         }
@@ -138,7 +159,34 @@ internal object ModSyncClient {
     if (activeMods == "client") {
       loaded = true
     } else {
+      restartStopped = false
       Swap.off("the game reloads its mods ($activeMods)")
+    }
+  }
+
+  /**
+   * At `Core.ResetLua(String, String)` RETURN. A jar the loader skipped in the join's pass (e.g. its approval was
+   * declined) leaves the mod's Lua without its Java; stopping the join there is not clean, so it is only reported.
+   */
+  @Synchronized
+  fun modsLoaded(activeMods: String?) {
+    if (activeMods != "client" || expected.isEmpty()) {
+      return
+    }
+    val mods = expected
+    expected = emptyList()
+    val serverMods = GameLaunch.serverMods()
+    mods.filter { it.id in serverMods }.forEach { mod ->
+      val served = GameLaunch.servingJar(mod.pkg)
+      val tree = mod.jar.toRealPath()
+      if (served != tree) {
+        val runs = served?.let { "runs ${mod.pkg} from $it" } ?: "did not load $tree"
+        ModSync.log {
+          "problem: ${mod.name} runs without the server's Java code: the game $runs (see the loader's lines)"
+        }
+      } else {
+        ModSync.log { "${mod.name} runs the server's Java code from $tree" }
+      }
     }
   }
 
@@ -153,20 +201,21 @@ internal object ModSyncClient {
   fun joinEnded() {
     endSession()
     if (!loaded) {
+      expected = emptyList()
       Swap.off("the join ended before the server's mods were loaded")
     }
   }
 
   /**
-   * For `Dont39AllInOne_ModSyncJoin.lua`: what the Connect screen shows while the join waits; nil when it does not
-   * wait for this feature. Keys in [JoinStatus].
+   * For `Dont39AllInOne_ModSyncJoin.lua`: what the Connect screen shows while the join waits, or after it stopped for
+   * a restart; nil when it does not wait for this feature. Keys in [JoinStatus].
    */
   @LuaGlobal("Dont39AllInOne_getModSyncJoin")
   @Synchronized
   fun luaStatus(): KahluaTable? {
     if (!ModSync.active()) return null
     return try {
-      session?.let(JoinStatus::table)
+      session?.let(JoinStatus::table) ?: if (restartStopped) JoinStatus.restart(restartStops, restartReason) else null
     } catch (t: Throwable) {
       ModSync.disable("reading the join's status", t)
       null

@@ -45,8 +45,10 @@ the task map and the cross-child acceptance criteria; the children own the deliv
 - D6. Only `VersionMismatch` is taken over. Workshop download and subscribe failures keep failing the join as vanilla
   does; no timeouts are added.
 - D7. When a mismatched item's server copy has a jar that differs from the client's (by hash), the client takes the
-  server's jar; a restart is prompted only where one is needed. A jar identical to the client's needs nothing. Items
-  carrying ZombieBuddy, Zabric, ZabricKotlin or Dont39 All-in-One are never taken from a server.
+  server's jar after one restart, whether or not its package is loaded (changed 2026-10-21 by
+  [mod-sync-java J1](../10-20-mod-sync-java/prd.md): a jar loaded at a join would outlive the session). A jar
+  identical to the client's needs nothing. Items carrying ZombieBuddy, Zabric, ZabricKotlin or Dont39 All-in-One, or
+  a preload mod (J3), are never taken from a server.
 - D8. When the mod's Java is loaded by the startup pass (enabled on the main menu, or a preload entry), Zabric gains a
   folder override for one launch, so the next launch loads the server's copy with no action from the player.
   Rejected: asking the player to disable the mod on the main menu; staging the copy under
@@ -68,7 +70,7 @@ the task map and the cross-child acceptance criteria; the children own the deliv
 | Child | Delivers | Depends on |
 |---|---|---|
 | [10-20-mod-sync-core](../archive/2026-10/10-20-mod-sync-core/prd.md) | Server manifest, HTTP service and location trailer; client mark, confirmation, download and folder swap for items whose changed files are not jars (D1-D6, D10, D12) | — |
-| [10-20-zabric-launch-override](../10-20-zabric-launch-override/prd.md) | Zabric: a mod folder override for one launch, accessors for loaded Java packages, widening for cache folders (D8) | — |
+| [10-20-zabric-launch-override](../archive/2026-10/10-20-zabric-launch-override/prd.md) | Zabric: a mod folder override for one launch, accessors for loaded Java packages, widening for cache folders (D8) | — |
 | [10-20-mod-sync-java](../10-20-mod-sync-java/prd.md) | Server jars at the join, restart with a launch override, Rejoin, refused items, the dialog's Java marking (D7-D9, D11) | core, Zabric |
 
 The architecture and the contracts between the children are in [design.md](./design.md); the order and the
@@ -83,8 +85,8 @@ integration review in [implement.md](./implement.md).
 - [ ] A client with the mod on a server without the feature (or with port 0) sees vanilla behavior.
 - [ ] Items whose timestamps match are installed by Steam as today, with no request to the server's HTTP port.
 - [ ] After leaving the server, the main menu and single player use the client's own Workshop copies again.
-- [ ] A changed jar whose package is not loaded yet is loaded at the join; one whose package is loaded leads to a
-      restart and a working Rejoin, including a mod enabled on the main menu.
+- [ ] A changed jar leads to a restart and a working Rejoin, the session then running the server's jar and Lua,
+      including a mod enabled on the main menu; the launch after is back to the client's copy.
 - [ ] Every failure (HTTP error, hash mismatch, declined dialog, refused item) stops the join with a reason on the join
       screen; nothing falls back silently.
 

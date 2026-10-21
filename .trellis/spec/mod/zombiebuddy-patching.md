@@ -127,6 +127,11 @@ What is not behind the seam and needs rework when switching loaders:
   that feature's Lua global, read from its own Lua, and still works when the global is absent or returns nil:
   `Dont39AllInOne_NetworkStatus.lua` reads `Dont39AllInOne_getTunnelStatus`, whose keys `TunnelStatus.kt` lists. A
   table shared this way has its keys written down once, at the writer.
+- A feature that holds a join after vanilla's Workshop step shows the Connect screen again: `ServerWorkshopItemScreen`
+  hides it for a download and never restores it, so a dialog or a stop's reason would have no screen
+  (`restoreScreen` in `Dont39AllInOne_ModSyncJoin.lua`).
+- CN text in a rich text panel wraps through `breakable` (`Dont39AllInOne_ModSyncShared.lua`), which breaks only at
+  spaces and keeps closing punctuation off a line start: write no space between an ASCII word and CJK text.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
 
