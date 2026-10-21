@@ -14,12 +14,13 @@ Each child goes through its own review gate before `task.py start`.
 
 ## Integration Review (after the last child)
 
-- [ ] Run the parent's cross-child acceptance criteria on the Linux test server and a Windows client.
-- [ ] Vanilla client on the modded server; modded client on a vanilla server.
+- [x] Run the parent's cross-child acceptance criteria on the Linux test server and a Windows client.
+- [x] Vanilla client on the modded server; modded client on a vanilla server.
 - [ ] Release: Zabric release first (its child left the version at 0.4.1: first to ship takes 0.5.0, see
       `10-20-zabric-launch-override` design "Compatibility"), then Dont39 All-in-One with the feature; version bumps per
       [kotlin-runtime.md](../../spec/mod/kotlin-runtime.md).
-- [ ] Spec update for the new patterns (connection-details trailer, `CheckMods` hold, folder swap).
+- [x] Spec update for the new patterns (connection-details trailer, `CheckMods` hold, folder swap):
+      [zombiebuddy-patching.md "Extending the Join"](../../spec/mod/zombiebuddy-patching.md#extending-the-join).
 
 ### Integration Plan (2026-10-21)
 
@@ -40,3 +41,28 @@ game port 48271). Windows client with this branch deployed; a temporary Lua driv
 
 Then: PR into `main`, Zabric 0.5.0 (tag `zabric-v0.5.0`, Maven Central run approved by the user), Workshop uploads by
 the user (Zabric, then Dont39 All-in-One 0.12.0).
+
+### Integration Results (2026-10-21)
+
+Branch `claude/mod-sync-relaunch-fce8bc` (all four children, `cranky-pike` merged); myserver2 (port 48310,
+`DoLuaChecksum=true`) and myserver3 (port 0) started on v6; the user uploaded v7 (Lua only, v6's jar byte for byte)
+and later v8 (new jar) while both ran. A temporary driver in a client-only local mod (the join's Lua checksum and Lua
+reset leave it out) and window messages for "click to start" and the in-game menu; all removed after.
+
+- R0, v6 = v6: Workshop path; mod-sync logged only the location at `joinStarts`, no manifest fetch, no `preparing`.
+- R1, v7 → myserver2: confirm, "takes 4 files from your copy and 2 files (351 bytes) from the server", no restart;
+  `DoLuaChecksum` start/end, in game with the server's `version 6` Lua; leaving: `swap off: the game ended`, the main
+  menu then printed the client's `version 7`. A second join took the tree "ready from an earlier join" with no dialog.
+- R2, without ZombieBuddy (json edited, restored): vanilla "已安装插件和服务端插件版本不匹配".
+- R3, myserver3: "no mod sync, as the server sent no mod sync location", then the same vanilla error.
+- R4, myserver2: decline → "加入已停止：你选择不下载服务器版本的创意工坊物品。"; a served file changed after start →
+  stop naming the size ("larger than the 91 bytes the server's list gives"), and with a same-size change the SHA-256;
+  the file was restored.
+- R5, v8 → myserver2, the test item enabled on the main menu: restart stop → Restart game → the override launch's
+  startup pass loaded the server's jar (`java version 6`, Lua `version 6` at the main menu) → Rejoin → "runs the
+  server's Java code" → in game → leaving keeps v6 for that launch (by design) → the next launch `java version 8`.
+- Found, vanilla (D6): with the item's jar loaded at startup, the join's Workshop update of that item fails
+  (`onItemNotDownloaded result=33`): Windows keeps the loaded jar open. R5's first launch ran with the item off the main
+  menu so the update could land, and the item back on for the override launch.
+- Not run in game: single player after leaving (the main menu's pass resolves the same folders), an HTTP error and a
+  refused item (unit tests).

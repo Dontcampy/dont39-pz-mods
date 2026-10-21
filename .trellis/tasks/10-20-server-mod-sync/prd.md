@@ -82,16 +82,16 @@ integration review in [implement.md](./implement.md).
 
 ## Acceptance Criteria (across children)
 
-- [ ] A client with the mod joins a server whose Workshop item was updated after the server started: the join
+- [x] A client with the mod joins a server whose Workshop item was updated after the server started: the join
       succeeds, and the session runs the server's version of that item (Lua checksum passes).
-- [ ] The same item updated only in Lua or media downloads only the files whose hash differs from the client's copy.
-- [ ] A client without the mod sees vanilla behavior on the same server, including the `VersionMismatch` error.
-- [ ] A client with the mod on a server without the feature (or with port 0) sees vanilla behavior.
-- [ ] Items whose timestamps match are installed by Steam as today, with no request to the server's HTTP port.
-- [ ] After leaving the server, the main menu and single player use the client's own Workshop copies again.
-- [ ] A changed jar leads to a restart and a working Rejoin, the session then running the server's jar and Lua,
+- [x] The same item updated only in Lua or media downloads only the files whose hash differs from the client's copy.
+- [x] A client without the mod sees vanilla behavior on the same server, including the `VersionMismatch` error.
+- [x] A client with the mod on a server without the feature (or with port 0) sees vanilla behavior.
+- [x] Items whose timestamps match are installed by Steam as today, with no request to the server's HTTP port.
+- [x] After leaving the server, the main menu and single player use the client's own Workshop copies again.
+- [x] A changed jar leads to a restart and a working Rejoin, the session then running the server's jar and Lua,
       including a mod enabled on the main menu; the launch after is back to the client's copy.
-- [ ] Every failure (HTTP error, hash mismatch, declined dialog, refused item) stops the join with a reason on the join
+- [x] Every failure (HTTP error, hash mismatch, declined dialog, refused item) stops the join with a reason on the join
       screen; nothing falls back silently.
 
 ## Out of Scope

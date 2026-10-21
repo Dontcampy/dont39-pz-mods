@@ -45,7 +45,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 | Guide | Description |
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
-| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, loading on client and server, patch classes, Lua UI wrapping, server configuration, gating, enter/exit restore |
+| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, loading on client and server, patch classes, server configuration, extending the join, Lua UI wrapping, gating, enter/exit restore |
 | [Zabric Hooks](./zabric-hooks.md) | Hook API, processors, generated glue and listing, gates, publishing |
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |

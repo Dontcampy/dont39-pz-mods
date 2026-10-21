@@ -151,6 +151,24 @@ For what a server owner sets. Reference: `tunnel` (`ServerStart.kt`, `TunnelServ
 
 ---
 
+## Extending the Join
+
+For a feature that adds to the multiplayer join. Reference: `mod-sync`.
+
+- Server-to-client data rides as a versioned trailer after the connection-details the server writes: vanilla clients
+  stop reading before it, and the client reads it backwards from the buffer's limit before the join reads the buffer
+  (`protocol/Trailer.kt`). A new field is a new payload version, never a change to version 1.
+- Work the join waits for is held at a `CheckMods` `HEAD` hook that returns true for each frame; the handler fails
+  closed and stops the join with a reason on the Connect screen (`ModSyncClient.hold`,
+  [Error Handling](./error-handling.md)). Vanilla's Workshop step hides the Connect screen and never shows it again, so
+  a held join shows it itself (`Dont39AllInOne_ModSyncJoin.lua`).
+- A mod's folder taken from elsewhere for one session is answered where the game builds its folder list, from state
+  that is immutable and volatile (the list is built off the game thread), and turned off on every way out: Back, a lost
+  connection, the game's end (`client/swap/Swap.kt`, `ClientHooks.kt`). For the next launch, use Zabric's
+  `LaunchOverride` instead.
+
+---
+
 ## Wrapping Vanilla Lua UI
 
 For a feature that changes the game's own Lua UI. Reference:
