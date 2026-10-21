@@ -4,3 +4,23 @@ accessible field zombie/scripting/ScriptManager tempFileToModMap Ljava/util/Hash
 # the clothing items the world's loading thread waits for, counted while it waits
 accessible field zombie/core/skinnedmodel/population/OutfitManager cachedClothingItems Ljava/util/Hashtable;
 accessible class zombie/core/skinnedmodel/population/OutfitManager$ClothingItemEntry
+# the asset wait's file tasks, read on the thread that pumps the queue
+accessible field zombie/fileSystem/FileSystemImpl inProgress Ljava/util/ArrayList;
+accessible field zombie/fileSystem/FileSystemImpl pending Ljava/util/ArrayList;
+accessible class zombie/fileSystem/FileSystemImpl$AsyncItem
+accessible field zombie/fileSystem/FileSystemImpl$AsyncItem task Lzombie/fileSystem/FileTask;
+accessible field zombie/fileSystem/FileSystemImpl$AsyncItem future Ljava/util/concurrent/FutureTask;
+# the files of the tasks that do not name theirs in getErrorMessage
+accessible field zombie/asset/FileTask_LoadPackImage packName Ljava/lang/String;
+accessible field zombie/asset/FileTask_LoadPackImage imageName Ljava/lang/String;
+accessible field zombie/asset/FileTask_Exists fileName Ljava/lang/String;
+accessible class zombie/fileSystem/FileSystemImpl$OpenTask
+accessible field zombie/fileSystem/FileSystemImpl$OpenTask path Ljava/lang/String;
+accessible class zombie/tileDepth/TileDepthTextures$LoadTask
+accessible field zombie/tileDepth/TileDepthTextures$LoadTask path Ljava/nio/file/Path;
+accessible class zombie/worldMap/FileTask_LoadImagePyramidTexture
+accessible field zombie/worldMap/FileTask_LoadImagePyramidTexture path Ljava/nio/file/Path;
+# a pack image's .pack file: the one its task's file system mounted under the pack's name
+accessible field zombie/fileSystem/FileTask fileSystem Lzombie/fileSystem/FileSystem;
+accessible field zombie/fileSystem/FileSystemImpl texturepackDevices Ljava/util/HashMap;
+accessible field zombie/fileSystem/TexturePackDevice filename Ljava/lang/String;

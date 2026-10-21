@@ -41,11 +41,11 @@ public final class Progress {
      * Java mod jars showed at (null when none showed), {@code unknownGap} the one with the most time outside
      * {@link Known} calls. {@code interimSkips}: interim frames or their copies skipped for an OpenGL error the game
      * left pending. {@code timed}: the log's lines with their times, empty unless the report is on; {@code waitedNanos}
-     * of {@code nanos} went to waiting in the menu, in no line's time.
+     * of {@code nanos} went to waiting in the menu, in no line's time. {@code assetWait}: the world load's, or null.
      */
     public record End(Flow flow, Outcome outcome, String why, long nanos, int step, Step at, int ownFrames,
                       int interimFrames, int interimSkips, Gap largestGap, Gap largestVisibleGap, Gap javaModGap,
-                      Gap unknownGap, List<Timed> timed, long waitedNanos) {
+                      Gap unknownGap, List<Timed> timed, long waitedNanos, AssetWait assetWait) {
     }
 
     /**
@@ -153,6 +153,12 @@ public final class Progress {
     private int chunksQueued;
     // the game's count of loaded chunks when the first was queued
     private int chunksBefore;
+    private final FileWork files = new FileWork();
+    // the asset wait's line from its begin, and the wait once it ended
+    private Line waitLine;
+    private long waitBegan;
+    private long waitBeganMillis;
+    private AssetWait assetWait;
 
     /**
      * {@code client}: flows start only where it is true; {@code notClient} hears once where it is not.
@@ -210,6 +216,12 @@ public final class Progress {
         report = false;
         timing = null;
         timed = new ArrayList<>();
+        update();
+    }
+
+    /** The game's file tasks, which the hooks feed while the world loads and the report is on. */
+    public FileWork files() {
+        return files;
     }
 
     /** Whether a flow runs: a cheap first check for hooks on hot paths. */
@@ -552,9 +564,65 @@ public final class Progress {
         polled(Item.CLOTHING_ITEM, loaded, total);
     }
 
-    /** Polled while the world's loading thread waits for the animations: {@code loaded} of {@code total} are. */
+    /**
+     * Polled during the asset wait, which also waits for the animations: {@code loaded} of {@code total} are. Their line
+     * lasts until all are; the rest of the wait is the wait's again.
+     */
     public void animations(int loaded, int total) {
-        polled(Item.ANIMATION, loaded, total);
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            // the game polls them only during its wait; a poll from anyone else is not the wait's
+            if (!loadsWorld || waitLine == null || assetWait != null) {
+                return;
+            }
+            countedItem(Item.ANIMATION, loaded, total);
+            if (loaded == total && timing != null && timing.item() == Item.ANIMATION) {
+                time(waitLine, null, clock.getAsLong());
+            }
+        }
+    }
+
+    /**
+     * The world's loading thread begins to wait for the game's file tasks; {@code millis}: the wall clock, as the game's
+     * log line has it.
+     */
+    public void assetWaitBegins(long now, long millis) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (!loadsWorld) {
+                return;
+            }
+            if (waitLine != null) {
+                throw new IllegalStateException(flow.label() + ": the asset wait began again at " + current());
+            }
+            waitLine = new Line(current(), Item.ASSET_WAIT, 0, 0, null);
+            waitBegan = now;
+            waitBeganMillis = millis;
+            files.waitBegins(now);
+            item(Item.ASSET_WAIT, 0, 0, null);
+        }
+    }
+
+    /** The world's loading thread goes on after its asset wait. */
+    public void assetWaitEnds(long now, long millis) {
+        if (!loadsWorld) {
+            return;
+        }
+        synchronized (this) {
+            if (!loadsWorld) {
+                return;
+            }
+            if (waitLine == null || assetWait != null) {
+                throw new IllegalStateException(flow.label() + ": the asset wait ended at " + current()
+                        + (waitLine == null ? " without beginning" : " twice"));
+            }
+            assetWait = files.waitEnds(waitBegan - started, now - waitBegan, waitBeganMillis, millis, true);
+            runEnded(now);
+        }
     }
 
     /** A loader thread reads the lot header of map cell {@code cell}, one of {@code total}; several run at once. */
@@ -730,6 +798,8 @@ public final class Progress {
         timed = new ArrayList<>();
         timing = null;
         waited = 0;
+        waitLine = null;
+        assetWait = null;
         stepLine(now);
         ownFrameCount = 0;
         interimFrameCount = 0;
@@ -768,6 +838,15 @@ public final class Progress {
             clearKnownGap();
         } else if (i < step) {
             throw new IllegalStateException(flow.label() + ": " + next + " began after " + current());
+        }
+        if (i > step && waitLine != null && assetWait == null) {
+            throw new IllegalStateException(flow.label() + ": " + next + " began while the asset wait of "
+                    + current() + " still ran");
+        }
+        // the game logs the wait's begin before every finished world load; without it, its log line has changed
+        if (i > step && current() == Step.LOADING_WORLD && waitLine == null) {
+            throw new IllegalStateException(flow.label() + ": " + next + " began without the asset wait's line ("
+                    + AssetWait.BEGINS + ") in " + current());
         }
         if (i > step) {
             step = i;
@@ -938,10 +1017,15 @@ public final class Progress {
         } else {
             timeUntil(now);
         }
+        if (waitLine != null && assetWait == null) {
+            assetWait = files.waitEnds(waitBegan - started, now - waitBegan, waitBeganMillis, 0, false);
+        }
         End end = new End(flow, outcome, why, now - started, step + 1, current(), ownFrameCount,
                 interimFrameCount, interimSkipCount, largestGap, largestVisibleGap, javaModGap, unknownGap,
-                List.copyOf(timed), waited);
+                List.copyOf(timed), waited, assetWait);
         timed = new ArrayList<>();
+        waitLine = null;
+        assetWait = null;
         flow = null;
         paused = false;
         known = null;
@@ -951,7 +1035,7 @@ public final class Progress {
     }
 
     private void stepLine(long now) {
-        Line line = Line.step(current(), step + 1, flow.steps().size());
+        Line line = currentStepLine();
         log.add(line);
         if (report) {
             time(line, null, now);
@@ -969,8 +1053,12 @@ public final class Progress {
     // the game's loop over a kind returned: the time after its last item is the step's own again
     private void runEnded(long now) {
         if (timing != null && !timing.isStep()) {
-            time(Line.step(current(), step + 1, flow.steps().size()), null, now);
+            time(currentStepLine(), null, now);
         }
+    }
+
+    private Line currentStepLine() {
+        return Line.step(current(), step + 1, flow.steps().size());
     }
 
     private void timeUntil(long now) {
@@ -990,6 +1078,10 @@ public final class Progress {
         showing = active && !paused;
         ownFrames = showing && display && current().ownFrames();
         loadsWorld = showing && current() == Step.LOADING_WORLD;
+        boolean track = loadsWorld && report;
+        if (track != files.tracking()) {
+            files.track(track, started, track ? clock.getAsLong() : 0);
+        }
         if (!showing) {
             loadingJar = 0;
         }

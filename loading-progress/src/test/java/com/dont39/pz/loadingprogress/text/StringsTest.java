@@ -64,6 +64,8 @@ class StringsTest {
                 Strings.line(new Line(Step.LOADING_WORLD, Item.CLOTHING_ITEM, 40, 90, null), false));
         assertEquals("区块 12 / 361", Strings.line(new Line(Step.LOADING_WORLD, Item.CHUNK, 12, 361, null), true));
         assertEquals("动画 5 / 800", Strings.line(new Line(Step.LOADING_WORLD, Item.ANIMATION, 5, 800, null), true));
+        assertEquals("Waiting for assets to finish loading",
+                Strings.line(new Line(Step.LOADING_WORLD, Item.ASSET_WAIT, 0, 0, null), false));
         assertNull(Strings.line(new Line(Step.LOADING_WORLD, Item.CHUNK, 0, 361, null), false));
     }
 }

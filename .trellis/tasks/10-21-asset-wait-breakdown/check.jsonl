@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "failure handling review"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook correctness review"}
+{"file": ".trellis/tasks/10-21-load-speed-optimization/research/asset-wait.md", "reason": "asset wait internals to check against"}

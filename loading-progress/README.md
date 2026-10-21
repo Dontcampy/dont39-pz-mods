@@ -49,6 +49,18 @@ Workshop text: `mod/workshop/workshop.txt`.
   and a CSV with a row per line, and `report/Reports.java` writes them on a background thread to
   `Lua/Dont39LoadingProgress/` in the cache folder, keeping the last 10 loads; `console.txt` gets the summary's path.
   A write failure turns the report off for the session.
+- Asset wait (`hooks/AssetWaitHooks.java`, `progress/FileWork.java`): the world load's wait for the game's file
+  tasks, bracketed by the game's own `bWaitForAssetLoadingToFinish2` log lines, is a line of its own; the animations'
+  line ends when all are loaded, and the rest of the wait is the wait's line again. The summary gives its exact span
+  (wall clock, to compare with the game's log), the frames that pumped the file queue during it, the queue at its first
+  frame, the time texture decoders slept on the upload budget, and the tasks whose results the game took during it: by
+  type (count, worker time), the slowest, and worker time per mod by the folder of the task's file (for models,
+  animations and physics shapes the file their call resolved; for pack images the `.pack` file the game mounted under
+  the pack's name, after the mods' overrides, which their call opens; else their asset name), then the game's own (in
+  its folder), files in no mod's or the game's folder, and tasks named without a file's path; the CSV gets a row per task
+  (`file_task`, with its type and worker time; these rows overlap). A task's call names only JDK types, so its worker
+  time is matched to the task by the result the game takes: the tasks of one class that return null or a Boolean may
+  swap times among themselves. Tracked only while the world loads with the report on.
 
 ## Constraints
 

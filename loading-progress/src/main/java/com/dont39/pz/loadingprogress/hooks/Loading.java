@@ -145,7 +145,8 @@ public final class Loading {
             return;
         }
         Report.Context context = new Report.Context(String.format(Locale.ROOT, END_LINE, args),
-                Core.getInstance().getVersion(), Loading.class.getPackage().getImplementationVersion(), modFolders());
+                Core.getInstance().getVersion(), Loading.class.getPackage().getImplementationVersion(),
+                ZomboidFileSystem.instance.base.canonicalFile.getPath(), modFolders());
         Path folder = luaFolder().resolve(Reports.FOLDER);
         LocalDateTime time = LocalDateTime.now();
         REPORTS.execute(() -> write(end, context, folder, time));

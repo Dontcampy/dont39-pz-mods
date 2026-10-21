@@ -63,6 +63,7 @@ public final class Strings {
                     name != null ? name : chinese ? "模组的文件" : "mods' files", chinese);
             case CHUNK -> counted(chinese ? "区块" : "Chunk", index, total, name, chinese);
             case ANIMATION -> counted(chinese ? "动画" : "Animation", index, total, name, chinese);
+            case ASSET_WAIT -> chinese ? "等待资源加载完成" : "Waiting for assets to finish loading";
         };
     }
 
