@@ -90,6 +90,14 @@ public final class Loader {
         return LoadStatus.loaded(pass);
     }
 
+    /**
+     * The jars the loader recorded as preloaded or loaded for {@code modId} this launch, by canonical path. Throws
+     * naming the loader version when its records cannot be read.
+     */
+    public static Set<Path> recordedJars(String modId) {
+        return LoadStatus.jarsOf(modId);
+    }
+
     /** The ids of the mod list the loader is loading; only valid inside that pass, e.g. from a mod's {@code Main}. */
     public static Set<String> currentPass() {
         return LoadStatus.currentPass();
@@ -160,6 +168,15 @@ public final class Loader {
      */
     public static void onJarLoad(Instrumentation inst, JarListener listener) {
         JarLoadHook.install(inst, listener);
+    }
+
+    /**
+     * Checks, at the end of the loader's pass over the mod list, that the {@link #onJarLoad} hook followed each jar the
+     * pass recorded; what does not match is kept for {@link #jarLoadEscaped}. Never throws. Call from the
+     * {@link #onModsLoaded} callback.
+     */
+    public static void jarPassEnded() {
+        JarLoadHook.passEnded();
     }
 
     /** What the {@link #onJarLoad} hook could not follow since the last call, or null. */

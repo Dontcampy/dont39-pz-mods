@@ -86,9 +86,9 @@ public final class Overlay {
                 return;
             }
         }
-        // before drawing: a drawing error must not also read as a frame without this hook
-        progress.frameHandedOver(System.nanoTime());
-        if (drawn && progress.display()) {
+        // before drawing: a drawing error must not also read as a frame without this hook; the flow can end here
+        boolean shows = progress.frameHandedOver(System.nanoTime());
+        if (shows && drawn && progress.display()) {
             draw(view);
         }
     }

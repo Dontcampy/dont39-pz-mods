@@ -14,7 +14,7 @@ import com.pzlauncher.zabric.loader.Loader;
  * When Zabric cannot follow the loader's passes this session, every listener is removed that way.
  */
 public final class LoaderProgress {
-    static final JarListeners LISTENERS = new JarListeners();
+    static final JarListeners LISTENERS = new JarListeners(Loader::recordedJars);
 
     private LoaderProgress() {
     }
@@ -34,7 +34,11 @@ public final class LoaderProgress {
         }
     }
 
-    /** Adds {@code listener} for {@code modId}, the mod it reports against. Never throws for non-null arguments. */
+    /**
+     * Adds {@code listener} for {@code modId}, the mod it reports against, whose jar must hold the listener's class.
+     * Throws {@link IllegalArgumentException} when the loader recorded no such jar for {@code modId}, and
+     * {@link IllegalStateException} naming the loader version when its records cannot be read.
+     */
     public static void listen(String modId, Listener listener) {
         LISTENERS.listen(modId, listener);
     }

@@ -63,7 +63,6 @@ public final class Lifecycle {
     private static volatile boolean stopped;
     private static final Set<String> registered = new HashSet<>();
     private static final Set<String> mainCalled = new HashSet<>();
-    private static final Set<String> hooksReported = new HashSet<>();
 
     private Lifecycle() {
     }
@@ -177,6 +176,7 @@ public final class Lifecycle {
                         + " phase failed: " + escaped + closeHooks(), LogSeverity.Error);
             }
             start();
+            Loader.jarPassEnded();
             Throwable lost = Loader.jarLoadEscaped();
             if (lost != null) {
                 progressLost(lost);
@@ -217,10 +217,6 @@ public final class Lifecycle {
 
     private static void load(String modId, List<Path> jars) {
         Declared declared = Entrypoints.declared(modId, jars);
-        String hooksProblem = Entrypoints.launchHooksProblem(declared);
-        if (hooksProblem != null && hooksReported.add(modId)) {
-            DebugType.Mod.error(PREFIX + "%s: %s", modId, hooksProblem);
-        }
         if (declared.preLaunch() != null && registered.add(modId)) {
             Preload.register(modId, preLaunched.contains(modId));
         }

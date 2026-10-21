@@ -4,6 +4,7 @@ import com.pzlauncher.zabric.hook.ZabricHooks;
 import com.pzlauncher.zabric.hook.impl.CapturedLog;
 import com.pzlauncher.zabric.hook.impl.HookRuntime;
 import com.pzlauncher.zabric.hook.weave.Weaving;
+import com.pzlauncher.zabric.internal.Jars;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,14 +13,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JarListenersTest {
-    private final JarListeners listeners = new JarListeners();
+    // where this test's listener classes are from
+    private static final Path HERE = here();
+    // recorded with another jar; every other mod id with this test's classes
+    private static final Map<String, Set<Path>> FOREIGN = Map.of("lp-foreign", Set.of(Path.of("other.jar")));
+
+    private final JarListeners listeners = recordedHere();
     private CapturedLog log;
 
     @BeforeEach
@@ -91,7 +99,7 @@ class JarListenersTest {
         listeners.listen("lp-lost", recorder);
         assertFalse(ZabricHooks.mod("lp-lost").open(), "registered after the loss");
 
-        JarListeners fresh = new JarListeners();
+        JarListeners fresh = recordedHere();
         Recorder late = new Recorder();
         fresh.listen("lp-late", late);
         assertTrue(fresh.unavailable(new IllegalStateException("lost")));
@@ -103,6 +111,42 @@ class JarListenersTest {
                         + Recorder.class.getName() + " | java.lang.IllegalStateException: none yet",
                 "error [Zabric] lp-late: hooks stopped after an error while following the loader's progress with "
                         + Recorder.class.getName() + " | java.lang.IllegalStateException: lost"), log.lines());
+    }
+
+    @Test
+    void aListenerFromAnotherModsJarIsRejected() {
+        open("lp-foreign");
+        Recorder recorder = new Recorder();
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> listeners.listen("lp-foreign", recorder));
+        assertEquals("cannot listen to the loader's progress for lp-foreign with " + Recorder.class.getName()
+                + ": it is from " + HERE + ", not from a jar ZombieBuddy recorded for lp-foreign ("
+                + FOREIGN.get("lp-foreign") + ")", e.getMessage());
+        pass("a");
+        assertEquals(List.of(), recorder.calls, "not registered");
+        assertTrue(ZabricHooks.mod("lp-foreign").open(), "the named mod's hooks are left alone");
+        assertEquals(List.of(), log.lines());
+    }
+
+    @Test
+    void aListenerFromItsModsJarIsAccepted() {
+        open("lp-own");
+        Recorder recorder = new Recorder();
+        listeners.listen("lp-own", recorder);
+        pass("a");
+        assertEquals(List.of("loading 1/1 a", "loaded 1/1 a"), recorder.calls);
+    }
+
+    private static JarListeners recordedHere() {
+        return new JarListeners(modId -> FOREIGN.getOrDefault(modId, Set.of(HERE)));
+    }
+
+    private static Path here() {
+        try {
+            return Jars.codeSource(JarListenersTest.class).toRealPath();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static final class Recorder implements LoaderProgress.Listener {

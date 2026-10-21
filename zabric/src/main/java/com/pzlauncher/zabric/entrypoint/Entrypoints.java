@@ -57,19 +57,15 @@ final class Entrypoints {
                 return Declared.NONE;
             }
             Attributes attributes = manifest.getMainAttributes();
-            return new Declared(className(attributes, Lifecycle.PRE_LAUNCH), className(attributes, Lifecycle.MAIN),
-                    launchHooks(attributes));
+            String preLaunch = className(attributes, Lifecycle.PRE_LAUNCH);
+            boolean launchHooks = launchHooks(attributes);
+            // only a mod Zabric keeps preloaded opens its hooks at preLaunch
+            if (launchHooks && preLaunch == null) {
+                throw new IllegalStateException("its manifest has " + Lifecycle.HOOKS + ": " + Lifecycle.HOOKS_LAUNCH
+                        + " but no " + Lifecycle.PRE_LAUNCH + " entrypoint; launch-wide hooks need one");
+            }
+            return new Declared(preLaunch, className(attributes, Lifecycle.MAIN), launchHooks);
         }
-    }
-
-    /** Why the mod's launch-wide hooks are ignored, or null: only a mod Zabric keeps preloaded opens at preLaunch. */
-    static String launchHooksProblem(Declared declared) {
-        if (!declared.launchHooks() || declared.preLaunch() != null) {
-            return null;
-        }
-        return "its manifest has " + Lifecycle.HOOKS + ": " + Lifecycle.HOOKS_LAUNCH + " but no " + Lifecycle.PRE_LAUNCH
-                + " entrypoint, so Zabric does not keep it preloaded; ignored: its hooks run only while it is in the"
-                + " mod list";
     }
 
     private static boolean launchHooks(Attributes attributes) {

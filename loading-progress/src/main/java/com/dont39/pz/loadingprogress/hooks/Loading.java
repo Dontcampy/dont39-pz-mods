@@ -126,7 +126,12 @@ public final class Loading {
         return Path.of(ZomboidFileSystem.instance.getCacheDir(), "Lua");
     }
 
+    // reads the game's state, which only the game thread may
     private static void ended(Progress.End end) {
+        if (Thread.currentThread() != GameWindow.gameThread) {
+            throw new IllegalStateException("the " + end.flow().label() + " ended on the thread "
+                    + Thread.currentThread().getName() + ", not on the game thread");
+        }
         Object[] args = {end.flow().label(), end.outcome().name().toLowerCase(Locale.ROOT),
                 end.why() == null ? "" : " (" + end.why() + ")", end.nanos() / 1e9, end.step(),
                 end.flow().steps().size(), Strings.step(end.at(), false), end.ownFrames(), end.interimFrames(),

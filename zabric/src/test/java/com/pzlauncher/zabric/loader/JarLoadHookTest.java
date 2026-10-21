@@ -8,10 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Runs ZombieBuddy's own {@code loadJar}, with the hook installed, against records as its pass writes them. */
@@ -133,6 +137,68 @@ class JarLoadHookTest {
         Path a = jar("a.jar", "lh-a", "loaded");
         assertFalse(loadJar(a, main), "the loader's own result: the test jar names no package");
         assertSame(thrown, JarLoadHook.takeEscaped());
+    }
+
+    @Test
+    void aPassThatEndsWithEveryRecordedJarLoadedReportsNothing() throws Exception {
+        JarLoadHook.passStarting();
+        JarLoadHook.passEnded();
+        assertNull(JarLoadHook.takeEscaped(), "no jars recorded, none loaded");
+
+        JarLoadHook.passStarting();
+        Path a = jar("a.jar", "lh-a", "loaded");
+        loadJar(a, main);
+        JarLoadHook.passEnded();
+        assertEquals(List.of("loading 1/1 lh-a", "loaded 1/1 lh-a"), calls);
+        assertNull(JarLoadHook.takeEscaped());
+    }
+
+    @Test
+    void aPassThatEndsShortOfItsRecordsIsReportedAndEnded() throws Exception {
+        JarLoadHook.passStarting();
+        Path a = jar("a.jar", "lh-a", "loaded");
+        Path b = jar("b.jar", "lh-b", "loaded");
+        loadJar(a, main);
+        JarLoadHook.passEnded();
+        assertEquals(List.of("loading 1/2 lh-a", "loaded 1/2 lh-a"), calls);
+        Throwable escaped = JarLoadHook.takeEscaped();
+        assertTrue(escaped.getMessage().startsWith("ZombieBuddy " + Loader.version() + " returned from its pass after"
+                + " loading 1 of the 2 jars it recorded"), escaped.getMessage());
+
+        loadJar(b, main);
+        assertEquals(2, calls.size(), calls.toString());
+        escaped = JarLoadHook.takeEscaped();
+        assertTrue(escaped.getMessage().startsWith("ZombieBuddy " + Loader.version() + " loads " + b
+                + " outside its pass over the mod list"), escaped.getMessage());
+    }
+
+    @Test
+    void aJarWhoseLoadThrowsStillEnds() throws Exception {
+        Instrumentation inst = Weaving.instrumentation();
+        JarLoadHook.passStarting();
+        Path gone = jar("gone.jar", "lh-gone", "loaded");
+        Files.delete(gone);
+        // the loader reports the missing jar on System.err and lets an Error through
+        Error thrown = new AssertionError("err broke");
+        PrintStream err = System.err;
+        System.setErr(new PrintStream(OutputStream.nullOutputStream()) {
+            @Override
+            public void println(String x) {
+                throw thrown;
+            }
+        });
+        try {
+            InvocationTargetException e = assertThrows(InvocationTargetException.class, () -> loadJar(gone, main));
+            assertSame(thrown, e.getCause());
+        } finally {
+            System.setErr(err);
+        }
+        assertEquals(List.of("loading 1/1 lh-gone", "loaded 1/1 lh-gone"), calls);
+        long beat = JarLoadHook.heartbeat();
+        retransform(inst);
+        assertEquals(beat, JarLoadHook.heartbeat(), "counting stopped");
+        JarLoadHook.passEnded();
+        assertNull(JarLoadHook.takeEscaped());
     }
 
     @Test

@@ -27,8 +27,9 @@ import static net.bytebuddy.matcher.ElementMatchers.is;
 /**
  * Advice on the entry of ZombieBuddy's {@code Loader.loadMods(List)} and around each {@code loadJar} of its MAIN pass,
  * which it calls in a loop once it has decided on every mod, and a transformer that counts the classes its thread
- * transforms or loads inside each jar. Public only because the advice is inlined into that class and calls
- * {@link #passStarting}, {@link #jarLoading} and {@link #jarLoaded}.
+ * transforms or loads inside each jar. The pass's end ({@link #passEnded}) comes from Zabric's own hook on its exit.
+ * Public only because the advice is inlined into that class and calls {@link #passStarting}, {@link #jarLoading} and
+ * {@link #jarLoaded}.
  */
 public final class JarLoadHook {
     private static final String LOADER = "me.zed_0xff.zombie_buddy.Loader";
@@ -195,6 +196,47 @@ public final class JarLoadHook {
         }
     }
 
+    /**
+     * At the end of the loader's pass over the mod list: the pass must have loaded each jar it recorded for it. Never
+     * throws into loadMods.
+     */
+    static synchronized void passEnded() {
+        if (listener == null) {
+            return;
+        }
+        try {
+            if (passFailed) {
+                return;
+            }
+            if (before == null) {
+                throw new IllegalStateException(mismatch("returned from a pass over the mod list that Zabric did not see"
+                        + " start"));
+            }
+            if (current != null) {
+                throw new IllegalStateException(mismatch("returned from its pass over the mod list while loading "
+                        + current));
+            }
+            if (jars == null) {
+                jars = LoadStatus.loadedSince(before);
+            }
+            if (index != jars.size()) {
+                throw new IllegalStateException(mismatch("returned from its pass after loading " + index + " of the "
+                        + jars.size() + " jars it recorded (" + jars.keySet() + ")"));
+            }
+        } catch (Throwable t) {
+            failed(t);
+        } finally {
+            // a jar loaded outside a pass is caught as such
+            before = null;
+            jars = null;
+            index = 0;
+            current = null;
+            currentMod = null;
+            passFailed = false;
+            stopCounting();
+        }
+    }
+
     private static void failed(Throwable t) {
         passFailed = true;
         escaped.compareAndSet(null, t);
@@ -246,7 +288,8 @@ public final class JarLoadHook {
             jarLoading(jar, phase);
         }
 
-        @Advice.OnMethodExit(suppress = Throwable.class)
+        // also when loadJar throws, so that the listener hears the jar's end and the counting stops
+        @Advice.OnMethodExit(onThrowable = Throwable.class, suppress = Throwable.class)
         static void exit(@Advice.Argument(0) Path jar, @Advice.Argument(3) Object phase) {
             jarLoaded(jar, phase);
         }

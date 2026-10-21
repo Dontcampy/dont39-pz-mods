@@ -82,6 +82,19 @@ final class LoadStatus {
         return jars;
     }
 
+    /** The jars recorded as preloaded or loaded for {@code modId}, by the canonical path the loader keys them by. */
+    static Set<Path> jarsOf(String modId) {
+        Set<Path> jars = new HashSet<>();
+        Consumer<Loader.ModJar> ofMod = jar -> {
+            if (modId.equals(jar.modId())) {
+                jars.add(jar.jar());
+            }
+        };
+        records(PRELOADED, state -> true, ofMod);
+        records(LOADED, state -> true, ofMod);
+        return jars;
+    }
+
     private static List<Loader.ModJar> jars(String wanted, Set<String> ids) {
         List<Loader.ModJar> jars = new ArrayList<>();
         records(wanted, state -> true, jar -> {

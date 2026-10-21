@@ -146,7 +146,7 @@ class ProgressTest {
     @Test
     void aFailedJoinEndsWithoutABar() {
         progress.connect(at(0));
-        progress.connectionState("Connected", at(1));
+        progress.connectionState("Connected", true, at(1));
         assertEquals(Step.CONNECTING, step());
         progress.event("OnConnectFailed", true, at(2));
         assertNull(progress.view());
@@ -156,8 +156,31 @@ class ProgressTest {
     @Test
     void aLostConnectionWhileConnectingEndsTheJoin() {
         progress.connect(at(0));
-        progress.connectionState("Failed", at(1));
+        progress.connectionState("Failed", true, at(1));
         assertNull(progress.view());
+    }
+
+    @Test
+    void aLostConnectionHeardOffTheGameThreadEndsTheJoinAtTheNextFrame() {
+        progress.connect(at(0));
+        progress.connectionState("Disconnected", false, at(1));
+        assertEquals(Step.CONNECTING, step());
+        assertEquals(List.of(), ends);
+        assertFalse(progress.frameHandedOver(at(2)));
+        assertNull(progress.view());
+        assertEquals(Progress.Outcome.STOPPED, ends.get(0).outcome());
+        assertEquals(TimeUnit.MILLISECONDS.toNanos(2), ends.get(0).nanos());
+    }
+
+    @Test
+    void aLostConnectionHeardOffTheGameThreadDoesNotEndALaterJoin() {
+        progress.connect(at(0));
+        progress.connectionState("Failed", false, at(1));
+        progress.connect(at(2));
+        assertEquals(Progress.Outcome.LEFT, ends.get(0).outcome());
+        progress.frameHandedOver(at(3));
+        assertEquals(Step.CONNECTING, step());
+        assertEquals(1, ends.size());
     }
 
     @Test

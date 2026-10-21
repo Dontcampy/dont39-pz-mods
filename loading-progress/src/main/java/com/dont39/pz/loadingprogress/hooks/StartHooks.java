@@ -5,6 +5,7 @@ import com.pzlauncher.zabric.hook.At;
 import com.pzlauncher.zabric.hook.CallbackInfo;
 import com.pzlauncher.zabric.hook.Hooks;
 import com.pzlauncher.zabric.hook.Inject;
+import zombie.GameWindow;
 import zombie.Lua.LuaManager;
 import zombie.core.raknet.RakNetPeerInterface;
 import zombie.gameStates.GameLoadingState;
@@ -47,7 +48,7 @@ public final class StartHooks {
         }
     }
 
-    // the network library's state callback, which the connect screen hears as OnConnectionStateChanged
+    // the network library's state callback, which the connect screen hears as OnConnectionStateChanged; on any thread
     @Hooks(RakNetPeerInterface.class)
     public static final class Connection {
         private Connection() {
@@ -55,7 +56,7 @@ public final class StartHooks {
 
         @Inject(method = "connectionStateChangedCallback", at = @At("HEAD"))
         public static void stateChanged(String state, String message, CallbackInfo ci) {
-            PROGRESS.connectionState(state, System.nanoTime());
+            PROGRESS.connectionState(state, Thread.currentThread() == GameWindow.gameThread, System.nanoTime());
         }
     }
 

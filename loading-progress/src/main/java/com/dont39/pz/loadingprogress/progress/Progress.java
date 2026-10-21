@@ -88,6 +88,8 @@ public final class Progress {
     private volatile boolean loadsWorld;
     private volatile long lastFrame;
     private volatile long loadingJar;
+    // a failed join heard off the game thread, for the game thread's next frame: ending a flow reads game state
+    private volatile boolean joinFailedLater;
 
     private Flow flow;
     private int step;
@@ -339,9 +341,13 @@ public final class Progress {
         }
     }
 
-    /** The network connection's state changed. */
-    public void connectionState(String state, long now) {
+    /** The network connection's state changed, on the game thread or on the network library's. */
+    public void connectionState(String state, boolean gameThread, long now) {
         if (!active || state == null || !FAILED_STATES.contains(state)) {
+            return;
+        }
+        if (!gameThread) {
+            joinFailedLater = true;
             return;
         }
         synchronized (this) {
@@ -631,17 +637,22 @@ public final class Progress {
         return !showing || lastFrame - since >= 0;
     }
 
-    /** A frame was handed to the render thread. */
-    public void frameHandedOver(long now) {
+    /** A frame was handed to the render thread; on the game thread. Whether a flow still shows. */
+    public boolean frameHandedOver(long now) {
         if (!showing) {
-            return;
+            return false;
         }
         synchronized (this) {
+            if (joinFailedLater) {
+                joinFailedLater = false;
+                joinFailedLocked(now);
+            }
             if (showing) {
                 gaps(now);
                 lastFrame = now;
                 visible(now);
             }
+            return showing;
         }
     }
 
@@ -694,6 +705,8 @@ public final class Progress {
         if (flow != null) {
             throw new IllegalStateException(next.label() + " began while the " + flow.label() + " was at " + current());
         }
+        // one heard before this flow is not its own
+        joinFailedLater = false;
         if (stopped || !client()) {
             return;
         }

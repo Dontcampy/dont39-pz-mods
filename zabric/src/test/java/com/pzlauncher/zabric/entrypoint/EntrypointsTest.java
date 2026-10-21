@@ -13,7 +13,6 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EntrypointsTest {
@@ -39,12 +38,10 @@ class EntrypointsTest {
     }
 
     @Test
-    void launchWideHooksWithoutAPreLaunchEntrypointAreIgnoredWithAReason() {
-        assertEquals("its manifest has Zabric-Hooks: launch but no Zabric-PreLaunch entrypoint, so Zabric does not"
-                        + " keep it preloaded; ignored: its hooks run only while it is in the mod list",
-                Entrypoints.launchHooksProblem(new Declared(null, "a.Main", true)));
-        assertNull(Entrypoints.launchHooksProblem(new Declared("a.Pre", null, true)));
-        assertNull(Entrypoints.launchHooksProblem(new Declared(null, "a.Main", false)));
+    void launchWideHooksWithoutAPreLaunchEntrypointAreAnError() throws IOException {
+        Path jar = jar(Lifecycle.MAIN, "a.Main", Lifecycle.HOOKS, Lifecycle.HOOKS_LAUNCH);
+        assertEquals("its manifest has Zabric-Hooks: launch but no Zabric-PreLaunch entrypoint; launch-wide hooks need"
+                + " one", assertThrows(IllegalStateException.class, () -> Entrypoints.declared(jar)).getMessage());
     }
 
     // name, value, ...
