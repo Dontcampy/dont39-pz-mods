@@ -61,6 +61,12 @@ class JoinSessionTest {
 
     override fun versionFolder(modFolder: Path) = "42"
 
+    override fun relaunchUnavailable(): String? = null
+
+    override fun arguments(): List<String> = emptyList()
+
+    override fun relaunch(omitted: Set<Int>) = throw UnsupportedOperationException("a join does not restart the game")
+
     /** The next launch, which applies the request. */
     fun restart() {
       current = pending

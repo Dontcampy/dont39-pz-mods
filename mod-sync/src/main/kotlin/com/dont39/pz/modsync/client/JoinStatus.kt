@@ -12,13 +12,14 @@ import zombie.Lua.LuaManager
  *   `files`, `bytes` and `java` (true when its jars change) of each item that downloads anything or changes a jar.
  * - download: `files`, `bytes` (totals), `filesDone`, `bytesDone`.
  * - restart: the join stopped for a restart of the game; `stop` counts such stops, so a screen can tell them apart,
- *   and `reason` is the stop's text.
+ *   `reason` is the stop's text, and `relaunch` is true when `Dont39AllInOne_restartModSyncGame` can restart the game.
  */
 internal object JoinStatus {
-  fun restart(stop: Int, reason: String): KahluaTable = LuaManager.platform.newTable().apply {
+  fun restart(stop: Int, reason: String, relaunch: Boolean): KahluaTable = LuaManager.platform.newTable().apply {
     rawset("state", "restart")
     put("stop", stop)
     rawset("reason", reason)
+    rawset("relaunch", relaunch)
   }
 
   /** Null while the join has not reached its mod check, or no longer waits. */

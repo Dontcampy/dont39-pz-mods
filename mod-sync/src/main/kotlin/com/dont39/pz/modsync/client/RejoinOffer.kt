@@ -3,6 +3,9 @@ package com.dont39.pz.modsync.client
 import com.dont39.pz.common.put
 import com.dont39.pz.common.serverKey
 import com.dont39.pz.modsync.ModSync
+import com.dont39.pz.modsync.client.java.GameLaunch
+import com.dont39.pz.modsync.client.rejoin.GameHosts
+import com.dont39.pz.modsync.client.rejoin.JoinArgs
 import com.dont39.pz.modsync.client.rejoin.RejoinStore
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.lang.management.ManagementFactory
@@ -32,8 +35,9 @@ internal object RejoinOffer {
   }
 
   /**
-   * The server to offer, once per launch and never in the launch that stopped for it: a table with `host`, `port`,
-   * `user` (the account's user name) and `name` (the server list's name); nil when there is none.
+   * The server to offer, once per launch, never in the launch that stopped for it nor in one whose `+connect` joins it:
+   * a table with `host`, `port`, `user` (the account's user name) and `name` (the server list's name); nil when there
+   * is none.
    */
   @LuaGlobal("Dont39AllInOne_getModSyncRejoin")
   @Synchronized
@@ -45,6 +49,13 @@ internal object RejoinOffer {
       val rejoin = store.read() ?: return null
       if (rejoin.written == launchStart) return null
       offered = true
+      val args = JoinArgs.of(GameLaunch.arguments(), rejoin.host, rejoin.port, GameHosts) { ModSync.log(it) }
+      if (args.toServer) {
+        // vanilla's popup for the launch's +connect is the way back
+        store.drop()
+        ModSync.log { "no rejoin offer for ${rejoin.name}: this launch joins it through +connect ${args.target}" }
+        return null
+      }
       ModSync.log { "offering to rejoin ${rejoin.name} (${serverKey(rejoin.host, rejoin.port)}) as ${rejoin.user}" }
       LuaManager.platform.newTable().apply {
         rawset("host", rejoin.host)

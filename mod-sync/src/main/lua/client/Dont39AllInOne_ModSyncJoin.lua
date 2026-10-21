@@ -1,7 +1,8 @@
 -- Dont39 All-in-One: mod sync on the Connect screen. While a join waits for the server's version of its Workshop
 -- items, the screen's status line shows what it does, and a dialog asks before downloading from a server that is not
--- remembered or taking Java code from it. After a join stopped for a restart, the screen offers to quit the game. The
--- Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are listed in JoinStatus.kt.
+-- remembered or taking Java code from it. After a join stopped for a restart, the screen offers to restart the game,
+-- where the Java side can, and to quit it. The Java side holds the join; Dont39AllInOne_getModSyncJoin's keys are
+-- listed in JoinStatus.kt.
 
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
@@ -23,7 +24,10 @@ local lastPoll = 0
 local dialog = nil
 local asked = false -- this confirm was shown; it is not shown again before the next one
 local quit = nil -- the Quit button, on the Connect screen it was added to
-local dismissed = nil -- the restart stop whose screen the player left; its button is not shown again
+local restart = nil -- the Restart button, likewise
+local dismissed = nil -- the restart stop whose screen the player left; its buttons are not shown again
+local buttonsFor = nil -- the restart stop the buttons are shown for
+local restarted = nil -- the restart stop whose Restart was clicked; it stays disabled for that stop
 local screenFor = nil -- "join", or the restart stop's number, once the Connect screen was there for it
 
 -- as text: the Java side's numbers are Lua doubles
@@ -53,13 +57,14 @@ local function closeDialog()
     end
 end
 
-local function hideQuit()
+local function hideButtons()
     if quit then quit:setVisible(false) end
+    if restart then restart:setVisible(false) end
 end
 
 local guard = Common.guard(PREFIX, function()
     pcall(closeDialog)
-    pcall(hideQuit)
+    pcall(hideButtons)
     -- also outside a confirm: a later one would wait for an answer this file can no longer give
     if Dont39AllInOne_answerModSyncJoin then
         pcall(Dont39AllInOne_answerModSyncJoin, "failed")
@@ -183,37 +188,70 @@ local function onQuit()
     if not ok then fail("quitting the game", err, trace) end
 end
 
+local function onRestart()
+    local ok, err, trace = pcall(function()
+        -- for the rest of the stop: a click while the game quits would start a second helper process
+        restarted = buttonsFor
+        restart:setEnable(false)
+        local why = Dont39AllInOne_restartModSyncGame()
+        if why then setLine(why) end
+    end)
+    if not ok then fail("restarting the game", err, trace) end
+end
+
+-- [button]: the one shown before, which is made again for another screen
+local function addButton(button, screen, back, title, onClick, accept)
+    if button and button.parent == screen then return button end
+    button = ISButton:new(0, 0, 100, back:getHeight(), title, nil, onClick)
+    button:initialise()
+    button:instantiate()
+    -- before any setEnable, which keeps these colours for the enabled state
+    if accept then button:enableAcceptColor() end
+    button:setAnchorLeft(true)
+    button:setAnchorRight(false)
+    button:setAnchorTop(false)
+    button:setAnchorBottom(true)
+    button:setWidthToTitle(100)
+    screen:addChild(button)
+    return button
+end
+
 -- next to the screen's Back button, which vanilla moves on resize
-local function placeQuit(screen)
+local function placeButtons(screen, status)
     local back = screen.backBtn
     if not back then error("the Connect screen has no Back button (backBtn)") end
-    if not quit or quit.parent ~= screen then
-        quit = ISButton:new(0, 0, 100, back:getHeight(), getText(KEY .. "QuitGame"), nil, onQuit)
-        quit:initialise()
-        quit:instantiate()
-        quit:setAnchorLeft(true)
-        quit:setAnchorRight(false)
-        quit:setAnchorTop(false)
-        quit:setAnchorBottom(true)
-        quit:setWidthToTitle(100)
-        screen:addChild(quit)
+    local x = back:getRight() + PAD
+    if type(status.relaunch) ~= "boolean" then error("the restart stop does not say whether the game can restart") end
+    if status.relaunch then
+        restart = addButton(restart, screen, back, getText(KEY .. "RestartGame"), onRestart, true)
+        local enable = restarted ~= status.stop
+        if restart.enable ~= enable then restart:setEnable(enable) end
+        restart:setX(x)
+        restart:setY(back:getY())
+        restart:setVisible(true)
+        x = restart:getRight() + PAD
+    elseif restart then
+        restart:setVisible(false)
     end
-    quit:setX(back:getRight() + PAD)
+    quit = addButton(quit, screen, back, getText(KEY .. "QuitGame"), onQuit)
+    quit:setX(x)
     quit:setY(back:getY())
     quit:setVisible(true)
 end
 
--- [stop]: the restart stop the Java side reports, nil when there is none
-local function updateQuit(stop)
+-- [status]: the restart stop the Java side reports, nil when there is none
+local function updateButtons(status)
     local screen = ConnectToServer and ConnectToServer.instance
+    local stop = status and status.stop
     local shown = quit ~= nil and quit:getIsVisible()
     if stop and stop ~= dismissed and screen and screen:getIsVisible() and not screen.connecting then
-        placeQuit(screen)
+        buttonsFor = stop
+        placeButtons(screen, status)
         return
     end
     -- Back or a new connect left the stop's screen
     if shown and stop then dismissed = stop end
-    hideQuit()
+    hideButtons()
 end
 
 -- The join's Workshop step hides the Connect screen behind ServerWorkshopItemScreen and, once the items are in, only
@@ -249,7 +287,7 @@ local function update(status)
         closeDialog()
         asked = false
     end
-    updateQuit(state == "restart" and status.stop or nil)
+    updateButtons(state == "restart" and status or nil)
     if not status then return end
     if state == "preparing" then
         setLine(getText(KEY .. "Preparing"))

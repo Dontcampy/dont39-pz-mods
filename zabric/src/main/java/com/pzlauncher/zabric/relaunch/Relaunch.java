@@ -96,7 +96,8 @@ public final class Relaunch {
         try {
             host = host();
         } catch (Unavailable e) {
-            throw new IllegalStateException("the game cannot restart itself: " + e.getMessage());
+            // the reasons read on their own; callers put them after their own "cannot restart"
+            throw new IllegalStateException(e.getMessage());
         }
         LaunchSpec spec = new LaunchSpec(ProcessHandle.current().pid(), host.exe(),
                 omit(host.commandLine(), omitted), Path.of(System.getProperty("user.dir")), System.getenv(),

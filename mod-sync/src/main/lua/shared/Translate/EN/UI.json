@@ -1,7 +1,7 @@
 {
     "UI_Dont39AllInOne_ModSync_Failed": "Cannot join with the server's version of its Workshop items: %1",
     "UI_Dont39AllInOne_ModSync_Failed_Network": "Cannot download the server's Workshop items from %1:\n%2\nAsk the server owner whether its mod sync port is open.",
-    "UI_Dont39AllInOne_ModSync_Failed_Restart": "To use the server's version of %1, restart the game: Java code can only be loaded when the game starts.\nQuit, start the game again and choose Rejoin on the main menu.",
+    "UI_Dont39AllInOne_ModSync_Failed_Restart": "To use the server's version of %1, restart the game: Java code can only be loaded when the game starts.\nOnce it has started again, choose Rejoin on the main menu.",
     "UI_Dont39AllInOne_ModSync_Failed_Preload": "%1 (in %2) loads at game start and cannot be taken from a server.\nAsk the server owner to restart the server, which updates the item.",
     "UI_Dont39AllInOne_ModSync_Failed_NotServed": "The game runs the Java code of %1 from %2, not the server's version (details in console.txt).\nRestart the game and join again.",
     "UI_Dont39AllInOne_ModSync_Failed_NotLoaded": "The game did not load the Java code of %1 (%2) when it started, so it cannot run the server's version. Was it declined in ZombieBuddy's dialog? (details in console.txt)\nRestart the game and join again.",
@@ -23,6 +23,8 @@
     "UI_Dont39AllInOne_ModSync_Download": "Download and join",
     "UI_Dont39AllInOne_ModSync_Cancel": "Cancel",
     "UI_Dont39AllInOne_ModSync_QuitGame": "Quit game",
+    "UI_Dont39AllInOne_ModSync_RestartGame": "Restart game",
+    "UI_Dont39AllInOne_ModSync_RestartFailed": "The game cannot restart itself: %1\nQuit the game and start it again yourself.",
     "UI_Dont39AllInOne_ModSync_RejoinTitle": "Rejoin %1?",
     "UI_Dont39AllInOne_ModSync_RejoinText": "The game restarted to use this server's version of its Workshop items.",
     "UI_Dont39AllInOne_ModSync_Rejoin": "Rejoin",

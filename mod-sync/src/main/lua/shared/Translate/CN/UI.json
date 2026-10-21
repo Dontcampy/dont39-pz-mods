@@ -1,7 +1,7 @@
 {
     "UI_Dont39AllInOne_ModSync_Failed": "无法使用服务器版本的创意工坊物品加入：%1",
     "UI_Dont39AllInOne_ModSync_Failed_Network": "无法从 %1 下载服务器的创意工坊物品：\n%2\n请询问服务器管理员模组同步端口是否已开放。",
-    "UI_Dont39AllInOne_ModSync_Failed_Restart": "要使用服务器版本的%1，需要重启游戏：Java代码只能在游戏启动时加载。\n请退出游戏，重新启动后在主菜单选择“重新加入”。",
+    "UI_Dont39AllInOne_ModSync_Failed_Restart": "要使用服务器版本的%1，需要重启游戏：Java代码只能在游戏启动时加载。\n重新启动后在主菜单选择“重新加入”。",
     "UI_Dont39AllInOne_ModSync_Failed_Preload": "%1（位于%2）在游戏启动时加载，无法从服务器获取。\n请让服务器管理员重启服务器，以更新该物品。",
     "UI_Dont39AllInOne_ModSync_Failed_NotServed": "游戏运行的是来自%2的%1的Java代码，而不是服务器的版本（详情见console.txt）。\n请重启游戏后再加入。",
     "UI_Dont39AllInOne_ModSync_Failed_NotLoaded": "游戏启动时没有加载%1（%2）的Java代码，因此无法运行服务器的版本。是否在ZombieBuddy的对话框中拒绝了它？（详情见console.txt）\n请重启游戏后再加入。",
@@ -23,6 +23,8 @@
     "UI_Dont39AllInOne_ModSync_Download": "下载并加入",
     "UI_Dont39AllInOne_ModSync_Cancel": "取消",
     "UI_Dont39AllInOne_ModSync_QuitGame": "退出游戏",
+    "UI_Dont39AllInOne_ModSync_RestartGame": "重启游戏",
+    "UI_Dont39AllInOne_ModSync_RestartFailed": "游戏无法自行重启：%1\n请退出游戏，然后自己重新启动。",
     "UI_Dont39AllInOne_ModSync_RejoinTitle": "重新加入%1？",
     "UI_Dont39AllInOne_ModSync_RejoinText": "游戏已重启，以使用该服务器版本的创意工坊物品。",
     "UI_Dont39AllInOne_ModSync_Rejoin": "重新加入",

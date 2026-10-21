@@ -7,6 +7,8 @@ import com.dont39.pz.modsync.client.JoinSession.Step
 import com.dont39.pz.modsync.client.download.Cache
 import com.dont39.pz.modsync.client.java.GameLaunch
 import com.dont39.pz.modsync.client.java.JavaMod
+import com.dont39.pz.modsync.client.rejoin.GameHosts
+import com.dont39.pz.modsync.client.rejoin.restartFor
 import com.dont39.pz.modsync.client.swap.Swap
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.nio.file.Path
@@ -40,6 +42,11 @@ internal object ModSyncClient {
   private var restartStops = 0
   private var restartStopped = false
   private var restartReason = ""
+  private var restartRelaunch = false
+
+  // the server of the last restart stop, which a restart of the game is for
+  private var restartHost: String? = null
+  private var restartPort = 0
 
   // Java mods of the swapped items that are to run from their trees once the session's mods are loaded
   private var expected = emptyList<JavaMod>()
@@ -135,6 +142,13 @@ internal object ModSyncClient {
             restartStops++
             restartStopped = true
             restartReason = Translator.getText(JoinSession.KEY_PREFIX + step.key, *step.args.toTypedArray())
+            restartHost = s.host
+            restartPort = s.gamePort
+            val unavailable = GameLaunch.relaunchUnavailable()
+            restartRelaunch = unavailable == null
+            if (unavailable != null) {
+              ModSync.log { "the Connect screen offers no Restart game: $unavailable" }
+            }
           }
           stop(join, step)
           true
@@ -215,7 +229,8 @@ internal object ModSyncClient {
   fun luaStatus(): KahluaTable? {
     if (!ModSync.active()) return null
     return try {
-      session?.let(JoinStatus::table) ?: if (restartStopped) JoinStatus.restart(restartStops, restartReason) else null
+      session?.let(JoinStatus::table)
+        ?: if (restartStopped) JoinStatus.restart(restartStops, restartReason, restartRelaunch) else null
     } catch (t: Throwable) {
       ModSync.disable("reading the join's status", t)
       null
@@ -252,6 +267,25 @@ internal object ModSyncClient {
       ModSync.disable("taking the dialog's answer", t)
     }
   }
+
+  /**
+   * "Restart game" after a restart stop: nil once the game quits, else the text that says why it cannot. The request
+   * for the next launch stays as the stop left it.
+   */
+  @LuaGlobal("Dont39AllInOne_restartModSyncGame")
+  @Synchronized
+  fun luaRestart(): String? {
+    ModSync.whyNotActive()?.let { return restartFailed(it) }
+    return try {
+      val host = checkNotNull(restartHost) { "no join stopped for a restart" }
+      restartFor(GameLaunch, host, restartPort, GameHosts) { ModSync.log(it) }?.let(::restartFailed)
+    } catch (t: Throwable) {
+      ModSync.disable("restarting the game", t)
+      Translator.getText(JoinSession.KEY_PREFIX + ERROR.key)
+    }
+  }
+
+  private fun restartFailed(why: String) = Translator.getText(JoinSession.KEY_PREFIX + "RestartFailed", why)
 
   private fun endSession() {
     session?.cancel()

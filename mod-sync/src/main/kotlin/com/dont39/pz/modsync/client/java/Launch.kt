@@ -2,14 +2,15 @@ package com.dont39.pz.modsync.client.java
 
 import com.pzlauncher.zabric.mods.JavaMods
 import com.pzlauncher.zabric.mods.LaunchOverride
+import com.pzlauncher.zabric.relaunch.Relaunch
 import java.nio.file.Path
 import zombie.ZomboidFileSystem
 import zombie.modding.ActiveMods
 import zombie.network.GameClient
 
 /**
- * What a join asks of this launch about Java mods: Zabric's one-launch override, the jars that run, and the game's mod
- * list. On the game thread only. Item ids are Workshop ids in decimal, folders `mods` folders.
+ * What a join asks of this launch about Java mods: Zabric's one-launch override, the jars that run, the game's mod
+ * list, and the restart. On the game thread only. Item ids are Workshop ids in decimal, folders `mods` folders.
  */
 internal interface Launch {
   /** The items this launch takes from other folders. */
@@ -32,6 +33,18 @@ internal interface Launch {
 
   /** The version folder name the game and ZombieBuddy use in [modFolder]. */
   fun versionFolder(modFolder: Path): String
+
+  /** Why the game cannot restart itself here, or null when it can. */
+  fun relaunchUnavailable(): String?
+
+  /** This launch's arguments after the program, as [relaunch] counts them. */
+  fun arguments(): List<String>
+
+  /**
+   * Quits the game to start it again as this launch started, without the arguments at [omitted]. Returns once the
+   * game quits; throws with the reason, and the game runs on, when it cannot.
+   */
+  fun relaunch(omitted: Set<Int>)
 }
 
 /** [Launch] in game, through Zabric's public API. */
@@ -51,4 +64,10 @@ internal object GameLaunch : Launch {
   fun serverMods(): Set<String> = GameClient.instance.serverMods.toSet()
 
   override fun versionFolder(modFolder: Path): String = ZomboidFileSystem.instance.getModVersionDirName(modFolder)
+
+  override fun relaunchUnavailable(): String? = Relaunch.unavailable()
+
+  override fun arguments(): List<String> = Relaunch.arguments()
+
+  override fun relaunch(omitted: Set<Int>) = Relaunch.restart(omitted)
 }
