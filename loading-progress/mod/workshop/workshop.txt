@@ -1,4 +1,5 @@
 version=1
+id=3823987147
 title=Loading Progress
 description=[h1]Loading Progress[/h1]
 description=Long loading screens with lots of mods? See how far along the game is and what it is loading right now. 中文说明在下方。
