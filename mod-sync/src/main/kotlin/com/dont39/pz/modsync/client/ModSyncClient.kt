@@ -7,6 +7,7 @@ import com.dont39.pz.modsync.client.JoinSession.Step
 import com.dont39.pz.modsync.client.download.Cache
 import com.dont39.pz.modsync.client.java.GameLaunch
 import com.dont39.pz.modsync.client.java.JavaMod
+import com.dont39.pz.modsync.client.java.JavaRun
 import com.dont39.pz.modsync.client.rejoin.GameHosts
 import com.dont39.pz.modsync.client.rejoin.JoinArgs
 import com.dont39.pz.modsync.client.rejoin.restartFor
@@ -51,6 +52,9 @@ internal object ModSyncClient {
   // Java mods of the swapped items that are to run from their trees once the session's mods are loaded
   private var expected = emptyList<JavaMod>()
 
+  // the session runs some of them without the server's Java code: shown once in game, dropped when the game ends
+  private var notice: List<JavaRun.Notice>? = null
+
   val cache by lazy {
     Cache(Path.of(ZomboidFileSystem.instance.cacheDir, "Dont39AllInOne", "ModSync"))
   }
@@ -61,6 +65,7 @@ internal object ModSyncClient {
     endSession()
     restartStopped = false
     expected = emptyList()
+    notice = null
     Swap.off("a new join started")
     if (!ModSync.active()) {
       return
@@ -141,7 +146,7 @@ internal object ModSyncClient {
             RejoinOffer.record(s.host, s.gamePort)
             restartStops++
             restartStopped = true
-            restartReason = Translator.getText(JoinSession.KEY_PREFIX + step.key, *step.args.toTypedArray())
+            restartReason = text(step.key, step.args)
             val unavailable = GameLaunch.relaunchUnavailable()
             restartRelaunch = unavailable == null
             restartArgs = if (unavailable == null) {
@@ -181,7 +186,8 @@ internal object ModSyncClient {
 
   /**
    * At `Core.ResetLua(String, String)` RETURN. A jar the loader skipped in the join's pass (e.g. its approval was
-   * declined) leaves the mod's Lua without its Java; stopping the join there is not clean, so it is only reported.
+   * declined) or another jar serving the package leaves the mod's Lua without the server's Java; stopping the join
+   * there is not clean, so it is reported, and the player told once in game.
    */
   @Synchronized
   fun modsLoaded(activeMods: String?) {
@@ -190,24 +196,27 @@ internal object ModSyncClient {
     }
     val mods = expected
     expected = emptyList()
-    val serverMods = GameLaunch.serverMods()
-    mods.filter { it.id in serverMods }.forEach { mod ->
-      val served = GameLaunch.servingJar(mod.pkg)
-      val tree = mod.jar.toRealPath()
-      if (served != tree) {
-        val runs = served?.let { "runs ${mod.pkg} from $it" } ?: "did not load $tree"
-        ModSync.log {
-          "problem: ${mod.name} runs without the server's Java code: the game $runs (see the loader's lines)"
+    val runs = JavaRun.of(mods, GameLaunch.serverMods(), GameLaunch::servingJar)
+    runs.forEach { run ->
+      val name = run.mod.name
+      when (run) {
+        is JavaRun.FromTree -> ModSync.log { "$name runs the server's Java code from ${run.tree}" }
+        is JavaRun.NotLoaded -> ModSync.error {
+          "$name runs without the server's Java code: the game did not load ${run.tree} (see the loader's lines)"
         }
-      } else {
-        ModSync.log { "${mod.name} runs the server's Java code from $tree" }
+        is JavaRun.Other -> ModSync.error {
+          "$name runs without the server's Java code: the game runs ${run.mod.pkg} from ${run.served}, not from " +
+            "${run.tree} (see the loader's lines)"
+        }
       }
     }
+    notice = JavaRun.notice(runs)
   }
 
   /** At `IngameState.exit` HEAD: the game reloads the main menu's mods without `ResetLua`. */
   @Synchronized
   fun leftGame() {
+    notice = null
     Swap.off("the game ended")
   }
 
@@ -287,11 +296,32 @@ internal object ModSyncClient {
       restartFor(GameLaunch, args) { ModSync.log(it) }?.let(::restartFailed)
     } catch (t: Throwable) {
       ModSync.disable("restarting the game", t)
-      Translator.getText(JoinSession.KEY_PREFIX + ERROR.key)
+      text(ERROR.key)
     }
   }
 
-  private fun restartFailed(why: String) = Translator.getText(JoinSession.KEY_PREFIX + "RestartFailed", why)
+  /**
+   * For `Dont39AllInOne_ModSyncNotice.lua`, once in game: the text that tells the player the session runs mods without
+   * the server's Java code, nil when it does not; given once.
+   */
+  @LuaGlobal("Dont39AllInOne_takeModSyncNotice")
+  @Synchronized
+  fun luaTakeNotice(): String? {
+    if (!ModSync.active()) return null
+    return try {
+      val lines = notice ?: return null
+      notice = null
+      (lines.map { text(it.key, it.args) } + text("NoticeText")).joinToString("\n")
+    } catch (t: Throwable) {
+      ModSync.disable("reading the notice about the server's Java code", t)
+      null
+    }
+  }
+
+  private fun text(key: String, args: List<String> = emptyList()) =
+    Translator.getText(JoinSession.KEY_PREFIX + key, *args.toTypedArray())
+
+  private fun restartFailed(why: String) = text("RestartFailed", listOf(why))
 
   private fun endSession() {
     session?.cancel()

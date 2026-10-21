@@ -10,9 +10,10 @@
   would drop ([Building the Message](#building-the-message)). Lua code uses the same logger
   (`DebugType.Mod:println` / `:error`), not `print`; see the helpers in
   `mod-options-sidebar/src/main/lua/client/Dont39AllInOne_ModOptionsSidebar.lua`.
-- Each feature logs through its facade's `log` / `debug` / `disable` helpers, which add the shared mod + feature
-  prefix. Mod-level lines come only from the mod's main entrypoint (ZabricKotlin: its `Main`); Zabric uses its own
-  `[Zabric]` prefix.
+- Each feature logs through its facade's `log` / `debug` / `error` / `disable` helpers, which add the shared mod +
+  feature prefix. A problem the feature runs on with is `error { }`, never an info line worded as one; an exception
+  goes to `disable`. Mod-level lines come only from the mod's main entrypoint (ZabricKotlin: its `Main`); Zabric uses
+  its own `[Zabric]` prefix.
 - Every feature reports the same lifecycle moments so a player's `console.txt` shows its state: ready or idle at
   `init()`, active or inactive on first use, disabled on a runtime error, and each error after that. The wording is in
   `Feature.kt`; reasons come from the facade's `problem()` (`ImeKeyboardFix.kt`).

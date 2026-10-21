@@ -15,6 +15,9 @@
 - `Feature.whyNotActive()` gives the player-facing reason a feature does not run (null when active), e.g. for a Lua
   check that refuses an action (`Tunnel.luaProblem`). New in ZabricKotlin after 0.4.0: release ZabricKotlin before a
   mod that calls it.
+- `Feature.error { }` logs at the game's error level, for a problem the feature runs on with
+  (`ModSyncClient.modsLoaded`); an exception goes to `disable`. New in ZabricKotlin 0.6.0: release ZabricKotlin before
+  a mod that calls it.
 - Code only the All-in-One features share goes into `allinone-common`, which ships in Dont39AllInOne's jar and needs
   no ZabricKotlin release ([Directory Structure](./directory-structure.md)); this module is for any Kotlin mod.
 - Do not re-implement in a feature what the module provides: gating state, the log prefix, lifecycle wording, hook

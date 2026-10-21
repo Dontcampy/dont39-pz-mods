@@ -1,6 +1,7 @@
 package com.dont39.pz.zbktutils
 
 import com.dont39.pz.zbktutils.LoggerUtils.lzDebug
+import com.dont39.pz.zbktutils.LoggerUtils.lzError
 import com.dont39.pz.zbktutils.LoggerUtils.lzInfo
 import com.pzlauncher.zabric.hook.HookGate
 import com.pzlauncher.zabric.hook.ZabricHooks
@@ -166,6 +167,9 @@ abstract class Feature(val name: String, private val modId: String, private val 
   inline fun log(message: () -> String) = DebugType.Mod.lzInfo { "$prefix${message()}" }
 
   inline fun debug(message: () -> String) = DebugType.Mod.lzDebug { "$prefix${message()}" }
+
+  /** A problem the feature runs on with, e.g. state it cannot correct; an exception goes to [disable]. */
+  inline fun error(message: () -> String) = DebugType.Mod.lzError { "$prefix${message()}" }
 
   @Synchronized
   private fun move(from: State, to: State, why: String? = null): Boolean {

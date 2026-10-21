@@ -29,5 +29,9 @@
     "UI_Dont39AllInOne_ModSync_RejoinText": "游戏已重启，以使用该服务器版本的创意工坊物品。",
     "UI_Dont39AllInOne_ModSync_Rejoin": "重新加入",
     "UI_Dont39AllInOne_ModSync_NotNow": "暂不",
-    "UI_Dont39AllInOne_ModSync_RejoinNoEntry": "%1不在你保存的服务器中，无法从这里重新加入。请从服务器列表加入。"
+    "UI_Dont39AllInOne_ModSync_RejoinNoEntry": "%1不在你保存的服务器中，无法从这里重新加入。请从服务器列表加入。",
+    "UI_Dont39AllInOne_ModSync_NoticeTitle": "未运行服务器的Java代码",
+    "UI_Dont39AllInOne_ModSync_NoticeNotLoaded": "%1：游戏没有加载它的Java代码。是否在ZombieBuddy的对话框中拒绝了它？",
+    "UI_Dont39AllInOne_ModSync_NoticeNotServed": "%1：游戏运行的是来自%2的Java代码。",
+    "UI_Dont39AllInOne_ModSync_NoticeText": "这些模组可能无法像在服务器上那样工作（详情见console.txt）。请退出服务器，重启游戏后再加入。"
 }

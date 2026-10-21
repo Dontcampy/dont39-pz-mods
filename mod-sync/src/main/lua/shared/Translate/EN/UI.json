@@ -29,5 +29,9 @@
     "UI_Dont39AllInOne_ModSync_RejoinText": "The game restarted to use this server's version of its Workshop items.",
     "UI_Dont39AllInOne_ModSync_Rejoin": "Rejoin",
     "UI_Dont39AllInOne_ModSync_NotNow": "Not now",
-    "UI_Dont39AllInOne_ModSync_RejoinNoEntry": "%1 is not in your saved servers, so it cannot be rejoined from here. Join it from the server list."
+    "UI_Dont39AllInOne_ModSync_RejoinNoEntry": "%1 is not in your saved servers, so it cannot be rejoined from here. Join it from the server list.",
+    "UI_Dont39AllInOne_ModSync_NoticeTitle": "Running without the server's Java code",
+    "UI_Dont39AllInOne_ModSync_NoticeNotLoaded": "%1: the game did not load its Java code. Was it declined in ZombieBuddy's dialog?",
+    "UI_Dont39AllInOne_ModSync_NoticeNotServed": "%1: the game runs its Java code from %2.",
+    "UI_Dont39AllInOne_ModSync_NoticeText": "These mods may not work as on the server (details in console.txt). Leave, restart the game and join again."
 }
