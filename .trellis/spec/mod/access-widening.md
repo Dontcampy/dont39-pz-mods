@@ -79,7 +79,7 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - Windows clients only: Steam's Linux runtime container ends the other processes in it when the game exits, the
   helper included; `Relaunch.unavailable()` names the reason, and callers keep their manual path.
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
-- The author contract is in `zabric/mod/workshop/workshop.txt`. Changing it needs a new list header version.
+- The author contract is in `zabric/README.md` (the Workshop page only links it). Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`),
   the `loadMods` hook (`ModsLoadedHook.java`), and its `mod.info` and jar rules, which `ModInfo.java` re-implements
   (ZombieBuddy's parser is private; `LaunchOverride`'s refusal and `JavaMods.inFolder` use it).
@@ -87,10 +87,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
 ## Entrypoints and Preload Registration
 
 - Startup code of a Zabric-based mod is an entrypoint, not a ZombieBuddy `PreMain` or `Main` (author contract:
-  `zabric/mod/workshop/workshop.txt`; phases: `entrypoint/Lifecycle.java`).
+  `zabric/README.md`; phases: `entrypoint/Lifecycle.java`).
 - Order within a phase is undefined: no entrypoint may assume another mod's entrypoint of that phase has run.
   Class-path dependencies are a separate matter ([Loading](./zombiebuddy-patching.md#loading)).
 - Mods without entrypoints are left alone: mods that use only ZombieBuddy load as without Zabric.
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that
-  its current hash was approved. The Workshop texts say so.
+  its current hash was approved. `zabric/README.md` says so.

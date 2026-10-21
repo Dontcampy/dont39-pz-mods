@@ -67,7 +67,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
-| Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the Workshop author contract |
+| Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
 | `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
 | Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
