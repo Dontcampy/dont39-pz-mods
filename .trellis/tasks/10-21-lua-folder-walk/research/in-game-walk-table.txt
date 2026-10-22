@@ -1,0 +1,22 @@
+== launch: walk before each folder's first file (ms), Lua step, files, list hash
+warm        600 (1126)       333 (2014)   step     3709   3140 files   7759559cd4
+off1       3050 (1126)       878 (2014)   step     3855   3140 files   7759559cd4
+on1         608 (1126)       315 (2014)   step     1226   3140 files   7759559cd4
+off2       3149 (1126)       861 (2014)   step     3775   3140 files   7759559cd4
+on2         600 (1126)       315 (2014)   step     1235   3140 files   7759559cd4
+off3       2949 (1126)       860 (2014)   step     3633   3140 files   7759559cd4
+on3         610 (1126)       318 (2014)   step     1276   3140 files   7759559cd4
+off med     3050       861   step     3775   (n=3)
+on med      608       315   step     1235   (n=3)
+lists the same in every on/off run: True (['7759559cd4'])
+== start: walk before each folder's first file (ms), Lua step, files, list hash
+warm        581 (1126)       317 (2012)       278 (1004)   step     1065   4142 files   2ab85ae098
+off1       2875 (1126)       859 (2012)       533 (1004)   step     3335   4142 files   2ab85ae098
+on1         595 (1126)       327 (2012)       285 (1004)   step     1068   4142 files   2ab85ae098
+off2       2889 (1126)       871 (2012)       536 (1004)   step     3340   4142 files   2ab85ae098
+on2         584 (1126)       304 (2012)       264 (1004)   step     1033   4142 files   2ab85ae098
+off3       2898 (1126)       877 (2012)       538 (1004)   step     3354   4142 files   2ab85ae098
+on3         586 (1126)       309 (2012)       278 (1004)   step     1040   4142 files   2ab85ae098
+off med     2889       871       536   step     3340   (n=3)
+on med      586       309       278   step     1040   (n=3)
+lists the same in every on/off run: True (['2ab85ae098'])

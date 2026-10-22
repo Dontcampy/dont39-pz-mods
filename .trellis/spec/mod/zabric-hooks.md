@@ -56,10 +56,12 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   HEAD) or the return value instead of cancelling. A cancel by the outer advice skips the inner mod's advice, and which
   is outer depends on preload order (`ScriptHooks.java` in `faster-loading`, which keeps Loading Progress's
   `stripComments` timing).
-- Cancelling is the exception for a replacement no rewrite can express (an upload that must become another GL call):
-  only for the call shapes the hook fully replaces, only after the replacement succeeded, only on a method nothing on
-  the target mod list patches (its `[ZB] patching` lines), and stated in the mod's README (`TextureHooks.java` in
-  `faster-loading`).
+- Cancelling is the exception for a replacement no rewrite can express (an upload that must become another GL call,
+  work repeated inside the method's own body): only for the call shapes the hook fully replaces, only after the
+  replacement succeeded, only on a method nothing on the target mod list patches (its `[ZB] patching` lines), and
+  stated in the mod's README (`TextureHooks.java` in `faster-loading`). A recursive target is replaced whole at the
+  outermost call, its result built aside and handed over only once complete, so a failure leaves the call to the
+  game's code with nothing half done (`LuaHooks.java` in `faster-loading`).
 - Library classes in the game jar (LWJGL) are hookable from a preloaded mod when the descriptor is JDK-only. A hook on
   a call the game makes from its first splash frame runs its pure argument checks before anything that needs the game
   up (settings, log, cache folder) (`TextureHooks.java`).

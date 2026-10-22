@@ -12,6 +12,7 @@ the mod's own encoder. One switch per fix. Made for game 42.21 revision `4a0e954
 | `stripComments` | `ScriptParser.stripComments(String)`, `@ModifyVariable` on the argument at HEAD (`hooks/ScriptHooks.java`) | Hands the game's method `comments/Comments.java`'s result, linear where the game's method cuts each comment out of one buffer (about 2 s for the game's `tileGeometry.txt` alone, per launch and per join). Same output for every input, the game's quirks included (markers inside strings, two-level nesting, a stray `*/` that stops it, `/*/`, markers formed across a cut); the game's method returns it unchanged after one scan (about 10 ms for the hooked call on `tileGeometry.txt`) |
 | `textureCompression` | `GL11.glTexImage2D(IIIIIIIILjava/nio/ByteBuffer;)V`, cancellable `@Inject` at HEAD (`hooks/TextureHooks.java`) | Compresses the levels the game asks the driver to compress (the call shape in `textures/Upload.java`) to DXT5, the format NVIDIA's driver picks, and uploads the blocks; other uploads go to the driver untouched. The driver compresses on the render thread, about 20 ms per tile page: a join with many tile mods waits about a minute on it when the game's texture compression option is on. `textures/Dxt5Encoder.java` (stb_dxt colour, own alpha in `Dxt5Alpha.java`) splits a level over all cores, at or above the driver's quality on colour and alpha. A later encoder (BC7, on the GPU, or a cache in front of one) implements `textures/Encoder.java` and leaves the hook as it is |
 | `depthMapOrder` | `TileDepthTextureManager.init()V`, `@Inject` at HEAD and RETURN (`hooks/DepthHooks.java`) | Each mod's depth maps (and the game's) decode one at a time under that mod's lock, and the game queues them mod after mod at one priority, so the 4 file workers mostly wait on one lock: 5-6 s of background loading after the main menu is up, and the last 5-6 s of a join started before that finished. At RETURN, before the game sorts the new tasks into its file queue, `depth/DepthOrder.java` lowers their priorities (all at or below the game's 4) into the order of a greedy schedule (`depth/Schedule.java`: a free worker takes the next task of the idle mod with the most tileset rows left), so different mods' maps decode side by side and the longest start first. Same tasks, each mod's in its own order; only the order changes |
+| `luaFolderWalk` | `LuaManager.searchFolders(URI, File)`, cancellable `@Inject` at HEAD (`hooks/LuaHooks.java`) | The game lists the Lua files of itself and each mod by looking up a folder's canonical path again for every entry in it, about 0.4 ms each on Windows: about 4 s per launch and per join with a large mod list. `luafiles/FolderWalk.java` lists the same files in the same order, still through `ZomboidFileSystem.getRelativeFile`, and looks the path up once for the walk's root and for each folder the lookup could change (a link or other reparse point, a name ending in a dot or space); a folder reached by a listed name of a canonical folder already has its canonical path |
 
 ## How it works
 
@@ -39,8 +40,12 @@ the mod's own encoder. One switch per fix. Made for game 42.21 revision `4a0e954
   hooked, never with `@Self`; `checkJdkGlue` fails the build otherwise.
 - Hooks do not cancel the game's method: ZombieBuddy stacks the advice of several mods on one method in load order,
   and a cancel by the outer one would skip the inner one's, such as Loading Progress's known-call bracket on
-  `stripComments`. The exception is `glTexImage2D`: the upload must be replaced, and no argument change makes it take
+  `stripComments`. Two exceptions. `glTexImage2D`: the upload must be replaced, and no argument change makes it take
   compressed blocks. It cancels only the calls it uploads itself, and no mod on the live mod list patches `GL11`.
+  `searchFolders`: the repeated lookups are inside the method, so the hook walks the whole folder and cancels the
+  outermost call, after the walk succeeded and appended its list; no mod on the live mod list patches it.
+- A failure of the Lua folder walk (a folder that cannot be listed, an I/O error of a lookup) throws before anything
+  reaches the game's list and stops all the mod's hooks; that call then runs the game's own walk.
 - The depth map order reads the game's file queue and depth-map tasks through members
   `src/main/resources/META-INF/dont39/faster-loading.classtweaker` lists, which Zabric makes public at game start (the
   jar ships it as `META-INF/zabric/Dont39FasterLoading.classtweaker`). The main entrypoint logs whether the list is in
@@ -64,7 +69,11 @@ close to a brute-force search and never worse than stb_dxt's. `Upload.requested`
 takes and leaves to the driver. The depth map schedule is tested on its own: mods alternate, the most work starts
 first, each mod keeps its order, every priority is at or below the game's, a batch of one mod is left as it is, a batch
 shaped like a measured join finishes near the bound no order can beat, and the order equals the task's simulator
-(`order_greedy`) on a generated batch for 4 and 2 workers; `Batch` is tested on the mismatches it reports.
+(`order_greedy`) on a generated batch for 4 and 2 workers; `Batch` is tested on the mismatches it reports. The Lua
+folder walk is compared with the game's own `searchFolders` from `projectzomboid.jar`, list and order: on the game's
+and every installed Workshop mod's Lua folders, with one canonical lookup per root there, and on generated trees
+(upper-case extensions, empty folders, a root that is a file or missing, a junction, a symbolic link where the user
+may create one, names ending in a dot or space through `\\?\` paths); a folder that cannot be listed throws.
 
 `:faster-loading:qualityCheck` (not part of `check`: it needs a GPU) compresses up to 6 pages each of four installed
 tile packs with the driver's `GL_COMPRESSED_RGBA` and with the mod's encoder, reads level 0 back from the GPU and fails

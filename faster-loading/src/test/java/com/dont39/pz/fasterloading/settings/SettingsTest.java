@@ -46,8 +46,9 @@ class SettingsTest {
         assertEquals(Settings.DEFAULTS, load(file));
         assertTrue(problems.isEmpty(), problems.toString());
         String text = Files.readString(file);
-        assertTrue(text.contains("# stripComments:") && text.contains("# textureCompression:")
-                && text.contains("# depthMapOrder:"), "a comment per key: " + text);
+        for (Fix fix : Fix.values()) {
+            assertTrue(text.contains("# " + fix.key() + ":"), "a comment per key: " + text);
+        }
         assertEquals(Settings.DEFAULTS, load(file), "and reads back");
         assertTrue(problems.isEmpty(), problems.toString());
     }
@@ -62,7 +63,7 @@ class SettingsTest {
     @Test
     void aByteOrderMarkIsSkipped() throws IOException {
         assertEquals(OFF, load(file("﻿# comment\nstripComments = false\ntextureCompression = false\n"
-                + "depthMapOrder = false\n")));
+                + "depthMapOrder = false\nluaFolderWalk = false\n")));
         assertTrue(problems.isEmpty(), problems.toString());
     }
 
@@ -103,7 +104,8 @@ class SettingsTest {
 
     @Test
     void aFileWithEveryKeyIsLeftAsItIs() throws IOException {
-        String text = "stripComments = false\ntextureCompression = true\ndepthMapOrder = false\n";
+        String text = "stripComments = false\ntextureCompression = true\ndepthMapOrder = false\n"
+                + "luaFolderWalk = false\n";
         Path file = file(text);
         load(file);
         assertEquals(text, Files.readString(file));
@@ -112,10 +114,19 @@ class SettingsTest {
     @Test
     void aFileOfVersion020GetsTheDepthMapOrderOn() throws IOException {
         Path file = file("stripComments = false\ntextureCompression = false\n");
-        assertEquals(new Settings(EnumSet.of(Fix.DEPTH_MAP_ORDER)), load(file));
+        assertEquals(new Settings(EnumSet.of(Fix.DEPTH_MAP_ORDER, Fix.LUA_FOLDER_WALK)), load(file));
         assertTrue(problems.isEmpty(), problems.toString());
         String text = Files.readString(file);
         assertTrue(text.contains("\ndepthMapOrder = true\n") && text.contains("\ntextureCompression = false\n"), text);
+    }
+
+    @Test
+    void aFileOfVersion030GetsTheLuaFolderWalkOn() throws IOException {
+        Path file = file("stripComments = false\ntextureCompression = false\ndepthMapOrder = false\n");
+        assertEquals(new Settings(EnumSet.of(Fix.LUA_FOLDER_WALK)), load(file));
+        assertTrue(problems.isEmpty(), problems.toString());
+        String text = Files.readString(file);
+        assertTrue(text.contains("\nluaFolderWalk = true\n") && text.contains("\ndepthMapOrder = false\n"), text);
     }
 
     @Test

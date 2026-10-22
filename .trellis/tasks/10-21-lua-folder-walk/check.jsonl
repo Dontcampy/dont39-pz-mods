@@ -2,3 +2,4 @@
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "failure handling review"}
 {"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook correctness review"}
 {"file": ".trellis/tasks/10-21-load-speed-optimization/research/lua-loading.md", "reason": "equivalence requirements to check against"}
+{"file": ".trellis/tasks/10-21-lua-folder-walk/research/walk-measurement.md", "reason": "equivalence rule to check the walk against"}

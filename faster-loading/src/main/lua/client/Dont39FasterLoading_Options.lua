@@ -27,6 +27,12 @@ local FIXES = {
         comment = "# depthMapOrder: load the depth maps of the game and of different mods side by side instead of one"
             .. " mod after another (true or false)",
     },
+    {
+        key = "luaFolderWalk",
+        text = "LuaFolderWalk",
+        comment = "# luaFolderWalk: list the Lua files of the game and the mods without looking up each folder's full"
+            .. " path once per entry in it, with the game's list (true or false)",
+    },
 }
 -- Kahlua strings are Java strings: one char, U+FEFF
 local BOM = string.char(65279)
