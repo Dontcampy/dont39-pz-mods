@@ -796,3 +796,25 @@ Researched depth-map loading (one lock per mod, tasks queued mod after mod, dept
 ### Status
 
 [OK] **Completed**
+
+
+## Session 34: R4: Lua folder walk in Faster Loading 0.4.0
+<!-- trellis-session: v=2 fp=d35318c2d71a59cb -->
+
+**Date**: 2026-10-22
+**Task**: R4: Lua folder walk in Faster Loading 0.4.0
+**Branch**: `feat/lua-folder-walk-143b68`
+
+### Summary
+
+Measured LuaManager.searchFolders offline: ~95% is a canonical-path lookup of the parent folder repeated per entry; getRelativeFile ~6 ms, Viewpoint's patch binds getRelativeFile(String) only. User chose variant B: skip the lookup for folders already canonical by construction (root, links/reparse points and names ending in dot/space still take the game's call). New switch luaFolderWalk (cancellable HEAD hook, list built aside, handed over only when complete); tests match the game's method on the game's and 1,149 Workshop Lua folders plus junction and odd-name trees. In game (local full server, live mod list, medians of 3): walks 3.9 -> 0.9 s per launch, 4.3 -> 1.2 s per join; launch 34.6 -> 31.4 s, join 68.5 -> 64.8 s; identical Lua lists, no new errors, no checksum mismatch. Precompile measured (~1.15 s) and not done: no preloadable hook point. Spec: cancel exception extended to recursive targets. User files restored after the runs.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce7b3e9` | List the Lua files without repeated path lookups in Faster Loading 0.4.0 |
+
+### Status
+
+[OK] **Completed**

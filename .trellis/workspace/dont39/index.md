@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 33
+- **Total Sessions**: 34
 - **Last Active**: 2026-10-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~798 | Active |
+| `journal-1.md` | ~820 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 34 | 2026-10-22 | R4: Lua folder walk in Faster Loading 0.4.0 | `ce7b3e9` | `feat/lua-folder-walk-143b68` |
 | 33 | 2026-10-22 | Depth-map order in Faster Loading 0.3.0 | `f05c47c` | `claude/dreamy-varahamihira-298ef8` |
 | 32 | 2026-10-22 | R2: texture compression off the render thread | `3a9b526`, `743afc7` | `claude/asset-wait-speedup-2d74f7` |
 | 31 | 2026-10-21 | PR #20 merges, review fixes and Workshop staging | `bcf8059`, `9d16c7c`, `8ca0216`, `8233d10`, `0cb3f78` | `claude/trellis-loading-progress-tasks-67a636` |
