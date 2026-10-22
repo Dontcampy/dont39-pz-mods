@@ -751,3 +751,26 @@ Merged main twice into PR #20 (#21 mod sync, #22 Java mod restart); resolved con
 ### Status
 
 [OK] **Completed**
+
+
+## Session 32: R2: texture compression off the render thread
+<!-- trellis-session: v=2 fp=1474599f0bd53d45 -->
+
+**Date**: 2026-10-22
+**Task**: R2: texture compression off the render thread
+**Branch**: `claude/asset-wait-speedup-2d74f7`
+
+### Summary
+
+Found the join's asset wait bound by driver-side texture compression on the render thread (textureCompression on: wait 66 s vs 14 s off). Faster Loading 0.2.0 takes GL_COMPRESSED_RGBA uploads at GL11.glTexImage2D and encodes DXT5 on a pool (stb_dxt colour, own alpha), behind an encoder interface; quality above the driver on 21 pages. Local server, live mod list, median of 3: join 141.7 -> 69.8 s, asset wait 70.4 -> 12.5 s. Settings upgrade keeps old ini values. BC7 GPU encoder planned as a child task.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3a9b526` | Compress textures on all CPU cores in Faster Loading, halving a server join |
+| `743afc7` | chore(task): add child 10-22-gpu-bc7-encoder |
+
+### Status
+
+[OK] **Completed**
