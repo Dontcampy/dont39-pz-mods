@@ -2,3 +2,5 @@
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "failure handling review"}
 {"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook correctness review"}
 {"file": ".trellis/tasks/10-21-load-speed-optimization/research/asset-wait.md", "reason": "asset wait internals to check against"}
+{"file": ".trellis/tasks/10-21-asset-wait-speedup/research/upload-path.md", "reason": "upload path, profile, encoder benches, hook points"}
+{"file": "faster-loading/README.md", "reason": "the mod the fix joins: switches, constraints, checks"}

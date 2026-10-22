@@ -234,3 +234,6 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
   (`Interim.java` in `loading-progress`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on. Know how often the patched method is called before adding work to it.
+- Work a render-thread hook does inline holds up every queued upload behind it (`RenderThread.flushInvokeQueue` runs
+  items in order, 10 ms per pass): split it over the mod's own pool and profile it in game (JFR) before trusting a
+  bench (`Dxt5Encoder.java` in `faster-loading`).

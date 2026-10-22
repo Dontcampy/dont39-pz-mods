@@ -32,8 +32,9 @@ public record Settings(Set<Fix> on) {
     }
 
     /**
-     * The settings in {@code file}; a missing file is written with the defaults. An unreadable or invalid file goes to
-     * {@code problem} as one line naming the file and key, and the defaults apply; the file is left as it is.
+     * The settings in {@code file}; a missing file is written with the defaults, and a file without some keys (from an
+     * older version) gets them with their defaults. An unreadable or invalid file goes to {@code problem} as one line
+     * naming the file and key, and the defaults apply; the file is left as it is.
      */
     public static Settings load(Path file, Consumer<String> problem) {
         List<String> lines;
@@ -51,16 +52,33 @@ public record Settings(Set<Fix> on) {
             problem.accept(file + ": cannot read it (" + e + "); " + usingDefaults());
             return DEFAULTS;
         }
+        Map<Fix, Boolean> values;
         try {
-            return parse(lines);
+            values = read(lines);
         } catch (IllegalArgumentException e) {
             problem.accept(file + ": " + e.getMessage() + "; " + usingDefaults());
             return DEFAULTS;
         }
+        Settings settings = of(values);
+        if (values.size() < Fix.values().length) {
+            try {
+                Files.writeString(file, text(settings), StandardCharsets.UTF_8);
+            } catch (IOException | RuntimeException e) {
+                problem.accept(file + ": cannot add the keys of the newer fixes (" + e + ")");
+            }
+        }
+        return settings;
     }
 
-    /** The file's lines; throws naming the key or line that is not as {@link #text} writes it. */
+    /**
+     * The file's lines, a missing key at its default; throws naming the key or line that is not as {@link #text} writes
+     * it.
+     */
     static Settings parse(List<String> lines) {
+        return of(read(lines));
+    }
+
+    private static Map<Fix, Boolean> read(List<String> lines) {
         Map<Fix, Boolean> values = new EnumMap<>(Fix.class);
         for (int i = 0; i < lines.size(); i++) {
             // a hand edit in Notepad may start it with a byte order mark; the options page skips it too
@@ -90,13 +108,13 @@ public record Settings(Set<Fix> on) {
                 throw new IllegalArgumentException("key " + key + " is set twice");
             }
         }
+        return values;
+    }
+
+    private static Settings of(Map<Fix, Boolean> values) {
         Set<Fix> on = EnumSet.noneOf(Fix.class);
         for (Fix fix : Fix.values()) {
-            Boolean value = values.get(fix);
-            if (value == null) {
-                throw new IllegalArgumentException("key " + fix.key() + " is missing");
-            }
-            if (value) {
+            if (values.getOrDefault(fix, DEFAULTS.on(fix))) {
                 on.add(fix);
             }
         }

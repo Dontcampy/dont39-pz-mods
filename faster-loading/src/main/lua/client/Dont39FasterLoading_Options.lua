@@ -15,6 +15,12 @@ local FIXES = {
         comment = "# stripComments: remove the comments of script and tile files in one pass, with the game's result"
             .. " (true or false)",
     },
+    {
+        key = "textureCompression",
+        text = "TextureCompression",
+        comment = "# textureCompression: compress on all CPU cores the textures the game asks the graphics driver to"
+            .. " compress, to the same DXT5 format (true or false)",
+    },
 }
 -- Kahlua strings are Java strings: one char, U+FEFF
 local BOM = string.char(65279)
@@ -76,15 +82,11 @@ local function readFile()
     end)
     pcall(function() reader:close() end)
     if not ok then error(err, 0) end
-    if not problem then
-        for _, fix in ipairs(FIXES) do
-            if values[fix.key] == nil then
-                problem = "key " .. fix.key .. " is missing"
-                break
-            end
-        end
-    end
     if problem then return nil, problem end
+    -- a file from an older version lacks the newer keys, which are on by default as on the Java side
+    for _, fix in ipairs(FIXES) do
+        if values[fix.key] == nil then values[fix.key] = true end
+    end
     return values
 end
 

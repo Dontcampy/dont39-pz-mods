@@ -46,7 +46,8 @@ class SettingsTest {
         assertEquals(Settings.DEFAULTS, load(file));
         assertTrue(problems.isEmpty(), problems.toString());
         String text = Files.readString(file);
-        assertTrue(text.contains("# stripComments:"), "a comment per key: " + text);
+        assertTrue(text.contains("# stripComments:") && text.contains("# textureCompression:"),
+                "a comment per key: " + text);
         assertEquals(Settings.DEFAULTS, load(file), "and reads back");
         assertTrue(problems.isEmpty(), problems.toString());
     }
@@ -60,7 +61,7 @@ class SettingsTest {
 
     @Test
     void aByteOrderMarkIsSkipped() throws IOException {
-        assertEquals(OFF, load(file("﻿# comment\nstripComments = false\n")));
+        assertEquals(OFF, load(file("﻿# comment\nstripComments = false\ntextureCompression = false\n")));
         assertTrue(problems.isEmpty(), problems.toString());
     }
 
@@ -88,9 +89,23 @@ class SettingsTest {
     }
 
     @Test
-    void aMissingKeyIsReported() throws IOException {
-        assertEquals(Settings.DEFAULTS, load(file("# nothing\n")));
-        assertTrue(problems.get(0).contains("key stripComments is missing"), problems.toString());
+    void aFileFromAnOlderVersionKeepsItsValuesAndGetsTheNewKeys() throws IOException {
+        Path file = file("# comment\nstripComments = false\n");
+        Settings settings = load(file);
+        assertFalse(settings.on(Fix.STRIP_COMMENTS));
+        assertTrue(settings.on(Fix.TEXTURE_COMPRESSION), "a missing key takes its default");
+        assertTrue(problems.isEmpty(), problems.toString());
+        assertEquals(Settings.text(settings), Files.readString(file), "rewritten with every key");
+        assertEquals(settings, load(file), "and reads back");
+        assertTrue(problems.isEmpty(), problems.toString());
+    }
+
+    @Test
+    void aFileWithEveryKeyIsLeftAsItIs() throws IOException {
+        String text = "stripComments = false\ntextureCompression = true\n";
+        Path file = file(text);
+        load(file);
+        assertEquals(text, Files.readString(file));
     }
 
     @Test

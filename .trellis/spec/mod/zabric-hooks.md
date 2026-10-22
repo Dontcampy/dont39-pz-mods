@@ -56,6 +56,13 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   HEAD) or the return value instead of cancelling. A cancel by the outer advice skips the inner mod's advice, and which
   is outer depends on preload order (`ScriptHooks.java` in `faster-loading`, which keeps Loading Progress's
   `stripComments` timing).
+- Cancelling is the exception for a replacement no rewrite can express (an upload that must become another GL call):
+  only for the call shapes the hook fully replaces, only after the replacement succeeded, only on a method nothing on
+  the target mod list patches (its `[ZB] patching` lines), and stated in the mod's README (`TextureHooks.java` in
+  `faster-loading`).
+- Library classes in the game jar (LWJGL) are hookable from a preloaded mod when the descriptor is JDK-only. A hook on
+  a call the game makes from its first splash frame runs its pure argument checks before anything that needs the game
+  up (settings, log, cache folder) (`TextureHooks.java`).
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
   tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 

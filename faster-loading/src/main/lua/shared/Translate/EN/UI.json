@@ -1,5 +1,7 @@
 {
     "UI_Dont39FasterLoading_Options": "Faster Loading",
     "UI_Dont39FasterLoading_StripComments": "Faster comment removal in script files",
-    "UI_Dont39FasterLoading_StripCommentsTooltip": "Removes the comments of script and tile files in one pass, with the same result as the game. Saves about 2 seconds at each game start and each join or save load. Applies from the next launch of the game."
+    "UI_Dont39FasterLoading_StripCommentsTooltip": "Removes the comments of script and tile files in one pass, with the same result as the game. Saves about 2 seconds at each game start and each join or save load. Applies from the next launch of the game.",
+    "UI_Dont39FasterLoading_TextureCompression": "Texture compression on all CPU cores",
+    "UI_Dont39FasterLoading_TextureCompressionTooltip": "Compresses the textures on all CPU cores instead of the graphics driver doing it one at a time. Same format and video memory, image quality at least the driver's. Saves about a minute per server join with many tile mods when the game's texture compression option is on. Applies from the next launch of the game."
 }

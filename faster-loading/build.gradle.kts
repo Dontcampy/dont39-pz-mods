@@ -16,7 +16,7 @@ plugins {
   id("buildsrc.convention.pz-junit")
 }
 
-version = "0.1.0"
+version = "0.2.0"
 
 val modId = pzMod.modId
 val pkg = pzMod.javaPkgName
@@ -80,11 +80,27 @@ tasks.test {
   val gameDir = pzDir()
   val workshop = pzWorkshopContent()
   inputs.file(gameJar).withPropertyName("gameJar").withPathSensitivity(PathSensitivity.NONE)
+  // the encoder tests run stb_dxt from the game's LWJGL
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
   doFirst {
     val test = this as Test
     test.systemProperty("fasterloading.gameDir", gameDir.get().asFile.absolutePath)
     test.systemProperty("fasterloading.workshop", workshop.get().asFile.absolutePath)
   }
+}
+
+// needs a GPU and the sample packs installed, so not part of check
+tasks.register<JavaExec>("qualityCheck") {
+  description = "Compares the texture encoder's image quality with the graphics driver's on real tile pages."
+  group = "verification"
+  classpath = sourceSets.test.get().runtimeClasspath
+  mainClass = "com.dont39.pz.fasterloading.textures.QualityCheck"
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
+  val gameDir = pzDir()
+  val workshop = pzWorkshopContent()
+  argumentProviders.add(CommandLineArgumentProvider {
+    listOf(gameDir.get().asFile.absolutePath, workshop.get().asFile.absolutePath)
+  })
 }
 
 // the mod options page and its text
