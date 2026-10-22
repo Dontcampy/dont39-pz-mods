@@ -50,8 +50,11 @@ All times in ms. Shared 1,126 files, client 2,014 (launch) / 2,012 (join), serve
   JDK-only hook reaches.
 - **AC: same `loadList`.** Met. The Lua file rows (names in run order) hash the same in every run of a flow, on and
   off: launch `7759559cd4` (3,140 files), join `2ab85ae098` (4,142 files).
-- **AC: no new errors, no checksum mismatch.** Met. `console.txt` has 954 `ERROR` lines and 15 lines with "exception"
-  in every run, on and off (the live mod list's own). No checksum message, every join reached the world
+- **AC: no new errors, no checksum mismatch.** No new errors: met. `console.txt` has 954 `ERROR` lines and 15 lines
+  with "exception" in every run, on and off (the live mod list's own). The checksum was **not exercised**: the test
+  server copies the live server's `DoLuaChecksum=false`. The list identity above stands in for it, since the client
+  adds the files to its checksum in `loadList` order (`LoadDirBase` L1228-1229), so identical lists give identical
+  checksum input. Every join reached the world
   (`lptest_state.txt` "ingame"). `[ZB] patching zombie.Lua.LuaManager.searchFolders with 1 advice(s)` in every run
   (only ours). The mod logged `lua folder walk on|off` as set, and none of its hooks stopped.
 - Not covered: Linux and macOS clients (the rule's link check is the same there; untested), and a symbolic link

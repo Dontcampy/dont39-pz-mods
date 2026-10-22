@@ -43,7 +43,8 @@ building the file list, not to running Lua.
   mixed case and empty folders.
 - [x] In game, Loading Progress's Lua file rows are identical with the switch on vs off, on launch and join.
 - [x] `LoadDirBase` → first file time drops by ≥ 50 % (median of 3 runs, launch and join) in Loading Progress reports.
-- [x] Launch and an MP join on the local full server: no new errors, no checksum mismatch.
+- [x] Launch and an MP join on the local full server: no new errors, no checksum mismatch (the server does not check
+  Lua checksums, `DoLuaChecksum=false`; covered by the identical lists, `verification.md`).
 - [x] Precompile decision recorded with its measurement in `verification.md`.
 - [x] `:faster-loading:check` and `:faster-loading:smokeTest` pass.
 
