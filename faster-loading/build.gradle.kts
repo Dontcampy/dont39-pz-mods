@@ -16,7 +16,7 @@ plugins {
   id("buildsrc.convention.pz-junit")
 }
 
-version = "0.2.0"
+version = "0.3.0"
 
 val modId = pzMod.modId
 val pkg = pzMod.javaPkgName
@@ -60,13 +60,11 @@ tasks.jar {
   }
   // build data only (the source list)
   exclude("META-INF/dont39/**")
-  // where Zabric reads it at game start; no fix reaches a non-public member yet
-  if (pzWidening.listed) {
-    val listName = "$modId.classtweaker"
-    from(pzWidening.expanded) {
-      into("META-INF/zabric")
-      rename { listName }
-    }
+  // where Zabric reads it at game start
+  val listName = "$modId.classtweaker"
+  from(pzWidening.expanded) {
+    into("META-INF/zabric")
+    rename { listName }
   }
 }
 
@@ -117,6 +115,4 @@ tasks.register<GameSmokeTest>("smokeTest") {
   version = project.version.toString()
   zabricId = modInfoOf("zabric").id
   hooks = true
-  // no fix needs a widened member yet
-  widener = false
 }

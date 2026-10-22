@@ -21,6 +21,12 @@ local FIXES = {
         comment = "# textureCompression: compress on all CPU cores the textures the game asks the graphics driver to"
             .. " compress, to the same DXT5 format (true or false)",
     },
+    {
+        key = "depthMapOrder",
+        text = "DepthMapOrder",
+        comment = "# depthMapOrder: load the depth maps of the game and of different mods side by side instead of one"
+            .. " mod after another (true or false)",
+    },
 }
 -- Kahlua strings are Java strings: one char, U+FEFF
 local BOM = string.char(65279)

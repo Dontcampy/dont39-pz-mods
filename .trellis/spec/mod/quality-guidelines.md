@@ -65,6 +65,11 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 8. A real client launch goes through `ProjectZomboid64.exe` (JNI), not `java`: `smokeTest` does not show what differs
    there (e.g. `sun.java.command` is empty at premain).
 9. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.
+10. Load-time gains: a join that connects right after the menu is up (the test driver's default) still waits on the
+    launch's own file tasks, which a player who stays in the menu ~15 s never sees. Before crediting a gain to the
+    join, repeat the on/off joins after a realistic menu stay (≥ 30 s). The asset wait's phases by task type come from
+    Loading Progress's CSV (`research/timeline.py` of `archive/2026-10/10-22-depth-map-speedup`); its pack-image
+    backlog varies by run, so compare phases, not just the wait.
 
 If an in-game check was not done, say so in the task report.
 

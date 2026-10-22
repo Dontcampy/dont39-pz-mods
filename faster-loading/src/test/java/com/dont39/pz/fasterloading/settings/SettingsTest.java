@@ -46,8 +46,8 @@ class SettingsTest {
         assertEquals(Settings.DEFAULTS, load(file));
         assertTrue(problems.isEmpty(), problems.toString());
         String text = Files.readString(file);
-        assertTrue(text.contains("# stripComments:") && text.contains("# textureCompression:"),
-                "a comment per key: " + text);
+        assertTrue(text.contains("# stripComments:") && text.contains("# textureCompression:")
+                && text.contains("# depthMapOrder:"), "a comment per key: " + text);
         assertEquals(Settings.DEFAULTS, load(file), "and reads back");
         assertTrue(problems.isEmpty(), problems.toString());
     }
@@ -61,7 +61,8 @@ class SettingsTest {
 
     @Test
     void aByteOrderMarkIsSkipped() throws IOException {
-        assertEquals(OFF, load(file("﻿# comment\nstripComments = false\ntextureCompression = false\n")));
+        assertEquals(OFF, load(file("﻿# comment\nstripComments = false\ntextureCompression = false\n"
+                + "depthMapOrder = false\n")));
         assertTrue(problems.isEmpty(), problems.toString());
     }
 
@@ -102,10 +103,19 @@ class SettingsTest {
 
     @Test
     void aFileWithEveryKeyIsLeftAsItIs() throws IOException {
-        String text = "stripComments = false\ntextureCompression = true\n";
+        String text = "stripComments = false\ntextureCompression = true\ndepthMapOrder = false\n";
         Path file = file(text);
         load(file);
         assertEquals(text, Files.readString(file));
+    }
+
+    @Test
+    void aFileOfVersion020GetsTheDepthMapOrderOn() throws IOException {
+        Path file = file("stripComments = false\ntextureCompression = false\n");
+        assertEquals(new Settings(EnumSet.of(Fix.DEPTH_MAP_ORDER)), load(file));
+        assertTrue(problems.isEmpty(), problems.toString());
+        String text = Files.readString(file);
+        assertTrue(text.contains("\ndepthMapOrder = true\n") && text.contains("\ntextureCompression = false\n"), text);
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.dont39.pz.fasterloading.entrypoint;
 
 import com.dont39.pz.fasterloading.hooks.Session;
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint;
+import com.pzlauncher.zabric.widener.AccessWidener;
 import zombie.debug.DebugType;
 import zombie.network.GameServer;
 
@@ -16,5 +17,11 @@ public final class MainEntry implements MainEntrypoint {
             return;
         }
         DebugType.Mod.println(PREFIX + "%s loaded", MainEntry.class.getPackage().getImplementationVersion());
+        boolean applied = AccessWidener.report(Session.MOD_ID, MainEntry.class) == null;
+        Session.widened(applied);
+        if (!applied) {
+            DebugType.Mod.warn(PREFIX + "depth map order idle: the access widener did not apply the mod's list (line"
+                    + " above)");
+        }
     }
 }

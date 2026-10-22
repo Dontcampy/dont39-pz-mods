@@ -6,7 +6,9 @@ public enum Fix {
             "remove the comments of script and tile files in one pass, with the game's result"),
     TEXTURE_COMPRESSION("textureCompression", "texture compression",
             "compress on all CPU cores the textures the game asks the graphics driver to compress, to the same DXT5"
-                    + " format");
+                    + " format"),
+    DEPTH_MAP_ORDER("depthMapOrder", "depth map order",
+            "load the depth maps of the game and of different mods side by side instead of one mod after another");
 
     private final String key;
     private final String label;

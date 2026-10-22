@@ -23,8 +23,28 @@ public final class Session {
     // null while the fixes do not run
     private static Settings settings;
     private static String mismatch;
+    private static boolean wideningReported;
+    private static boolean widened;
 
     private Session() {
+    }
+
+    /** Whether Zabric applied the mod's access widener list, as the main entrypoint reported it. */
+    public static synchronized void widened(boolean applied) {
+        wideningReported = true;
+        widened = applied;
+    }
+
+    /**
+     * Whether the members the mod's list widens are public; throws when the main entrypoint has not reported it yet,
+     * which the mod list's load does before the game queues its first depth maps.
+     */
+    static synchronized boolean widened() {
+        if (!wideningReported) {
+            throw new IllegalStateException("a fix that needs the access widener ran before the mod's main entrypoint"
+                    + " reported it");
+        }
+        return widened;
     }
 
     /**

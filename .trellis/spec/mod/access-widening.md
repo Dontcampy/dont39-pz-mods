@@ -11,7 +11,7 @@
 | Part | Code |
 |------|------|
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
-| Target mod jars, widened compile jars, merged list | `pz-widening.gradle.kts`, `buildSrc/src/main/kotlin/widening/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts`; a standalone mod ships its own list (`loading-progress/build.gradle.kts`) |
+| Target mod jars, widened compile jars, merged list | `pz-widening.gradle.kts`, `buildSrc/src/main/kotlin/widening/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts`; a standalone mod ships its own list (`loading-progress/build.gradle.kts`, `faster-loading/build.gradle.kts`) and reports its status from its main entrypoint with `AccessWidener.report`, staying idle with the reason when the list is not in effect (`faster-loading/.../entrypoint/MainEntry.java`); `smokeTest` checks that report unless `widener = false` |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/`: facade and per-mod status `AccessWidener.java`, scan `WidenerScan.java` / `ModFolders.java`, modifier changes `WidenerTransform.java` |
 | ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list and jar hooks, `mod.info` rules) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java`, `JarLoadHook.java`, `ModInfo.java` |
 | Entrypoints, preload registration, loader progress | `zabric/.../entrypoint/Lifecycle.java` (phases), `Entrypoints.java` (manifest, instantiation), `Preload.java`, `PreLaunchHook.java`, `LoaderProgress.java` / `JarListeners.java` |
