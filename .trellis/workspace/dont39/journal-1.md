@@ -774,3 +774,25 @@ Found the join's asset wait bound by driver-side texture compression on the rend
 ### Status
 
 [OK] **Completed**
+
+
+## Session 33: Depth-map order in Faster Loading 0.3.0
+<!-- trellis-session: v=2 fp=cda073218315e256 -->
+
+**Date**: 2026-10-22
+**Task**: Depth-map order in Faster Loading 0.3.0
+**Branch**: `claude/dreamy-varahamihira-298ef8`
+
+### Summary
+
+Researched depth-map loading (one lock per mod, tasks queued mod after mod, depth maps the tail of quick joins). Added switch depthMapOrder: reprioritises the launch/join depth batch at TileDepthTextureManager.init RETURN into a greedy longest-chain-first schedule; first access-widening list for Faster Loading. Quick join: depth phase 5.64->2.91 s, asset wait -1.46 s (AC2 target not met). After 30 s in the menu the join has no depth tasks; launch background loading ends ~4 s sooner. Kept in 0.3.0; prefetch lever dropped. Specs: access-widening (standalone list), quality-guidelines (measure joins after a menu stay).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f05c47c` | Load mods' depth maps side by side in Faster Loading 0.3.0 |
+
+### Status
+
+[OK] **Completed**
