@@ -1,0 +1,11 @@
+name=Sync Guard
+id=Dont39SyncGuard
+author=Dont39
+modversion=@VERSION@
+description=Detects multiplayer container and item updates that never reached a player and repairs them from the server's state. Needed on the server and the clients.
+require=\ZombieBuddy,\Zabric
+loadModAfter=\Zabric
+javaJarFile=media/java/Dont39SyncGuard.jar
+javaPkgName=com.dont39.pz.syncguard
+ZBVersionMin=2.3.4
+versionMin=42.21.0

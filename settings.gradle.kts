@@ -27,5 +27,6 @@ include(":zabric-processor")
 include(":zb-skip-online-checks")
 include(":loading-progress")
 include(":faster-loading")
+include(":sync-guard")
 
 rootProject.name = "dont39-pz-mods"

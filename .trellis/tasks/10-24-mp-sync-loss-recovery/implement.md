@@ -11,6 +11,10 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
    in `design.md#module-and-packaging-d4`), `mod/42/mod.info`, `mod/workshop/`, translations EN/CN, entrypoint that
    logs `loaded` / `ready` / `not ready: <why>`; register in `settings.gradle.kts`. Build passes, `smokeTest` sees the
    ready line.
+   Done 2026-10-24. Carry-overs for the hook steps: drop `checkJdkGlue` and the "JDK types only" note in `Mod.java`
+   (only preloaded mods' glue must be JDK-only, `.trellis/spec/mod/zabric-hooks.md:44`); with the first widening list
+   add `AccessWidener.report(MOD_ID, MainEntry.class)` to `MainEntry`; set `smokeTest` `hooks = true` with the first
+   hook class; add `pz-switches` only if a switch is needed; Workshop preview image before upload.
 3. `protocol`: keys, digests, message codecs, trailer; JUnit tests for codec round trips and digest stability
    (order independence of the container digest, field coverage).
 4. Activation: trailer write/read, `Hello`, per-connection active set, inactive log lines (R8).
