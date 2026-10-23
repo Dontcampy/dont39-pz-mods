@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, forbidden patterns, in-game verification rule"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Check gating, disable paths, no catch around vanilla handlers"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Check no per-frame logging and lifecycle lines"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Check join trailer convention and threading rules"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/vanilla-sync.md", "reason": "Verify hooks target the documented points"}
