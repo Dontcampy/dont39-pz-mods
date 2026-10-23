@@ -5,7 +5,7 @@ import zombie.network.GameServer
 
 /**
  * In multiplayer, a signal icon in the bottom-left corner shows the connection's ping and packet loss, with the details
- * on hover. The Java side only reads the game client's RakNet connection for the Lua icon.
+ * on hover. The Java side reads the game client's RakNet connection and counts the packets it receives by type.
  */
 object NetworkStatus : Feature("network-status", "Dont39AllInOne") {
   override fun problem(): String? =

@@ -28,5 +28,8 @@
     "UI_Dont39AllInOne_NetworkStatus_CongestionNone": "Congestion control: not throttling",
     "UI_Dont39AllInOne_NetworkStatus_Bandwidth": "Bandwidth limit: throttling to %1 KB/s",
     "UI_Dont39AllInOne_NetworkStatus_BandwidthNone": "Bandwidth limit: not throttling",
-    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "Send buffer: %1 bytes"
+    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "Send buffer: %1 bytes",
+    "UI_Dont39AllInOne_NetworkStatus_Received": "Received: %1 MB of game packets in %2 min (%3 of all received bytes)",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedNoTotal": "Received: %1 MB of game packets in %2 min",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedType": "  %1: %2 MB (%3), %4 packets"
 }

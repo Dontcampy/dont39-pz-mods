@@ -28,5 +28,8 @@
     "UI_Dont39AllInOne_NetworkStatus_CongestionNone": "拥塞控制：未限速",
     "UI_Dont39AllInOne_NetworkStatus_Bandwidth": "带宽上限：限速至 %1 KB/s",
     "UI_Dont39AllInOne_NetworkStatus_BandwidthNone": "带宽上限：未限速",
-    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "发送缓冲：%1 字节"
+    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "发送缓冲：%1 字节",
+    "UI_Dont39AllInOne_NetworkStatus_Received": "已接收：游戏数据包 %1 MB，%2 分钟（占全部接收字节的 %3）",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedNoTotal": "已接收：游戏数据包 %1 MB，%2 分钟",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedType": "  %1：%2 MB（%3），%4 个包"
 }

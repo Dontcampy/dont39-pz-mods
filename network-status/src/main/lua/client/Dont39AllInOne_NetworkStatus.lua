@@ -22,6 +22,7 @@ local TIP_PAD, TIP_GAP = 6, 4
 
 local SAMPLE_MS = 1000
 local WINDOW = 5 -- samples the icon averages over
+local TRAFFIC_ROWS = 6 -- packet types the tooltip lists
 
 local BACKGROUND = { r = 0, g = 0, b = 0, a = 0.45 }
 local GRAY = { r = 0.55, g = 0.55, b = 0.55 }
@@ -181,6 +182,10 @@ local function whole(number)
     return tostring(math.floor(number + 0.5))
 end
 
+local function megabytes(bytes)
+    return string.format("%.2f", bytes / (1024 * 1024))
+end
+
 local function tooltipLines()
     local lines = {}
     local function add(text, color)
@@ -231,8 +236,11 @@ local function tooltipLines()
         add(getText(TEXT .. "Server", tostring(name), tostring(getServerIP()) .. ":" .. tostring(getServerPort())))
     end
 
-    if status.stats then
+    local traffic = status.traffic -- nil before the connection's first packet
+    if status.stats or traffic then
         add(getText(TEXT .. "Debug"), DEBUG_COLOR)
+    end
+    if status.stats then
         add(getText(TEXT .. "Resend", whole(status.resendMessages), whole(status.resendBytes)), DEBUG_COLOR)
         if status.congestionLimited then
             add(getText(TEXT .. "Congestion", kilobytes(status.congestionBps)), DEBUG_COLOR)
@@ -245,6 +253,24 @@ local function tooltipLines()
             add(getText(TEXT .. "BandwidthNone"), DEBUG_COLOR)
         end
         add(getText(TEXT .. "SendBuffer", whole(status.sendBufferBytes)), DEBUG_COLOR)
+    end
+    if traffic then
+        local received = megabytes(traffic.bytes)
+        local minutes = whole(traffic.seconds / 60)
+        if status.stats then
+            -- RakNet's count adds its headers and acknowledgements
+            local share = status.bytesRecvTotal > 0 and traffic.bytes / status.bytesRecvTotal or nil
+            add(getText(TEXT .. "Received", received, minutes, percent(share)), DEBUG_COLOR)
+        else
+            add(getText(TEXT .. "ReceivedNoTotal", received, minutes), DEBUG_COLOR)
+        end
+        local types = traffic.types
+        for i = 1, math.min(TRAFFIC_ROWS, #types) do
+            local row = types[i]
+            local share = traffic.bytes > 0 and row.bytes / traffic.bytes or nil
+            add(getText(TEXT .. "ReceivedType", row.name, megabytes(row.bytes), percent(share), whole(row.packets)),
+                DEBUG_COLOR)
+        end
     end
     return lines
 end
