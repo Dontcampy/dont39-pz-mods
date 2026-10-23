@@ -4,7 +4,7 @@ title=Zabric
 description=[h1]Zabric[/h1]
 description=A library for ZombieBuddy Java mods, made by Dont39. Subscribe to it and enable it when a mod requires it; it does nothing on its own.
 description=
-description=Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked) and Project Zomboid 42.21. Load after ZombieBuddy. On first launch, restart the game once when the main menu asks.
+description=Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked) and Project Zomboid 42.21. Load after ZombieBuddy. On first launch, and when a mod that runs at game start is added, restart the game once when the main menu asks.
 description=
 description=For mod authors: [url=https://github.com/Dontcampy/dont39-pz-mods/blob/main/zabric/README.md]zabric/README.md[/url]. Source and feedback: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url].
 tags=Build 42;Framework

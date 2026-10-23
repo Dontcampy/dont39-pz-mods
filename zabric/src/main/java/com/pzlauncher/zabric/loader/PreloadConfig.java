@@ -9,13 +9,19 @@ import me.zed_0xff.zombie_buddy.Agent;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -31,6 +37,10 @@ final class PreloadConfig {
     }
 
     static Loader.PreloadEntry keep(String modId, Path versionDir, Path commonDir) throws IOException {
+        return keep(Agent.configDir().resolve("config.json"), modId, versionDir, commonDir);
+    }
+
+    static Loader.PreloadEntry keep(Path config, String modId, Path versionDir, Path commonDir) throws IOException {
         Path inf = versionDir.resolve("mod.info");
         String jarFile = modInfoValue(inf, "javaJarFile");
         if (jarFile == null && commonDir != null) {
@@ -44,7 +54,6 @@ final class PreloadConfig {
         Path jar = versionDir.resolve(jarFile).normalize();
         checkPreloadable(modId, inf, jar);
 
-        Path config = Agent.configDir().resolve("config.json");
         ObjectMapper json = new ObjectMapper();
         ObjectNode root;
         if (Files.exists(config)) {
@@ -69,12 +78,118 @@ final class PreloadConfig {
             updated.put("infPath", inf.toString());
             updated.put("jarPath", jar.toString());
         }
-        if (!current || !zabricFirst(preload)) {
-            root.set("preload_mods", withZabricFirst(json, preload));
+        List<String> stored = new ArrayList<>();
+        preload.fieldNames().forEachRemaining(stored::add);
+        Map<String, Set<String>> requires = new HashMap<>();
+        for (String id : stored) {
+            requires.put(id, requires(preload.get(id).path("infPath").asText("")));
+        }
+        Order order = order(stored, requires);
+        boolean reordered = !order.ids().equals(stored);
+        if (!current || reordered) {
+            ObjectNode ordered = json.createObjectNode();
+            order.ids().forEach(id -> ordered.set(id, preload.get(id)));
+            root.set("preload_mods", ordered);
             // ZombieBuddy reads the file at every launch
             AtomicWrite.write(config, json.writerWithDefaultPrettyPrinter().writeValueAsString(root));
         }
-        return new Loader.PreloadEntry(current, config);
+        return new Loader.PreloadEntry(current, config, reordered ? order.ids() : List.of(), order.cycles());
+    }
+
+    /** The order to preload in, and each group of entries that require each other, in stored order. */
+    record Order(List<String> ids, List<List<String>> cycles) {
+    }
+
+    /**
+     * ZombieBuddy preloads in the stored order: Zabric first, so its transformer is in place for the others, then each
+     * entry after the entries it requires, the rest as stored. Entries that require each other keep their stored
+     * order. {@code requires}: the mod ids each entry's mod.info requires.
+     */
+    static Order order(List<String> stored, Map<String, Set<String>> requires) {
+        Map<String, Set<String>> deps = new HashMap<>();
+        for (String id : stored) {
+            Set<String> d = new HashSet<>(requires.getOrDefault(id, Set.of()));
+            d.retainAll(stored);
+            d.remove(id);
+            deps.put(id, d);
+        }
+        List<String> placed = new ArrayList<>();
+        List<String> remaining = new ArrayList<>(stored);
+        if (remaining.remove(ZABRIC)) {
+            placed.add(ZABRIC);
+        }
+        List<List<String>> cycles = new ArrayList<>();
+        while (!remaining.isEmpty()) {
+            String next = remaining.stream().filter(id -> placed.containsAll(deps.get(id))).findFirst().orElse(null);
+            if (next != null) {
+                remaining.remove(next);
+                placed.add(next);
+                continue;
+            }
+            List<String> cycle = firstCycle(remaining, placed, deps);
+            remaining.removeAll(cycle);
+            placed.addAll(cycle);
+            cycles.add(cycle);
+        }
+        return new Order(List.copyOf(placed), List.copyOf(cycles));
+    }
+
+    // the group of entries that require each other and wait for nothing else, with the earliest stored member
+    private static List<String> firstCycle(List<String> remaining, List<String> placed, Map<String, Set<String>> deps) {
+        for (String id : remaining) {
+            List<String> group = remaining.stream()
+                    .filter(other -> reaches(id, other, remaining, deps) && reaches(other, id, remaining, deps))
+                    .toList();
+            if (group.isEmpty()) {
+                continue;
+            }
+            boolean waitsForNothingElse = group.stream().flatMap(m -> deps.get(m).stream())
+                    .allMatch(d -> placed.contains(d) || group.contains(d));
+            if (waitsForNothingElse) {
+                return group;
+            }
+        }
+        // every entry left waits for another one left, so they form at least one such group
+        throw new IllegalStateException("no cycle among " + remaining + " although none can be placed");
+    }
+
+    private static boolean reaches(String from, String to, List<String> within, Map<String, Set<String>> deps) {
+        Set<String> seen = new HashSet<>();
+        ArrayDeque<String> todo = new ArrayDeque<>(deps.get(from));
+        while (!todo.isEmpty()) {
+            String id = todo.pop();
+            if (!within.contains(id) || !seen.add(id)) {
+                continue;
+            }
+            if (id.equals(to)) {
+                return true;
+            }
+            todo.addAll(deps.get(id));
+        }
+        return false;
+    }
+
+    // the require line as the game reads it: comma-separated ids, each with a leading backslash in Build 42
+    private static Set<String> requires(String storedInf) throws IOException {
+        Path inf;
+        try {
+            inf = storedInf.isEmpty() ? null : Path.of(storedInf);
+        } catch (InvalidPathException e) {
+            inf = null;
+        }
+        // an entry without a readable mod.info requires nothing here: ZombieBuddy drops it at the next premain
+        String value = inf == null ? null : modInfoValue(inf, "require");
+        Set<String> ids = new HashSet<>();
+        if (value != null) {
+            for (String part : value.split(",")) {
+                String id = part.trim();
+                id = id.startsWith("\\") ? id.substring(1).trim() : id;
+                if (!id.isEmpty()) {
+                    ids.add(id);
+                }
+            }
+        }
+        return ids;
     }
 
     // ZombieBuddy drops an entry at premain without these, which would make every launch register again
@@ -116,31 +231,13 @@ final class PreloadConfig {
         }
     }
 
-    private static boolean zabricFirst(ObjectNode preload) {
-        Iterator<String> names = preload.fieldNames();
-        return !preload.has(ZABRIC) || names.next().equals(ZABRIC);
-    }
-
-    // ZombieBuddy preloads in this order; Zabric must come first so its transformer is in place for the others
-    private static ObjectNode withZabricFirst(ObjectMapper json, ObjectNode preload) {
-        ObjectNode ordered = json.createObjectNode();
-        if (preload.has(ZABRIC)) {
-            ordered.set(ZABRIC, preload.get(ZABRIC));
-        }
-        preload.fields().forEachRemaining(e -> {
-            if (!e.getKey().equals(ZABRIC)) {
-                ordered.set(e.getKey(), e.getValue());
-            }
-        });
-        return ordered;
-    }
-
-    // mod.info as ZombieBuddy reads it: first line wins, keys are case-insensitive
+    // mod.info as ZombieBuddy reads it: first line wins, keys are case-insensitive, and bytes that are not UTF-8 (another
+    // mod's description) do not fail the read
     private static String modInfoValue(Path inf, String key) throws IOException {
         if (!Files.isRegularFile(inf)) {
             return null;
         }
-        List<String> lines = Files.readAllLines(inf, StandardCharsets.UTF_8);
+        List<String> lines = new String(Files.readAllBytes(inf), StandardCharsets.UTF_8).lines().toList();
         String prefix = key.toLowerCase(Locale.ROOT) + "=";
         for (String line : lines) {
             if (line.toLowerCase(Locale.ROOT).startsWith(prefix)) {

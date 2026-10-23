@@ -64,14 +64,14 @@ What is not behind the seam and needs rework when switching loaders:
 
 | Touchpoint | Where |
 |------------|-------|
-| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric`; `Main` in `zb-kt` |
+| Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric` and `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
 | Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
-| `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in Zabric's) | every `mod/42/mod.info` |
-| Manifest `ZB-Preload` | `tasks.jar` in `zabric/build.gradle.kts` |
+| `mod.info` fields (`require=\ZombieBuddy`, `loadModAfter`, `ZBVersionMin`, `javaJarFile`, `javaPkgName`; `javaPreload` in the preload mods') | every `mod/42/mod.info` |
+| Manifest `ZB-Preload` | `tasks.jar` in the preload mods' build scripts (`zabric`, `zb-kt`, ...) |
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
@@ -94,6 +94,9 @@ What is not behind the seam and needs rework when switching loaders:
   jar's classes and applies its hooks one jar after another, and drops failed loads silently. Direct dependencies
   only; the chain covers the rest. Zabric needs no entry from mods that use only its entrypoints: it is preloaded on
   every launch that runs them.
+- At game start ZombieBuddy loads preloaded jars in `preload_mods` order, not the mod list's: there `require` decides,
+  which Zabric keeps in order ([Access Widening](./access-widening.md#entrypoints-and-preload-registration)). A preload
+  mod that uses ZabricKotlin at game start requires it ([Kotlin Runtime](./kotlin-runtime.md)).
 
 ---
 

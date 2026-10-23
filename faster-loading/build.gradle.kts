@@ -7,7 +7,8 @@ import buildsrc.convention.mod.pzUserDir
 import buildsrc.convention.mod.pzWorkshopContent
 import buildsrc.convention.smoke.GameSmokeTest
 
-// Java only: Zabric opens its hooks at game start, before ZabricKotlin could install Kotlin.
+// Java: its hooks are written for zabric-processor, the javac glue front end; the KSP one serves only
+// All-in-One features.
 plugins {
   id("buildsrc.convention.pz-java")
   id("buildsrc.convention.pz-mod")

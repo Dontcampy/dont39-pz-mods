@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Two swap points, no readiness checks in dependents"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Failures are errors with context, no hidden degrade"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log wording is a contract"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and in-game verification"}

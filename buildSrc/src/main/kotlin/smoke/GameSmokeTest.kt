@@ -84,7 +84,10 @@ abstract class GameSmokeTest : DefaultTask() {
     } else {
       val kotlinModInfo = kotlinMod.singleFile.resolve("42/mod.info")
       val kotlinVersion = modInfoValue(kotlinModInfo.readLines(), "modversion", kotlinModInfo)
-      listOf("[ZabricKotlin] $kotlinVersion loaded", "[ZabricKotlin] ready: ${kotlinVersions.get()}")
+      listOf(
+        "[ZabricKotlin] $kotlinVersion loaded",
+        "[ZabricKotlin] ready: ${kotlinVersions.get()}; installed at game start",
+      )
     }
     val features = featureFolders.files.map(FeatureInfo::read)
     val targeted = luaTargeted.get()

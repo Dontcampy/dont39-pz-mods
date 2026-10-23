@@ -96,6 +96,10 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - A preloaded mod's hooks open at preLaunch; Zabric never loads or retransforms their targets there
   (`HookRuntime.preLaunch`). `Zabric-Hooks: launch` is for client-side UI only (author contract).
 - Registration follows only code ZombieBuddy approved and loaded (`entrypoint/Preload.java`, `loader/PreloadConfig.java`).
+- ZombieBuddy preloads in the stored order of `preload_mods`. Zabric keeps it Zabric first, then each entry after the
+  entries its `require` names, the rest as stored; entries that require each other keep their stored order with an
+  error. It rewrites the file whenever the stored order differs (`PreloadConfig.order`). Zabric never names other mods
+  there: ZabricKotlin precedes the preload mods that require it, not necessarily all of them.
 - Loader progress calls listeners outside any transformer; when Zabric cannot follow a pass it stops only the
   listening mods, never the lifecycle (`LoaderProgress.java`, `JarLoadHook.java`).
 - Approval gap, accepted with signing off: ZombieBuddy runs a registered unsigned jar at premain without checking that

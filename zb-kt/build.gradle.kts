@@ -17,7 +17,7 @@ plugins {
   id("buildsrc.convention.pz-bootstrap")
 }
 
-version = "0.6.0"
+version = "0.7.0"
 
 val pkgDir = "com/dont39/pz/zbkt"
 
@@ -84,6 +84,14 @@ tasks.processResources {
 }
 
 tasks.jar {
+  manifest {
+    attributes(
+      // ZombieBuddy also needs javaPreload=true in mod.info
+      "ZB-Preload" to "true",
+      // makes Zabric keep the mod preloaded
+      "Zabric-PreLaunch" to "${pzMod.javaPkgName}.PreLaunchEntry",
+    )
+  }
   from(utilsClasses, utilsResources)
   from(bundledJars.elements.map { jars -> jars.map { archives.zipTree(it) } }) {
     exclude("META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "META-INF/*.EC")
@@ -122,8 +130,8 @@ val stageServerMods = tasks.register<Sync>("stageServerMods") {
 }
 
 tasks.register<ServerSmokeTest>("serverSmokeTest") {
-  description = "Launches the dedicated server with $zabricModId and ${pzMod.modId} until init, also with a leftover " +
-    "preload entry, and checks the log."
+  description = "Launches the dedicated server with $zabricModId and ${pzMod.modId} until init, before and after " +
+    "${pzMod.modId}'s preload registration and with the player's config, and checks the log."
   // the client's copies too: the player's config points at them, and they must be current as after a Workshop update
   dependsOn(stageServerMods, tasks.named("deployWorkshop"), ":zabric:deployWorkshop")
   serverDir = pzServerDir()

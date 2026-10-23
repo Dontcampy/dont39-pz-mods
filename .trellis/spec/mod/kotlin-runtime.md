@@ -1,7 +1,8 @@
 # Kotlin Runtime (ZabricKotlin)
 
 > Rules for Kotlin code in this repo and for the `zb-kt` library mod. How the swap works is in the code:
-> start at `KotlinSwap.java` and `Main.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`) and `zb-kt/build.gradle.kts`.
+> start at `KotlinSwap.java`, `Install.java` and `Main.java` (`zb-kt/src/main/java/com/dont39/pz/zbkt/`) and
+> `zb-kt/build.gradle.kts`.
 
 ---
 
@@ -19,12 +20,17 @@
 
 ## Library (`zb-kt`)
 
-- The swap runs from ZabricKotlin's ZombieBuddy `Main`, not a Zabric entrypoint, and ZabricKotlin is not a
-  preload mod: it must run before ZombieBuddy reaches any dependent's jar, which the dependents' `require` and
-  `loadModAfter` guarantee ([Dependent Kotlin Modules](#dependent-kotlin-modules)). This is the one place it depends on
-  mod order.
-- Accepted risk: anything that loads `kotlin.*` before ZombieBuddy reaches this jar beats the swap, which then fails
-  with an error. No known ZombieBuddy-only mod uses Kotlin.
+- ZabricKotlin is a preload mod: the swap runs from its ZombieBuddy `PreMain`, before the preload mods that require it
+  (Zabric's `require` order, [Access Widening](./access-widening.md#entrypoints-and-preload-registration)). Its
+  preLaunch entrypoint only makes Zabric keep it registered and runs the self-check early.
+- On a launch where it was not preloaded (first launch, a dropped entry, Zabric not at game start) its ZombieBuddy
+  `Main` swaps instead, before ZombieBuddy reaches any dependent's jar, which the dependents' `require` and
+  `loadModAfter` guarantee ([Dependent Kotlin Modules](#dependent-kotlin-modules)); Zabric's restart notice covers the
+  next launch. The ready line says which way ran.
+- A swap that failed at premain is reported at MAIN, never retried: it may be half done (`Install.java`).
+- Accepted risk: anything that loads `kotlin.*` before the swap beats it, which then fails with an error: a preload mod
+  that uses Kotlin without requiring ZabricKotlin, or any Kotlin preload mod on a launch where ZabricKotlin is not
+  preloaded (until the restart). No such mod is known (`zb-kt/README.md` says it).
 - Its Java classes run before the swap and must not reference Kotlin types (`checkBootstrapClasses` enforces this).
   Put Kotlin code in a subpackage of `javaPkgName`; see the comment in `selfcheck/SelfCheck.kt`.
 - A failure is an error in its own log; dependents get no flag or degraded mode ([Error Handling](./error-handling.md)).
@@ -41,6 +47,9 @@
 - The mod `require`s `\Zabric` and `\ZabricKotlin` and lists `\ZabricKotlin` in `loadModAfter`
   ([Loading](./zombiebuddy-patching.md#loading)).
 - Mod-level startup code is a Zabric main entrypoint, not a ZombieBuddy `Main`.
+- Code at game start (a preLaunch entrypoint, the hooks and classes of a preloaded mod) may use Kotlin only in a mod that
+  requires ZabricKotlin, and accepts that on a launch where ZabricKotlin is not preloaded it breaks the swap for every
+  Kotlin mod until the restart. Java code there that loads no Kotlin class works on every launch.
 - No readiness checks anywhere, generated glue included: dependents assume the current Kotlin.
 
 ## Version Bumps
