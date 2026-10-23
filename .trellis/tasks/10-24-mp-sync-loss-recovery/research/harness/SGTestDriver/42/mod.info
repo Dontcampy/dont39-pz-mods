@@ -1,0 +1,4 @@
+name=SG Test Driver
+id=SGTestDriver
+description=Test driver of Sync Guard's local test harness; idle unless Zomboid/Lua/sgtest.txt exists. Not for players.
+versionMin=42.0.0
