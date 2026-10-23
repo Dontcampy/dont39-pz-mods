@@ -870,3 +870,34 @@ Fixed every finding of the PR #24 architecture/reuse/performance review: BC7 bal
 ### Next Steps
 
 - Fast-forward load-speed-optimization when the user asks; resume parent AC5 on the Linux test server
+
+
+## Session 37: Load speed optimization AC5 on the Linux test server
+<!-- trellis-session: v=2 fp=4069ed4dcc2062ad -->
+
+**Date**: 2026-10-23
+**Task**: Load speed optimization AC5 on the Linux test server
+**Branch**: `load-speed-optimization`
+
+### Summary
+
+AC5 run on a Linux test instance with the live 246-mod list and DoLuaChecksum=true (live server stopped by the user): checksum passed on every join, 15 Java mods (+Faster Loading); every switch off matches no Faster Loading (join 121.1 vs 121.2 s), every switch on 51.3 s. Parent task archived; test instance removed, client files restored.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6cabbe0` | docs(task): AC5 met on the Linux test server; every criterion of load speed optimization met |
+| `a1a055d` | chore(task): archive 10-21-load-speed-optimization |
+
+### Testing
+
+- [OK] 9 Steam joins to the Linux test server (3 base, 3 off, 3 on)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- User restarts the live server from the panel; Workshop upload of Faster Loading 0.5.0 and Loading Progress 0.2.0 is the user's
