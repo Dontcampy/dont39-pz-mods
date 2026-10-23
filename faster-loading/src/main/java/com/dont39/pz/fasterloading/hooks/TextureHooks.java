@@ -1,10 +1,10 @@
 package com.dont39.pz.fasterloading.hooks;
 
+import com.dont39.pz.fasterloading.Mod;
 import com.dont39.pz.fasterloading.settings.Fix;
 import com.dont39.pz.fasterloading.textures.Encoder;
 import com.dont39.pz.fasterloading.textures.Encoders;
 import com.dont39.pz.fasterloading.textures.Upload;
-import com.dont39.pz.fasterloading.textures.bc7.Bc7Encoder;
 import com.pzlauncher.zabric.hook.At;
 import com.pzlauncher.zabric.hook.CallbackInfo;
 import com.pzlauncher.zabric.hook.Hooks;
@@ -32,14 +32,16 @@ public final class TextureHooks {
             return;
         }
         Encoder encoder = Encoders.session(() -> Session.on(Fix.TEXTURE_BC7),
-                line -> DebugType.Mod.println(Session.PREFIX + "texture compression: %s", line));
+                line -> DebugType.Mod.println(Mod.PREFIX + "texture compression: %s", line));
         if (!Upload.packedRows(width)) {
-            // the driver picks DXT5 for GL_COMPRESSED_RGBA, so a BC7 texture with one level from it is incomplete
-            if (encoder instanceof Bc7Encoder) {
+            // the driver compresses this level; in another format than the encoder's other levels, the texture would
+            // be incomplete
+            if (encoder.glInternalFormat() != Encoders.driverFormat()) {
                 throw new IllegalStateException("a " + width + "x" + height + " level " + level + " to compress comes"
                         + " with unpack state other than tightly packed rows from client memory, which " + encoder.id()
-                        + " does not take and the driver would compress to another format than the texture's other"
-                        + " levels");
+                        + " does not take, and the driver would compress it to 0x"
+                        + Integer.toHexString(Encoders.driverFormat()) + ", not the encoder's 0x"
+                        + Integer.toHexString(encoder.glInternalFormat()));
             }
             return;
         }

@@ -1,6 +1,6 @@
 """Simulates the depth-map phase of a join's asset wait under several queue orders.
 
-Usage: python -I reprioritise_sim.py <LP start.csv> <workshop content/108600 dir>
+Usage: python -I reprioritise_sim.py <LP report>-files.csv <workshop content/108600 dir>
 
 Model (FileSystemImpl, game 42.21 4a0e9546ec):
 - pending is sorted once, at insertion (priority desc, FIFO within equal priority);
@@ -42,7 +42,7 @@ def load(csv_path, workshop):
                 for fn in os.listdir(dm):
                     index[(folder.lower(), fn.lower())] = os.path.join(dm, fn)
     rows = [r for r in csv.DictReader(open(csv_path, encoding='utf-8-sig'))
-            if r['kind'] == 'file_task' and r['task_type'] == 'TileDepthTextures$LoadTask']
+            if r['queued_ms'] and r['type'] == 'TileDepthTextures$LoadTask']
     tasks = []
     for r in rows:
         p = r['name']
@@ -51,8 +51,8 @@ def load(csv_path, workshop):
             i = [k for k, s in enumerate(parts) if s.lower() == 'mods'][-1]
             p = index[(parts[i + 1].lower(), parts[-1].lower())]
         w, h = png_wh(p)
-        tasks.append(dict(name=os.path.basename(r['name']), inst=r['mod'] or 'game', sent=float(r['start_ms']),
-                          done=float(r['start_ms']) + float(r['duration_ms']), worker=float(r['worker_ms']),
+        tasks.append(dict(name=os.path.basename(r['name']), inst=r['mod'] or 'game', sent=float(r['queued_ms']),
+                          done=float(r['done_ms']), worker=float(r['worker_ms']),
                           px=w * h, bytes=os.path.getsize(p)))
     return tasks
 

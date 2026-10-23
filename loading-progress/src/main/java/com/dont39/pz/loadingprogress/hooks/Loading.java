@@ -166,7 +166,7 @@ public final class Loading {
         }
         try {
             Path summary = Reports.write(folder, time, end.flow().name().toLowerCase(Locale.ROOT),
-                    Report.summary(end, context), Report.csv(end, context));
+                    Report.summary(end, context), Report.csv(end, context), Report.filesCsv(end, context));
             DebugType.Mod.println(PREFIX + "load timing report: %s", summary);
         } catch (IOException | RuntimeException e) {
             reportFailed = true;

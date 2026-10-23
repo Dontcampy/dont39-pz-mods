@@ -22,8 +22,11 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -31,8 +34,12 @@ import java.util.List;
  * {@code GL_COMPRESSED_RGBA}, by {@link Dxt5Encoder} and by {@link Bc7Encoder} through {@link Upload}; PSNR of what the
  * GPU decodes. Fails when DXT5 is below the driver on colour or alpha; when BC7 is below DXT5 on colour, over white or
  * over grey; when a BC7 level of a mip chain or a large level is not BPTC of its size or decodes below a floor; when a
- * BC7 level changes the GL state around it; or when BC7 takes more of the GL thread a page with all its levels than
- * {@link #MAX_GL_THREAD_SHARE} of DXT5's in the same run. Needs a GPU, so it is not part of {@code check}. Arguments: the game folder and the Workshop content folder.
+ * BC7 level changes the GL state around it; or when BC7 takes more of the GL thread a page with all its levels, at the
+ * pages' own sizes, than {@link #MAX_GL_THREAD_SHARE} of DXT5's in the same run. Needs a GPU, so it is not part of
+ * {@code check}.
+ * Arguments: the game folder and the Workshop content folder. With {@code -Dfasterloading.dump=<dir>} it writes a
+ * SHA-256 of every BC7 level it defines to {@code <dir>/bc7-blocks.txt}, so an encoder change can be compared bit for
+ * bit.
  */
 public final class QualityCheck {
     private static final int PAGES_PER_PACK = 6;
@@ -49,7 +56,10 @@ public final class QualityCheck {
     private static final int RUNS = 7;
     private static final int BPTC = GL42.GL_COMPRESSED_RGBA_BPTC_UNORM;
 
+    private static final String DUMP = System.getProperty("fasterloading.dump");
+
     private static final List<String> failures = new ArrayList<>();
+    private static final List<String> hashes = new ArrayList<>();
 
     private QualityCheck() {
     }
@@ -114,6 +124,12 @@ public final class QualityCheck {
         }
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
+        if (DUMP != null) {
+            Path file = Path.of(DUMP).resolve("bc7-blocks.txt");
+            Files.createDirectories(file.getParent());
+            Files.write(file, hashes);
+            System.out.println(hashes.size() + " BC7 levels hashed to " + file);
+        }
         if (!failures.isEmpty()) {
             failures.forEach(f -> System.out.println("FAILED: " + f));
             System.exit(1);
@@ -152,8 +168,14 @@ public final class QualityCheck {
             GL11.glFinish();
             driver.add(System.nanoTime() - start, expected, readBack(width, height, 0));
             if (driver.pages() == 1) {
-                System.out.printf("  (the driver picks internal format 0x%x for GL_COMPRESSED_RGBA)%n",
-                        GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_INTERNAL_FORMAT));
+                int picked = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_INTERNAL_FORMAT);
+                int probed = Encoders.probeDriverFormat();
+                System.out.printf("  (the driver picks internal format 0x%x for GL_COMPRESSED_RGBA, the probe without"
+                        + " pixels 0x%x)%n", picked, probed);
+                if (picked != probed) {
+                    failures.add(String.format("the probe says the driver picks 0x%x, a page got 0x%x", probed,
+                            picked));
+                }
             }
 
             start = System.nanoTime();
@@ -165,6 +187,7 @@ public final class QualityCheck {
             Upload.compressed(bc7, GL11.GL_TEXTURE_2D, 0, width, height, page.rgba);
             GL11.glFinish();
             gpu.add(System.nanoTime() - start, expected, readBack(width, height, 0));
+            hash(page.name, 0, width, height);
 
             start = System.nanoTime();
             oneThread.encode(page.rgba, width, height).close();
@@ -225,6 +248,7 @@ public final class QualityCheck {
                     failures.add(String.format("%dx%d chain, level %d: format 0x%x %dx%d, not BPTC %dx%d", size[0],
                             size[1], level, format, w, h, width, height));
                 }
+                hash("chain " + size[0] + "x" + size[1], level, width, height);
                 byte[] expected = new byte[width * height * 4];
                 chain.get(level).get(0, expected);
                 double[] psnr = Dxt5Decoder.psnr(expected, readBack(width, height, level));
@@ -276,6 +300,7 @@ public final class QualityCheck {
         // as the game's textures without mipmaps: level 0 alone, no chain allocated
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         Upload.compressed(bc7, GL11.GL_TEXTURE_2D, 0, width, height, rgba);
+        hash("large", 0, width, height);
         int format = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_INTERNAL_FORMAT);
         int level1 = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 1, GL11.GL_TEXTURE_WIDTH);
         byte[] expected = new byte[width * height * 4];
@@ -333,6 +358,7 @@ public final class QualityCheck {
         ByteBuffer rgba = crop(page, 64, 64);
         Upload.compressed(bc7, GL11.GL_TEXTURE_2D, 0, 64, 64, rgba);
         String after = state();
+        hash("state", 0, 64, 64);
         System.out.println("GL state around a BC7 level: " + (before.equals(after) ? "the same, " + after
                 : "before " + before + ", after " + after));
         if (!before.equals(after)) {
@@ -364,8 +390,23 @@ public final class QualityCheck {
                 .append(" texture ").append(GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D)).toString();
     }
 
-    // every page with all its levels into a new texture, as the game uploads them; runs interleaved, medians
+    // The limit applies at the pages' own sizes, where it was set; padded as the game uploads them, BC7 copies the
+    // padding's pixels that DXT5 encodes almost for free, and the share sat at 37-41 % before and after the
+    // review fixes (2026-10-23), so that run is printed only
     private static void timing(List<Page> pages, Dxt5Encoder dxt5, Bc7Encoder bc7) {
+        double share = time(pages, "at their own sizes", dxt5, bc7, false);
+        if (share > MAX_GL_THREAD_SHARE) {
+            failures.add(String.format("BC7 takes %.0f%% of DXT5's GL thread a page at the pages' own sizes, more than"
+                    + " %.0f%%", share * 100, MAX_GL_THREAD_SHARE * 100));
+        }
+        List<Page> padded = pages.stream().map(QualityCheck::padded).toList();
+        time(padded, "padded to their power-of-two sizes as the game does", dxt5, bc7, true);
+        padded.forEach(page -> MemoryUtil.memFree(page.rgba));
+    }
+
+    // every page with all its levels into a new texture, as the game uploads them; runs interleaved, medians; BC7's
+    // share of DXT5's GL thread a page
+    private static double time(List<Page> pages, String how, Dxt5Encoder dxt5, Bc7Encoder bc7, boolean hash) {
         int n = pages.size();
         List<List<ByteBuffer>> chains = new ArrayList<>();
         for (Page page : pages) {
@@ -417,27 +458,80 @@ public final class QualityCheck {
                     }
                     gpu[run] = nanos / 1e6 / n;
                     GL15.glDeleteQueries(queries);
+                    if (run == 0 && hash) {
+                        hashChains(pages, textures);
+                    }
                 }
                 GL11.glDeleteTextures(textures);
             }
         }
-        System.out.printf("%d pages with all their levels, a new texture each; medians of %d interleaved runs, per"
-                + " page:%n", n, RUNS);
+        System.out.printf("%d pages %s (%s), with all their levels, a new texture each; medians of %d interleaved runs,"
+                + " per page:%n", n, how, sizes(pages), RUNS);
         for (int k = 0; k < encoders.length; k++) {
             System.out.printf("  %-60s GL thread %5.2f ms, until the GPU is done %5.2f ms%s%n", encoders[k].id(),
                     median(glThread[k]), median(done[k]),
                     encoders[k] == bc7 ? String.format(", GPU time %5.2f ms", median(gpu)) : "");
         }
         double share = median(glThread[1]) / median(glThread[0]);
-        System.out.printf("  BC7's GL thread a page is %.0f%% of DXT5's (limit %.0f%%)%n", share * 100,
-                MAX_GL_THREAD_SHARE * 100);
-        if (share > MAX_GL_THREAD_SHARE) {
-            failures.add(String.format("BC7 takes %.2f ms of the GL thread a page, %.0f%% of DXT5's %.2f ms, more than"
-                    + " %.0f%%", median(glThread[1]), share * 100, median(glThread[0]), MAX_GL_THREAD_SHARE * 100));
+        System.out.printf("  BC7's GL thread a page is %.0f%% of DXT5's%n", share * 100);
+        // level 0 is the page's own buffer
+        chains.forEach(chain -> chain.subList(1, chain.size()).forEach(MemoryUtil::memFree));
+        return share;
+    }
+
+    private static void hashChains(List<Page> pages, int[] textures) {
+        for (int i = 0; i < pages.size(); i++) {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textures[i]);
+            int width = pages.get(i).width;
+            int height = pages.get(i).height;
+            for (int level = 0; ; level++) {
+                hash("hw " + pages.get(i).name, level, width, height);
+                if (width == 1 && height == 1) {
+                    break;
+                }
+                width = Math.max(1, width / 2);
+                height = Math.max(1, height / 2);
+            }
         }
-        for (List<ByteBuffer> chain : chains) {
-            // level 0 is the page's
-            chain.subList(1, chain.size()).forEach(MemoryUtil::memFree);
+    }
+
+    private static String sizes(List<Page> pages) {
+        return pages.stream().map(p -> p.width + "x" + p.height).distinct().reduce((a, b) -> a + ", " + b)
+                .orElse("");
+    }
+
+    // the page in the top left of a transparent power-of-two image, as the game's ImageData decodes it
+    private static Page padded(Page page) {
+        int width = powerOfTwo(page.width);
+        int height = powerOfTwo(page.height);
+        ByteBuffer out = MemoryUtil.memCalloc(width * height * 4);
+        for (int y = 0; y < page.height; y++) {
+            MemoryUtil.memCopy(MemoryUtil.memAddress(page.rgba) + (long) y * page.width * 4,
+                    MemoryUtil.memAddress(out) + (long) y * width * 4, page.width * 4L);
+        }
+        return new Page(page.name, width, height, out);
+    }
+
+    private static int powerOfTwo(int n) {
+        return n <= 1 ? 1 : Integer.highestOneBit(n - 1) << 1;
+    }
+
+    // the blocks the GL holds for the bound texture's level, with -Dfasterloading.dump
+    private static void hash(String label, int level, int width, int height) {
+        if (DUMP == null) {
+            return;
+        }
+        ByteBuffer blocks = MemoryUtil.memAlloc(Blocks.count(width, height) * 16);
+        try {
+            GL13.glGetCompressedTexImage(GL11.GL_TEXTURE_2D, level, blocks);
+            MessageDigest sha = MessageDigest.getInstance("SHA-256");
+            sha.update(blocks);
+            hashes.add(String.format("%s level %d %dx%d %s", label, level, width, height,
+                    HexFormat.of().formatHex(sha.digest())));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            MemoryUtil.memFree(blocks);
         }
     }
 

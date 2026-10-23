@@ -1,6 +1,7 @@
-package com.dont39.pz.fasterloading.depth;
+package com.dont39.pz.fasterloading.hooks;
 
-import com.dont39.pz.fasterloading.hooks.Session;
+import com.dont39.pz.fasterloading.Mod;
+import com.dont39.pz.fasterloading.depth.Batch;
 import zombie.GameWindow;
 import zombie.debug.DebugType;
 import zombie.fileSystem.FileSystem;
@@ -15,19 +16,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Reorders the depth-map tasks one {@code TileDepthTextureManager.init} queued, on the game thread before the next
- * pump of the file queue sorts them in by priority.
+ * pump of the file queue sorts them in by priority: {@link DepthHooks}' access to the game's members the mod's list
+ * widens.
  */
 public final class DepthOrder {
+    private static boolean wideningReported;
+    private static boolean widened;
+
     private DepthOrder() {
     }
 
+    /** Whether Zabric applied the mod's access widener list, as the main entrypoint reported it. */
+    public static synchronized void widened(boolean applied) {
+        wideningReported = true;
+        widened = applied;
+    }
+
+    /**
+     * Whether the members the mod's list widens are public; throws when the main entrypoint has not reported it yet,
+     * which the mod list's load does before the game queues its first depth maps.
+     */
+    static synchronized boolean widened() {
+        if (!wideningReported) {
+            throw new IllegalStateException("the depth map order ran before the mod's main entrypoint reported"
+                    + " whether the access widener applied");
+        }
+        return widened;
+    }
+
     /** The game's count of depth-map tasks not yet done. */
-    public static int queued() {
+    static int queued() {
         return TileDepthTextureManager.getInstance().remainingLoadTasks;
     }
 
     /** Sets the priorities of the tasks queued since {@link #queued} returned {@code before}. */
-    public static void reorder(int before) {
+    static void reorder(int before) {
         FileSystem fileSystem = GameWindow.fileSystem;
         if (!(fileSystem instanceof FileSystemImpl queue)) {
             throw new IllegalStateException("the game's file system is a " + className(fileSystem) + ", not the "
@@ -49,10 +72,10 @@ public final class DepthOrder {
             loads.get(i).setPriority(plan.priorities()[i]);
         }
         if (plan.chains() < 2) {
-            DebugType.Mod.println(Session.PREFIX + "depth map order: %d tasks of %d depthmaps folders, left as queued",
+            DebugType.Mod.println(Mod.PREFIX + "depth map order: %d tasks of %d depthmaps folders, left as queued",
                     loads.size(), plan.chains());
         } else {
-            DebugType.Mod.println(Session.PREFIX + "depth map order: %d tasks of %d depthmaps folders on %d workers,"
+            DebugType.Mod.println(Mod.PREFIX + "depth map order: %d tasks of %d depthmaps folders on %d workers,"
                     + " most work in %s (%d tasks)", loads.size(), plan.chains(), workers.getCorePoolSize(),
                     plan.longestMod(), plan.longestTasks());
         }

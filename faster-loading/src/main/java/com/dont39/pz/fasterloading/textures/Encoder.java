@@ -16,7 +16,8 @@ public interface Encoder {
     /**
      * Defines {@code level} of the texture bound to {@code target} from {@code width}×{@code height} tightly packed
      * RGBA bytes starting at {@code rgba}'s position, which the caller frees once this returns. Called on the GL
-     * thread with the context current; leaves the GL state it touched as it found it.
+     * thread with the context current and no pixel unpack buffer bound ({@link Upload#packedRows}); leaves the GL state
+     * it touched as it found it.
      */
     void define(int target, int level, int width, int height, ByteBuffer rgba);
 }

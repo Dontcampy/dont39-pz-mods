@@ -14,6 +14,7 @@ plugins {
   id("buildsrc.convention.pz-bootstrap")
   id("buildsrc.convention.pz-widening")
   id("buildsrc.convention.pz-junit")
+  id("buildsrc.convention.pz-switches")
 }
 
 version = "0.5.0"
@@ -98,6 +99,11 @@ tasks.register<JavaExec>("qualityCheck") {
   val workshop = pzWorkshopContent()
   argumentProviders.add(CommandLineArgumentProvider {
     listOf(gameDir.get().asFile.absolutePath, workshop.get().asFile.absolutePath)
+  })
+  // -PqualityDump=<dir>: a hash of every BC7 level's blocks, to compare an encoder change bit for bit
+  val dump = providers.gradleProperty("qualityDump")
+  jvmArgumentProviders.add(CommandLineArgumentProvider {
+    dump.map { listOf("-Dfasterloading.dump=$it") }.getOrElse(emptyList())
   })
 }
 

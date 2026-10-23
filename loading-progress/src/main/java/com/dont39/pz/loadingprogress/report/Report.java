@@ -21,13 +21,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.function.ToLongFunction;
 
-/** A flow's timing report: a summary to read and a CSV with a row per line of the flow's log. Game-free. */
+/**
+ * A flow's timing report: a summary to read, a CSV with a row per line of the flow's log, and for a world load's asset
+ * wait a CSV with a row per file task. Game-free.
+ */
 public final class Report {
     static final int SLOWEST = 20;
-    static final String CSV_HEADER = "flow,step,kind,index,total,name,mod,start_ms,duration_ms,task_type,worker_ms,"
-            + "task_failed";
+    static final String CSV_HEADER = "flow,step,kind,index,total,name,mod,start_ms,duration_ms";
+    static final String FILES_CSV_HEADER = "type,name,mod,queued_ms,done_ms,worker_ms,failed";
 
     // the kinds whose time counts for the mod they belong to, in the order the per-mod lines name them
     private static final List<Item> MOD_KINDS = List.of(Item.JAVA_MOD, Item.MOD, Item.LUA, Item.SCRIPT);
@@ -43,6 +46,10 @@ public final class Report {
      */
     public record Context(String endLine, String gameVersion, String modVersion, String gameFolder,
                           Map<String, String> modFolders) {
+    }
+
+    // a group of the summary with its total, computed once
+    private record Ranked<V>(String name, V value, long nanos) {
     }
 
     private Report() {
@@ -87,8 +94,9 @@ public final class Report {
             assetWait(out, end.assetWait(), folders);
         }
 
+        // the wait's lines miss the animations' time inside it: its one number is the Asset wait block's span
         Map<Item, List<Timed>> kinds = new EnumMap<>(Item.class);
-        end.timed().stream().filter(timed -> !timed.line().isStep())
+        end.timed().stream().filter(timed -> !timed.line().isStep() && timed.line().item() != Item.ASSET_WAIT)
                 .forEach(timed -> kinds.computeIfAbsent(timed.line().item(), kind -> new ArrayList<>()).add(timed));
         out.append("\nItems by kind: count, total time and the ").append(SLOWEST).append(" slowest\n");
         kinds.forEach((kind, items) -> {
@@ -117,11 +125,8 @@ public final class Report {
                 outside += timed.nanos();
             }
         }
-        mods.entrySet().stream()
-                .sorted(Comparator.comparingLong((Map.Entry<String, Map<Item, Long>> mod) -> total(mod.getValue()))
-                        .reversed().thenComparing(Map.Entry::getKey))
-                .forEach(mod -> row(out, "  ", total(mod.getValue()), mod.getKey() + "  (" + parts(mod.getValue())
-                        + ")"));
+        ranked(mods, Report::total).forEach(mod -> row(out, "  ", mod.nanos(), mod.name() + "  ("
+                + parts(mod.value()) + ")"));
         row(out, "  ", outside, "Lua and script files in no mod's folder (the game's own)");
         if (lastScript > 0) {
             row(out, "  ", lastScript, "the last script file " + SCRIPTS_PROCESSED + ", in no mod");
@@ -129,10 +134,7 @@ public final class Report {
         return out.toString();
     }
 
-    /**
-     * A header and a row per line of the flow's log, steps included, so a step's rows add up to its time; then a row per
-     * file task of the asset wait, whose times overlap.
-     */
+    /** A header and a row per line of the flow's log, steps included, so a step's rows add up to its time. */
     public static String csv(Progress.End end, Context context) {
         ModFolders folders = new ModFolders(context.modFolders(), context.gameFolder());
         String flow = end.flow().name().toLowerCase(Locale.ROOT);
@@ -145,18 +147,27 @@ public final class Report {
             out.append(String.join(",", flow, line.step().name().toLowerCase(Locale.ROOT),
                     line.isStep() ? "step" : line.item().name().toLowerCase(Locale.ROOT),
                     Integer.toString(line.index()), Integer.toString(line.total()), field(name), field(mod),
-                    millis(timed.start()), millis(timed.nanos()), "", "", "")).append("\r\n");
+                    millis(timed.start()), millis(timed.nanos()))).append("\r\n");
         }
-        if (end.assetWait() != null) {
-            String step = Step.LOADING_WORLD.name().toLowerCase(Locale.ROOT);
-            for (FileWork.Run run : end.assetWait().runs()) {
-                boolean queued = run.queued() >= 0;
-                out.append(String.join(",", flow, step, "file_task", "0", "0", field(run.name()),
-                        field(folders.modOfPath(run.name())), queued ? millis(run.queued()) : "",
-                        queued ? millis(run.done() - run.queued()) : "", field(run.type()),
-                        run.workerNanos() >= 0 ? millis(run.workerNanos()) : "", run.failed() ? "failed" : ""))
-                        .append("\r\n");
-            }
+        return out.toString();
+    }
+
+    /**
+     * A header and a row per file task the game took during the asset wait, whose times overlap: when it was queued and
+     * done after the flow began (queued empty when before the world load), and its time on a worker. Null without an
+     * asset wait.
+     */
+    public static String filesCsv(Progress.End end, Context context) {
+        if (end.assetWait() == null) {
+            return null;
+        }
+        ModFolders folders = new ModFolders(context.modFolders(), context.gameFolder());
+        StringBuilder out = new StringBuilder(FILES_CSV_HEADER).append("\r\n");
+        for (FileWork.Run run : end.assetWait().runs()) {
+            out.append(String.join(",", field(run.type()), field(run.name()), field(folders.modOfPath(run.name())),
+                    run.queued() >= 0 ? millis(run.queued()) : "", millis(run.done()),
+                    run.workerNanos() >= 0 ? millis(run.workerNanos()) : "", run.failed() ? "failed" : ""))
+                    .append("\r\n");
         }
         return out.toString();
     }
@@ -203,25 +214,22 @@ public final class Report {
         }
 
         out.append("  By type: worker time and tasks\n");
-        Map<String, List<FileWork.Run>> types = new TreeMap<>();
+        Map<String, List<FileWork.Run>> types = new HashMap<>();
         runs.forEach(run -> types.computeIfAbsent(run.type(), type -> new ArrayList<>()).add(run));
-        types.entrySet().stream()
-                .sorted(Comparator.comparingLong((Map.Entry<String, List<FileWork.Run>> type) -> worker(type.getValue()))
-                        .reversed())
-                .forEach(type -> {
-                    List<FileWork.Run> ofType = type.getValue();
-                    List<String> notes = new ArrayList<>();
-                    long failed = ofType.stream().filter(FileWork.Run::failed).count();
-                    long notTimed = ofType.stream().filter(run -> run.workerNanos() < 0).count();
-                    if (failed > 0) {
-                        notes.add(failed + " failed");
-                    }
-                    if (notTimed > 0) {
-                        notes.add(notTimed + " not timed");
-                    }
-                    row(out, "    ", worker(ofType), type.getKey() + ": " + counted(ofType.size(), "task")
-                            + (notes.isEmpty() ? "" : " (" + String.join(", ", notes) + ")"));
-                });
+        ranked(types, Report::worker).forEach(type -> {
+            List<FileWork.Run> ofType = type.value();
+            List<String> notes = new ArrayList<>();
+            long failed = ofType.stream().filter(FileWork.Run::failed).count();
+            long notTimed = ofType.stream().filter(run -> run.workerNanos() < 0).count();
+            if (failed > 0) {
+                notes.add(failed + " failed");
+            }
+            if (notTimed > 0) {
+                notes.add(notTimed + " not timed");
+            }
+            row(out, "    ", type.nanos(), type.name() + ": " + counted(ofType.size(), "task")
+                    + (notes.isEmpty() ? "" : " (" + String.join(", ", notes) + ")"));
+        });
 
         out.append("  The ").append(SLOWEST).append(" slowest tasks on a worker\n");
         runs.stream().filter(run -> run.workerNanos() >= 0)
@@ -249,11 +257,8 @@ public final class Report {
                 unnamed.add(run);
             }
         });
-        mods.entrySet().stream()
-                .sorted(Comparator.comparingLong((Map.Entry<String, List<FileWork.Run>> mod) -> worker(mod.getValue()))
-                        .reversed().thenComparing(Map.Entry::getKey))
-                .forEach(mod -> row(out, "    ", worker(mod.getValue()), mod.getKey() + "  ("
-                        + counted(mod.getValue().size(), "task") + ")"));
+        ranked(mods, Report::worker).forEach(mod -> row(out, "    ", mod.nanos(), mod.name() + "  ("
+                + counted(mod.value().size(), "task") + ")"));
         row(out, "    ", worker(game), "the game's own, in its folder  (" + counted(game.size(), "task") + ")");
         if (!elsewhere.isEmpty()) {
             row(out, "    ", worker(elsewhere), "in no mod's or the game's folder  ("
@@ -261,6 +266,15 @@ public final class Report {
         }
         row(out, "    ", worker(unnamed), "named without a file's path, so in no folder  ("
                 + counted(unnamed.size(), "task") + ")");
+    }
+
+    // the largest total first, then by name
+    private static <V> List<Ranked<V>> ranked(Map<String, V> groups, ToLongFunction<V> total) {
+        return groups.entrySet().stream()
+                .map(group -> new Ranked<>(group.getKey(), group.getValue(), total.applyAsLong(group.getValue())))
+                .sorted(Comparator.comparingLong((Ranked<V> group) -> group.nanos()).reversed()
+                        .thenComparing(Ranked::name))
+                .toList();
     }
 
     private static long worker(List<FileWork.Run> runs) {

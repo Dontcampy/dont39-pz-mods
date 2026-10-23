@@ -14,7 +14,10 @@
 //   compiled in.
 // - Per-subset values of TryMode137 in named variables: dynamically indexed arrays spilled to local memory.
 // - A barrier after each EncodeBlock reduction pass, where the HLSL relied on lockstep execution.
-// - Bounds checks on block ids and partitions; groups are numbered y * 65535 + x over a 2D grid.
+// - Bounds checks on block ids and partitions; groups are numbered row by row over a 2D grid, and those past the last
+//   block return at once.
+// - TryMode137 skips a block the passes before encoded without error.
+// - Each entry declares only the shared fields it uses; TryMode137 keeps its block's pixels in an array of their own.
 // - EncodeBlock picks each pixel's index by its smallest error and fixes the anchor index afterwards by swapping the
 //   subset's endpoints and mirroring its indices; the try passes keep the HLSL's projection (half the GPU time, the
 //   same quality).
@@ -58,23 +61,40 @@ const float g_alpha_weight = 4.0;
 #define MAX_UINT 0xFFFFFFFFu
 #define SYNC memoryBarrierShared(); barrier()
 
+// each entry declares only the fields it uses: shared memory per group limits the groups an SM runs at once
 struct BufferShared {
+#ifndef ENTRY_137
     uvec4 pixel;
+#endif
     uint error;
     uint mode;
-    uint part;
-    uint index_selector;
+#ifndef ENTRY_ENCODE
     uint rotation;
+#endif
+#ifdef ENTRY_137
+    uint part;
+#endif
+#ifdef ENTRY_456
+    uint index_selector;
+#endif
+#ifndef ENTRY_137
     uvec4 endPoint_low;
     uvec4 endPoint_high;
+#endif
+#ifdef ENTRY_ENCODE
     uvec4 endPoint_low_quantized;
     uvec4 endPoint_high_quantized;
+#endif
 };
 shared BufferShared shared_temp[64];
+#ifdef ENTRY_137
+// the group's one block
+shared uvec4 shared_pixel[16];
+#endif
 
-// GL_MAX_COMPUTE_WORK_GROUP_COUNT is at least 65535 per dimension
+// GL_MAX_COMPUTE_WORK_GROUP_COUNT is at least 65535 per dimension, so a level's groups span rows
 uint groupIndex() {
-    return gl_WorkGroupID.y * 65535u + gl_WorkGroupID.x;
+    return gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
 }
 
 uvec4 loadPixel(uint base_x, uint base_y, uint t) {
@@ -197,6 +217,10 @@ void compress_endpoints7(inout uvec4 endPoint[2], uvec2 P, out uvec4 quantized[2
 #ifdef ENTRY_456
 // modes 4 (rotations, index selector), 5 (rotations) and 6 (p-bits); 4 blocks a group, 16 candidates a block
 void main() {
+    // the whole group, so before any barrier
+    if (groupIndex() * 4u >= g_num_total_blocks) {
+        return;
+    }
     uint GI = gl_LocalInvocationIndex;
     uint blockInGroup = GI / 16u;
     uint blockID = groupIndex() * 4u + blockInGroup;
@@ -366,12 +390,22 @@ void compress137(inout uvec4 lo, inout uvec4 hi, uint p) {
 void main() {
     uint GI = gl_LocalInvocationIndex;
     uint blockID = groupIndex();
+    if (blockID >= g_num_total_blocks) {
+        return;
+    }
+    // no partition beats an exact block (transparent, flat, padding); one block a group, so before any barrier
+    if (g_InBuff[blockID].x == 0u) {
+        if (GI == 0u) {
+            g_OutBuff[blockID] = g_InBuff[blockID];
+        }
+        return;
+    }
     uint threadInBlock = GI;
     uint block_y = blockID / g_num_block_x;
     uint block_x = blockID - block_y * g_num_block_x;
 
     if (threadInBlock < 16u) {
-        shared_temp[GI].pixel = loadPixel(block_x * 4u, block_y * 4u, threadInBlock);
+        shared_pixel[GI] = loadPixel(block_x * 4u, block_y * 4u, threadInBlock);
     }
     SYNC;
 
@@ -380,7 +414,7 @@ void main() {
     // dynamically indexed per-subset arrays spill to local memory: 40 times slower
     uvec4 lo0 = uvec4(MAX_UINT), hi0 = uvec4(0u), lo1 = uvec4(MAX_UINT), hi1 = uvec4(0u);
     for (uint i = 0u; i < 16u; i++) {
-        uvec4 pixel = shared_temp[i].pixel;
+        uvec4 pixel = shared_pixel[i];
         if (((bits >> i) & 1u) == 1u) {
             lo1 = min(lo1, pixel);
             hi1 = max(hi1, pixel);
@@ -405,11 +439,11 @@ void main() {
         }
         int n0 = idot(s0, s0);
         int n1 = idot(s1, s1);
-        if (flipNeeded(idot(s0, ivec4(shared_temp[0].pixel) - ivec4(a0)), n0)) {
+        if (flipNeeded(idot(s0, ivec4(shared_pixel[0]) - ivec4(a0)), n0)) {
             s0 = -s0;
             swap4(a0, b0);
         }
-        if (flipNeeded(idot(s1, ivec4(shared_temp[candidateFixUpIndex1D[part]].pixel) - ivec4(a1)), n1)) {
+        if (flipNeeded(idot(s1, ivec4(shared_pixel[candidateFixUpIndex1D[part]]) - ivec4(a1)), n1)) {
             s1 = -s1;
             swap4(a1, b1);
         }
@@ -420,7 +454,7 @@ void main() {
             ivec4 sp = in1 ? s1 : s0;
             uvec4 a = in1 ? a1 : a0;
             uvec4 b = in1 ? b1 : b0;
-            uvec4 pixel = shared_temp[i].pixel;
+            uvec4 pixel = shared_pixel[i];
             uint color_index = stepIndex(idot(sp, ivec4(pixel) - ivec4(a)), in1 ? n1 : n0, step_selector);
             uint w = aWeight[step_selector][color_index];
             uvec4 pixel_r = ((64u - w) * a + w * b + 32u) >> 6u;
@@ -633,6 +667,9 @@ uvec4 block_package7(uint part, uint threadBase) {
 shared uint shared_flip[4][2];
 
 void main() {
+    if (groupIndex() * 4u >= g_num_total_blocks) {
+        return;
+    }
     uint GI = gl_LocalInvocationIndex;
     uint blockInGroup = GI / 16u;
     uint blockID = groupIndex() * 4u + blockInGroup;

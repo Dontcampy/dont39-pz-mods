@@ -1,0 +1,12 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer rules and guide index"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook API, default gate, JDK-only glue"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "throw on mismatch, GL state restore, settings rows"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, GL work on the render thread"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "where shared sources and Lua files go"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "log prefix and lines"}
+{"file": ".trellis/tasks/archive/2026-10/10-22-gpu-bc7-encoder/design.md", "reason": "BC7 encoder design this task changes"}
+{"file": ".trellis/tasks/archive/2026-10/10-22-gpu-bc7-encoder/verification.md", "reason": "BC7 numbers to compare against"}
+{"file": ".trellis/tasks/archive/2026-10/10-22-gpu-bc7-encoder/research/bc7-prototype.md", "reason": "perf traps: spills, uniforms, ring, per-pass timing"}
+{"file": ".trellis/tasks/archive/2026-10/10-21-asset-wait-breakdown/prd.md", "reason": "what the asset-wait report must show"}
+{"file": "faster-loading/README.md", "reason": "the mod: switches and checks"}
+{"file": "loading-progress/README.md", "reason": "report format documented for users"}

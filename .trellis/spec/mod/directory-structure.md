@@ -22,6 +22,7 @@ buildSrc/src/main/kotlin/
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
   pz-publish.gradle.kts              the Maven Central artifacts (zabric, zabric-processor)
+  pz-switches.gradle.kts             shipped mods with an ini of switches: mod-settings/ under the mod's own names
   mod/                               machine paths, mod.info, typed extensions, JVM levels, version catalog
   feature/                           the variants projects exchange data through, feature descriptors, initFeatures(),
                                      the merged media folder (MergeMedia.kt)
@@ -60,6 +61,10 @@ loading-progress/                    shipped mod: client-only Java mod, preloade
                                      frames and a timing report per load, switches on a mod options page (its README)
 faster-loading/                      shipped mod: client-only Java mod, preloaded with launch-wide hooks; load-time fixes,
                                      one switch each in its ini and options page (its README)
+mod-settings/                        no project: the switches ini reader/writer (Switches.java), its options page
+                                     (Switches.lua) and the page's test check (SwitchesPage.java), which pz-switches
+                                     compiles into <javaPkgName>.settings and ships as <modId>_Switches.lua, since the
+                                     mods share one class loader and one Lua require namespace
 ```
 
 Build, signing, and packaging behavior (toolchain, Java release level, compile-only jars, how features' classes and Lua

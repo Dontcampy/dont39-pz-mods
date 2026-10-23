@@ -13,10 +13,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SettingsTest {
     private static final Settings OFF = new Settings(EnumSet.noneOf(Fix.class));
+    private static final Path PAGE = Path.of("src/main/lua/client/Dont39FasterLoading_Options.lua");
+    private static final Path TRANSLATE = Path.of("src/main/lua/shared/Translate");
 
     @TempDir
     Path dir;
@@ -157,5 +160,37 @@ class SettingsTest {
         Path file = Files.createDirectories(dir.resolve(Settings.FILE));
         assertEquals(Settings.DEFAULTS, load(file));
         assertEquals(1, problems.size(), problems.toString());
+    }
+
+    @Test
+    void theOptionsPageListsTheFixes() throws IOException {
+        SwitchesPage.check(Settings.SWITCHES, PAGE, TRANSLATE);
+    }
+
+    @Test
+    void theOptionsPageCheckFindsADifference() throws IOException {
+        String page = Files.readString(PAGE);
+        Path translate = dir.resolve("Translate");
+        for (String language : List.of("EN", "CN")) {
+            Files.createDirectories(translate.resolve(language));
+            Files.copy(TRANSLATE.resolve(language).resolve("UI.json"), translate.resolve(language).resolve("UI.json"));
+        }
+        // the order, a description, a key
+        for (String changed : List.of(
+                page.replace("\"stripComments\"", "\"x\"").replace("\"textureCompression\"", "\"stripComments\"")
+                        .replace("\"x\"", "\"textureCompression\""),
+                page.replace("side by side", "together"),
+                page.replace("\"luaFolderWalk\"", "\"luaFolders\""))) {
+            Path file = dir.resolve("Changed.lua");
+            Files.writeString(file, changed);
+            assertThrows(AssertionError.class, () -> SwitchesPage.check(Settings.SWITCHES, file, translate), changed);
+        }
+        // a tooltip missing in one language
+        Path cn = translate.resolve("CN").resolve("UI.json");
+        Files.writeString(cn, Files.readString(cn).replace("\"UI_Dont39FasterLoading_TextureBc7Tooltip\"",
+                "\"UI_Dont39FasterLoading_TextureBc7Tip\""));
+        AssertionError error = assertThrows(AssertionError.class,
+                () -> SwitchesPage.check(Settings.SWITCHES, PAGE, translate));
+        assertTrue(error.getMessage().contains("CN"), error.getMessage());
     }
 }

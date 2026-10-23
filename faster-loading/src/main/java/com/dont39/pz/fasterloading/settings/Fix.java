@@ -1,7 +1,10 @@
 package com.dont39.pz.fasterloading.settings;
 
-/** The mod's fixes, each with its switch; the options page lists the same keys. */
-public enum Fix {
+/**
+ * The mod's fixes, each with its switch; the options page lists the same keys. {@link #TEXTURE_BC7} is an option of
+ * {@link #TEXTURE_COMPRESSION}, not a fix of its own: it chooses that fix's encoder and does nothing with it off.
+ */
+public enum Fix implements Switches.Key {
     STRIP_COMMENTS("stripComments", "comment stripping",
             "remove the comments of script and tile files in one pass, with the game's result"),
     TEXTURE_COMPRESSION("textureCompression", "texture compression",
@@ -26,7 +29,7 @@ public enum Fix {
         this.description = description;
     }
 
-    /** Its key in the settings file. */
+    @Override
     public String key() {
         return key;
     }
@@ -36,7 +39,8 @@ public enum Fix {
         return label;
     }
 
-    String description() {
+    @Override
+    public String description() {
         return description;
     }
 }

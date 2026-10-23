@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL21;
 
 import java.nio.ByteBuffer;
+import java.util.function.Supplier;
 
 /** Uploading a level the game asked the driver to compress, compressed by an {@link Encoder} instead. */
 public final class Upload {
@@ -39,12 +40,26 @@ public final class Upload {
      * the GL reports an error for it.
      */
     public static void compressed(Encoder encoder, int target, int level, int width, int height, ByteBuffer pixels) {
+        checkSize(width, height, pixels);
         clearErrors();
         encoder.define(target, level, width, height, pixels);
+        checkErrors(() -> "for a " + width + "x" + height + " level " + level + " from " + encoder.id());
+    }
+
+    /** Throws unless {@code rgba} holds a {@code width}×{@code height} RGBA level from its position. */
+    public static void checkSize(int width, int height, ByteBuffer rgba) {
+        long bytes = (long) width * height * 4;
+        if (width < 1 || height < 1 || rgba.remaining() < bytes) {
+            throw new IllegalArgumentException(width + "x" + height + " RGBA needs " + bytes
+                    + " bytes, the buffer has " + rgba.remaining());
+        }
+    }
+
+    /** Throws when the GL reports an error, saying what it was {@code doing}. */
+    public static void checkErrors(Supplier<String> doing) {
         int error = GL11.glGetError();
         if (error != GL11.GL_NO_ERROR) {
-            throw new IllegalStateException("the GL reported 0x" + Integer.toHexString(error) + " for a " + width + "x"
-                    + height + " level " + level + " from " + encoder.id());
+            throw new IllegalStateException("the GL reported 0x" + Integer.toHexString(error) + " " + doing.get());
         }
     }
 

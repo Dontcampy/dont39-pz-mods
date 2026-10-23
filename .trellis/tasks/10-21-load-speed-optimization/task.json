@@ -24,7 +24,8 @@
     "10-21-lua-folder-walk",
     "10-21-asset-wait-speedup",
     "10-22-gpu-bc7-encoder",
-    "10-22-depth-map-speedup"
+    "10-22-depth-map-speedup",
+    "10-23-pr24-review-fixes"
   ],
   "parent": null,
   "relatedFiles": [],

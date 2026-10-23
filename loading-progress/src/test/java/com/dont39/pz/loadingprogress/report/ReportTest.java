@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReportTest {
@@ -123,12 +124,13 @@ class ReportTest {
                 item(Step.LUA, Item.LUA, 2, 5, "x.lua", "C:/mods/A/42/media/lua/x.lua", 51.5, 0.25));
         String csv = Report.csv(end(timed, ms(60), 0), context(folders));
         assertEquals(List.of(
-                "flow,step,kind,index,total,name,mod,start_ms,duration_ms,task_type,worker_ms,task_failed",
-                "launch,loading_world,step,11,13,Loading the world,,0.000,20.000,,,",
-                "launch,loading_world,world,0,0,\"Say \"\"hi\"\", world\",,20.000,30.500,,,",
-                "launch,loading_world,chunk,3,9,,,50.500,1.000,,,",
-                "launch,lua,lua,2,5,C:/mods/A/42/media/lua/x.lua,A,51.500,0.250,,,"), csv.lines().toList());
+                "flow,step,kind,index,total,name,mod,start_ms,duration_ms",
+                "launch,loading_world,step,11,13,Loading the world,,0.000,20.000",
+                "launch,loading_world,world,0,0,\"Say \"\"hi\"\", world\",,20.000,30.500",
+                "launch,loading_world,chunk,3,9,,,50.500,1.000",
+                "launch,lua,lua,2,5,C:/mods/A/42/media/lua/x.lua,A,51.500,0.250"), csv.lines().toList());
         assertTrue(csv.endsWith("\r\n"));
+        assertNull(Report.filesCsv(end(timed, ms(60), 0), context(folders)), "no asset wait, no file tasks");
     }
 
     private static long clock(int second, int milli) {
@@ -137,9 +139,35 @@ class ReportTest {
     }
 
     private static Progress.End withWait(AssetWait wait) {
+        return withWait(wait, List.of(step(Step.LOADING_WORLD, 11, 13, 0, 120_000)));
+    }
+
+    private static Progress.End withWait(AssetWait wait, List<Timed> timed) {
         Progress.Gap gap = new Progress.Gap(0, Step.LOADING_WORLD, null, null, 0);
         return new Progress.End(Flow.START, Progress.Outcome.DONE, null, ms(120_000), 13, Step.ENTERING_WORLD, 0, 0, 0,
-                gap, gap, null, gap, List.of(step(Step.LOADING_WORLD, 11, 13, 0, 120_000)), 0, wait);
+                gap, gap, null, gap, timed, 0, wait);
+    }
+
+    @Test
+    void theAssetWaitsTimeIsItsRecordsOnly() {
+        List<Timed> timed = List.of(
+                step(Step.LOADING_WORLD, 11, 13, 0, 100),
+                item(Step.LOADING_WORLD, Item.ASSET_WAIT, 0, 0, null, null, 100, 300),
+                item(Step.LOADING_WORLD, Item.ANIMATION, 20, 20, null, null, 400, 200),
+                item(Step.LOADING_WORLD, Item.ASSET_WAIT, 0, 0, null, null, 600, 400),
+                step(Step.LOADING_WORLD, 11, 13, 1000, 50));
+        AssetWait wait = new AssetWait(ms(100), ms(900), clock(15, 0), clock(15, 900), true, 0, 0, 0, 0, 0, 0, 0,
+                List.of());
+        String summary = Report.summary(withWait(wait, timed), context(Map.of()));
+        assertTrue(summary.contains("     900 ms  from 21:10:15.000 to 21:10:15.900"), summary);
+        assertFalse(summary.contains("asset wait:"), "not again among the items, without the animations: " + summary);
+        assertTrue(summary.contains("  animations: 1, 200 ms\n"), summary);
+        assertTrue(summary.contains("1050 ms  11 / 13  Loading the world  (outside its items 150 ms)"),
+                "the step's lines still add up: " + summary);
+        List<String> csv = Report.csv(withWait(wait, timed), context(Map.of())).lines().toList();
+        assertEquals("start,loading_world,asset_wait,0,0,,,100.000,300.000", csv.get(2), "the timeline keeps it");
+        assertEquals(List.of(Report.FILES_CSV_HEADER), Report.filesCsv(withWait(wait, timed), context(Map.of()))
+                .lines().toList());
     }
 
     @Test
@@ -181,16 +209,16 @@ class ReportTest {
         assertFalse(summary.contains("in no mod's or the game's folder"), "only when there are such: " + summary);
         assertTrue(summary.indexOf("Asset wait") < summary.indexOf("Items by kind"), "after the steps: " + summary);
 
-        List<String> csv = Report.csv(end, context).lines().toList();
+        assertEquals(2, Report.csv(end, context).lines().count(), "file tasks are not lines of the log");
+        String files = Report.filesCsv(end, context);
         assertEquals(List.of(
-                "start,loading_world,file_task,0,0,C:/mods/A/42/media/models_X/Car.fbx,A,73000.000,7000.000,"
-                        + "FileTask_LoadPhysicsShape,3000.000,",
-                "start,loading_world,file_task,0,0,C:/mods/A/42/media/models_X/Van.fbx,A,73000.000,8000.000,"
-                        + "FileTask_LoadPhysicsShape,1500.500,failed",
-                "start,loading_world,file_task,0,0,Tiles2x/floor_1,,,,FileTask_LoadPackImage,40.000,",
-                "start,loading_world,file_task,0,0,C:/game/media/depth/DEPTH_a.png,,73500.000,1500.000,"
-                        + "TileDepthTextures$LoadTask,,"),
-                csv.subList(2, csv.size()));
+                "type,name,mod,queued_ms,done_ms,worker_ms,failed",
+                "FileTask_LoadPhysicsShape,C:/mods/A/42/media/models_X/Car.fbx,A,73000.000,80000.000,3000.000,",
+                "FileTask_LoadPhysicsShape,C:/mods/A/42/media/models_X/Van.fbx,A,73000.000,81000.000,1500.500,failed",
+                "FileTask_LoadPackImage,Tiles2x/floor_1,,,74000.000,40.000,",
+                "TileDepthTextures$LoadTask,C:/game/media/depth/DEPTH_a.png,,73500.000,75000.000,,"),
+                files.lines().toList());
+        assertTrue(files.endsWith("\r\n"));
     }
 
     @Test
@@ -227,10 +255,27 @@ class ReportTest {
                 """, perMod.substring(0, perMod.indexOf("\nItems by kind")));
         assertTrue(summary.contains("tiki.pack/tiki167  [Tiki]\n"), summary);
 
-        List<String> csv = Report.csv(end, context).lines().toList();
-        assertEquals("start,loading_world,file_task,0,0,C:/mods/Tiki/42/media/texturepacks/tiki.pack/tiki168,Tiki,"
-                + "73000.000,1000.000,FileTask_LoadPackImage,200.000,", csv.get(3));
-        assertTrue(csv.get(4).contains("Tiles2x.pack/floor_1,,"), "the game's own names no mod: " + csv.get(4));
+        List<String> csv = Report.filesCsv(end, context).lines().toList();
+        assertEquals("FileTask_LoadPackImage,C:/mods/Tiki/42/media/texturepacks/tiki.pack/tiki168,Tiki,"
+                + "73000.000,74000.000,200.000,", csv.get(2));
+        assertTrue(csv.get(3).contains("Tiles2x.pack/floor_1,,"), "the game's own names no mod: " + csv.get(3));
+    }
+
+    @Test
+    void groupsWithTheSameTimeAreRankedByName() {
+        List<FileWork.Run> runs = List.of(
+                new FileWork.Run("B", "C:/mods/B/b.png", 0, ms(1), ms(10), false),
+                new FileWork.Run("A", "C:/mods/A/a.png", 0, ms(1), ms(10), false),
+                new FileWork.Run("C", "C:/mods/C/c.png", 0, ms(1), ms(20), false));
+        AssetWait wait = new AssetWait(0, ms(100), clock(15, 0), clock(15, 100), true, 1, 0, 3, 1, ms(40), 0, 0, runs);
+        String summary = Report.summary(withWait(wait),
+                context(Map.of("A", "C:/mods/A", "B", "C:/mods/B", "C", "C:/mods/C")));
+        String types = summary.substring(summary.indexOf("  By type"), summary.indexOf("  The " + Report.SLOWEST));
+        assertTrue(types.indexOf("C: 1") < types.indexOf("A: 1") && types.indexOf("A: 1") < types.indexOf("B: 1"),
+                types);
+        String mods = summary.substring(summary.indexOf("  Worker time per mod"));
+        assertTrue(mods.indexOf("  C  (") < mods.indexOf("  A  (") && mods.indexOf("  A  (") < mods.indexOf("  B  ("),
+                mods);
     }
 
     @Test

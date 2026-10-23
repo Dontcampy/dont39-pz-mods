@@ -64,8 +64,8 @@ class Dxt5EncoderTest {
 
     // the image grown to whole blocks by repeating its last column and row
     private static byte[] padded(byte[] rgba, int width, int height) {
-        int w = (width + 3) / 4 * 4;
-        int h = (height + 3) / 4 * 4;
+        int w = Blocks.columns(width) * 4;
+        int h = Blocks.rows(height) * 4;
         byte[] out = new byte[w * h * 4];
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
@@ -88,8 +88,9 @@ class Dxt5EncoderTest {
             ByteBuffer in = direct(source, 0);
             ByteBuffer whole = direct(grown, 0);
             try (Blocks blocks = parallel.encode(in, width, height);
-                    Blocks expected = parallel.encode(whole, (width + 3) / 4 * 4, (height + 3) / 4 * 4)) {
-                assertEquals(((width + 3) / 4) * ((height + 3) / 4) * 16, blocks.data().remaining(),
+                    Blocks expected = parallel.encode(whole, Blocks.columns(width) * 4,
+                            Blocks.rows(height) * 4)) {
+                assertEquals(Blocks.count(width, height) * 16, blocks.data().remaining(),
                         width + "x" + height);
                 assertArrayEquals(bytes(expected), bytes(blocks), width + "x" + height);
             } finally {

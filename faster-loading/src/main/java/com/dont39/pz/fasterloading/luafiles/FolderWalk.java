@@ -53,46 +53,62 @@ public final class FolderWalk {
         return canonicalCalls;
     }
 
-    // canonical: fo's path is a canonical folder's path plus a name that folder listed
-    private void visit(File fo, boolean canonical) throws IOException {
-        if (fo.isDirectory()) {
-            String[] names = fo.list();
-            if (names == null) {
-                // the game's loop throws a NullPointerException here
-                throw new IOException("the folder " + fo + " could not be listed");
+    // listed: fo's path is a canonical folder's path plus a name that folder listed. The game asks the disk whether
+    // fo is a folder and, for a folder, looks up its canonical path; one attribute read answers both for a listed
+    // name, except where the lookup could change it.
+    private void visit(File fo, boolean listed) throws IOException {
+        Entry entry = listed ? entry(fo) : fo.isDirectory() ? Entry.LOOKUP : Entry.FILE;
+        if (entry == Entry.FILE) {
+            String path = fo.getAbsolutePath();
+            if (path.toLowerCase().endsWith(".lua")) {
+                files.add(relative.apply(base, path).toLowerCase(Locale.ENGLISH));
             }
-            if (names.length == 0) {
-                return;
-            }
-            String parent;
-            if (canonical && unchanged(fo)) {
-                parent = fo.getAbsolutePath();
-            } else {
-                canonicalCalls++;
-                parent = fo.getCanonicalFile().getAbsolutePath();
-            }
-            for (String name : names) {
-                visit(new File(parent + File.separator + name), true);
-            }
-        } else if (fo.getAbsolutePath().toLowerCase().endsWith(".lua")) {
-            files.add(relative.apply(base, fo.getAbsolutePath()).toLowerCase(Locale.ENGLISH));
+            return;
+        }
+        String[] names = fo.list();
+        if (names == null) {
+            // the game's loop throws a NullPointerException here
+            throw new IOException("the folder " + fo + " could not be listed");
+        }
+        if (names.length == 0) {
+            return;
+        }
+        String parent;
+        if (entry == Entry.CANONICAL) {
+            parent = fo.getAbsolutePath();
+        } else {
+            canonicalCalls++;
+            parent = fo.getCanonicalFile().getAbsolutePath();
+        }
+        for (String name : names) {
+            visit(new File(parent + File.separator + name), true);
         }
     }
 
+    private enum Entry {
+        FILE,
+        // a folder whose path is already canonical
+        CANONICAL,
+        // a folder whose path takes the game's lookup
+        LOOKUP
+    }
+
     // The lookup changes a listed name only through a link (Windows reparse points read as links or "other") or the
-    // name normalization Windows applies to a trailing dot or space, which also fails the attribute read.
-    private static boolean unchanged(File folder) {
-        String name = folder.getName();
-        if (name.endsWith(".") || name.endsWith(" ")) {
-            return false;
+    // name normalization Windows applies to a trailing dot or space, which also fails the attribute read. There the
+    // game's own folder check decides, following the link as it does.
+    private static Entry entry(File fo) {
+        String name = fo.getName();
+        if (!name.endsWith(".") && !name.endsWith(" ")) {
+            try {
+                BasicFileAttributes attributes = Files.readAttributes(fo.toPath(), BasicFileAttributes.class,
+                        LinkOption.NOFOLLOW_LINKS);
+                if (!attributes.isSymbolicLink() && !attributes.isOther()) {
+                    return attributes.isDirectory() ? Entry.CANONICAL : Entry.FILE;
+                }
+            } catch (IOException | InvalidPathException e) {
+                // as below
+            }
         }
-        BasicFileAttributes attributes;
-        try {
-            attributes = Files.readAttributes(folder.toPath(), BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-        } catch (IOException | InvalidPathException e) {
-            // the game's lookup then decides, as it would
-            return false;
-        }
-        return !attributes.isSymbolicLink() && !attributes.isOther();
+        return fo.isDirectory() ? Entry.LOOKUP : Entry.FILE;
     }
 }

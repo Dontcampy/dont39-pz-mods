@@ -57,12 +57,10 @@ public final class Dxt5Encoder implements Encoder {
 
     /** The blocks of {@code width}×{@code height} tightly packed RGBA bytes starting at {@code rgba}'s position. */
     public Blocks encode(ByteBuffer rgba, int width, int height) {
-        if (width < 1 || height < 1 || rgba.remaining() < (long) width * height * 4) {
-            throw new IllegalArgumentException(width + "x" + height + " RGBA needs " + (long) width * height * 4
-                    + " bytes, the buffer has " + rgba.remaining());
-        }
-        int columns = (width + 3) / 4;
-        int rows = (height + 3) / 4;
+        // it reads native memory, and tests call it directly
+        Upload.checkSize(width, height, rgba);
+        int columns = Blocks.columns(width);
+        int rows = Blocks.rows(height);
         ByteBuffer out = MemoryUtil.memAlloc(columns * rows * 16);
         long src = MemoryUtil.memAddress(rgba);
         long dst = MemoryUtil.memAddress(out);
@@ -81,15 +79,17 @@ public final class Dxt5Encoder implements Encoder {
     }
 
     private void parallel(long src, int width, int height, long dst, int rows, int parts) {
-        List<Future<?>> started = new ArrayList<>(parts);
+        List<Future<?>> started = new ArrayList<>(parts - 1);
         Throwable failure = null;
         try {
             ExecutorService executor = pool();
-            for (int p = 0; p < parts; p++) {
+            for (int p = 0; p < parts - 1; p++) {
                 int first = (int) ((long) rows * p / parts);
                 int end = (int) ((long) rows * (p + 1) / parts);
                 started.add(executor.submit(() -> rows(src, width, height, dst, first, end)));
             }
+            // the last part on the calling thread, which would otherwise wait idle
+            rows(src, width, height, dst, (int) ((long) rows * (parts - 1) / parts), rows);
         } catch (RuntimeException | Error e) {
             failure = e;
         }
@@ -120,7 +120,7 @@ public final class Dxt5Encoder implements Encoder {
 
     // block rows [first, end); a partial block repeats its last column and row, as encoders commonly pad
     private static void rows(long src, int width, int height, long dst, int first, int end) {
-        int columns = (width + 3) / 4;
+        int columns = Blocks.columns(width);
         int[] alpha = new int[16];
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long block = stack.nmalloc(64);
@@ -154,7 +154,8 @@ public final class Dxt5Encoder implements Encoder {
                 p = pool;
                 if (p == null) {
                     AtomicInteger n = new AtomicInteger();
-                    p = Executors.newFixedThreadPool(threads, r -> {
+                    // with the calling thread, threads in all
+                    p = Executors.newFixedThreadPool(threads - 1, r -> {
                         Thread t = new Thread(r, "Dont39FasterLoading-texture-" + n.incrementAndGet());
                         t.setDaemon(true);
                         return t;

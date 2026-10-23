@@ -9,10 +9,10 @@ final class Dxt5Decoder {
 
     /** RGBA bytes of a {@code width}×{@code height} level from its blocks. */
     static byte[] decode(ByteBuffer blocks, int width, int height) {
-        int columns = (width + 3) / 4;
+        int columns = Blocks.columns(width);
         byte[] out = new byte[width * height * 4];
         int[] palette = new int[4];
-        for (int by = 0; by < (height + 3) / 4; by++) {
+        for (int by = 0; by < Blocks.rows(height); by++) {
             for (int bx = 0; bx < columns; bx++) {
                 int at = blocks.position() + (by * columns + bx) * 16;
                 long alphaBlock = 0;

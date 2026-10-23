@@ -1,5 +1,6 @@
 package com.dont39.pz.fasterloading.textures.bc7;
 
+import com.dont39.pz.fasterloading.textures.Blocks;
 import com.dont39.pz.fasterloading.textures.Encoder;
 import com.dont39.pz.fasterloading.textures.Upload;
 import org.lwjgl.opengl.GL11;
@@ -47,6 +48,8 @@ public final class Bc7Encoder implements Encoder {
     private final int triedA;
     private final int triedB;
     private final int output;
+    // the mipmapped texture whose chain this allocated, while its levels arrive in order
+    private Chain chain;
 
     /**
      * Builds the programs and buffers on the GL thread with the context current; throws with the GL's log when a
@@ -67,11 +70,7 @@ public final class Bc7Encoder implements Encoder {
         triedA = storage(GL15.glGenBuffers(), BLOCK_BYTES, GL15.GL_DYNAMIC_COPY);
         triedB = storage(GL15.glGenBuffers(), BLOCK_BYTES, GL15.GL_DYNAMIC_COPY);
         output = storage(GL15.glGenBuffers(), BLOCK_BYTES, GL15.GL_DYNAMIC_COPY);
-        int error = GL11.glGetError();
-        if (error != GL11.GL_NO_ERROR) {
-            throw new IllegalStateException("the GL reported 0x" + Integer.toHexString(error) + " while building "
-                    + id());
-        }
+        Upload.checkErrors(() -> "while building " + id());
     }
 
     @Override
@@ -86,11 +85,6 @@ public final class Bc7Encoder implements Encoder {
 
     @Override
     public void define(int target, int level, int width, int height, ByteBuffer rgba) {
-        long pixelBytes = (long) width * height * 4;
-        if (width < 1 || height < 1 || rgba.remaining() < pixelBytes) {
-            throw new IllegalArgumentException(width + "x" + height + " RGBA needs " + pixelBytes
-                    + " bytes, the buffer has " + rgba.remaining());
-        }
         int rows = stripRows(width, height);
         GlState saved = GlState.save(INPUT, TRIED, OUTPUT);
         Throwable failure = null;
@@ -109,19 +103,30 @@ public final class Bc7Encoder implements Encoder {
         // a level defined from the GPU's output per call kept the render thread waiting for the GPU (10 ms a page).
         // The game defines every level next, so a mipmapped texture's chain is allocated at its first level and each
         // level filled.
-        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-        if (!allocated(target, level, width, height)) {
-            allocate(target, level, width, height, mipmapped(target));
+        int texture = target == GL11.GL_TEXTURE_2D ? GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D) : 0;
+        Chain next = chain;
+        chain = null;
+        // the next level of the chain allocated here skips three queries, each a wait for the driver's thread
+        if (next == null || !next.holds(texture, level, width, height)) {
+            next = null;
+            if (!allocated(target, level, width, height)) {
+                boolean mipmapped = mipmapped(target);
+                allocate(target, level, width, height, mipmapped);
+                if (mipmapped && texture != 0) {
+                    next = new Chain(texture, level, width, height);
+                }
+            }
         }
         for (int y = 0; y < height; y += rows) {
             strip(target, level, y, width, Math.min(rows, height - y), rgba);
         }
+        chain = next == null ? null : next.after();
     }
 
     // rows [y, y + height) of the level; y is a multiple of 4, so the strip's blocks are the level's
     private void strip(int target, int level, int y, int width, int height, ByteBuffer rgba) {
-        int columns = (width + 3) / 4;
-        int blocks = blocks(width, height);
+        int columns = Blocks.columns(width);
+        int blocks = Blocks.count(width, height);
         int input = inputs[next];
         next = (next + 1) % RING;
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, input);
@@ -133,17 +138,18 @@ public final class Bc7Encoder implements Encoder {
 
         Groups fours = groups((blocks + 3) / 4);
         Groups ones = groups(blocks);
-        // each pass keeps the better of its own try and the one before, per block
-        dispatch(try456, triedB, triedA, fours);
+        // each pass keeps the better of its own try and the one before, per block, and the next reads it as storage
+        dispatch(try456, triedB, triedA, fours, GL43.GL_SHADER_STORAGE_BARRIER_BIT);
         int tried = triedA;
         for (int program : try137) {
             int better = tried == triedA ? triedB : triedA;
-            dispatch(program, tried, better, ones);
+            dispatch(program, tried, better, ones, GL43.GL_SHADER_STORAGE_BARRIER_BIT);
             tried = better;
         }
-        dispatch(encode, tried, output, fours);
+        // only the fill reads the output; the next pass to write a buffer this one reads or writes follows a try
+        // pass's barrier
+        dispatch(encode, tried, output, fours, GL42.GL_PIXEL_BUFFER_BARRIER_BIT);
 
-        GL42.glMemoryBarrier(GL42.GL_PIXEL_BUFFER_BARRIER_BIT);
         GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, output);
         GL13.glCompressedTexSubImage2D(target, level, 0, y, width, height, glInternalFormat(), blocks * 16, 0L);
     }
@@ -171,7 +177,7 @@ public final class Bc7Encoder implements Encoder {
     private void allocate(int target, int level, int width, int height, boolean chain) {
         while (true) {
             GL13.glCompressedTexImage2D(target, level, glInternalFormat(), width, height, 0,
-                    blocks(width, height) * 16, 0L);
+                    Blocks.count(width, height) * 16, 0L);
             if (!chain || width == 1 && height == 1) {
                 return;
             }
@@ -181,12 +187,13 @@ public final class Bc7Encoder implements Encoder {
         }
     }
 
-    private static void dispatch(int program, int in, int out, Groups groups) {
+    // barrier: what the next reader of out needs
+    private static void dispatch(int program, int in, int out, Groups groups, int barrier) {
         GL20.glUseProgram(program);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, TRIED, in);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, OUTPUT, out);
         GL43.glDispatchCompute(groups.x(), groups.y(), 1);
-        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+        GL42.glMemoryBarrier(barrier);
     }
 
     /**
@@ -194,7 +201,7 @@ public final class Bc7Encoder implements Encoder {
      * pixels as 16 times that) a strip; the last strip may be shorter.
      */
     public static int stripRows(int width, int height) {
-        int columns = (width + 3) / 4;
+        int columns = Blocks.columns(width);
         if (columns > STRIP_BLOCKS) {
             throw new IllegalArgumentException("a " + width
                     + " pixels wide level has more blocks a row than a strip holds");
@@ -203,27 +210,34 @@ public final class Bc7Encoder implements Encoder {
         return (int) Math.min(height, blockRows * 4L);
     }
 
-    /** The 4×4 blocks of a level, a partial block at the right and bottom edge counted whole. */
-    static int blocks(int width, int height) {
-        return ((width + 3) / 4) * ((height + 3) / 4);
-    }
-
-    /** The grid for {@code count} work groups, which the shader numbers {@code y * MAX_GROUPS + x}. */
+    /**
+     * The grid for {@code count} work groups, which the shader numbers row by row: as few rows as fit, each as short
+     * as covers the count, so fewer groups than rows lie past it.
+     */
     static Groups groups(int count) {
         if (count < 1) {
             throw new IllegalArgumentException("groups " + count);
-        }
-        if (count <= MAX_GROUPS) {
-            return new Groups(count, 1);
         }
         int y = (count + MAX_GROUPS - 1) / MAX_GROUPS;
         if (y > MAX_GROUPS) {
             throw new IllegalArgumentException("groups " + count + " exceed " + MAX_GROUPS + " x " + MAX_GROUPS);
         }
-        return new Groups(MAX_GROUPS, y);
+        return new Groups((count + y - 1) / y, y);
     }
 
     record Groups(int x, int y) {
+    }
+
+    // a texture's allocated chain, at the level expected next
+    record Chain(int texture, int level, int width, int height) {
+        boolean holds(int texture, int level, int width, int height) {
+            return texture == this.texture && level == this.level && width == this.width && height == this.height;
+        }
+
+        Chain after() {
+            return width == 1 && height == 1 ? null
+                    : new Chain(texture, level + 1, Math.max(1, width / 2), Math.max(1, height / 2));
+        }
     }
 
     private static String source() {

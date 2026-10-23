@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * The game's file tasks while the world loads, for the asset wait's part of the report. Game-free: the hooks pass the
@@ -22,13 +23,17 @@ import java.util.function.Function;
 public final class FileWork {
     // a texture decoder that waited at least this long slept on the upload budget; the game sleeps 20 ms at a time
     static final long SLEPT = TimeUnit.MILLISECONDS.toNanos(1);
+    // the game takes every done task at its next pump; a call's time still unmatched after this many pumps belongs to
+    // a task cancelled while it ran, whose result the game never takes
+    static final int KEPT_PUMPS = 3;
 
     /**
      * A task as the hooks describe it: {@code type} its class, {@code worker} the hook that times its call (the class
      * that declares it), {@code name} its file as the game names it (null when it has none), unless its call resolves
-     * one ({@link #callFile}); {@code future} its result once a worker ran it.
+     * one ({@link #callFile}); {@code callName} what its call names through {@link #callNamed}, or null;
+     * {@code future} its result once a worker ran it.
      */
-    public record Task(String type, String worker, String name, Future<?> future) {
+    public record Task(String type, String worker, String name, String callName, Future<?> future) {
     }
 
     /**
@@ -43,8 +48,12 @@ public final class FileWork {
     private record Sent(Task task, long queued) {
     }
 
-    // a call's time on its worker and the file it resolved, or null
-    private record Worked(long nanos, String file) {
+    // a call's time on its worker, the file it resolved or null, and the pump count when it ended
+    private record Worked(long nanos, String file, int pump) {
+    }
+
+    // the calls of one hook whose results the game shares between tasks, by what each call named (or null)
+    private record Shared(String worker, String callName) {
     }
 
     // the call running on a worker thread, if it began while tracking
@@ -52,6 +61,7 @@ public final class FileWork {
         boolean begun;
         long start;
         String file;
+        String named;
     }
 
     private final ThreadLocal<Call> calls = ThreadLocal.withInitial(Call::new);
@@ -67,11 +77,13 @@ public final class FileWork {
     private long base;
     // in the order sent; the game's items are equal only to themselves
     private final Map<Object, Sent> sent = new LinkedHashMap<>();
-    // workers' times by their result; a result the game shares between tasks (null, Boolean) only by hook, so such
-    // tasks of one hook may swap times with each other
+    // workers' times by their result; a result the game shares between tasks (null, Boolean) by hook and by what the
+    // call named, so tasks of one hook whose calls named nothing may swap times with each other
     private final Map<Object, ArrayDeque<Worked>> byResult = new IdentityHashMap<>();
-    private final Map<String, ArrayDeque<Worked>> byWorker = new HashMap<>();
-    private boolean pumped;
+    private final Map<Shared, ArrayDeque<Worked>> byWorker = new HashMap<>();
+    private int pumps;
+    // a pack's file, resolved once per world load: the mod list, and so the mounted packs, may differ in the next
+    private final Map<String, String> packFiles = new HashMap<>();
 
     private int frames;
     private int queuedPending;
@@ -87,7 +99,7 @@ public final class FileWork {
         return tracking;
     }
 
-    /** Whether the asset wait runs. */
+    /** Whether the asset wait runs while tracking. */
     public boolean waiting() {
         return waiting;
     }
@@ -99,6 +111,7 @@ public final class FileWork {
             call.begun = true;
             call.start = now;
             call.file = null;
+            call.named = null;
         }
     }
 
@@ -108,6 +121,19 @@ public final class FileWork {
             Call call = calls.get();
             if (call.begun) {
                 call.file = path;
+            }
+        }
+    }
+
+    /**
+     * The call running on this thread names {@code name}, as {@link Task#callName()} does for its task; outside a call,
+     * nothing.
+     */
+    public void callNamed(String name) {
+        if (tracking) {
+            Call call = calls.get();
+            if (call.begun) {
+                call.named = name;
             }
         }
     }
@@ -124,19 +150,21 @@ public final class FileWork {
         boolean begun = call.begun;
         long start = call.start;
         String file = call.file;
+        String named = call.named;
         call.begun = false;
         call.file = null;
+        call.named = null;
         // a call that began before tracking did is not timed
         if (!begun || start - trackingSince < 0) {
             return;
         }
-        Worked worked = new Worked(now - start, file);
         synchronized (this) {
             if (!tracking) {
                 return;
             }
+            Worked worked = new Worked(now - start, file, pumps);
             if (thrown == null && shared(result)) {
-                byWorker.computeIfAbsent(worker, key -> new ArrayDeque<>()).add(worked);
+                byWorker.computeIfAbsent(new Shared(worker, named), key -> new ArrayDeque<>()).add(worked);
             } else {
                 byResult.computeIfAbsent(thrown != null ? thrown : result, key -> new ArrayDeque<>()).add(worked);
             }
@@ -194,17 +222,35 @@ public final class FileWork {
         });
         for (T item : atWorkers) {
             if (!sent.containsKey(item)) {
-                sent.put(item, new Sent(describe.apply(item), pumped ? now - base : -1));
+                sent.put(item, new Sent(describe.apply(item), pumps > 0 ? now - base : -1));
             }
         }
-        pumped = true;
+        pumps++;
+        forgetUntaken(byResult);
+        forgetUntaken(byWorker);
         if (waiting && frames++ == 0) {
             queuedPending = pending;
             queuedAtWorkers = atWorkers.size();
         }
     }
 
-    /** Tracks while {@code on}; turning it on starts afresh, with run times from {@code flowStarted}. */
+    /**
+     * The file of pack {@code pack} as {@code resolve} gives it, or null when it has none; resolved once per pack while
+     * tracking. Reentrant from {@link #pumped}'s {@code describe}.
+     */
+    public synchronized String packFile(String pack, UnaryOperator<String> resolve) {
+        if (packFiles.containsKey(pack)) {
+            return packFiles.get(pack);
+        }
+        String file = resolve.apply(pack);
+        packFiles.put(pack, file);
+        return file;
+    }
+
+    /**
+     * Tracks while {@code on}; turning it on starts afresh, with run times from {@code flowStarted}. Turned off during
+     * the asset wait, the wait counts nothing more.
+     */
     synchronized void track(boolean on, long flowStarted, long now) {
         if (on == tracking) {
             return;
@@ -213,12 +259,15 @@ public final class FileWork {
         if (on) {
             base = flowStarted;
             trackingSince = now;
+        } else {
+            waiting = false;
         }
         tracking = on;
     }
 
+    // the wait's hooks idle unless tracking: their numbers are only the report's
     synchronized void waitBegins(long now) {
-        waiting = true;
+        waiting = tracking;
         waitStarted = now;
         frames = 0;
         queuedPending = 0;
@@ -243,6 +292,12 @@ public final class FileWork {
         return wait;
     }
 
+    /** The calls' times not yet matched to a task the game took. */
+    synchronized int held() {
+        return byResult.values().stream().mapToInt(ArrayDeque::size).sum()
+                + byWorker.values().stream().mapToInt(ArrayDeque::size).sum();
+    }
+
     private void done(Sent item, long now) {
         Task task = item.task();
         Future<?> future = task.future();
@@ -256,7 +311,7 @@ public final class FileWork {
             try {
                 Object result = future.get();
                 failed = false;
-                worked = shared(result) ? take(byWorker, task.worker()) : take(byResult, result);
+                worked = shared(result) ? takeShared(task) : take(byResult, result);
             } catch (ExecutionException e) {
                 worked = take(byResult, e.getCause());
             } catch (InterruptedException e) {
@@ -270,11 +325,27 @@ public final class FileWork {
         }
     }
 
+    // the call that named what the task expects, else one of its hook that named nothing: the game may skip the named
+    // call, e.g. for a tileset another mod's depth map already made
+    private Worked takeShared(Task task) {
+        Worked named = task.callName() == null ? null : take(byWorker, new Shared(task.worker(), task.callName()));
+        return named != null ? named : take(byWorker, new Shared(task.worker(), null));
+    }
+
+    // also releases a result the game is done with
+    private <K> void forgetUntaken(Map<K, ArrayDeque<Worked>> times) {
+        times.values().removeIf(queue -> {
+            queue.removeIf(worked -> pumps - worked.pump() >= KEPT_PUMPS);
+            return queue.isEmpty();
+        });
+    }
+
     private void clearTracked() {
         sent.clear();
         byResult.clear();
         byWorker.clear();
-        pumped = false;
+        packFiles.clear();
+        pumps = 0;
     }
 
     // an emptied queue goes, so that the map holds no result the game is done with

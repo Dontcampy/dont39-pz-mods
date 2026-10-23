@@ -3,7 +3,9 @@ package com.dont39.pz.fasterloading.textures;
 import com.dont39.pz.fasterloading.textures.bc7.Bc7Encoder;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
+import java.nio.ByteBuffer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -13,6 +15,7 @@ import java.util.function.Consumer;
  */
 public final class Encoders {
     private static Encoder session;
+    private static int driverFormat;
 
     private Encoders() {
     }
@@ -38,8 +41,9 @@ public final class Encoders {
     }
 
     /**
-     * The session's encoder, built at the first call on the GL thread, which also sends {@code log} one line naming it
-     * and why. Throws when the GL lacks what the chosen encoder needs or the encoder cannot be built.
+     * The session's encoder, built at the first call on the GL thread, which also probes {@link #driverFormat} and
+     * sends {@code log} one line naming the encoder and why. Throws when the GL lacks what the chosen encoder needs or
+     * the encoder cannot be built.
      */
     public static synchronized Encoder session(BooleanSupplier bc7Switch, Consumer<String> log) {
         if (session != null) {
@@ -47,6 +51,7 @@ public final class Encoders {
         }
         Choice choice = choose(bc7Switch.getAsBoolean(), GL.getCapabilities().OpenGL43);
         String gl = GL11.glGetString(GL11.GL_RENDERER) + ", " + GL11.glGetString(GL11.GL_VERSION);
+        driverFormat = probeDriverFormat();
         String where;
         if (choice.kind() == Kind.BC7) {
             session = new Bc7Encoder();
@@ -61,7 +66,37 @@ public final class Encoders {
             session = dxt5;
             where = "on " + dxt5.threads() + " threads";
         }
-        log.accept(session.id() + " " + where + " (" + choice.reason() + "; " + gl + ")");
+        log.accept(session.id() + " " + where + " (" + choice.reason() + "; " + gl
+                + "; the driver's GL_COMPRESSED_RGBA: 0x" + Integer.toHexString(driverFormat) + ")");
         return session;
+    }
+
+    /**
+     * The internal format the driver gives a level asked for as {@code GL_COMPRESSED_RGBA}, probed once with the
+     * session's encoder: what a level left to the driver gets.
+     */
+    public static synchronized int driverFormat() {
+        if (session == null) {
+            throw new IllegalStateException("the driver's format is probed with the session's encoder");
+        }
+        return driverFormat;
+    }
+
+    // on a scratch texture, without pixels: the hook leaves that call to the driver
+    static int probeDriverFormat() {
+        int bound = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        Upload.clearErrors();
+        int texture = GL11.glGenTextures();
+        try {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL13.GL_COMPRESSED_RGBA, 4, 4, 0, GL11.GL_RGBA,
+                    GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+            int format = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_INTERNAL_FORMAT);
+            Upload.checkErrors(() -> "probing the driver's format for GL_COMPRESSED_RGBA");
+            return format;
+        } finally {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, bound);
+            GL11.glDeleteTextures(texture);
+        }
     }
 }

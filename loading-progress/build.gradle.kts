@@ -12,6 +12,7 @@ plugins {
   id("buildsrc.convention.pz-bootstrap")
   id("buildsrc.convention.pz-widening")
   id("buildsrc.convention.pz-junit")
+  id("buildsrc.convention.pz-switches")
 }
 
 version = "0.2.0"

@@ -1,10 +1,10 @@
+# Usage: python -I timeline.py <LP report>-files.csv (Loading Progress 0.2.0+: a row per file task of the asset wait)
 import csv, sys, collections
-rows=[r for r in csv.DictReader(open(sys.argv[1],encoding='utf-8-sig')) if r['kind']=='file_task' and r['start_ms']]
-txt=open(sys.argv[1][:-4]+'.txt',encoding='utf-8').read()
-t0=min(float(r['start_ms']) for r in rows); 
+rows=[r for r in csv.DictReader(open(sys.argv[1],encoding='utf-8-sig')) if r['queued_ms']]
+t0=min(float(r['queued_ms']) for r in rows); 
 for r in rows:
-    r['s']=float(r['start_ms'])-t0; r['e']=r['s']+float(r['duration_ms']); r['w']=float(r['worker_ms'] or 0)
-    r['t']=r['task_type'].replace('FileTask_','').replace('TileDepthTextures$','Depth')
+    r['s']=float(r['queued_ms'])-t0; r['e']=float(r['done_ms'])-t0; r['w']=float(r['worker_ms'] or 0)
+    r['t']=r['type'].replace('FileTask_','').replace('TileDepthTextures$','Depth')
 end=max(r['e'] for r in rows); print('tasks',len(rows),'span %.1f s'%(end/1000))
 B=1000
 types=sorted(set(r['t'] for r in rows))

@@ -735,6 +735,8 @@ class ProgressTest {
         off.worldPrepares(at(0));
         off.reach(Boundary.WORLD_LOAD, at(10));
         assertFalse(off.files().tracking());
+        off.assetWaitBegins(at(20), 0);
+        assertFalse(off.files().waiting(), "the wait's hooks idle with the report off");
     }
 
     @Test

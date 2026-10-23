@@ -19,6 +19,7 @@ import zombie.fileSystem.FileSystemImpl;
 import zombie.fileSystem.FileTask;
 import zombie.fileSystem.TexturePackDevice;
 import zombie.tileDepth.TileDepthTextures;
+import zombie.tileDepth.TilesetDepthTexture;
 import zombie.worldMap.FileTask_LoadImagePyramidTexture;
 
 import java.io.File;
@@ -28,7 +29,8 @@ import static com.dont39.pz.loadingprogress.hooks.Loading.PROGRESS;
 /**
  * The world load's wait for the game's file tasks: its bounds, the queue the game pumps once per frame, and each task's
  * call on a worker. A task's call has no JDK-only way to name its task, so its time is matched to the task by the
- * result the game takes on the pumping thread.
+ * result the game takes on the pumping thread, and where results are shared (null, a Boolean) by what the call names
+ * through a JDK-only call inside it.
  */
 public final class AssetWaitHooks {
     private static final String MODEL = "FileTask_AbstractLoadModel";
@@ -106,6 +108,23 @@ public final class AssetWaitHooks {
         public static void resolved(String path, CallbackInfo ci) {
             if (PROGRESS.files().tracking()) {
                 PROGRESS.files().callFile(path);
+            }
+        }
+    }
+
+    // a depth map's call makes its tileset, named by the map's file, unless the tileset is there already; the call
+    // returns null, so this name is what matches its time to its task
+    @Hooks(TileDepthTextures.class)
+    public static final class DepthTileset {
+        private DepthTileset() {
+        }
+
+        @Inject(method = "createTileset(Ljava/lang/String;Z)Lzombie/tileDepth/TilesetDepthTexture;",
+                at = @At("HEAD"))
+        public static void created(String tileset, boolean loadImages,
+                                   CallbackInfoReturnable<TilesetDepthTexture> cir) {
+            if (PROGRESS.files().tracking()) {
+                PROGRESS.files().callNamed(tileset);
             }
         }
     }
@@ -342,12 +361,23 @@ public final class AssetWaitHooks {
         String type = task.getClass().getName();
         type = type.substring(type.lastIndexOf('.') + 1);
         return new FileWork.Task(type, task instanceof FileTask_AbstractLoadModel ? MODEL : type, name(task),
-                item.future);
+                task instanceof TileDepthTextures.LoadTask depthMap ? tileset(depthMap) : null, item.future);
+    }
+
+    // the tileset the depth map's call names, derived from the file name as the call does
+    private static String tileset(TileDepthTextures.LoadTask depthMap) {
+        return depthMap.path.toFile().getName().replaceFirst("DEPTH_", "").replace(".png", "");
     }
 
     private static String name(FileTask task) {
         if (task instanceof FileTask_LoadPackImage pack) {
-            return packFile(pack) + "/" + pack.imageName;
+            if (!(pack.fileSystem instanceof FileSystemImpl files)) {
+                throw new IllegalStateException("the pack image task " + pack.packName + "/" + pack.imageName
+                        + " reads from the file system " + pack.fileSystem + ", not a FileSystemImpl");
+            }
+            String file = PROGRESS.files().packFile(pack.packName, packName -> packFile(files, packName));
+            // a pack no mod mounted is the mod list's problem, not the game's: its call fails with the game's error
+            return (file != null ? file : pack.packName) + "/" + pack.imageName;
         }
         if (task instanceof TileDepthTextures.LoadTask depthMap) {
             return String.valueOf(depthMap.path);
@@ -369,16 +399,11 @@ public final class AssetWaitHooks {
         return task.getErrorMessage();
     }
 
-    // the file the task's call opens, as mounted for the pack's name in the mods' override order
-    private static String packFile(FileTask_LoadPackImage pack) {
-        if (!(pack.fileSystem instanceof FileSystemImpl files)) {
-            throw new IllegalStateException("the pack image task " + pack.packName + "/" + pack.imageName
-                    + " reads from the file system " + pack.fileSystem + ", not a FileSystemImpl");
-        }
-        TexturePackDevice device = files.texturepackDevices.get(pack.packName);
+    // the file the task's call opens, as mounted for the pack's name in the mods' override order, or null
+    private static String packFile(FileSystemImpl files, String packName) {
+        TexturePackDevice device = files.texturepackDevices.get(packName);
         if (device == null || device.filename == null) {
-            throw new IllegalStateException("the game has no texture pack file mounted as " + pack.packName
-                    + " for its pack image task " + pack.imageName);
+            return null;
         }
         // a relative name opens from the working folder: the game's folder, canonical like the game's own file paths
         File file = new File(device.filename);
