@@ -18,5 +18,7 @@ public enum Item {
     MAP_CELL,
     TILE_DEFINITIONS,
     CHUNK,
-    ANIMATION
+    ANIMATION,
+    /** The world load's wait for the game's file tasks: one line when it begins. */
+    ASSET_WAIT
 }

@@ -124,6 +124,7 @@ class ProgressTest {
         assertEquals(Step.LOGIN_QUEUE, step());
         progress.worldPrepares(at(9100));
         progress.reach(Boundary.WORLD_LOAD, at(9200));
+        assetWait(9200);
         progress.reach(Boundary.WORLD_READY, at(9300));
         progress.reach(Boundary.WORLD_ENTER, at(9400));
         progress.inWorld(at(9500));
@@ -187,6 +188,7 @@ class ProgressTest {
     void leavingTheWorldBeforeItsFirstFrameEndsTheStart() {
         progress.worldPrepares(at(0));
         progress.reach(Boundary.WORLD_LOAD, at(1));
+        assetWait(1);
         progress.reach(Boundary.WORLD_READY, at(2));
         progress.reach(Boundary.WORLD_ENTER, at(3));
         progress.worldLeft(at(4));
@@ -499,13 +501,15 @@ class ProgressTest {
         progress.chunks(6);
         progress.chunks(7);
         progress.chunks(7);
+        progress.assetWaitBegins(at(3), 0);
         progress.animations(10, 20);
         assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "CLOTHING_ITEM 0 null", "CLOTHING_ITEM 2 null",
                 "WORLD 0 Loading tile definitions", "WORLD_EVENT 0 OnInitWorld", "MAP_CELL 1 26_40",
                 "TILE_DEFINITIONS 0 newtiledefinitions.tiles", "MAP_CELL 2 27_40", "TILE_DEFINITIONS 0 null",
                 "CHUNK 0 null", "CHUNK 1 null",
-                "CHUNK 2 null", "ANIMATION 10 null"), log());
-        progress.reach(Boundary.WORLD_READY, at(3));
+                "CHUNK 2 null", "ASSET_WAIT 0 null", "ANIMATION 10 null"), log());
+        progress.assetWaitEnds(at(4), 0);
+        progress.reach(Boundary.WORLD_READY, at(5));
         assertFalse(progress.loadsWorld());
     }
 
@@ -534,6 +538,7 @@ class ProgressTest {
         progress.worldPrepares(at(0));
         progress.reach(Boundary.WORLD_LOAD, at(1));
         progress.event("OnInitWorld", false, at(2));
+        assetWait(2);
         progress.reach(Boundary.WORLD_READY, at(3));
         progress.reach(Boundary.WORLD_ENTER, at(4));
         progress.inWorld(at(5));
@@ -548,6 +553,7 @@ class ProgressTest {
     void gameThreadEventsShowAgainAfterOthers() {
         progress.worldPrepares(at(0));
         progress.reach(Boundary.WORLD_LOAD, at(1));
+        assetWait(1);
         progress.reach(Boundary.WORLD_READY, at(2));
         progress.reach(Boundary.WORLD_ENTER, at(3));
         progress.event("OnCreatePlayer", true, at(4));
@@ -563,10 +569,174 @@ class ProgressTest {
         progress.reach(Boundary.WORLD_LOAD, at(1));
         progress.mapCell("1_1", 1);
         assertThrows(IllegalStateException.class, () -> progress.mapCell("1_2", 1));
+        progress.assetWaitBegins(at(2), 0);
         assertThrows(IllegalStateException.class, () -> progress.animations(3, 2));
         progress.chunkQueued(4);
         assertThrows(IllegalStateException.class, () -> progress.chunks(6));
         assertThrows(IllegalStateException.class, () -> progress.chunks(3));
+    }
+
+    // the world load's wait, from the begin of its line to the step's line after it
+    private void worldLoadWaits(long begins, long ends) {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.assetWaitBegins(at(begins), 5_000);
+        progress.animations(20, 20);
+        progress.assetWaitEnds(at(ends), 45_000);
+    }
+
+    private List<Timed> worldLines() {
+        return ends.get(0).timed().stream().filter(timed -> timed.line().step() == Step.LOADING_WORLD).toList();
+    }
+
+    @Test
+    void theAssetWaitIsAnEntryWithItsExactSpan() {
+        worldLoadWaits(1000, 40_000);
+        progress.reach(Boundary.WORLD_READY, at(40_100));
+        progress.stop("why", at(40_200));
+        AssetWait wait = ends.get(0).assetWait();
+        assertEquals(ms(1000), wait.start());
+        assertEquals(ms(39_000), wait.nanos());
+        assertEquals(5_000, wait.startMillis());
+        assertEquals(45_000, wait.endMillis());
+        assertTrue(wait.ended());
+        Line waitLine = new Line(Step.LOADING_WORLD, Item.ASSET_WAIT, 0, 0, null);
+        assertEquals(List.of(
+                new Timed(new Line(Step.LOADING_WORLD, null, 11, 13, null), null, ms(10), ms(990)),
+                new Timed(waitLine, null, ms(1000), 0),
+                new Timed(new Line(Step.LOADING_WORLD, Item.ANIMATION, 20, 20, null), null, ms(1000), 0),
+                new Timed(waitLine, null, ms(1000), ms(39_000)),
+                new Timed(new Line(Step.LOADING_WORLD, null, 11, 13, null), null, ms(40_000), ms(100))),
+                worldLines());
+    }
+
+    @Test
+    void theAnimationsKeepTheirLineUntilAllAreLoaded() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.assetWaitBegins(at(100), 0);
+        at(200);
+        progress.animations(5, 20);
+        at(300);
+        progress.animations(5, 20);
+        at(400);
+        progress.animations(20, 20);
+        at(500);
+        progress.animations(20, 20);
+        progress.assetWaitEnds(at(1000), 0);
+        progress.stop("why", at(1100));
+        Line waitLine = new Line(Step.LOADING_WORLD, Item.ASSET_WAIT, 0, 0, null);
+        assertEquals(List.of(
+                new Timed(new Line(Step.LOADING_WORLD, null, 11, 13, null), null, ms(10), ms(90)),
+                new Timed(waitLine, null, ms(100), ms(100)),
+                new Timed(new Line(Step.LOADING_WORLD, Item.ANIMATION, 5, 20, null), null, ms(200), ms(200)),
+                new Timed(new Line(Step.LOADING_WORLD, Item.ANIMATION, 20, 20, null), null, ms(400), 0),
+                new Timed(waitLine, null, ms(400), ms(600)),
+                new Timed(new Line(Step.LOADING_WORLD, null, 11, 13, null), null, ms(1000), ms(100))),
+                worldLines());
+    }
+
+    // the game's asset wait, which every finished world load logs
+    private void assetWait(long millis) {
+        progress.assetWaitBegins(at(millis), 0);
+        progress.assetWaitEnds(at(millis), 0);
+    }
+
+    @Test
+    void animationsPolledOutsideTheWaitAreNotItsLines() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.animations(1, 2);
+        progress.assetWaitBegins(at(20), 0);
+        progress.assetWaitEnds(at(30), 0);
+        progress.animations(2, 2);
+        assertEquals(List.of("10 PREPARING_WORLD", "11 LOADING_WORLD", "ASSET_WAIT 0 null"), log());
+    }
+
+    @Test
+    void aWorldLoadThatEndsWithoutTheWaitsLineThrows() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        assertThrows(IllegalStateException.class, () -> progress.reach(Boundary.WORLD_READY, at(20)));
+    }
+
+    @Test
+    void theAssetWaitBeginsAndEndsOnce() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        assertThrows(IllegalStateException.class, () -> progress.assetWaitEnds(at(20), 0));
+        progress.assetWaitBegins(at(30), 0);
+        assertThrows(IllegalStateException.class, () -> progress.assetWaitBegins(at(40), 0));
+        progress.assetWaitEnds(at(50), 0);
+        assertThrows(IllegalStateException.class, () -> progress.assetWaitEnds(at(60), 0));
+    }
+
+    @Test
+    void theWorldLoadCannotMoveOnDuringItsAssetWait() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.assetWaitBegins(at(30), 0);
+        assertThrows(IllegalStateException.class, () -> progress.reach(Boundary.WORLD_READY, at(40)));
+    }
+
+    @Test
+    void aLoadThatEndsDuringTheAssetWaitHasItUnfinished() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.assetWaitBegins(at(30), 0);
+        progress.menu(at(100));
+        AssetWait wait = ends.get(0).assetWait();
+        assertFalse(wait.ended());
+        assertEquals(ms(70), wait.nanos());
+    }
+
+    @Test
+    void aLoadWithoutTheAssetWaitHasNone() {
+        progress.worldPrepares(at(0));
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        progress.menu(at(100));
+        assertNull(ends.get(0).assetWait());
+        progress.assetWaitBegins(at(200), 0);
+        assertTrue(ends.size() == 1 && !progress.active(), "nothing outside the world load");
+    }
+
+    @Test
+    void theNextWorldLoadHasItsOwnAssetWait() {
+        worldLoadWaits(100, 200);
+        progress.reach(Boundary.WORLD_READY, at(300));
+        progress.reach(Boundary.WORLD_ENTER, at(400));
+        progress.inWorld(at(500));
+        progress.worldLeft(at(600));
+        progress.worldPrepares(at(700));
+        progress.reach(Boundary.WORLD_LOAD, at(800));
+        progress.assetWaitBegins(at(900), 0);
+        progress.assetWaitEnds(at(1000), 0);
+        progress.menu(at(1100));
+        assertEquals(2, ends.size());
+        assertEquals(ms(200), ends.get(1).assetWait().start(), "from its own flow's begin");
+    }
+
+    @Test
+    void fileTasksAreTrackedWhileTheWorldLoadsWithTheReportOn() {
+        progress.worldPrepares(at(0));
+        assertFalse(progress.files().tracking());
+        progress.reach(Boundary.WORLD_LOAD, at(10));
+        assertTrue(progress.files().tracking());
+        progress.assetWaitBegins(at(20), 0);
+        assertTrue(progress.files().waiting());
+        progress.assetWaitEnds(at(30), 0);
+        assertFalse(progress.files().waiting());
+        progress.reportOff();
+        assertFalse(progress.files().tracking());
+        progress.reach(Boundary.WORLD_READY, at(40));
+
+        settings = new Settings(true, false);
+        Progress off = new Progress(() -> true, () -> settings, () -> now, () -> { }, ends::add);
+        off.worldPrepares(at(0));
+        off.reach(Boundary.WORLD_LOAD, at(10));
+        assertFalse(off.files().tracking());
+        off.assetWaitBegins(at(20), 0);
+        assertFalse(off.files().waiting(), "the wait's hooks idle with the report off");
     }
 
     @Test
@@ -583,6 +753,7 @@ class ProgressTest {
         progress.reach(Boundary.WORLD_LOAD, at(1));
         progress.mapCell("1_1", 1);
         progress.chunkQueued(0);
+        assetWait(1);
         progress.reach(Boundary.WORLD_READY, at(2));
         progress.reach(Boundary.WORLD_ENTER, at(3));
         progress.inWorld(at(4));
@@ -904,6 +1075,7 @@ class ProgressTest {
         progress.reach(Boundary.LOGIN_QUEUE, at(9000));
         progress.worldPrepares(at(9100));
         progress.reach(Boundary.WORLD_LOAD, at(9200));
+        assetWait(9200);
         progress.reach(Boundary.WORLD_READY, at(9300));
         progress.reach(Boundary.WORLD_ENTER, at(9400));
         progress.inWorld(at(9500));

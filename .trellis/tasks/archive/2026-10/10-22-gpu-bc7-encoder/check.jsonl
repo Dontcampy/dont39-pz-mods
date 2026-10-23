@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, forbidden patterns, ported third-party code"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "failure policy: capability choice vs mismatch, GL errors, restore paths"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook correctness, no catch in handlers"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "no per-call logging"}
+{"file": ".trellis/tasks/10-22-gpu-bc7-encoder/research/bc7-prototype.md", "reason": "expected numbers and GL state to verify against"}
+{"file": "faster-loading/README.md", "reason": "docs match the shipped behaviour"}

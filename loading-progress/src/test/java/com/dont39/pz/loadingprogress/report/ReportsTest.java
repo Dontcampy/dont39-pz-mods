@@ -29,29 +29,42 @@ class ReportsTest {
 
     @Test
     void aLoadIsASummaryAndACsv() throws IOException {
-        Path summary = Reports.write(dir, START, "launch", "summary\n", "a,b\r\n");
+        Path summary = Reports.write(dir, START, "launch", "summary\n", "a,b\r\n", null);
         assertEquals(dir.resolve("2026-10-20_09-05-00_launch.txt"), summary);
         assertEquals("summary\n", Files.readString(summary));
         byte[] csv = Files.readAllBytes(dir.resolve("2026-10-20_09-05-00_launch.csv"));
         assertArrayEquals(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 'a', ',', 'b', '\r', '\n'}, csv);
+        assertEquals(List.of("2026-10-20_09-05-00_launch.csv", "2026-10-20_09-05-00_launch.txt"), files());
+    }
+
+    @Test
+    void aWorldLoadAlsoHasItsFileTasks() throws IOException {
+        Reports.write(dir, START, "start", "s", "c", "t\r\n");
+        byte[] csv = Files.readAllBytes(dir.resolve("2026-10-20_09-05-00_start-files.csv"));
+        assertArrayEquals(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 't', '\r', '\n'}, csv);
     }
 
     @Test
     void aClashGetsACounter() throws IOException {
-        Reports.write(dir, START, "launch", "1", "1");
-        Path second = Reports.write(dir, START, "launch", "2", "2");
+        Reports.write(dir, START, "launch", "1", "1", null);
+        Path second = Reports.write(dir, START, "launch", "2", "2", null);
         assertEquals("2026-10-20_09-05-00_launch_2.txt", second.getFileName().toString());
         assertEquals("1", Files.readString(dir.resolve("2026-10-20_09-05-00_launch.txt")));
+        Files.writeString(dir.resolve("2026-10-20_09-05-00_start-files.csv"), "left");
+        Path start = Reports.write(dir, START, "start", "3", "3", "3");
+        assertEquals("2026-10-20_09-05-00_start_2.txt", start.getFileName().toString(), "any of its files clashes");
     }
 
     @Test
     void theNewestTenLoadsAreKept() throws IOException {
         Files.writeString(dir.resolve("notes.txt"), "mine", StandardCharsets.UTF_8);
         for (int i = 0; i < 12; i++) {
-            Reports.write(dir, START.plusMinutes(i), i % 2 == 0 ? "start" : "reload", "s", "c");
+            boolean start = i % 2 == 0;
+            Reports.write(dir, START.plusMinutes(i), start ? "start" : "reload", "s", "c", start ? "f" : null);
         }
         List<String> files = files();
-        assertEquals(2 * Reports.KEEP + 1, files.size(), files.toString());
+        assertEquals(2 * Reports.KEEP + Reports.KEEP / 2 + 1, files.size(), files.toString());
+        assertTrue(files.contains("2026-10-20_09-07-00_start-files.csv"), files.toString());
         assertTrue(files.contains("notes.txt"), "only report files are deleted");
         assertTrue(files.contains("2026-10-20_09-07-00_start.txt"), files.toString());
         assertTrue(files.stream().noneMatch(file -> file.startsWith("2026-10-20_09-05")

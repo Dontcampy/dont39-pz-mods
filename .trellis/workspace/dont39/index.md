@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 31
-- **Last Active**: 2026-10-21
+- **Total Sessions**: 37
+- **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~753 | Active |
+| `journal-1.md` | ~903 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,12 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 37 | 2026-10-23 | Load speed optimization AC5 on the Linux test server | `6cabbe0`, `a1a055d` | `load-speed-optimization` |
+| 36 | 2026-10-23 | PR #24 review fixes | `97e28bd` | `feat/gpu-bc7-encoder-2b7d0a` |
+| 35 | 2026-10-23 | GPU BC7 texture encoder (Faster Loading 0.5.0) | `9214c21` | `feat/gpu-bc7-encoder-2b7d0a` |
+| 34 | 2026-10-22 | R4: Lua folder walk in Faster Loading 0.4.0 | `ce7b3e9` | `feat/lua-folder-walk-143b68` |
+| 33 | 2026-10-22 | Depth-map order in Faster Loading 0.3.0 | `f05c47c` | `claude/dreamy-varahamihira-298ef8` |
+| 32 | 2026-10-22 | R2: texture compression off the render thread | `3a9b526`, `743afc7` | `claude/asset-wait-speedup-2d74f7` |
 | 31 | 2026-10-21 | PR #20 merges, review fixes and Workshop staging | `bcf8059`, `9d16c7c`, `8ca0216`, `8233d10`, `0cb3f78` | `claude/trellis-loading-progress-tasks-67a636` |
 | 30 | 2026-10-21 | mod-sync-relaunch: restart the game with this launch's command line | `a3727aa`, `c558aa8`, `ea65324`, `f9c5449`, `10a8378` | `claude/mod-sync-relaunch-fce8bc` |
 | 29 | 2026-10-21 | mod-sync-java: server Java mods after one restart | `394ec65`, `790281a` | `claude/trellis-main-update-subtasks-6c01f8` |

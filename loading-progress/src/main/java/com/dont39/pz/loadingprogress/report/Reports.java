@@ -8,19 +8,24 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** The report files of the last {@value #KEEP} loads, a summary and a CSV each. Game-free. */
+/**
+ * The report files of the last {@value #KEEP} loads: a summary and a CSV each, and a world load's file tasks CSV.
+ * Game-free.
+ */
 public final class Reports {
     public static final String FOLDER = "Dont39LoadingProgress";
     public static final int KEEP = 10;
 
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+    private static final List<String> SUFFIXES = List.of(".txt", ".csv", "-files.csv");
     // only files of this form are ever deleted
     private static final Pattern FILE =
-            Pattern.compile("(\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}_[a-z]+(?:_\\d+)?)\\.(?:txt|csv)");
+            Pattern.compile("(\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}_[a-z]+(?:_\\d+)?)(?:\\.txt|(?:-files)?\\.csv)");
     // Excel reads a CSV without it in the system's code page, which garbles Chinese names
     private static final byte[] BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
 
@@ -28,27 +33,37 @@ public final class Reports {
     }
 
     /**
-     * Writes a load's {@code summary} and {@code csv} into {@code folder}, named by {@code time} and {@code flow}, then
-     * deletes all but the newest {@value #KEEP} loads. Returns the summary's path.
+     * Writes a load's {@code summary}, {@code csv} and {@code filesCsv} (none when null) into {@code folder}, named by
+     * {@code time} and {@code flow}, then deletes all but the newest {@value #KEEP} loads. Returns the summary's path.
      */
-    public static Path write(Path folder, LocalDateTime time, String flow, String summary, String csv)
-            throws IOException {
+    public static Path write(Path folder, LocalDateTime time, String flow, String summary, String csv,
+                             String filesCsv) throws IOException {
         Files.createDirectories(folder);
         String base = time.format(TIME) + "_" + flow;
         String name = base;
-        for (int n = 2; Files.exists(folder.resolve(name + ".txt")) || Files.exists(folder.resolve(name + ".csv"));
-             n++) {
+        for (int n = 2; taken(folder, name); n++) {
             name = base + "_" + n;
         }
         Path text = folder.resolve(name + ".txt");
         Files.writeString(text, summary, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        writeCsv(folder.resolve(name + ".csv"), csv);
+        if (filesCsv != null) {
+            writeCsv(folder.resolve(name + "-files.csv"), filesCsv);
+        }
+        prune(folder);
+        return text;
+    }
+
+    private static boolean taken(Path folder, String name) {
+        return SUFFIXES.stream().anyMatch(suffix -> Files.exists(folder.resolve(name + suffix)));
+    }
+
+    private static void writeCsv(Path file, String csv) throws IOException {
         byte[] rows = csv.getBytes(StandardCharsets.UTF_8);
         byte[] bytes = new byte[BOM.length + rows.length];
         System.arraycopy(BOM, 0, bytes, 0, BOM.length);
         System.arraycopy(rows, 0, bytes, BOM.length, rows.length);
-        Files.write(folder.resolve(name + ".csv"), bytes, StandardOpenOption.CREATE_NEW);
-        prune(folder);
-        return text;
+        Files.write(file, bytes, StandardOpenOption.CREATE_NEW);
     }
 
     private static void prune(Path folder) throws IOException {
@@ -64,8 +79,9 @@ public final class Reports {
         }
         while (loads.size() > KEEP) {
             String oldest = loads.pollFirst();
-            Files.deleteIfExists(folder.resolve(oldest + ".txt"));
-            Files.deleteIfExists(folder.resolve(oldest + ".csv"));
+            for (String suffix : SUFFIXES) {
+                Files.deleteIfExists(folder.resolve(oldest + suffix));
+            }
         }
     }
 }

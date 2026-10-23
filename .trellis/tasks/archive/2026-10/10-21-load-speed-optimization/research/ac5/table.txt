@@ -1,0 +1,22 @@
+run     launch s   join s  world s  wait s
+base1       42.5    123.5     80.5    65.5
+base2       42.3    121.2     77.8    62.9
+base3       42.1    120.5     77.3    62.6
+base4       43.2        -        -       -
+off1        44.9    119.6     74.8    59.6
+off2        42.5    121.1     77.8    63.0
+off3        42.1    121.1     77.5    62.6
+on1         34.8     56.3     21.7     0.1
+on2         30.2     49.8     16.5     0.3
+on3         30.0     51.3     21.6     0.1
+on    median: launch 30.2 s, join 51.3 s, world 21.6 s (3 runs)
+off   median: launch 42.5 s, join 121.1 s, world 77.5 s (3 runs)
+base  median: launch 42.4 s, join 121.2 s, world 77.8 s (4 runs)
+off1: 0 error signatures not in any base run
+off2: 0 error signatures not in any base run
+off3: 0 error signatures not in any base run
+on1: 2 error signatures not in any base run
+    ERROR: General at LuaManager.getFunctionObject > no such function "SpecialLootSpawns.OnCreateGasMask"
+    ERROR: General at LuaManager.getFunctionObject > no such function "SpecialLootSpawns.OnCreateRecipeMagazine"
+on2: 0 error signatures not in any base run
+on3: 0 error signatures not in any base run

@@ -1,0 +1,76 @@
+package com.dont39.pz.fasterloading.textures;
+
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL21;
+
+import java.nio.ByteBuffer;
+import java.util.function.Supplier;
+
+/** Uploading a level the game asked the driver to compress, compressed by an {@link Encoder} instead. */
+public final class Upload {
+    private Upload() {
+    }
+
+    /**
+     * Whether a {@code glTexImage2D} call asks the driver to compress tightly read RGBA bytes into a 2D level: what the
+     * game's {@code TextureID.generateHwId} sends for a texture flagged for compression. Other calls are not ours.
+     */
+    public static boolean requested(int target, int internalFormat, int width, int height, int border, int format,
+            int type, ByteBuffer pixels) {
+        return target == GL11.GL_TEXTURE_2D && internalFormat == GL13.GL_COMPRESSED_RGBA && border == 0
+                && format == GL11.GL_RGBA && type == GL11.GL_UNSIGNED_BYTE && width > 0 && height > 0
+                && pixels != null && pixels.isDirect() && pixels.remaining() >= (long) width * height * 4;
+    }
+
+    /**
+     * Whether the GL reads a {@code width} pixels wide RGBA level from client memory row after row from the start, with
+     * no gap between rows, as {@link Encoder#define} reads it.
+     */
+    public static boolean packedRows(int width) {
+        return GL11.glGetInteger(GL21.GL_PIXEL_UNPACK_BUFFER_BINDING) == 0
+                && GL11.glGetInteger(GL11.GL_UNPACK_ROW_LENGTH) == 0
+                && GL11.glGetInteger(GL11.GL_UNPACK_SKIP_ROWS) == 0
+                && GL11.glGetInteger(GL11.GL_UNPACK_SKIP_PIXELS) == 0
+                && (width * 4) % GL11.glGetInteger(GL11.GL_UNPACK_ALIGNMENT) == 0;
+    }
+
+    /**
+     * Defines the bound texture's {@code level} by {@code encoder} from {@code pixels}. Throws, naming the level, when
+     * the GL reports an error for it.
+     */
+    public static void compressed(Encoder encoder, int target, int level, int width, int height, ByteBuffer pixels) {
+        checkSize(width, height, pixels);
+        clearErrors();
+        encoder.define(target, level, width, height, pixels);
+        checkErrors(() -> "for a " + width + "x" + height + " level " + level + " from " + encoder.id());
+    }
+
+    /** Throws unless {@code rgba} holds a {@code width}×{@code height} RGBA level from its position. */
+    public static void checkSize(int width, int height, ByteBuffer rgba) {
+        long bytes = (long) width * height * 4;
+        if (width < 1 || height < 1 || rgba.remaining() < bytes) {
+            throw new IllegalArgumentException(width + "x" + height + " RGBA needs " + bytes
+                    + " bytes, the buffer has " + rgba.remaining());
+        }
+    }
+
+    /** Throws when the GL reports an error, saying what it was {@code doing}. */
+    public static void checkErrors(Supplier<String> doing) {
+        int error = GL11.glGetError();
+        if (error != GL11.GL_NO_ERROR) {
+            throw new IllegalStateException("the GL reported 0x" + Integer.toHexString(error) + " " + doing.get());
+        }
+    }
+
+    /**
+     * Clears the GL's pending error flags. The game's texture path never reads them (checkGLErrorThrowTexture is off),
+     * so one set by earlier game code may still be pending and would read as the mod's; the game would not have looked
+     * at it either.
+     */
+    public static void clearErrors() {
+        for (int i = 0; i < 8 && GL11.glGetError() != GL11.GL_NO_ERROR; i++) {
+            // cleared
+        }
+    }
+}

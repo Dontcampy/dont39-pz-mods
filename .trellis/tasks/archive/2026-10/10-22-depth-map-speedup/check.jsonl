@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod spec index"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook kinds, JDK-only glue, exit handlers and ModHooks.open"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Faster Loading's first classtweaker"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "mismatch throws and disables, never degrades"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "one log line per batch"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "tests and comment rules"}
+{"file": ".trellis/tasks/10-22-depth-map-speedup/research/reprioritise.md", "reason": "queue internals, members to widen, checks, design B"}
+{"file": ".trellis/tasks/10-22-depth-map-speedup/research/reprioritise_sim.py", "reason": "order_greedy reference for Schedule"}
+{"file": ".trellis/tasks/10-22-depth-map-speedup/research/depth-maps.md", "reason": "depth-map code path and timeline"}
+{"file": ".trellis/tasks/10-22-depth-map-speedup/research/timeline.py", "reason": "depth phase measurement for verification"}

@@ -21,7 +21,7 @@ public enum Step {
     LOGIN_QUEUE(false),
     PREPARING_WORLD(true, Item.LUA),
     LOADING_WORLD(false, Item.WORLD, Item.WORLD_EVENT, Item.CLOTHING_ITEM, Item.MAP_CELL, Item.TILE_DEFINITIONS,
-            Item.CHUNK, Item.ANIMATION),
+            Item.CHUNK, Item.ANIMATION, Item.ASSET_WAIT),
     READY(false),
     ENTERING_WORLD(true, Item.EVENT);
 

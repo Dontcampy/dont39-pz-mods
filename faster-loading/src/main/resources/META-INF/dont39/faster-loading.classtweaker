@@ -1,0 +1,16 @@
+zabric-classtweaker v1
+# the depth-map tasks an init queued, read under the queue's lock before the next pump sorts them in
+accessible field zombie/fileSystem/FileSystemImpl added Ljava/util/ArrayList;
+accessible field zombie/fileSystem/FileSystemImpl lock Ljava/util/concurrent/atomic/AtomicBoolean;
+accessible class zombie/fileSystem/FileSystemImpl$AsyncItem
+accessible field zombie/fileSystem/FileSystemImpl$AsyncItem task Lzombie/fileSystem/FileTask;
+accessible field zombie/fileSystem/FileTask priority I
+# the worker count the schedule plans for
+accessible field zombie/fileSystem/FileSystemImpl executor Ljava/util/concurrent/ExecutorService;
+# a depth-map task's mod, file and tileset rows, and the game's count of queued tasks
+accessible class zombie/tileDepth/TileDepthTextures$LoadTask
+accessible field zombie/tileDepth/TileDepthTextures$LoadTask textures Lzombie/tileDepth/TileDepthTextures;
+accessible field zombie/tileDepth/TileDepthTextures$LoadTask path Ljava/nio/file/Path;
+accessible field zombie/tileDepth/TileDepthTextures modId Ljava/lang/String;
+accessible field zombie/tileDepth/TileDepthTextures tilesetRows Ljava/util/HashMap;
+accessible field zombie/tileDepth/TileDepthTextureManager remainingLoadTasks I

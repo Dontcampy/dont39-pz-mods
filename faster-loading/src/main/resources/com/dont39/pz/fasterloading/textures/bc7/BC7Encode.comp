@@ -1,0 +1,814 @@
+//--------------------------------------------------------------------------------------
+// GLSL port of DirectXTex's BC7 encoder compute shader: DirectXTex/Shaders/BC7Encode.hlsl of
+// https://github.com/microsoft/DirectXTex at commit ec66b78b37389e8373a8e14ccc3cd29be94146b3.
+//
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License (META-INF/licenses/DirectXTex.txt in this jar).
+//
+// Bc7Encoder.java puts "#version 430", one of ENTRY_456, ENTRY_137 (with g_mode_id 1u, 3u or 7u) and ENTRY_ENCODE
+// before this text. Changes from the HLSL:
+// - `partition` is `part` (a reserved word in GLSL).
+// - Input from a buffer of tightly packed RGBA bytes after a 16-byte header (width, height, blocks per row, blocks);
+//   a partial block repeats its last column and row, where D3D's Load returns 0.
+// - No uniforms: setting one waits for every dispatch in flight that uses the program. Mode and alpha weight (4) are
+//   compiled in.
+// - Per-subset values of TryMode137 in named variables: dynamically indexed arrays spilled to local memory.
+// - A barrier after each EncodeBlock reduction pass, where the HLSL relied on lockstep execution.
+// - Bounds checks on block ids and partitions; groups are numbered row by row over a 2D grid, and those past the last
+//   block return at once.
+// - TryMode137 skips a block the passes before encoded without error.
+// - Each entry declares only the shared fields it uses; TryMode137 keeps its block's pixels in an array of their own.
+// - EncodeBlock picks each pixel's index by its smallest error and fixes the anchor index afterwards by swapping the
+//   subset's endpoints and mirroring its indices; the try passes keep the HLSL's projection (half the GPU time, the
+//   same quality).
+// - Modes 0 and 2 (3 subsets) dropped, with their tables and packing.
+//--------------------------------------------------------------------------------------
+
+// partitions 0-63 of two subsets: bit i set when pixel i is in subset 1
+const uint candidateSectionBit[64] = uint[64](
+    0xCCCCu, 0x8888u, 0xEEEEu, 0xECC8u, 0xC880u, 0xFEECu, 0xFEC8u, 0xEC80u,
+    0xC800u, 0xFFECu, 0xFE80u, 0xE800u, 0xFFE8u, 0xFF00u, 0xFFF0u, 0xF000u,
+    0xF710u, 0x008Eu, 0x7100u, 0x08CEu, 0x008Cu, 0x7310u, 0x3100u, 0x8CCEu,
+    0x088Cu, 0x3110u, 0x6666u, 0x366Cu, 0x17E8u, 0x0FF0u, 0x718Eu, 0x399Cu,
+    0xAAAAu, 0xF0F0u, 0x5A5Au, 0x33CCu, 0x3C3Cu, 0x55AAu, 0x9696u, 0xA55Au,
+    0x73CEu, 0x13C8u, 0x324Cu, 0x3BDCu, 0x6996u, 0xC33Cu, 0x9966u, 0x0660u,
+    0x0272u, 0x04E4u, 0x4E40u, 0x2720u, 0xC936u, 0x936Cu, 0x39C6u, 0x639Cu,
+    0x9336u, 0x9CC6u, 0x817Eu, 0xE718u, 0xCCF0u, 0x0FCCu, 0x7744u, 0xEE22u);
+
+// the anchor pixel of subset 1 for partitions 0-63 (candidateFixUpIndex1D[i].x, the same in its Ordered twin)
+const uint candidateFixUpIndex1D[64] = uint[64](
+    15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u, 15u,
+    15u,  2u,  8u,  2u,  2u,  8u,  8u, 15u,  2u,  8u,  2u,  2u,  8u,  8u,  2u,  2u,
+    15u, 15u,  6u,  8u,  2u,  8u, 15u, 15u,  2u,  8u,  2u,  2u,  2u, 15u, 15u,  6u,
+     6u,  2u,  6u,  8u, 15u, 15u,  2u,  2u, 15u, 15u, 15u, 15u, 15u,  2u,  2u, 15u);
+
+const uint aWeight[3][16] = uint[3][16](
+    uint[16](0u, 4u, 9u, 13u, 17u, 21u, 26u, 30u, 34u, 38u, 43u, 47u, 51u, 55u, 60u, 64u),
+    uint[16](0u, 9u, 18u, 27u, 37u, 46u, 55u, 64u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u),
+    uint[16](0u, 21u, 43u, 64u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u));
+
+layout(local_size_x = 64) in;
+
+layout(std430, binding = 0) readonly buffer Input { uvec4 g_params; uint g_pixels[]; };
+layout(std430, binding = 1) readonly buffer InBuff { uvec4 g_InBuff[]; };
+layout(std430, binding = 2) writeonly buffer OutBuff { uvec4 g_OutBuff[]; };
+
+#define g_size ivec2(g_params.xy)
+#define g_num_block_x g_params.z
+#define g_num_total_blocks g_params.w
+const float g_alpha_weight = 4.0;
+
+#define MAX_UINT 0xFFFFFFFFu
+#define SYNC memoryBarrierShared(); barrier()
+
+// each entry declares only the fields it uses: shared memory per group limits the groups an SM runs at once
+struct BufferShared {
+#ifndef ENTRY_137
+    uvec4 pixel;
+#endif
+    uint error;
+    uint mode;
+#ifndef ENTRY_ENCODE
+    uint rotation;
+#endif
+#ifdef ENTRY_137
+    uint part;
+#endif
+#ifdef ENTRY_456
+    uint index_selector;
+#endif
+#ifndef ENTRY_137
+    uvec4 endPoint_low;
+    uvec4 endPoint_high;
+#endif
+#ifdef ENTRY_ENCODE
+    uvec4 endPoint_low_quantized;
+    uvec4 endPoint_high_quantized;
+#endif
+};
+shared BufferShared shared_temp[64];
+#ifdef ENTRY_137
+// the group's one block
+shared uvec4 shared_pixel[16];
+#endif
+
+// GL_MAX_COMPUTE_WORK_GROUP_COUNT is at least 65535 per dimension, so a level's groups span rows
+uint groupIndex() {
+    return gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+}
+
+uvec4 loadPixel(uint base_x, uint base_y, uint t) {
+    ivec2 p = min(ivec2(int(base_x + t % 4u), int(base_y + t / 4u)), g_size - 1);
+    uint v = g_pixels[p.y * g_size.x + p.x];
+    return uvec4(v & 0xFFu, (v >> 8u) & 0xFFu, (v >> 16u) & 0xFFu, v >> 24u);
+}
+
+const uint aStep[3][64] = uint[3][64](uint[64](0u, 0u, 0u, 1u, 1u, 1u, 1u, 2u, 2u, 2u, 2u, 2u, 3u, 3u, 3u, 3u, 4u, 4u, 4u, 4u, 5u, 5u, 5u, 5u, 6u, 6u, 6u, 6u, 6u, 7u, 7u, 7u, 7u, 8u, 8u, 8u, 8u, 9u, 9u, 9u, 9u, 10u, 10u, 10u, 10u, 10u, 11u, 11u, 11u, 11u, 12u, 12u, 12u, 12u, 13u, 13u, 13u, 13u, 14u, 14u, 14u, 14u, 15u, 15u), uint[64](0u, 0u, 0u, 0u, 0u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u, 6u, 6u, 6u, 6u, 6u, 6u, 6u, 6u, 6u, 7u, 7u, 7u, 7u), uint[64](0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u, 3u));
+
+int idot(ivec3 a, ivec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+int idot(ivec4 a, ivec4 b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
+void swap4(inout uvec4 a, inout uvec4 b) { uvec4 t = a; a = b; b = t; }
+uint stepIndex(int dp, int sns, uint prec) {
+    return (sns <= 0 || dp <= 0) ? 0u
+        : ((dp < sns) ? aStep[prec][uint(float(dp) * 63.49999 / float(sns))] : aStep[prec][63]);
+}
+bool flipNeeded(int dp, int sns) {
+    return sns > 0 && dp > 0 && uint(float(dp) * 63.49999) > uint(32 * sns);
+}
+void swapu(inout uint a, inout uint b) { uint t = a; a = b; b = t; }
+
+uint ComputeError(uvec4 a, uvec4 b) {
+    return uint(float(a.r * b.r + a.g * b.g + a.b * b.b) + g_alpha_weight * float(a.a) * float(b.a));
+}
+
+void Ensure_A_Is_Larger(inout uvec4 a, inout uvec4 b) {
+    uvec4 hi = max(a, b);
+    b = min(a, b);
+    a = hi;
+}
+
+// the index of the palette entry nearest the pixel, in the error the mode search uses
+uint bestIndex(uvec4 px, uvec4 e0, uvec4 e1, uint prec, bool rgb, bool alpha) {
+    uint n = 16u >> prec;
+    uint best = 0u;
+    float bestErr = 3.4e38;
+    for (uint k = 0u; k < n; k++) {
+        uint w = aWeight[prec][k];
+        ivec4 d = ivec4(((64u - w) * e0 + w * e1 + 32u) >> 6u) - ivec4(px);
+        float err = (rgb ? float(d.r * d.r + d.g * d.g + d.b * d.b) : 0.0)
+            + (alpha ? g_alpha_weight * float(d.a * d.a) : 0.0);
+        if (err < bestErr) {
+            bestErr = err;
+            best = k;
+        }
+    }
+    return best;
+}
+
+uvec4 rotate(uvec4 p, uint rotation) {
+    if (rotation == 1u) p.ra = p.ar;
+    else if (rotation == 2u) p.ga = p.ag;
+    else if (rotation == 3u) p.ba = p.ab;
+    return p;
+}
+
+uvec4 quantize(uvec4 color, uint uPrec) {
+    return (((color << 8u) + color) * ((1u << uPrec) - 1u) + 32768u) >> 16u;
+}
+
+uvec4 unquantize(uvec4 color, uint uPrec) {
+    color = color << (8u - uPrec);
+    return color | (color >> uPrec);
+}
+
+void compress_endpoints1(inout uvec4 endPoint[2], uvec2 P, out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j].rgb = quantize(endPoint[j].rgbb, 7u).rgb & 0xFFFFFFFEu;
+        quantized[j].rgb |= P[j];
+        quantized[j].a = 0xFFu;
+        endPoint[j].rgb = unquantize(quantized[j].rgbb, 7u).rgb;
+        endPoint[j].a = 0xFFu;
+        quantized[j] <<= 1u;
+    }
+}
+void compress_endpoints3(inout uvec4 endPoint[2], uvec2 P, out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j].rgb = endPoint[j].rgb & 0xFFFFFFFEu;
+        quantized[j].rgb |= P[j];
+        quantized[j].a = 0xFFu;
+        endPoint[j].rgb = quantized[j].rgb;
+        endPoint[j].a = 0xFFu;
+    }
+}
+void compress_endpoints4(inout uvec4 endPoint[2], out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j].rgb = quantize(endPoint[j].rgbb, 5u).rgb;
+        quantized[j].a = quantize(uvec4(endPoint[j].a), 6u).r;
+        endPoint[j].rgb = unquantize(quantized[j].rgbb, 5u).rgb;
+        endPoint[j].a = unquantize(uvec4(quantized[j].a), 6u).r;
+        quantized[j].rgb <<= 3u;
+        quantized[j].a <<= 2u;
+    }
+}
+void compress_endpoints5(inout uvec4 endPoint[2], out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j].rgb = quantize(endPoint[j].rgbb, 7u).rgb;
+        quantized[j].a = endPoint[j].a;
+        endPoint[j].rgb = unquantize(quantized[j].rgbb, 7u).rgb;
+        quantized[j].rgb <<= 1u;
+    }
+}
+void compress_endpoints6(inout uvec4 endPoint[2], uvec2 P, out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j] = endPoint[j] & 0xFFFFFFFEu;
+        quantized[j] |= P[j];
+        endPoint[j] = quantized[j];
+    }
+}
+void compress_endpoints7(inout uvec4 endPoint[2], uvec2 P, out uvec4 quantized[2]) {
+    for (uint j = 0u; j < 2u; j++) {
+        quantized[j] = quantize(endPoint[j], 6u) & 0xFFFFFFFEu;
+        quantized[j] |= P[j];
+        endPoint[j] = unquantize(quantized[j], 6u);
+        quantized[j] <<= 2u;
+    }
+}
+
+#ifdef ENTRY_456
+// modes 4 (rotations, index selector), 5 (rotations) and 6 (p-bits); 4 blocks a group, 16 candidates a block
+void main() {
+    // the whole group, so before any barrier
+    if (groupIndex() * 4u >= g_num_total_blocks) {
+        return;
+    }
+    uint GI = gl_LocalInvocationIndex;
+    uint blockInGroup = GI / 16u;
+    uint blockID = groupIndex() * 4u + blockInGroup;
+    uint threadBase = blockInGroup * 16u;
+    uint threadInBlock = GI - threadBase;
+    uint block_y = blockID / g_num_block_x;
+    uint block_x = blockID - block_y * g_num_block_x;
+    uint base_x = block_x * 4u;
+    uint base_y = block_y * 4u;
+
+    shared_temp[GI].pixel = loadPixel(base_x, base_y, threadInBlock);
+    shared_temp[GI].endPoint_low = shared_temp[GI].pixel;
+    shared_temp[GI].endPoint_high = shared_temp[GI].pixel;
+    SYNC;
+    for (uint s = 8u; s > 0u; s >>= 1u) {
+        if (threadInBlock < s) {
+            shared_temp[GI].endPoint_low = min(shared_temp[GI].endPoint_low, shared_temp[GI + s].endPoint_low);
+            shared_temp[GI].endPoint_high = max(shared_temp[GI].endPoint_high, shared_temp[GI + s].endPoint_high);
+        }
+        SYNC;
+    }
+
+    uvec4 endPoint[2];
+    endPoint[0] = shared_temp[threadBase].endPoint_low;
+    endPoint[1] = shared_temp[threadBase].endPoint_high;
+    uvec4 q[2];
+
+    uint error = MAX_UINT;
+    uint mode = 0u;
+    uint index_selector = 0u;
+    uint rotation = 0u;
+
+    uvec2 indexPrec;
+    if (threadInBlock < 8u) {
+        if (0u == (threadInBlock & 1u)) {
+            index_selector = 0u;
+            indexPrec = uvec2(2u, 1u);
+        } else {
+            index_selector = 1u;
+            indexPrec = uvec2(1u, 2u);
+        }
+    } else {
+        indexPrec = uvec2(2u, 2u);
+    }
+
+    if (threadInBlock < 12u) {
+        if (threadInBlock < 2u || 8u == threadInBlock) {
+            rotation = 0u;
+        } else if (threadInBlock < 4u || 9u == threadInBlock) {
+            rotation = 1u;
+        } else if (threadInBlock < 6u || 10u == threadInBlock) {
+            rotation = 2u;
+        } else {
+            rotation = 3u;
+        }
+        endPoint[0] = rotate(endPoint[0], rotation);
+        endPoint[1] = rotate(endPoint[1], rotation);
+
+        if (threadInBlock < 8u) {
+            mode = 4u;
+            compress_endpoints4(endPoint, q);
+        } else {
+            mode = 5u;
+            compress_endpoints5(endPoint, q);
+        }
+
+        uvec4 pixel0 = rotate(shared_temp[threadBase].pixel, rotation);
+        ivec4 span = ivec4(endPoint[1]) - ivec4(endPoint[0]);
+        ivec2 span_norm_sqr = ivec2(idot(span.rgb, span.rgb), span.a * span.a);
+        ivec3 d0 = ivec3(pixel0.rgb) - ivec3(endPoint[0].rgb);
+        ivec3 d1 = ivec3(pixel0.rgb) - ivec3(endPoint[1].rgb);
+        if (idot(d0, d0) > idot(d1, d1)) {
+            span.rgb = -span.rgb;
+            uvec3 t = endPoint[0].rgb;
+            endPoint[0].rgb = endPoint[1].rgb;
+            endPoint[1].rgb = t;
+        }
+        int a0 = int(pixel0.a) - int(endPoint[0].a);
+        int a1 = int(pixel0.a) - int(endPoint[1].a);
+        if (a0 * a0 > a1 * a1) {
+            span.a = -span.a;
+            uint t = endPoint[0].a;
+            endPoint[0].a = endPoint[1].a;
+            endPoint[1].a = t;
+        }
+        error = 0u;
+        for (uint i = 0u; i < 16u; i++) {
+            uvec4 pixel = rotate(shared_temp[threadBase + i].pixel, rotation);
+            uint color_index = stepIndex(idot(span.rgb, ivec3(pixel.rgb) - ivec3(endPoint[0].rgb)), span_norm_sqr.x,
+                indexPrec.x);
+            uint alpha_index = stepIndex(span.a * (int(pixel.a) - int(endPoint[0].a)), span_norm_sqr.y, indexPrec.y);
+
+            uvec4 pixel_r;
+            pixel_r.rgb = ((64u - aWeight[indexPrec.x][color_index]) * endPoint[0].rgb
+                + aWeight[indexPrec.x][color_index] * endPoint[1].rgb + 32u) >> 6u;
+            pixel_r.a = ((64u - aWeight[indexPrec.y][alpha_index]) * endPoint[0].a
+                + aWeight[indexPrec.y][alpha_index] * endPoint[1].a + 32u) >> 6u;
+
+            Ensure_A_Is_Larger(pixel_r, pixel);
+            pixel_r -= pixel;
+            pixel_r = rotate(pixel_r, rotation);
+            error += ComputeError(pixel_r, pixel_r);
+        }
+    } else {
+        uint p = threadInBlock - 12u;
+        compress_endpoints6(endPoint, uvec2(p, p >> 1u) & 1u, q);
+
+        uvec4 pixel0 = shared_temp[threadBase].pixel;
+        ivec4 span = ivec4(endPoint[1]) - ivec4(endPoint[0]);
+        int span_norm_sqr = idot(span, span);
+        int dotProduct = idot(span, ivec4(pixel0) - ivec4(endPoint[0]));
+        if (span_norm_sqr > 0 && dotProduct >= 0 && uint(float(dotProduct) * 63.49999) > uint(32 * span_norm_sqr)) {
+            span = -span;
+            swap4(endPoint[0], endPoint[1]);
+        }
+        error = 0u;
+        for (uint i = 0u; i < 16u; i++) {
+            uvec4 pixel = shared_temp[threadBase + i].pixel;
+            uint color_index = stepIndex(idot(span, ivec4(pixel) - ivec4(endPoint[0])), span_norm_sqr, 0u);
+            uvec4 pixel_r = ((64u - aWeight[0][color_index]) * endPoint[0]
+                + aWeight[0][color_index] * endPoint[1] + 32u) >> 6u;
+            Ensure_A_Is_Larger(pixel_r, pixel);
+            pixel_r -= pixel;
+            error += ComputeError(pixel_r, pixel_r);
+        }
+
+        mode = 6u;
+        rotation = p;
+    }
+
+    shared_temp[GI].error = error;
+    shared_temp[GI].mode = mode;
+    shared_temp[GI].index_selector = index_selector;
+    shared_temp[GI].rotation = rotation;
+    SYNC;
+
+    for (uint s = 8u; s > 0u; s >>= 1u) {
+        if (threadInBlock < s) {
+            if (shared_temp[GI].error > shared_temp[GI + s].error) {
+                shared_temp[GI].error = shared_temp[GI + s].error;
+                shared_temp[GI].mode = shared_temp[GI + s].mode;
+                shared_temp[GI].index_selector = shared_temp[GI + s].index_selector;
+                shared_temp[GI].rotation = shared_temp[GI + s].rotation;
+            }
+        }
+        SYNC;
+    }
+    if (threadInBlock == 0u && blockID < g_num_total_blocks) {
+        g_OutBuff[blockID] = uvec4(shared_temp[GI].error,
+            (shared_temp[GI].index_selector << 31) | shared_temp[GI].mode, 0u, shared_temp[GI].rotation);
+    }
+}
+#endif
+
+#ifdef ENTRY_137
+// mode g_mode_id (1, 3 or 7) over the 64 partitions of two subsets, one a thread; one block a group
+void compress137(inout uvec4 lo, inout uvec4 hi, uint p) {
+    uvec4 e[2] = uvec4[2](lo, hi);
+    uvec4 q[2];
+    if (g_mode_id == 1u) compress_endpoints1(e, uvec2(p), q);
+    else if (g_mode_id == 3u) compress_endpoints3(e, uvec2(p, p >> 1u) & 1u, q);
+    else compress_endpoints7(e, uvec2(p, p >> 1u) & 1u, q);
+    lo = e[0];
+    hi = e[1];
+}
+
+void main() {
+    uint GI = gl_LocalInvocationIndex;
+    uint blockID = groupIndex();
+    if (blockID >= g_num_total_blocks) {
+        return;
+    }
+    // no partition beats an exact block (transparent, flat, padding); one block a group, so before any barrier
+    if (g_InBuff[blockID].x == 0u) {
+        if (GI == 0u) {
+            g_OutBuff[blockID] = g_InBuff[blockID];
+        }
+        return;
+    }
+    uint threadInBlock = GI;
+    uint block_y = blockID / g_num_block_x;
+    uint block_x = blockID - block_y * g_num_block_x;
+
+    if (threadInBlock < 16u) {
+        shared_pixel[GI] = loadPixel(block_x * 4u, block_y * 4u, threadInBlock);
+    }
+    SYNC;
+
+    uint part = threadInBlock;
+    uint bits = candidateSectionBit[part];
+    // dynamically indexed per-subset arrays spill to local memory: 40 times slower
+    uvec4 lo0 = uvec4(MAX_UINT), hi0 = uvec4(0u), lo1 = uvec4(MAX_UINT), hi1 = uvec4(0u);
+    for (uint i = 0u; i < 16u; i++) {
+        uvec4 pixel = shared_pixel[i];
+        if (((bits >> i) & 1u) == 1u) {
+            lo1 = min(lo1, pixel);
+            hi1 = max(hi1, pixel);
+        } else {
+            lo0 = min(lo0, pixel);
+            hi0 = max(hi0, pixel);
+        }
+    }
+
+    uint max_p = (1u == g_mode_id) ? 2u : 4u;
+    uint step_selector = (g_mode_id != 1u) ? 2u : 1u;
+    uint error0 = MAX_UINT, error1 = MAX_UINT, final_p0 = 0u, final_p1 = 0u;
+    for (uint p = 0u; p < max_p; p++) {
+        uvec4 a0 = lo0, b0 = hi0, a1 = lo1, b1 = hi1;
+        compress137(a0, b0, p);
+        compress137(a1, b1, p);
+        ivec4 s0 = ivec4(b0) - ivec4(a0);
+        ivec4 s1 = ivec4(b1) - ivec4(a1);
+        if (g_mode_id != 7u) {
+            s0.w = 0;
+            s1.w = 0;
+        }
+        int n0 = idot(s0, s0);
+        int n1 = idot(s1, s1);
+        if (flipNeeded(idot(s0, ivec4(shared_pixel[0]) - ivec4(a0)), n0)) {
+            s0 = -s0;
+            swap4(a0, b0);
+        }
+        if (flipNeeded(idot(s1, ivec4(shared_pixel[candidateFixUpIndex1D[part]]) - ivec4(a1)), n1)) {
+            s1 = -s1;
+            swap4(a1, b1);
+        }
+
+        uint e0 = 0u, e1 = 0u;
+        for (uint i = 0u; i < 16u; i++) {
+            bool in1 = ((bits >> i) & 1u) == 1u;
+            ivec4 sp = in1 ? s1 : s0;
+            uvec4 a = in1 ? a1 : a0;
+            uvec4 b = in1 ? b1 : b0;
+            uvec4 pixel = shared_pixel[i];
+            uint color_index = stepIndex(idot(sp, ivec4(pixel) - ivec4(a)), in1 ? n1 : n0, step_selector);
+            uint w = aWeight[step_selector][color_index];
+            uvec4 pixel_r = ((64u - w) * a + w * b + 32u) >> 6u;
+            if (g_mode_id != 7u) {
+                pixel_r.a = 255u;
+            }
+            Ensure_A_Is_Larger(pixel_r, pixel);
+            pixel_r -= pixel;
+            uint err = ComputeError(pixel_r, pixel_r);
+            if (in1) e1 += err; else e0 += err;
+        }
+        if (e0 < error0) {
+            error0 = e0;
+            final_p0 = p;
+        }
+        if (e1 < error1) {
+            error1 = e1;
+            final_p1 = p;
+        }
+    }
+
+    shared_temp[GI].error = error0 + error1;
+    shared_temp[GI].mode = g_mode_id;
+    shared_temp[GI].part = part;
+    shared_temp[GI].rotation = (g_mode_id == 1u) ? ((final_p1 << 1) | final_p0) : ((final_p1 << 2) | final_p0);
+    SYNC;
+
+    for (uint s = 32u; s > 0u; s >>= 1u) {
+        if (threadInBlock < s) {
+            if (shared_temp[GI].error > shared_temp[GI + s].error) {
+                shared_temp[GI].error = shared_temp[GI + s].error;
+                shared_temp[GI].mode = shared_temp[GI + s].mode;
+                shared_temp[GI].part = shared_temp[GI + s].part;
+                shared_temp[GI].rotation = shared_temp[GI + s].rotation;
+            }
+        }
+        SYNC;
+    }
+    if (threadInBlock == 0u && blockID < g_num_total_blocks) {
+        if (g_InBuff[blockID].x > shared_temp[GI].error) {
+            g_OutBuff[blockID] = uvec4(shared_temp[GI].error, shared_temp[GI].mode, shared_temp[GI].part,
+                shared_temp[GI].rotation);
+        } else {
+            g_OutBuff[blockID] = g_InBuff[blockID];
+        }
+    }
+}
+#endif
+
+#ifdef ENTRY_ENCODE
+// the chosen mode's block; 4 blocks a group
+#define get_end_point_l(subset) shared_temp[threadBase + (subset)].endPoint_low_quantized
+#define get_end_point_h(subset) shared_temp[threadBase + (subset)].endPoint_high_quantized
+#define get_color_index(index) shared_temp[threadBase + (index)].error
+#define get_alpha_index(index) shared_temp[threadBase + (index)].mode
+
+uvec4 block_package1(uint part, uint threadBase) {
+    uvec4 block;
+    block.x = 0x02u | (part << 2)
+        | ((get_end_point_l(0).r & 0xFCu) <<  6) | ((get_end_point_h(0).r & 0xFCu) << 12)
+        | ((get_end_point_l(1).r & 0xFCu) << 18) | ((get_end_point_h(1).r & 0xFCu) << 24);
+    block.y = ((get_end_point_l(0).g & 0xFCu) >>  2) | ((get_end_point_h(0).g & 0xFCu) <<  4)
+        | ((get_end_point_l(1).g & 0xFCu) << 10) | ((get_end_point_h(1).g & 0xFCu) << 16)
+        | ((get_end_point_l(0).b & 0xFCu) << 22) | ((get_end_point_h(0).b & 0xFCu) << 28);
+    block.z = ((get_end_point_h(0).b & 0xFCu) >>  4) | ((get_end_point_l(1).b & 0xFCu) <<  2)
+        | ((get_end_point_h(1).b & 0xFCu) <<  8)
+        | ((get_end_point_l(0).r & 0x02u) << 15) | ((get_end_point_l(1).r & 0x02u) << 16)
+        | (get_color_index(0) << 18);
+    if (candidateFixUpIndex1D[part] == 15u) {
+        block.w = (get_color_index(15) << 30) | (get_color_index(14) << 27) | (get_color_index(13) << 24)
+            | (get_color_index(12) << 21) | (get_color_index(11) << 18) | (get_color_index(10) << 15)
+            | (get_color_index(9) << 12) | (get_color_index(8) << 9) | (get_color_index(7) << 6)
+            | (get_color_index(6) << 3) | get_color_index(5);
+        block.z |= (get_color_index(4) << 29) | (get_color_index(3) << 26) | (get_color_index(2) << 23)
+            | (get_color_index(1) << 20) | (get_color_index(0) << 18);
+    } else if (candidateFixUpIndex1D[part] == 2u) {
+        block.w = (get_color_index(15) << 29) | (get_color_index(14) << 26) | (get_color_index(13) << 23)
+            | (get_color_index(12) << 20) | (get_color_index(11) << 17) | (get_color_index(10) << 14)
+            | (get_color_index(9) << 11) | (get_color_index(8) << 8) | (get_color_index(7) << 5)
+            | (get_color_index(6) << 2) | (get_color_index(5) >> 1);
+        block.z |= (get_color_index(5) << 31) | (get_color_index(4) << 28) | (get_color_index(3) << 25)
+            | (get_color_index(2) << 23) | (get_color_index(1) << 20) | (get_color_index(0) << 18);
+    } else if (candidateFixUpIndex1D[part] == 8u) {
+        block.w = (get_color_index(15) << 29) | (get_color_index(14) << 26) | (get_color_index(13) << 23)
+            | (get_color_index(12) << 20) | (get_color_index(11) << 17) | (get_color_index(10) << 14)
+            | (get_color_index(9) << 11) | (get_color_index(8) << 9) | (get_color_index(7) << 6)
+            | (get_color_index(6) << 3) | get_color_index(5);
+        block.z |= (get_color_index(4) << 29) | (get_color_index(3) << 26) | (get_color_index(2) << 23)
+            | (get_color_index(1) << 20) | (get_color_index(0) << 18);
+    } else {
+        block.w = (get_color_index(15) << 29) | (get_color_index(14) << 26) | (get_color_index(13) << 23)
+            | (get_color_index(12) << 20) | (get_color_index(11) << 17) | (get_color_index(10) << 14)
+            | (get_color_index(9) << 11) | (get_color_index(8) << 8) | (get_color_index(7) << 5)
+            | (get_color_index(6) << 3) | get_color_index(5);
+        block.z |= (get_color_index(4) << 29) | (get_color_index(3) << 26) | (get_color_index(2) << 23)
+            | (get_color_index(1) << 20) | (get_color_index(0) << 18);
+    }
+    return block;
+}
+uvec4 block_package3(uint part, uint threadBase) {
+    uvec4 block;
+    block.x = 0x08u | (part << 4)
+        | ((get_end_point_l(0).r & 0xFEu) <<  9) | ((get_end_point_h(0).r & 0xFEu) << 16)
+        | ((get_end_point_l(1).r & 0xFEu) << 23) | ((get_end_point_h(1).r & 0xFEu) << 30);
+    block.y = ((get_end_point_h(1).r & 0xFEu) >>  2) | ((get_end_point_l(0).g & 0xFEu) <<  5)
+        | ((get_end_point_h(0).g & 0xFEu) << 12) | ((get_end_point_l(1).g & 0xFEu) << 19)
+        | ((get_end_point_h(1).g & 0xFEu) << 26);
+    block.z = ((get_end_point_h(1).g & 0xFEu) >>  6) | ((get_end_point_l(0).b & 0xFEu) <<  1)
+        | ((get_end_point_h(0).b & 0xFEu) <<  8) | ((get_end_point_l(1).b & 0xFEu) << 15)
+        | ((get_end_point_h(1).b & 0xFEu) << 22)
+        | ((get_end_point_l(0).r & 0x01u) << 30) | ((get_end_point_h(0).r & 0x01u) << 31);
+    block.w = ((get_end_point_l(1).r & 0x01u) <<  0) | ((get_end_point_h(1).r & 0x01u) <<  1)
+        | (get_color_index(0) << 2);
+    uint i = 1u;
+    for (; i <= candidateFixUpIndex1D[part]; i++) {
+        block.w |= get_color_index(i) << (i * 2u + 1u);
+    }
+    for (; i < 16u; i++) {
+        block.w |= get_color_index(i) << (i * 2u);
+    }
+    return block;
+}
+uvec4 block_package4(uint rotation, uint index_selector, uint threadBase) {
+    uvec4 block;
+    block.x = 0x10u | ((rotation & 3u) << 5) | ((index_selector & 1u) << 7)
+        | ((get_end_point_l(0).r & 0xF8u) <<  5) | ((get_end_point_h(0).r & 0xF8u) << 10)
+        | ((get_end_point_l(0).g & 0xF8u) << 15) | ((get_end_point_h(0).g & 0xF8u) << 20)
+        | ((get_end_point_l(0).b & 0xF8u) << 25);
+    block.y = ((get_end_point_l(0).b & 0xF8u) >>  7) | ((get_end_point_h(0).b & 0xF8u) >>  2)
+        | ((get_end_point_l(0).a & 0xFCu) <<  4) | ((get_end_point_h(0).a & 0xFCu) << 10)
+        | ((get_color_index(0) & 1u) << 18) | (get_color_index(1) << 19) | (get_color_index(2) << 21)
+        | (get_color_index(3) << 23) | (get_color_index(4) << 25) | (get_color_index(5) << 27)
+        | (get_color_index(6) << 29) | (get_color_index(7) << 31);
+    block.z = (get_color_index(7) >>  1) | (get_color_index(8) <<  1) | (get_color_index(9) <<  3)
+        | (get_color_index(10)<<  5) | (get_color_index(11)<<  7) | (get_color_index(12)<<  9)
+        | (get_color_index(13)<< 11) | (get_color_index(14)<< 13) | (get_color_index(15)<< 15)
+        | ((get_alpha_index(0) & 3u) << 17) | (get_alpha_index(1) << 19) | (get_alpha_index(2) << 22)
+        | (get_alpha_index(3) << 25) | (get_alpha_index(4) << 28) | (get_alpha_index(5) << 31);
+    block.w = (get_alpha_index(5) >>  1) | (get_alpha_index(6) <<  2) | (get_alpha_index(7) <<  5)
+        | (get_alpha_index(8) <<  8) | (get_alpha_index(9) << 11) | (get_alpha_index(10)<< 14)
+        | (get_alpha_index(11)<< 17) | (get_alpha_index(12)<< 20) | (get_alpha_index(13)<< 23)
+        | (get_alpha_index(14)<< 26) | (get_alpha_index(15)<< 29);
+    return block;
+}
+uvec4 block_package5(uint rotation, uint threadBase) {
+    uvec4 block;
+    block.x = 0x20u | (rotation << 6)
+        | ((get_end_point_l(0).r & 0xFEu) <<  7) | ((get_end_point_h(0).r & 0xFEu) << 14)
+        | ((get_end_point_l(0).g & 0xFEu) << 21) | ((get_end_point_h(0).g & 0xFEu) << 28);
+    block.y = ((get_end_point_h(0).g & 0xFEu) >>  4) | ((get_end_point_l(0).b & 0xFEu) <<  3)
+        | ((get_end_point_h(0).b & 0xFEu) << 10) | (get_end_point_l(0).a << 18) | (get_end_point_h(0).a << 26);
+    block.z = (get_end_point_h(0).a >>  6)
+        | (get_color_index(0) <<  2) | (get_color_index(1) <<  3) | (get_color_index(2) <<  5)
+        | (get_color_index(3) <<  7) | (get_color_index(4) <<  9) | (get_color_index(5) << 11)
+        | (get_color_index(6) << 13) | (get_color_index(7) << 15) | (get_color_index(8) << 17)
+        | (get_color_index(9) << 19) | (get_color_index(10)<< 21) | (get_color_index(11)<< 23)
+        | (get_color_index(12)<< 25) | (get_color_index(13)<< 27) | (get_color_index(14)<< 29)
+        | (get_color_index(15)<< 31);
+    block.w = (get_color_index(15)>> 1) | (get_alpha_index(0) <<  1) | (get_alpha_index(1) <<  2)
+        | (get_alpha_index(2) <<  4) | (get_alpha_index(3) <<  6) | (get_alpha_index(4) <<  8)
+        | (get_alpha_index(5) << 10) | (get_alpha_index(6) << 12) | (get_alpha_index(7) << 14)
+        | (get_alpha_index(8) << 16) | (get_alpha_index(9) << 18) | (get_alpha_index(10)<< 20)
+        | (get_alpha_index(11)<< 22) | (get_alpha_index(12)<< 24) | (get_alpha_index(13)<< 26)
+        | (get_alpha_index(14)<< 28) | (get_alpha_index(15)<< 30);
+    return block;
+}
+uvec4 block_package6(uint threadBase) {
+    uvec4 block;
+    block.x = 0x40u
+        | ((get_end_point_l(0).r & 0xFEu) <<  6) | ((get_end_point_h(0).r & 0xFEu) << 13)
+        | ((get_end_point_l(0).g & 0xFEu) << 20) | ((get_end_point_h(0).g & 0xFEu) << 27);
+    block.y = ((get_end_point_h(0).g & 0xFEu) >>  5) | ((get_end_point_l(0).b & 0xFEu) <<  2)
+        | ((get_end_point_h(0).b & 0xFEu) <<  9) | ((get_end_point_l(0).a & 0xFEu) << 16)
+        | ((get_end_point_h(0).a & 0xFEu) << 23)
+        | (get_end_point_l(0).r & 0x01u) << 31;
+    block.z = (get_end_point_h(0).r & 0x01u)
+        | (get_color_index(0) <<  1) | (get_color_index(1) <<  4) | (get_color_index(2) <<  8)
+        | (get_color_index(3) << 12) | (get_color_index(4) << 16) | (get_color_index(5) << 20)
+        | (get_color_index(6) << 24) | (get_color_index(7) << 28);
+    block.w = (get_color_index(8) <<  0) | (get_color_index(9) <<  4) | (get_color_index(10)<<  8)
+        | (get_color_index(11)<< 12) | (get_color_index(12)<< 16) | (get_color_index(13)<< 20)
+        | (get_color_index(14)<< 24) | (get_color_index(15)<< 28);
+    return block;
+}
+uvec4 block_package7(uint part, uint threadBase) {
+    uvec4 block;
+    block.x = 0x80u | (part << 8)
+        | ((get_end_point_l(0).r & 0xF8u) << 11) | ((get_end_point_h(0).r & 0xF8u) << 16)
+        | ((get_end_point_l(1).r & 0xF8u) << 21) | ((get_end_point_h(1).r & 0xF8u) << 26);
+    block.y = ((get_end_point_h(1).r & 0xF8u) >>  6) | ((get_end_point_l(0).g & 0xF8u) >>  1)
+        | ((get_end_point_h(0).g & 0xF8u) <<  4) | ((get_end_point_l(1).g & 0xF8u) <<  9)
+        | ((get_end_point_h(1).g & 0xF8u) << 14) | ((get_end_point_l(0).b & 0xF8u) << 19)
+        | ((get_end_point_h(0).b & 0xF8u) << 24);
+    block.z = ((get_end_point_l(1).b & 0xF8u) >>  3) | ((get_end_point_h(1).b & 0xF8u) <<  2)
+        | ((get_end_point_l(0).a & 0xF8u) <<  7) | ((get_end_point_h(0).a & 0xF8u) << 12)
+        | ((get_end_point_l(1).a & 0xF8u) << 17) | ((get_end_point_h(1).a & 0xF8u) << 22)
+        | ((get_end_point_l(0).r & 0x04u) << 28) | ((get_end_point_h(0).r & 0x04u) << 29);
+    block.w = ((get_end_point_l(1).r & 0x04u) >>  2) | ((get_end_point_h(1).r & 0x04u) >>  1)
+        | (get_color_index(0) <<  2);
+    uint i = 1u;
+    for (; i <= candidateFixUpIndex1D[part]; i++) {
+        block.w |= get_color_index(i) << (i * 2u + 1u);
+    }
+    for (; i < 16u; i++) {
+        block.w |= get_color_index(i) << (i * 2u);
+    }
+    return block;
+}
+
+shared uint shared_flip[4][2];
+
+void main() {
+    if (groupIndex() * 4u >= g_num_total_blocks) {
+        return;
+    }
+    uint GI = gl_LocalInvocationIndex;
+    uint blockInGroup = GI / 16u;
+    uint blockID = groupIndex() * 4u + blockInGroup;
+    uint threadBase = blockInGroup * 16u;
+    uint threadInBlock = GI - threadBase;
+    uint block_y = blockID / g_num_block_x;
+    uint block_x = blockID - block_y * g_num_block_x;
+    uint base_x = block_x * 4u;
+    uint base_y = block_y * 4u;
+
+    uvec4 inb = g_InBuff[min(blockID, g_num_total_blocks - 1u)];
+    uint mode = inb.y & 0x7FFFFFFFu;
+    uint part = min(inb.z, 63u);
+    uint index_selector = (inb.y >> 31) & 1u;
+    uint rotation = inb.w;
+
+    uvec4 pixel0 = loadPixel(base_x, base_y, threadInBlock);
+    if (4u == mode || 5u == mode) {
+        pixel0 = rotate(pixel0, rotation);
+    }
+    shared_temp[GI].pixel = pixel0;
+    SYNC;
+
+    bool two = (1u == mode || 3u == mode || 7u == mode);
+    uint subset_index = two ? (candidateSectionBit[part] >> threadInBlock) & 1u : 0u;
+
+    // each subset's bounding box, subset ii in thread ii
+    uvec4 ep[2];
+    ep[0] = uvec4(MAX_UINT);
+    ep[1] = uvec4(0u);
+    uvec4 ep_quantized[2];
+    for (uint ii = 0u; ii < 2u; ii++) {
+        uvec4 e0 = uvec4(MAX_UINT);
+        uvec4 e1 = uvec4(0u);
+        if (subset_index == ii) {
+            e0 = shared_temp[GI].pixel;
+            e1 = e0;
+        }
+        shared_temp[GI].endPoint_low = e0;
+        shared_temp[GI].endPoint_high = e1;
+        SYNC;
+        for (uint s = 8u; s > 0u; s >>= 1u) {
+            if (threadInBlock < s) {
+                shared_temp[GI].endPoint_low = min(shared_temp[GI].endPoint_low, shared_temp[GI + s].endPoint_low);
+                shared_temp[GI].endPoint_high = max(shared_temp[GI].endPoint_high, shared_temp[GI + s].endPoint_high);
+            }
+            SYNC;
+        }
+        if (ii == threadInBlock) {
+            ep[0] = shared_temp[threadBase].endPoint_low;
+            ep[1] = shared_temp[threadBase].endPoint_high;
+        }
+        // the next pass overwrites the reduction's result
+        SYNC;
+    }
+
+    if (threadInBlock < 2u) {
+        uvec2 P;
+        if (1u == mode) {
+            P = uvec2((rotation >> threadInBlock) & 1u);
+        } else {
+            P = uvec2(rotation >> (threadInBlock * 2u), rotation >> (threadInBlock * 2u + 1u)) & 1u;
+        }
+        if (1u == mode) compress_endpoints1(ep, P, ep_quantized);
+        else if (3u == mode) compress_endpoints3(ep, P, ep_quantized);
+        else if (4u == mode) compress_endpoints4(ep, ep_quantized);
+        else if (5u == mode) compress_endpoints5(ep, ep_quantized);
+        else if (6u == mode) compress_endpoints6(ep, P, ep_quantized);
+        else compress_endpoints7(ep, P, ep_quantized);
+        shared_temp[GI].endPoint_low = ep[0];
+        shared_temp[GI].endPoint_high = ep[1];
+        shared_temp[GI].endPoint_low_quantized = ep_quantized[0];
+        shared_temp[GI].endPoint_high_quantized = ep_quantized[1];
+    }
+    SYNC;
+
+    uvec2 indexPrec;
+    if (1u == mode) indexPrec = uvec2(1u);
+    else if (6u == mode) indexPrec = uvec2(0u);
+    else if (4u == mode) indexPrec = (0u == index_selector) ? uvec2(2u, 1u) : uvec2(1u, 2u);
+    else indexPrec = uvec2(2u);
+    uvec4 e0 = shared_temp[threadBase + subset_index].endPoint_low;
+    uvec4 e1 = shared_temp[threadBase + subset_index].endPoint_high;
+    uvec4 px = shared_temp[threadBase + threadInBlock].pixel;
+    uint color_index;
+    uint alpha_index = 0u;
+    if (4u == mode || 5u == mode) {
+        color_index = bestIndex(px, e0, e1, indexPrec.x, true, false);
+        alpha_index = bestIndex(px, e0, e1, indexPrec.y, false, true);
+    } else {
+        color_index = bestIndex(px, e0, e1, indexPrec.x, true, 6u == mode || 7u == mode);
+    }
+    // the anchor's top index bit must be 0: else swap the subset's endpoints and mirror its indices (the weights are
+    // symmetric, so the colours stay the same)
+    uint anchor = subset_index == 0u ? 0u : candidateFixUpIndex1D[part];
+    if (threadInBlock == anchor) {
+        // bit 0: the colour (or only) index set of this subset, bit 1: the alpha set of modes 4 and 5
+        shared_flip[blockInGroup][subset_index] = (color_index >= (8u >> indexPrec.x) ? 1u : 0u)
+            | (alpha_index >= (8u >> indexPrec.y) && (4u == mode || 5u == mode) ? 2u : 0u);
+    }
+    SYNC;
+    uint flip = shared_flip[blockInGroup][subset_index];
+    if ((flip & 1u) != 0u) color_index = (16u >> indexPrec.x) - 1u - color_index;
+    if ((flip & 2u) != 0u) alpha_index = (16u >> indexPrec.y) - 1u - alpha_index;
+    if (index_selector != 0u) {
+        swapu(color_index, alpha_index);
+    }
+    shared_temp[GI].error = color_index;
+    shared_temp[GI].mode = alpha_index;
+    if (threadInBlock < 2u) {
+        uint f = shared_flip[blockInGroup][threadInBlock];
+        if (4u == mode || 5u == mode) {
+            if ((f & 1u) != 0u) {
+                uvec3 t = shared_temp[GI].endPoint_low_quantized.rgb;
+                shared_temp[GI].endPoint_low_quantized.rgb = shared_temp[GI].endPoint_high_quantized.rgb;
+                shared_temp[GI].endPoint_high_quantized.rgb = t;
+            }
+            if ((f & 2u) != 0u) {
+                uint t = shared_temp[GI].endPoint_low_quantized.a;
+                shared_temp[GI].endPoint_low_quantized.a = shared_temp[GI].endPoint_high_quantized.a;
+                shared_temp[GI].endPoint_high_quantized.a = t;
+            }
+        } else if ((f & 1u) != 0u) {
+            uvec4 t = shared_temp[GI].endPoint_low_quantized;
+            shared_temp[GI].endPoint_low_quantized = shared_temp[GI].endPoint_high_quantized;
+            shared_temp[GI].endPoint_high_quantized = t;
+        }
+    }
+    SYNC;
+
+    if (0u == threadInBlock && blockID < g_num_total_blocks) {
+        uvec4 block;
+        if (1u == mode) block = block_package1(part, threadBase);
+        else if (3u == mode) block = block_package3(part, threadBase);
+        else if (4u == mode) block = block_package4(rotation, index_selector, threadBase);
+        else if (5u == mode) block = block_package5(rotation, threadBase);
+        else if (6u == mode) block = block_package6(threadBase);
+        else block = block_package7(part, threadBase);
+        g_OutBuff[blockID] = block;
+    }
+}
+#endif

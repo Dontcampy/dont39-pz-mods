@@ -1,0 +1,13 @@
+{
+    "UI_Dont39FasterLoading_Options": "Faster Loading",
+    "UI_Dont39FasterLoading_StripComments": "Faster comment removal in script files",
+    "UI_Dont39FasterLoading_StripCommentsTooltip": "Removes the comments of script and tile files in one pass, with the same result as the game. Saves about 2 seconds at each game start and each join or save load. Applies from the next launch of the game.",
+    "UI_Dont39FasterLoading_TextureCompression": "Faster texture compression",
+    "UI_Dont39FasterLoading_TextureCompressionTooltip": "Compresses the textures with the mod's own encoder instead of the graphics driver doing it one at a time on the thread that draws the screen: on the graphics card (BC7, see below) or on all CPU cores (DXT5, the driver's format). Same video memory and, on average, better image quality than the driver's. Saves about a minute per server join with many tile mods when the game's texture compression option is on. Applies from the next launch of the game.",
+    "UI_Dont39FasterLoading_TextureBc7": "Sharper compressed textures (BC7 on the graphics card)",
+    "UI_Dont39FasterLoading_TextureBc7Tooltip": "With faster texture compression on, compresses the textures on the graphics card to BC7 instead of DXT5 on the CPU: clearer colours at the same video memory. Needs OpenGL 4.3; without it, or with this off, DXT5 on all CPU cores is used. Applies from the next launch of the game.",
+    "UI_Dont39FasterLoading_DepthMapOrder": "Load the depth maps of different mods side by side",
+    "UI_Dont39FasterLoading_DepthMapOrderTooltip": "Loads the depth maps of the game and of different mods side by side on the game's file loading threads, instead of one mod after another while the other threads wait. Same depth maps, only the order changes. With many tile mods, the background loading after the main menu ends a few seconds sooner, and so does a server join started before it ended. Applies from the next launch of the game.",
+    "UI_Dont39FasterLoading_LuaFolderWalk": "Faster Lua file list",
+    "UI_Dont39FasterLoading_LuaFolderWalkTooltip": "Lists the Lua files of the game and the mods without looking up each folder's full path again for every file in it. The same files in the same order. With many mods, saves a few seconds at each game start and each join or save load. Applies from the next launch of the game."
+}

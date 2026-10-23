@@ -12,9 +12,10 @@ plugins {
   id("buildsrc.convention.pz-bootstrap")
   id("buildsrc.convention.pz-widening")
   id("buildsrc.convention.pz-junit")
+  id("buildsrc.convention.pz-switches")
 }
 
-version = "0.1.0"
+version = "0.2.0"
 
 val modId = pzMod.modId
 val pkg = pzMod.javaPkgName

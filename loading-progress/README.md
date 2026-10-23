@@ -34,21 +34,44 @@ Workshop text: `mod/workshop/workshop.txt`.
 
 ## Switches and timing report
 
-- Two switches in `Dont39LoadingProgress.ini` in the game cache's `Lua` folder (`progress/Settings.java`): `display`
-  (bar, log, own and interim frames) and `report` (timing report), both on by default. Read once per session at the
-  first flow's begin; a missing file is written with the defaults, an invalid one is reported in one line and the
-  defaults apply. With `display` off flows still run for the report and the frame-gap line; with both off no flow
-  begins.
-- The mod options page (`src/main/lua/client/Dont39LoadingProgress_Options.lua`, text in `Translate/`) shows the same
-  two switches, set from the ini when the page is built, and rewrites the ini on apply; a change applies from the next
-  launch.
+- Two switches in `Dont39LoadingProgress.ini` in the game cache's `Lua` folder (`progress/Settings.java` on the repo's
+  shared `mod-settings/Switches.java`): `display` (bar, log, own and interim frames) and `report` (timing report), both
+  on by default. Read once per session at the first flow's begin; a missing file is written with the defaults, a file
+  without a key gets it at its default, an invalid one is reported in one line and the defaults apply. With `display`
+  off flows still run for the report and the frame-gap line; with both off no flow begins.
+- The mod options page (`src/main/lua/client/Dont39LoadingProgress_Options.lua` on `mod-settings/Switches.lua`,
+  shipped as `Dont39LoadingProgress_Switches.lua`; text in `Translate/`, checked against the Java keys by
+  `SettingsTest`) shows the same two switches, set from the ini when the page is built, and rewrites the ini on apply;
+  a change applies from the next launch.
 - Timing: each new log line also gets a time (`progress/Timed.java`), until the next line, the return of the game's
   loop over its kind (mod list, script files, a Lua folder, a Java mod jar), a wait in the menu or the flow's end. No
   hook separates the last script file from the game's processing of all script files after it, so the summary names
   that row and credits it to no mod. At the flow's end `report/Report.java` builds a summary (steps, per item kind the slowest, time per mod)
-  and a CSV with a row per line, and `report/Reports.java` writes them on a background thread to
+  and a CSV with a row per line (a step's rows add up to its time), for a world load also `<report>-files.csv` with a
+  row per file task of the asset wait (below), and `report/Reports.java` writes them on a background thread to
   `Lua/Dont39LoadingProgress/` in the cache folder, keeping the last 10 loads; `console.txt` gets the summary's path.
   A write failure turns the report off for the session.
+- Asset wait (`hooks/AssetWaitHooks.java`, `progress/FileWork.java`, `progress/AssetWait.java`): the world load's wait
+  for the game's file tasks, bracketed by the game's own `bWaitForAssetLoadingToFinish2` log lines, is a line of its
+  own in the log and the line CSV; the animations' line ends when all are loaded, and the rest of the wait is the
+  wait's line again. The wait's numbers come only from its record (`AssetWait`), so the summary's items by kind leave
+  its lines out. The summary gives its exact span (wall clock, to compare with the game's log), the frames that pumped
+  the file queue during it, the queue at its first frame, the time texture decoders slept on the upload budget, and the
+  tasks whose results the game took during it: by type (count, worker time), the slowest, and worker time per mod by
+  the folder of the task's file (for models, animations and physics shapes the file their call resolved; for pack
+  images the `.pack` file the game mounted under the pack's name, after the mods' overrides, which their call opens, or
+  the pack's name when nothing is mounted under it, and the task then fails in the game; else their asset name), then
+  the game's own (in its folder), files in no mod's or the game's folder, and tasks named without a file's path.
+- The files CSV has a row per such task, whose times overlap: `type`, `name` and `mod` as above, `queued_ms` and
+  `done_ms` (when it went to the workers and when the game took its result, after the load began; `queued_ms` empty
+  when it was there before the world load), `worker_ms` (its call on a worker; empty when not timed: cancelled, or
+  its call began before the world load) and `failed`.
+- A task's call names only JDK types, so its worker time is matched to the task by the result the game takes. Results
+  the game shares between tasks (null, a Boolean) are matched by class and in order, except depth maps: their call
+  creates the tileset named by the map's file (`TileDepthTextures.createTileset`), which names the task too. A depth
+  map whose tileset was already there (another mod's map of the same name) and the other such tasks of one class may
+  swap times among themselves. A call whose task the game cancelled while it ran is forgotten a few frames later.
+  Tracked, the upload budget's sleeps too, only while the world loads with the report on.
 
 ## Constraints
 

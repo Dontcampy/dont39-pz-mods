@@ -1,0 +1,48 @@
+version=1
+title=Faster Loading
+description=[h1]Faster Loading[/h1]
+description=Shorter loading screens at game start, when joining a server and when loading a save: the same loading work, done faster. 中文说明在下方。
+description=
+description=[list]
+description=[*]Faster comment removal in script files: the game removes the comments of its script and tile files in a way that gets very slow on large files. This mod does it in one pass with exactly the same result. About 2 seconds saved at each game start and each load, more with mods that add tiles.
+description=[*]Faster texture compression: with the game's texture compression option on (the default), the graphics driver compresses the textures one after another on the thread that draws the screen, and a server join with many tile mods waits about a minute on it. This mod compresses them itself, with the same video memory: on the graphics card to BC7, a format with clearly better colours than the driver's (needs OpenGL 4.3; tested on NVIDIA), or, with "Sharper compressed textures" off or without OpenGL 4.3, on all CPU cores to the driver's own format (DXT5) at an image quality at least the driver's.
+description=[*]Depth maps of different mods side by side: after the main menu is up, the game loads the depth maps of each tile mod one mod after another in the background, while its other loading threads wait. This mod lets the maps of different mods load side by side, the largest first. Same depth maps, only the order changes; with many tile mods the background loading ends about 4 s sooner, and a join started before it ended saves about as much.
+description=[*]Faster Lua file list: before the game runs any Lua, it lists the Lua files of itself and every mod, and asks Windows for each folder's full path again for every file in it. This mod asks once per folder. The same files in the same order; with many mods a few seconds saved at each game start and each load.
+description=[/list]
+description=Each speed-up has its own switch in Options > Mods > Faster Loading, all on by default (takes effect the next time you start the game). Turned off, that part of loading is exactly as without this mod.
+description=
+description=Made for Project Zomboid 42.21. On another game version it does nothing and says so in console.txt until it is updated.
+description=
+description=[h2]Requirements[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=After enabling it, restart the game once when the main menu asks. Only you need it; servers do not.
+description=
+description=[h1]加快加载[/h1]
+description=缩短加载时间：加载的工作不变，只是做得更快。适用于启动游戏、加入服务器和读取存档。
+description=
+description=[list]
+description=[*]更快地去除脚本文件中的注释：游戏去除脚本和图块文件注释的方式在大文件上非常慢。本模组一次扫描完成，结果与游戏完全相同。每次启动游戏和每次加载约节省 2 秒，添加图块的模组越多节省越多。
+description=[*]更快的贴图压缩：开启游戏的贴图压缩选项（默认开启）时，显卡驱动在绘制画面的线程上逐张压缩贴图，加入装有大量图块模组的服务器时要为此等待约一分钟。本模组自己压缩，显存占用不变：在显卡上压缩为 BC7，颜色明显优于驱动的结果（需要 OpenGL 4.3；已在 NVIDIA 显卡上测试）；关闭“更清晰的压缩贴图”或没有 OpenGL 4.3 时，用全部 CPU 核心压缩为驱动使用的格式（DXT5），画质不低于驱动。
+description=[*]并行加载不同模组的深度图：进入主菜单后，游戏在后台逐个模组加载图块模组的深度图，其余加载线程只能等待。本模组让不同模组的深度图并行加载，最大的先开始。深度图完全相同，只改变顺序；装有大量图块模组时后台加载约提前4秒完成，在其完成前加入服务器也约节省这么多。
+description=[*]更快地列出 Lua 文件：游戏在运行任何 Lua 之前，会列出自身和每个模组的 Lua 文件，并为文件夹里的每个文件重新向 Windows 查询一次该文件夹的完整路径。本模组每个文件夹只查询一次。文件和顺序完全相同；装有大量模组时，每次启动游戏和每次加载节省几秒。
+description=[/list]
+description=每项加速都可在 选项 > 模组 > 加快加载 中单独开关，默认全部开启（下次启动游戏时生效）。关闭后，该部分加载与未安装本模组时完全相同。
+description=
+description=为 Project Zomboid 42.21 制作。在其他游戏版本上本模组不做任何事，并在 console.txt 中说明，直到更新为止。
+description=
+description=[h2]前置要求[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+（按提示批准本模组的 Java 代码）
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
+description=[*]Project Zomboid 42.21
+description=[/list]
+description=启用后，按主菜单提示重启一次游戏。只需自己安装，服务器不需要。
+description=
+description=[h2]Feedback / 反馈[/h2]
+description=Comment below or on [url=https://github.com/Dontcampy/dont39-pz-mods]GitHub[/url]. 欢迎在下方留言。
+tags=Build 42;QoL
+visibility=public

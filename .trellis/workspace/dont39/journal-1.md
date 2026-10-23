@@ -751,3 +751,153 @@ Merged main twice into PR #20 (#21 mod sync, #22 Java mod restart); resolved con
 ### Status
 
 [OK] **Completed**
+
+
+## Session 32: R2: texture compression off the render thread
+<!-- trellis-session: v=2 fp=1474599f0bd53d45 -->
+
+**Date**: 2026-10-22
+**Task**: R2: texture compression off the render thread
+**Branch**: `claude/asset-wait-speedup-2d74f7`
+
+### Summary
+
+Found the join's asset wait bound by driver-side texture compression on the render thread (textureCompression on: wait 66 s vs 14 s off). Faster Loading 0.2.0 takes GL_COMPRESSED_RGBA uploads at GL11.glTexImage2D and encodes DXT5 on a pool (stb_dxt colour, own alpha), behind an encoder interface; quality above the driver on 21 pages. Local server, live mod list, median of 3: join 141.7 -> 69.8 s, asset wait 70.4 -> 12.5 s. Settings upgrade keeps old ini values. BC7 GPU encoder planned as a child task.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3a9b526` | Compress textures on all CPU cores in Faster Loading, halving a server join |
+| `743afc7` | chore(task): add child 10-22-gpu-bc7-encoder |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 33: Depth-map order in Faster Loading 0.3.0
+<!-- trellis-session: v=2 fp=cda073218315e256 -->
+
+**Date**: 2026-10-22
+**Task**: Depth-map order in Faster Loading 0.3.0
+**Branch**: `claude/dreamy-varahamihira-298ef8`
+
+### Summary
+
+Researched depth-map loading (one lock per mod, tasks queued mod after mod, depth maps the tail of quick joins). Added switch depthMapOrder: reprioritises the launch/join depth batch at TileDepthTextureManager.init RETURN into a greedy longest-chain-first schedule; first access-widening list for Faster Loading. Quick join: depth phase 5.64->2.91 s, asset wait -1.46 s (AC2 target not met). After 30 s in the menu the join has no depth tasks; launch background loading ends ~4 s sooner. Kept in 0.3.0; prefetch lever dropped. Specs: access-widening (standalone list), quality-guidelines (measure joins after a menu stay).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f05c47c` | Load mods' depth maps side by side in Faster Loading 0.3.0 |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 34: R4: Lua folder walk in Faster Loading 0.4.0
+<!-- trellis-session: v=2 fp=d35318c2d71a59cb -->
+
+**Date**: 2026-10-22
+**Task**: R4: Lua folder walk in Faster Loading 0.4.0
+**Branch**: `feat/lua-folder-walk-143b68`
+
+### Summary
+
+Measured LuaManager.searchFolders offline: ~95% is a canonical-path lookup of the parent folder repeated per entry; getRelativeFile ~6 ms, Viewpoint's patch binds getRelativeFile(String) only. User chose variant B: skip the lookup for folders already canonical by construction (root, links/reparse points and names ending in dot/space still take the game's call). New switch luaFolderWalk (cancellable HEAD hook, list built aside, handed over only when complete); tests match the game's method on the game's and 1,149 Workshop Lua folders plus junction and odd-name trees. In game (local full server, live mod list, medians of 3): walks 3.9 -> 0.9 s per launch, 4.3 -> 1.2 s per join; launch 34.6 -> 31.4 s, join 68.5 -> 64.8 s; identical Lua lists, no new errors, no checksum mismatch. Precompile measured (~1.15 s) and not done: no preloadable hook point. Spec: cancel exception extended to recursive targets. User files restored after the runs.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce7b3e9` | List the Lua files without repeated path lookups in Faster Loading 0.4.0 |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 35: GPU BC7 texture encoder (Faster Loading 0.5.0)
+<!-- trellis-session: v=2 fp=721bf539c1259cfb -->
+
+**Date**: 2026-10-23
+**Task**: GPU BC7 texture encoder (Faster Loading 0.5.0)
+**Branch**: `feat/gpu-bc7-encoder-2b7d0a`
+
+### Summary
+
+Planned and shipped a GPU BC7 encoder for Faster Loading's textureCompression: DirectXTex compute shader ported to GLSL (modes 4-7, alpha weight 4, nearest index in the encode pass), new switch textureBc7, CPU DXT5 where OpenGL 4.3 is missing. Quality on 21 tile pages: RGB 45.33 / over white 44.34 / over grey 45.06 dB vs DXT5 39.26 / 38.95 / 39.18; alpha 53.43 vs 58.15 (accepted). Render thread 1.34 ms a page (32% of DXT5), GPU ~4.5 ms. Live mod list joins: 57.4 -> 55.1 s; VRAM peak +39 MiB vs DXT5 after fixing encoder buffers that grew with the largest level (+922 MiB). Spec: GL work on the render thread, ported code, capability choices. User files restored after every in-game run.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9214c21` | Encode textures to BC7 on the GPU in Faster Loading 0.5.0 |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 36: PR #24 review fixes
+<!-- trellis-session: v=2 fp=370da0a9ac4fd2ee -->
+
+**Date**: 2026-10-23
+**Task**: PR #24 review fixes
+**Branch**: `feat/gpu-bc7-encoder-2b7d0a`
+
+### Summary
+
+Fixed every finding of the PR #24 architecture/reuse/performance review: BC7 balanced dispatch grid, exact-block skip, per-entry shared memory, fewer GL queries (GPU a padded 1024² page 6.6 -> 3.0 ms, output bit-identical); shared settings source for both mods (mod-settings/, pz-switches); Faster Loading layering; Loading Progress asset-wait single source, files CSV, depth-map naming, leak and throw fixes. 40 % GL-thread gate kept on the pages' own sizes (user).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `97e28bd` | Fix PR #24 review findings: BC7 dispatch, shared settings, asset-wait report |
+
+### Testing
+
+- [OK] build gate faster-loading + loading-progress; qualityCheck with hash dump identical to baseline
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Fast-forward load-speed-optimization when the user asks; resume parent AC5 on the Linux test server
+
+
+## Session 37: Load speed optimization AC5 on the Linux test server
+<!-- trellis-session: v=2 fp=4069ed4dcc2062ad -->
+
+**Date**: 2026-10-23
+**Task**: Load speed optimization AC5 on the Linux test server
+**Branch**: `load-speed-optimization`
+
+### Summary
+
+AC5 run on a Linux test instance with the live 246-mod list and DoLuaChecksum=true (live server stopped by the user): checksum passed on every join, 15 Java mods (+Faster Loading); every switch off matches no Faster Loading (join 121.1 vs 121.2 s), every switch on 51.3 s. Parent task archived; test instance removed, client files restored.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6cabbe0` | docs(task): AC5 met on the Linux test server; every criterion of load speed optimization met |
+| `a1a055d` | chore(task): archive 10-21-load-speed-optimization |
+
+### Testing
+
+- [OK] 9 Steam joins to the Linux test server (3 base, 3 off, 3 on)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- User restarts the live server from the panel; Workshop upload of Faster Loading 0.5.0 and Loading Progress 0.2.0 is the user's

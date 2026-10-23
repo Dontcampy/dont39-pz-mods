@@ -1,5 +1,6 @@
 package com.dont39.pz.loadingprogress.progress;
 
+import com.dont39.pz.loadingprogress.settings.SwitchesPage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -77,9 +78,40 @@ class SettingsTest {
     }
 
     @Test
-    void aMissingKeyIsReported() throws IOException {
-        assertEquals(Settings.DEFAULTS, load(file("display = false\n")));
-        assertTrue(problems.get(0).contains("key report is missing"), problems.toString());
+    void aFileWithoutAKeyKeepsItsValuesAndGetsTheKey() throws IOException {
+        Path file = file("# comment\ndisplay = false\n");
+        Settings settings = load(file);
+        assertEquals(new Settings(false, true), settings, "a missing key takes its default");
+        assertTrue(problems.isEmpty(), problems.toString());
+        assertEquals(Settings.text(settings), Files.readString(file), "rewritten with every key");
+        assertEquals(settings, load(file), "and reads back");
+        assertTrue(problems.isEmpty(), problems.toString());
+    }
+
+    @Test
+    void aFileWithEveryKeyIsLeftAsItIs() throws IOException {
+        String text = "report = false\ndisplay = true\n";
+        Path file = file(text);
+        assertEquals(new Settings(true, false), load(file));
+        assertEquals(text, Files.readString(file));
+    }
+
+    @Test
+    void theTextIsAsBefore() {
+        assertEquals("""
+                # Loading Progress, read once at each launch of the game; also on the mod options page.
+                # display: show the progress bar and the log of what loads (true or false)
+                display = false
+                # report: after each load, write a timing report to Lua/Dont39LoadingProgress/ in this folder \
+                (true or false)
+                report = true
+                """, Settings.text(new Settings(false, true)));
+    }
+
+    @Test
+    void theOptionsPageListsTheSwitches() throws IOException {
+        SwitchesPage.check(Settings.SWITCHES, Path.of("src/main/lua/client/Dont39LoadingProgress_Options.lua"),
+                Path.of("src/main/lua/shared/Translate"));
     }
 
     @Test

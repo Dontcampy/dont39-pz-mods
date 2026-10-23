@@ -75,7 +75,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
-| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one` and `loading-progress`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
+| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one`, `loading-progress` and `faster-loading`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
 ---
@@ -234,3 +234,6 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
   (`Interim.java` in `loading-progress`).
 - Keep per-frame code cheap: reuse buffers instead of allocating per element, and build strings only when debug output
   is on. Know how often the patched method is called before adding work to it.
+- Work a render-thread hook does inline holds up every queued upload behind it (`RenderThread.flushInvokeQueue` runs
+  items in order, 10 ms per pass): split it over the mod's own pool and profile it in game (JFR) before trusting a
+  bench (`Dxt5Encoder.java` in `faster-loading`).

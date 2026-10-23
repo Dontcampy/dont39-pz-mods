@@ -1,0 +1,13 @@
+name=Faster Loading
+id=Dont39FasterLoading
+author=Dont39
+modversion=@VERSION@
+poster=poster.png
+description=Makes the game load faster at start, when joining a server and when loading a save. Client only.
+require=\ZombieBuddy,\Zabric
+loadModAfter=\Zabric
+javaJarFile=media/java/client/Dont39FasterLoading.jar
+javaPkgName=com.dont39.pz.fasterloading
+javaPreload=true
+ZBVersionMin=2.3.4
+versionMin=42.21.0

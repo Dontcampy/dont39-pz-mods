@@ -32,8 +32,8 @@ well as those of Zabric's hook runtime and both processor front ends
 tests applies `buildsrc.convention.pz-junit`, plus `pz-loader-test` when its tests run against ZombieBuddy's classes;
 it adds no JUnit setup of its own.
 
-The automated checks launch the real game (`smokeTest` of `dont39-all-in-one` and of `loading-progress`,
-`GameSmokeTest.kt`) or dedicated
+The automated checks launch the real game (`smokeTest` of `dont39-all-in-one`, `loading-progress` and
+`faster-loading`, `GameSmokeTest.kt`; a mod without a widening list sets its `widener` false) or dedicated
 server (`serverSmokeTest` of `zb-kt`, `ServerSmokeTest.kt`) with ZombieBuddy until init and check the log. Read the task
 for its prerequisites. After a fresh preload registration a test fails with "run again"; run it twice. A broken widening
 list in any installed mod fails both.
@@ -65,6 +65,11 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 8. A real client launch goes through `ProjectZomboid64.exe` (JNI), not `java`: `smokeTest` does not show what differs
    there (e.g. `sun.java.command` is empty at premain).
 9. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.
+10. Load-time gains: a join that connects right after the menu is up (the test driver's default) still waits on the
+    launch's own file tasks, which a player who stays in the menu ~15 s never sees. Before crediting a gain to the
+    join, repeat the on/off joins after a realistic menu stay (≥ 30 s). The asset wait's phases by task type come from
+    Loading Progress's `<report>-files.csv` (`research/timeline.py` of `archive/2026-10/10-22-depth-map-speedup`); its
+    pack-image backlog varies by run, so compare phases, not just the wait.
 
 If an in-game check was not done, say so in the task report.
 
@@ -76,7 +81,32 @@ Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `PzJvm.kt`
 New code is Kotlin; Java only in `zabric`, `zabric-processor`, `zb-skip-online-checks`, the samples, and where
 [Kotlin Runtime](./kotlin-runtime.md) requires it. Copied third-party code keeps its language, license header and
 source commit, lives in a subpackage of the feature (all mod jars share one class loader), and its license text goes
-into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for bugs, not style.
+into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for bugs, not style. A port into another
+language (an HLSL shader as GLSL) keeps the license header and source commit and lists its changes from the source
+in its header (`faster-loading` `textures/bc7/BC7Encode.comp`, `META-INF/licenses/DirectXTex.txt`).
+
+## GL Work on the Game's Render Thread
+
+What a hook does in GL runs inside the game's frame, on a driver that runs GL commands on a thread of its own
+(NVIDIA's threaded optimization). Measured in `faster-loading`'s BC7 encoder (`textures/bc7/Bc7Encoder`, numbers in
+`archive/2026-10/10-22-gpu-bc7-encoder/verification.md` and `10-23-pr24-review-fixes/verification.md`):
+
+- Any `glGet*` or `glGetError` waits for the driver thread to catch up; count them per call into a hot path. Once
+  one remains per call, it waits for the driver's copy of what the call before uploaded, and fewer queries barely
+  change the GL thread's time.
+- Never update a uniform of a program whose dispatches may still be in flight: the update waits for them. Pass
+  per-call values in a buffer.
+- Adding a level to a texture with GPU writes pending into it waits for them: allocate the levels first, then fill
+  them with `glCompressedTexSubImage2D` / `glTexSubImage2D`.
+- Every level of a texture needs the same internal format or the texture is incomplete; a fix that changes the format
+  takes every level or none.
+- Prove GL paths outside the game first with a hidden-window harness on the game's LWJGL (`qualityCheck`), and time
+  the GL thread and the GPU separately (`GL_TIME_ELAPSED`), at the sizes the game sends: its textures are padded to
+  powers of two (`ImageData.widthHw`). Timed at the images' own sizes, a dispatch grid with rows of 65,535 groups hid
+  twice the groups a 1024x1024 level needs (`Bc7Encoder.groups`).
+- An encoder change that should not change the output is compared bit for bit (`qualityCheck -PqualityDump`).
+- Shared memory per work group limits the groups a GPU runs at once: each compute entry declares only what it uses
+  (`BC7Encode.comp`).
 
 ## Forbidden Patterns
 
