@@ -4,7 +4,7 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
 
 ## Checklist
 
-1. Spikes S1-S5 (`design.md#spikes`), with `javap` on `projectzomboid.jar`; results in `research/spikes.md`.
+1. Spikes S1-S5 (`design.md#spikes`), with `javap` on `projectzomboid.jar`; results in `research/spike-s1-s5.md` and `research/spike-s2-s4.md` (done 2026-10-24).
    Stop and return to planning if S1 finds no safe raw-packet path or S5 finds reliability/channel cannot change at
    runtime.
 2. Module skeleton: `sync-guard/` with `build.gradle.kts` modeled on `loading-progress/build.gradle.kts` (differences
