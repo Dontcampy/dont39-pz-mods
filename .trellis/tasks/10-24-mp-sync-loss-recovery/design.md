@@ -26,6 +26,21 @@ Requirements and decisions: `prd.md`. Evidence: `research/vanilla-sync.md`, `res
 - Server marks a connection active on `Hello`; only active connections get sync frames and snapshots, and only
   their packets are recorded. Connection close drops all its state.
 
+Implemented deviations (phase A, 2026-10-24):
+
+- The client reads the trailer at `ConnectToServerState.exit` HEAD from the join's `connectionDetails` copy, not at
+  `ConnectionDetails.parse`: the server's mod list (and so this mod's hooks) loads in `receiveServerOptions` after
+  `parse`, so a client that enables the mod only through the server's list would never activate on its first join.
+- The trailer coexists with mod-sync's: ours is written before a trailing mod-sync record, and our reader steps over
+  one written after ours.
+- Item keys are (container key, item id); a moved item shows as gone in the old container and changed in the new.
+- The version is one frame number per SyncFrame; snapshots carry the peer's latest frame number.
+- Floor containers are not tracked (built as throwaways from square objects on both sides). Item names enter the
+  digest only when `isCustomName` (each side translates names). Mod data hashes only pairs the game would send.
+- Malformed or out-of-scope client input stops checks for that connection or refuses the request; it never
+  disables the server side. Snapshots and digests come only from a container the game still addresses under the
+  same key, so an out-of-range index never becomes an emptied container on the client.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with

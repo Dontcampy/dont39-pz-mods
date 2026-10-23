@@ -1,4 +1,3 @@
-import buildsrc.convention.check.CheckJdkGlue
 import buildsrc.convention.check.CheckLoaderRefs
 import buildsrc.convention.mod.modInfoOf
 import buildsrc.convention.mod.pzDir
@@ -35,27 +34,17 @@ tasks.named<CheckLoaderRefs>("checkLoaderRefs") {
   excludes.add("$pkgDir/*.class")
 }
 
-val checkJdkGlue = tasks.register<CheckJdkGlue>("checkJdkGlue") {
-  description = "Fails if the generated glue names a type outside the JDK."
-  classes = tasks.compileJava.flatMap { it.destinationDirectory }
-  gluePackage = pkgDir
-}
-tasks.check { dependsOn(checkJdkGlue) }
-
 tasks.jar {
-  dependsOn(checkJdkGlue)
   manifest {
     attributes("Zabric-Main" to "$pkg.entrypoint.MainEntry")
   }
   // build data only (the source list)
   exclude("META-INF/dont39/**")
   // where Zabric reads it at game start
-  if (pzWidening.listed) {
-    val listName = "$modId.classtweaker"
-    from(pzWidening.expanded) {
-      into("META-INF/zabric")
-      rename { listName }
-    }
+  val listName = "$modId.classtweaker"
+  from(pzWidening.expanded) {
+    into("META-INF/zabric")
+    rename { listName }
   }
 }
 
@@ -72,5 +61,5 @@ tasks.register<GameSmokeTest>("smokeTest") {
   modId = pzMod.modId
   version = project.version.toString()
   zabricId = modInfoOf("zabric").id
-  widener = pzWidening.listed
+  hooks = true
 }

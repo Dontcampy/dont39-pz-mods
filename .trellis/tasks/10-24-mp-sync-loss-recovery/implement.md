@@ -23,10 +23,14 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
 7. Client: `SyncFrame` handling, pending unresolved keys, `SnapshotRequest` (R5).
 8. Server snapshots with budget; client in-place reconcile including unequip/unwear (R6).
 9. Open check (R7).
-10. Notice, log lines, counters and summaries (R9).
+10. Notice, log lines, counters and summaries (R9). Summary lines are one `[Dont39SyncGuard]` line of plain
+    `key=value` numbers (the harness's sampler parses them; server keys include `bytesOut`, `stateEntries`,
+    `tickNsP99`), period set by `-Dsyncguard.summarySeconds` (default 600, load runs 5-60).
 11. Debug switch for AC1: drop the Nth in-scope delta on the client (sandbox option or system property; off by
     default, logged when on).
-12. Test harness, not shipped (kept under the task's `research/` with its scripts):
+12. Test harness, not shipped (kept under the task's `research/` with its scripts). Done 2026-10-24 in
+    `research/harness/` (see its README; not yet run in game). Open: AC6's second client needs its own user folder
+    (try the client's `-cachedir`), the driver does not drink, and the first server start may need a warm-up restart.
     - local modded server setup: a copy of `myserver1` (`~/Zomboid/Server/myserver1.ini`, its sandbox and spawn
       files) under a test server name, its mod list plus Sync Guard, run from `pzServerDir` with `-nosteam` and a short
       `-cachedir`; the mods it needs copied (real copies, not junctions, `robocopy /MT:16` from the Workshop content

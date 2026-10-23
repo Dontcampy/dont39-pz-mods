@@ -1,0 +1,24 @@
+zabric-classtweaker v1
+# the mod's packets on the game's main-loop queues, in order with the in-scope packets
+accessible field zombie/network/GameServer MainLoopNetDataHighPriorityQ Ljava/util/concurrent/ConcurrentLinkedQueue;
+accessible field zombie/network/GameClient MainLoopNetDataQ Ljava/util/concurrent/ConcurrentLinkedQueue;
+# refuses a send of the mod inside one of the game's
+accessible field zombie/core/raknet/UdpConnection bufferLock Ljava/util/concurrent/locks/Lock;
+# the join's connection-details, with the server's trailer at the end
+accessible field zombie/gameStates/ConnectToServerState connectionDetails Lzombie/core/network/ByteBufferReader;
+# what an in-scope packet addresses
+accessible field zombie/network/packets/AddInventoryItemToContainerPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/RemoveInventoryItemFromContainerPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/ReplaceInventoryItemInContainerPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/SyncItemFieldsPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/SyncItemFieldsPacket itemId I
+accessible field zombie/network/packets/SyncItemModDataPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/SyncItemModDataPacket itemId I
+accessible field zombie/network/packets/SyncHandWeaponFieldsPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/SyncHandWeaponFieldsPacket itemId I
+accessible field zombie/network/packets/ItemStatsPacket containerId Lzombie/network/fields/ContainerID;
+accessible field zombie/network/packets/ItemStatsPacket id I
+# the mod's container keys, from the game's address
+accessible field zombie/network/fields/ContainerID index S
+accessible field zombie/network/fields/ContainerID containerIndex S
+accessible field zombie/network/fields/ContainerID vid S
