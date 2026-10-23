@@ -840,3 +840,33 @@ Planned and shipped a GPU BC7 encoder for Faster Loading's textureCompression: D
 ### Status
 
 [OK] **Completed**
+
+
+## Session 36: PR #24 review fixes
+<!-- trellis-session: v=2 fp=370da0a9ac4fd2ee -->
+
+**Date**: 2026-10-23
+**Task**: PR #24 review fixes
+**Branch**: `feat/gpu-bc7-encoder-2b7d0a`
+
+### Summary
+
+Fixed every finding of the PR #24 architecture/reuse/performance review: BC7 balanced dispatch grid, exact-block skip, per-entry shared memory, fewer GL queries (GPU a padded 1024² page 6.6 -> 3.0 ms, output bit-identical); shared settings source for both mods (mod-settings/, pz-switches); Faster Loading layering; Loading Progress asset-wait single source, files CSV, depth-map naming, leak and throw fixes. 40 % GL-thread gate kept on the pages' own sizes (user).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `97e28bd` | Fix PR #24 review findings: BC7 dispatch, shared settings, asset-wait report |
+
+### Testing
+
+- [OK] build gate faster-loading + loading-progress; qualityCheck with hash dump identical to baseline
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Fast-forward load-speed-optimization when the user asks; resume parent AC5 on the Linux test server

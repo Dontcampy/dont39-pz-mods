@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 35
+- **Total Sessions**: 36
 - **Last Active**: 2026-10-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~842 | Active |
+| `journal-1.md` | ~872 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 36 | 2026-10-23 | PR #24 review fixes | `97e28bd` | `feat/gpu-bc7-encoder-2b7d0a` |
 | 35 | 2026-10-23 | GPU BC7 texture encoder (Faster Loading 0.5.0) | `9214c21` | `feat/gpu-bc7-encoder-2b7d0a` |
 | 34 | 2026-10-22 | R4: Lua folder walk in Faster Loading 0.4.0 | `ce7b3e9` | `feat/lua-folder-walk-143b68` |
 | 33 | 2026-10-22 | Depth-map order in Faster Loading 0.3.0 | `f05c47c` | `claude/dreamy-varahamihira-298ef8` |
