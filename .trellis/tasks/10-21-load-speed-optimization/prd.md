@@ -91,10 +91,17 @@ unkeyed jassimp cache broke body-mesh mods).
   (`archive/2026-10/10-21-faster-loading-strip-comments`).)
 - [x] AC4 (R4): `loadList` equals vanilla's (dumped with the switch on vs off) on launch and join; `LoadDirBase` →
   first file time drops by ≥ 50 % (median of 3 runs). (met (`archive/2026-10/10-21-lua-folder-walk`).)
-- [ ] AC5: with every switch on, launch and an MP join to the Linux test server complete with no new errors in
+- [x] AC5: with every switch on, launch and an MP join to the Linux test server complete with no new errors in
   `console.txt`, no checksum mismatch, and the 15 Java mods loaded; with every switch off, timings match the baseline
-  within noise. Open: not run with every switch on and off, nor on the Linux test server; every child joined a local
-  nosteam server whose ini has `DoLuaChecksum=false`, so the checksum is unverified.
+  within noise. (met 2026-10-23, `research/ac5/`: Steam joins from this PC to a test instance on the Linux server
+  with the live server's ini, sandbox and 246-mod list, `DoLuaChecksum=true`, tunnel and mod sync off, the live server
+  stopped by the user. Every join that reached the world ran the checksum without a kick; the Java mod pass had the 15
+  Java mods (16 with Faster Loading). Medians: no Faster Loading (4 runs) launch 42.4 s, join 121.2 s, Loading the
+  world 77.8 s; every switch off (3) 42.5 s, 121.1 s, 77.5 s; every switch on (3) 30.2 s, 51.3 s, 21.6 s, asset wait
+  0.1-0.3 s vs ~63 s. No error in an on or off run that no baseline run has, except two `SpecialLootSpawns` "no such
+  function" lines in on1: TheDivisionStuff's item scripts name a function nothing defines, and on1 was the first visit
+  to that spot; the later new-character run with every switch on (on3) has none. Joins that stopped at the Workshop
+  prompt after Workshop items updated mid-series were rerun after a server restart.)
 - [x] AC6: the build gate passes (`.trellis/spec/mod/quality-guidelines.md`). (met: build gate passes for
   `faster-loading` and `loading-progress`.)
 
