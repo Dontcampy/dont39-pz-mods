@@ -25,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,67 +118,95 @@ public final class ItemDigests {
 
     public static long item(InventoryItem item) {
         Digest d = new Digest();
-        d.putString(item.getFullType());
+        write(item, field -> d);
+        return d.get();
+    }
+
+    /**
+     * The same values as {@link #item}, hashed per field group instead of into one digest, for the per-field diff
+     * of {@code -Dsyncguard.debugFieldDiff}. Groups are named as in this class.
+     */
+    public static Map<String, Long> fields(InventoryItem item) {
+        Map<String, Digest> groups = new LinkedHashMap<>();
+        write(item, field -> groups.computeIfAbsent(field, k -> new Digest()));
+        Map<String, Long> out = new LinkedHashMap<>();
+        groups.forEach((field, d) -> out.put(field, d.get()));
+        return out;
+    }
+
+    /** Where each field's values go: one digest for all, or one per field. */
+    @FunctionalInterface
+    private interface Sink {
+        Digest at(String field);
+    }
+
+    private static void write(InventoryItem item, Sink out) {
+        out.at("type").putString(item.getFullType());
         if (on(Checked.CONDITION)) {
-            d.putInt(item.getCondition());
+            out.at("condition").putInt(item.getCondition());
         }
         if (on(Checked.HEAD_CONDITION)) {
+            Digest d = out.at("headCondition");
             d.putBoolean(item.hasHeadCondition());
             if (item.hasHeadCondition()) {
                 d.putInt(item.getHeadCondition());
             }
         }
-        d.putInt(item.getRemoteControlID());
+        out.at("remoteControlId").putInt(item.getRemoteControlID());
         if (on(Checked.USES) && !item.isActivated()) {
+            Digest d = out.at("uses");
             d.putInt(item.getCurrentUses());
             if (item instanceof DrainableComboItem) {
                 d.putFloat(item.getCurrentUsesFloat());
             }
         }
         if (on(Checked.AMMO)) {
-            d.putInt(item.getCurrentAmmoCount());
+            out.at("ammo").putInt(item.getCurrentAmmoCount());
         }
-        d.putInt(item.getHaveBeenRepaired());
+        out.at("repaired").putInt(item.getHaveBeenRepaired());
         if (on(Checked.WEIGHT)) {
-            d.putFloat(item.getWeight());
+            out.at("weight").putFloat(item.getWeight());
         }
-        d.putBoolean(item.isFavorite());
-        d.putBoolean(item.isCustomName());
+        out.at("favorite").putBoolean(item.isFavorite());
+        Digest name = out.at("customName");
+        name.putBoolean(item.isCustomName());
         if (item.isCustomName()) {
-            d.putString(item.getName());
+            name.putString(item.getName());
         }
-        d.putBoolean(item.isCustomColor());
+        Digest color = out.at("customColor");
+        color.putBoolean(item.isCustomColor());
         if (item.isCustomColor()) {
             Color c = item.getColor();
-            d.putFloat(c.r).putFloat(c.g).putFloat(c.b).putFloat(c.a);
+            color.putFloat(c.r).putFloat(c.g).putFloat(c.b).putFloat(c.a);
         }
         if (on(Checked.BLOOD) && (item instanceof Clothing || item instanceof HandWeapon)) {
-            d.putFloat(item.getBloodLevel());
+            out.at("blood").putFloat(item.getBloodLevel());
         }
-        d.putBoolean(item.hasSharpness());
+        Digest sharpness = out.at("sharpness");
+        sharpness.putBoolean(item.hasSharpness());
         if (on(Checked.SHARPNESS) && item.hasSharpness()) {
-            d.putFloat(item.getSharpness());
+            sharpness.putFloat(item.getSharpness());
         }
         if (on(Checked.MOD_DATA)) {
-            d.putLong(item.hasModData() ? LuaTableHash.hash(item.getModData(), KAHLUA) : LuaTableHash.EMPTY);
+            out.at("modData").putLong(item.hasModData() ? LuaTableHash.hash(item.getModData(), KAHLUA)
+                    : LuaTableHash.EMPTY);
         }
         if (on(Checked.WET)) {
-            d.putBoolean(item.isWet());
+            out.at("wet").putBoolean(item.isWet());
         }
-        fluids(d, item.getFluidContainer());
+        fluids(out.at("fluids"), item.getFluidContainer());
         if (item instanceof Clothing clothing) {
-            clothing(d, clothing);
+            clothing(out, clothing);
         }
         if (item instanceof Food food) {
-            food(d, food);
+            food(out, food);
         }
         if (item instanceof Literature literature) {
-            literature(d, literature);
+            literature(out, literature);
         }
         if (item instanceof HandWeapon weapon) {
-            weapon(d, weapon);
+            weapon(out, weapon);
         }
-        return d.get();
     }
 
     // as SyncItemFields carries it: the container's own save
@@ -195,7 +224,7 @@ public final class ItemDigests {
         d.putBytes(FLUIDS.array(), 0, FLUIDS.position());
     }
 
-    private static void clothing(Digest d, Clothing clothing) {
+    private static void clothing(Sink out, Clothing clothing) {
         int parts = BloodBodyPartType.MAX.index();
         Unordered patches = new Unordered();
         for (int i = 0; i < parts; i++) {
@@ -204,8 +233,9 @@ public final class ItemDigests {
                 patches.add(Digest.of(i, patch.tailorLvl, patch.fabricType, patch.hasHole ? 1 : 0));
             }
         }
-        d.putLong(patches.get());
+        out.at("patches").putLong(patches.get());
         ItemVisual visual = clothing.getVisual();
+        Digest d = out.at("visual");
         d.putBoolean(on(Checked.VISUAL) && visual != null);
         if (on(Checked.VISUAL) && visual != null) {
             for (int i = 0; i < parts; i++) {
@@ -217,19 +247,20 @@ public final class ItemDigests {
         }
     }
 
-    private static void food(Digest d, Food food) {
-        d.putFloat(food.getHungChange()).putFloat(food.getActualWeightUnmodded()).putFloat(food.getCalories())
-                .putFloat(food.getCarbohydrates()).putFloat(food.getLipids()).putFloat(food.getProteins())
+    private static void food(Sink out, Food food) {
+        out.at("food").putFloat(food.getHungChange()).putFloat(food.getActualWeightUnmodded())
+                .putFloat(food.getCalories()).putFloat(food.getCarbohydrates()).putFloat(food.getLipids())
+                .putFloat(food.getProteins())
                 .putFloat(food.getThirstChange()).putInt(food.getFluReduction()).putFloat(food.getPainReduction())
                 .putFloat(food.getEndChange()).putInt(food.getFoodSicknessChange()).putFloat(food.getStressChange())
                 .putFloat(food.getFatigueChange()).putFloat(food.getUnhappyChange())
                 .putFloat(food.getBoredomChange()).putInt(food.getPoisonPower())
                 .putInt(food.getPoisonDetectionLevel()).putBoolean(food.isAlcoholic()).putFloat(food.getBaseHunger())
                 .putFloat(food.getMinutesToCook()).putFloat(food.getMinutesToBurn()).putBoolean(food.isTainted());
-        strings(d, food.getExtraItems());
-        strings(d, food.getSpices());
+        strings(out.at("extraItems"), food.getExtraItems());
+        strings(out.at("spices"), food.getSpices());
         if (on(Checked.COOKED_BURNT)) {
-            d.putBoolean(food.isCooked()).putBoolean(food.isBurnt());
+            out.at("cookedBurnt").putBoolean(food.isCooked()).putBoolean(food.isBurnt());
         }
     }
 
@@ -241,11 +272,12 @@ public final class ItemDigests {
         }
     }
 
-    private static void literature(Digest d, Literature literature) {
+    private static void literature(Sink out, Literature literature) {
         if (on(Checked.PAGES)) {
-            d.putInt(literature.getAlreadyReadPages());
+            out.at("pages").putInt(literature.getAlreadyReadPages());
         }
         Map<Integer, String> pages = literature.getCustomPages();
+        Digest d = out.at("customPages");
         d.putBoolean(pages != null);
         if (pages != null) {
             Unordered u = new Unordered();
@@ -254,14 +286,15 @@ public final class ItemDigests {
         }
     }
 
-    private static void weapon(Digest d, HandWeapon weapon) {
+    private static void weapon(Sink out, HandWeapon weapon) {
         if (on(Checked.AMMO)) {
-            d.putBoolean(weapon.isRoundChambered()).putBoolean(weapon.isContainsClip())
+            out.at("weaponAmmo").putBoolean(weapon.isRoundChambered()).putBoolean(weapon.isContainsClip())
                     .putInt(weapon.getSpentRoundCount()).putBoolean(weapon.isSpentRoundChambered())
                     .putBoolean(weapon.isJammed());
         }
-        d.putFloat(weapon.getMaxRange()).putFloat(weapon.getMinRangeRanged()).putInt(weapon.getClipSize())
-                .putInt(weapon.getReloadTime()).putInt(weapon.getRecoilDelay()).putInt(weapon.getAimingTime())
+        out.at("weaponStats").putFloat(weapon.getMaxRange()).putFloat(weapon.getMinRangeRanged())
+                .putInt(weapon.getClipSize()).putInt(weapon.getReloadTime()).putInt(weapon.getRecoilDelay())
+                .putInt(weapon.getAimingTime())
                 .putInt(weapon.getHitChance()).putFloat(weapon.getMinAngle()).putFloat(weapon.getMinDamage())
                 .putFloat(weapon.getMaxDamage());
         PARTS.clear();
@@ -271,6 +304,6 @@ public final class ItemDigests {
             parts.add(new Digest().putString(part.getFullType()).get());
         }
         PARTS.clear();
-        d.putLong(parts.get());
+        out.at("weaponParts").putLong(parts.get());
     }
 }

@@ -1,5 +1,6 @@
 package com.dont39.pz.syncguard.protocol;
 
+import com.dont39.pz.syncguard.protocol.Message.Bye;
 import com.dont39.pz.syncguard.protocol.Message.Hello;
 import com.dont39.pz.syncguard.protocol.Message.OpenCheck;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
@@ -22,6 +23,7 @@ public final class Codec {
     static final byte SNAPSHOT_REQUEST = 3;
     static final byte SNAPSHOT = 4;
     static final byte OPEN_CHECK = 5;
+    static final byte BYE = 6;
 
     private static final int MAX_STRING = 256;
 
@@ -54,6 +56,8 @@ public final class Codec {
             header(out, OPEN_CHECK);
             c.key().write(out);
             out.putLong(c.digest());
+        } else if (message instanceof Bye) {
+            header(out, BYE);
         } else {
             throw new IllegalArgumentException("snapshots are written with SnapshotWriter");
         }
@@ -83,6 +87,7 @@ public final class Codec {
                 case SNAPSHOT_REQUEST -> request(in);
                 case SNAPSHOT -> snapshot(in);
                 case OPEN_CHECK -> new OpenCheck(WireKey.read(in), in.getLong());
+                case BYE -> new Bye();
                 default -> throw new ProtocolException("unknown message kind " + kind);
             };
             if (in.hasRemaining()) {

@@ -63,11 +63,31 @@ public final class Containers {
         return id;
     }
 
-    /** Reads {@code wire} as the game's packets do; ends in the game's lookup, so {@code getContainer()} is set. */
+    /**
+     * Whether {@code container} is still the one the game addresses as {@code key}: not taken out of the world, not
+     * at another object index, not a stand-in the game's lookup made up for an index out of range.
+     */
+    public static boolean live(ItemContainer container, ContainerKey key) {
+        if (container == null) {
+            return false;
+        }
+        ContainerID now = locate(container);
+        return now != null && key.equals(keyOf(now));
+    }
+
+    /**
+     * Reads {@code wire} as the game's packets do; ends in the game's lookup, so {@code getContainer()} is set. Null
+     * when the game's lookup throws, as it does for a parent that is gone (a player who left). Throws when the bytes
+     * are not one whole container id.
+     */
     public static ContainerID parse(byte[] wire, IConnection connection) {
         ContainerID id = new ContainerID();
         ByteBufferReader in = new ByteBufferReader(ByteBuffer.wrap(wire));
-        id.parse(in, connection);
+        try {
+            id.parse(in, connection);
+        } catch (RuntimeException e) {
+            return null;
+        }
         if (in.remaining() != 0) {
             throw new IllegalStateException(in.remaining() + " bytes after a container id");
         }

@@ -44,6 +44,11 @@ public final class Net {
         }
     }
 
+    /** Whether {@link #send} may run now: not inside one of the game's sends on {@code connection} on this thread. */
+    public static boolean canSend(UdpConnection connection) {
+        return !(connection.bufferLock instanceof ReentrantLock reentrant && reentrant.isHeldByCurrentThread());
+    }
+
     /** The payload after the 3-byte header the game already read; leaves {@code in} as it is. */
     public static byte[] payload(ByteBufferReader in) {
         ByteBuffer b = in.bb.duplicate();

@@ -11,7 +11,7 @@ import zombie.core.network.ByteBufferReader;
 import zombie.network.GameClient;
 import zombie.network.ZomboidNetData;
 
-/** The client's packet queue and its PlayerConnect. */
+/** The client's packet queue, its frame and its PlayerConnect. */
 @Hooks(value = GameClient.class, gate = Gate.class)
 public final class ClientNetHooks {
     private ClientNetHooks() {
@@ -28,6 +28,12 @@ public final class ClientNetHooks {
     @Inject(method = "mainLoopDealWithNetData", at = @At("HEAD"))
     public static void dispatch(ZomboidNetData data, CallbackInfo ci) {
         ClientSync.dispatch(data);
+    }
+
+    // every frame; also while shut, to say a Bye a failure left pending
+    @Inject(method = "update", at = @At("RETURN"), always = true)
+    public static void frame(CallbackInfo ci) {
+        ClientSync.tick();
     }
 
     @Inject(method = "sendPlayerConnect", at = @At("RETURN"))

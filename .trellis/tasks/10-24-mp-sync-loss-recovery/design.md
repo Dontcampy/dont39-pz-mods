@@ -41,6 +41,20 @@ Implemented deviations (phase A, 2026-10-24):
   disables the server side. Snapshots and digests come only from a container the game still addresses under the
   same key, so an out-of-range index never becomes an emptied container on the client.
 
+Implemented deviations (phase B, client, 2026-10-24):
+
+- Open check: the game's Lua calls `requestServerItemsForContainer` only for a container this client never explored,
+  and the server answers that request only for one it never explored either. So its HEAD hook checks the container
+  3 s later, once the game's own fill is in; containers already explored are reported by a client Lua file
+  (`Dont39SyncGuard_OpenCheck.lua`, the loot window's shown container) through a Lua global from `javaPkgName`.
+- Unresolved frame entries are retried every 500 ms, not each frame: the game's lookup logs an error for a missing
+  bag or vehicle on every try.
+- A `gone` item entry the client still has is checked as its whole container (an `OpenCheck`): the server cannot
+  snapshot an item it no longer has there. A `gone` container entry is left to its parent's entry.
+- A game call that throws while a snapshot is applied fails that key only (logged with the stack, not asked again);
+  the session goes on, as the game itself drops a packet whose handler throws.
+- `Bye` (C→S, no body): the client stops for the session (a failure, or leaving); the server stops sending to it.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with
@@ -55,7 +69,7 @@ Implemented deviations (phase A, 2026-10-24):
   the end-of-tick hook, never inside a vanilla send (`bufferLock` is reentrant and a nested send corrupts the vanilla
   packet). `Hello` goes from a RETURN hook on `GameClient.sendPlayerConnect`.
 - Messages: `Hello` (C→S), `SyncFrame` (S→C), `SnapshotRequest` (C→S, keys), `Snapshot` (S→C), `OpenCheck`
-  (C→S, key + digest). Each starts with a protocol version byte.
+  (C→S, key + digest), `Bye` (C→S). Each starts with a protocol version byte.
 
 ## Channel change (R2)
 

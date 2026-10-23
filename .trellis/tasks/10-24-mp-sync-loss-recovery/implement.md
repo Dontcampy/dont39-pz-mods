@@ -20,14 +20,17 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
 4. Activation: trailer write/read, `Hello`, per-connection active set, inactive log lines (R8).
 5. Channel change for the four packet types (R2).
 6. Server: touch recording, per-connection state and sweep, end-of-tick `SyncFrame` (R1, R3, R4).
-7. Client: `SyncFrame` handling, pending unresolved keys, `SnapshotRequest` (R5).
-8. Server snapshots with budget; client in-place reconcile including unequip/unwear (R6).
-9. Open check (R7).
+7. Client: `SyncFrame` handling, pending unresolved keys, `SnapshotRequest` (R5). Done 2026-10-24 (not run in game).
+8. Server snapshots with budget; client in-place reconcile including unequip/unwear (R6). Client half done
+   2026-10-24 (not run in game).
+9. Open check (R7). Client half done 2026-10-24, with a Lua trigger (`design.md`, phase B deviations).
 10. Notice, log lines, counters and summaries (R9). Summary lines are one `[Dont39SyncGuard]` line of plain
     `key=value` numbers (the harness's sampler parses them; server keys include `bytesOut`, `stateEntries`,
-    `tickNsP99`), period set by `-Dsyncguard.summarySeconds` (default 600, load runs 5-60).
+    `tickNsP99`), period set by `-Dsyncguard.summarySeconds` (default 600, load runs 5-60). Client side done
+    2026-10-24 (`scope=client`).
 11. Debug switch for AC1: drop the Nth in-scope delta on the client (sandbox option or system property; off by
-    default, logged when on).
+    default, logged when on). Done 2026-10-24: `-Dsyncguard.debugDropDelta=<n>`, and `-Dsyncguard.debugFieldDiff=true`
+    for the S2 field run.
 12. Test harness, not shipped (kept under the task's `research/` with its scripts). Done 2026-10-24 in
     `research/harness/` (see its README; not yet run in game). Open: AC6's second client needs its own user folder
     (try the client's `-cachedir`), the driver does not drink, and the first server start may need a warm-up restart.

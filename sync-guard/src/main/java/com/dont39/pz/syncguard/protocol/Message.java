@@ -43,4 +43,8 @@ public sealed interface Message {
     /** Client to server, when the player opens a container: the client's digest of it. */
     record OpenCheck(WireKey key, long digest) implements Message {
     }
+
+    /** Client to server: the client stopped checking for this session (it failed, or the player left). */
+    record Bye() implements Message {
+    }
 }

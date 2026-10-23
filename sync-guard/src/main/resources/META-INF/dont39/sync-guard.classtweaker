@@ -8,6 +8,8 @@ accessible field zombie/core/raknet/UdpConnection bufferLock Ljava/util/concurre
 accessible field zombie/gameStates/ConnectToServerState connectionDetails Lzombie/core/network/ByteBufferReader;
 # what an in-scope packet addresses
 accessible field zombie/network/packets/AddInventoryItemToContainerPacket containerId Lzombie/network/fields/ContainerID;
+# a snapshot's item list, of which the client adds only the items it lacks
+accessible field zombie/network/packets/AddInventoryItemToContainerPacket items Ljava/util/ArrayList;
 accessible field zombie/network/packets/RemoveInventoryItemFromContainerPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/ReplaceInventoryItemInContainerPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemFieldsPacket containerId Lzombie/network/fields/ContainerID;

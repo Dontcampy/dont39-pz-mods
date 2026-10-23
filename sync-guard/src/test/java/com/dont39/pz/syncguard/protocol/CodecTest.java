@@ -1,5 +1,6 @@
 package com.dont39.pz.syncguard.protocol;
 
+import com.dont39.pz.syncguard.protocol.Message.Bye;
 import com.dont39.pz.syncguard.protocol.Message.Hello;
 import com.dont39.pz.syncguard.protocol.Message.OpenCheck;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
@@ -64,6 +65,18 @@ class CodecTest {
     void openCheck() {
         OpenCheck c = new OpenCheck(ITEM, Long.MIN_VALUE);
         assertEquals(c, roundTrip(c, OpenCheck.class));
+    }
+
+    @Test
+    void bye() {
+        assertEquals(new Bye(), roundTrip(new Bye(), Bye.class));
+        assertEquals(2, encode(new Bye()).remaining());
+    }
+
+    @Test
+    void byeHasNoBody() {
+        ByteBuffer b = ByteBuffer.wrap(new byte[] {Protocol.VERSION, Codec.BYE, 0});
+        assertThrows(ProtocolException.class, () -> Codec.decode(b));
     }
 
     @Test

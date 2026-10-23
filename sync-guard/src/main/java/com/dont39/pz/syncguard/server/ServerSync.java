@@ -5,6 +5,7 @@ import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
 import com.dont39.pz.syncguard.game.OwnNetData;
 import com.dont39.pz.syncguard.game.PacketScope;
+import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.protocol.Codec;
 import com.dont39.pz.syncguard.protocol.ContainerKey;
 import com.dont39.pz.syncguard.protocol.ItemKey;
@@ -64,8 +65,6 @@ public final class ServerSync {
     // a frame packet's entries, well within the connection's 1,000,000-byte send buffer
     private static final int FRAME_BYTES = 256 * 1024;
     private static final long SWEEP_NANOS = 1_000_000_000L;
-    private static final String SUMMARY_PROPERTY = "syncguard.summarySeconds";
-    private static final int SUMMARY_SECONDS = 600;
 
     private static volatile boolean running;
     private static Thread mainThread;
@@ -93,7 +92,7 @@ public final class ServerSync {
         PacketScope.apply();
         long now = System.nanoTime();
         nextSweep = now + SWEEP_NANOS;
-        summaryNanos = summarySeconds() * 1_000_000_000L;
+        summaryNanos = Settings.summarySeconds() * 1_000_000_000L;
         nextSummary = now + summaryNanos;
         running = true;
     }
@@ -150,6 +149,8 @@ public final class ServerSync {
             Message m = Codec.decode(ByteBuffer.wrap(own.payload()));
             if (m instanceof Message.Hello h) {
                 hello(p, h);
+            } else if (m instanceof Message.Bye) {
+                bye(p);
             } else if (!p.active) {
                 throw new ProtocolException("a " + m.getClass().getSimpleName() + " before its Hello");
             } else if (m instanceof Message.SnapshotRequest r) {
@@ -177,6 +178,22 @@ public final class ServerSync {
         p.modVersion = h.modVersion();
         DebugType.Mod.println(PREFIX + "%s (connection %d): checking its sync (Sync Guard %s on the client)",
                 p.name(), p.connection.getIndex(), h.modVersion());
+    }
+
+    // the client failed or left: nothing more goes to it, and what it still sends is ignored
+    private static void bye(Peer p) {
+        if (!p.active) {
+            return;
+        }
+        p.active = false;
+        p.stopped = "a Bye";
+        p.touched.clear();
+        p.snapshots.clear();
+        p.queued.clear();
+        DebugType.Mod.println(PREFIX + "%s (connection %d): stopped checking its sync, as Sync Guard on the client"
+                + " stopped for this session", p.name(), p.connection.getIndex());
+        connectionSummary(p);
+        p.versions.clear();
     }
 
     // ---- touch recording (R3)
@@ -359,7 +376,7 @@ public final class ServerSync {
 
     private static SyncFrame.Entry resolve(Touch t) {
         WireKey wire = t.key() instanceof ItemKey ik ? WireKey.item(t.wire(), ik.itemId()) : WireKey.container(t.wire());
-        if (!live(t.container(), t.key().container())) {
+        if (!Containers.live(t.container(), t.key().container())) {
             return new SyncFrame.Entry(wire, true, 0);
         }
         if (t.key() instanceof ItemKey ik) {
@@ -368,18 +385,6 @@ public final class ServerSync {
                     : new SyncFrame.Entry(wire, false, ItemDigests.item(item));
         }
         return new SyncFrame.Entry(wire, false, ItemDigests.container(t.container()));
-    }
-
-    /**
-     * Whether {@code container} is still the one the game addresses as {@code key}: not taken out of the world, not
-     * at another object index, not a stand-in the game's lookup made up for an index out of range.
-     */
-    static boolean live(ItemContainer container, ContainerKey key) {
-        if (container == null) {
-            return false;
-        }
-        ContainerID now = Containers.locate(container);
-        return now != null && key.equals(Containers.keyOf(now));
     }
 
     // ---- requests (R6, R7)
@@ -404,7 +409,7 @@ public final class ServerSync {
         }
         ItemContainer container = id.getContainer();
         Long digest = null;
-        if (live(container, key.container())) {
+        if (Containers.live(container, key.container())) {
             if (key instanceof ItemKey ik) {
                 InventoryItem item = container.getItemWithID(ik.itemId());
                 digest = item == null ? null : ItemDigests.item(item);
@@ -515,24 +520,6 @@ public final class ServerSync {
                 .append(p.versions.size());
         p.session.appendTo(line);
         DebugType.Mod.println(PREFIX + "%s", line);
-    }
-
-    private static int summarySeconds() {
-        String value = System.getProperty(SUMMARY_PROPERTY);
-        if (value == null) {
-            return SUMMARY_SECONDS;
-        }
-        try {
-            int seconds = Integer.parseInt(value.trim());
-            if (seconds > 0) {
-                return seconds;
-            }
-        } catch (NumberFormatException e) {
-            // reported below
-        }
-        DebugType.Mod.warn(PREFIX + "-D%s=%s is not a whole number of seconds above 0; summaries come every %d s",
-                SUMMARY_PROPERTY, value, SUMMARY_SECONDS);
-        return SUMMARY_SECONDS;
     }
 
     static void ownWrite(boolean on) {

@@ -1,5 +1,6 @@
 package com.dont39.pz.syncguard.server;
 
+import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
 import com.dont39.pz.syncguard.protocol.ItemKey;
@@ -94,7 +95,7 @@ final class Snapshots {
 
     private static Snapshot.State write(ByteBuffer out, Peer.Job job, ItemContainer container, long version,
             IsoPlayer requester) {
-        boolean live = ServerSync.live(container, job.key().container());
+        boolean live = Containers.live(container, job.key().container());
         InventoryItem only = null;
         if (live && job.key() instanceof ItemKey ik) {
             only = container.getItemWithID(ik.itemId());

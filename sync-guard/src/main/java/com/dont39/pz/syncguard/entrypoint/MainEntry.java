@@ -3,6 +3,7 @@ package com.dont39.pz.syncguard.entrypoint;
 import com.dont39.pz.syncguard.client.ClientSync;
 import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.PacketScope;
+import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.server.ServerSync;
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint;
 import com.pzlauncher.zabric.widener.AccessWidener;
@@ -18,6 +19,7 @@ public final class MainEntry implements MainEntrypoint {
     @Override
     public void onMain() {
         DebugType.Mod.println(PREFIX + "%s loaded", MainEntry.class.getPackage().getImplementationVersion());
+        Settings.load();
         if (AccessWidener.report(MOD_ID, MainEntry.class) != null) {
             DebugType.Mod.warn(PREFIX + "idle: the access widener did not apply the mod's list (line above)");
             return;
@@ -37,6 +39,7 @@ public final class MainEntry implements MainEntrypoint {
         if (!GameServer.server) {
             Gate.INSTANCE.open(ClientSync::stop);
             DebugType.Mod.println(PREFIX + "ready on a client; it turns on for a server that runs it too");
+            Settings.reportClientSwitches();
         } else if (GameServer.coop) {
             DebugType.Mod.println(PREFIX + "off on a co-op host: it runs on dedicated servers only");
         } else {
