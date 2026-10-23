@@ -41,7 +41,8 @@ import java.util.function.BiConsumer;
  * advances it); wet cooldown (counts down on both sides); clothing wetness and dirtiness (own packet, and the client
  * updates them); attached slot, slot type and model (the hotbar resets them on the client without a sync); tainted
  * water (setData never sets it); activated, key id, stash map, infection, world scale and rotations (only in the full
- * save, not in a field packet); a name that is not custom (each side translates it into its own language).
+ * save, not in a field packet); a name that is not custom (each side translates it into its own language); food
+ * stats and clothing weight derived from those.
  * Main thread only: one scratch buffer.
  */
 public final class ItemDigests {
@@ -164,7 +165,8 @@ public final class ItemDigests {
             out.at("ammo").putInt(item.getCurrentAmmoCount());
         }
         out.at("repaired").putInt(item.getHaveBeenRepaired());
-        if (on(Checked.WEIGHT)) {
+        // clothing's weight follows its wetness, which is left out
+        if (on(Checked.WEIGHT) && !(item instanceof Clothing)) {
             out.at("weight").putFloat(item.getWeight());
         }
         out.at("favorite").putBoolean(item.isFavorite());
@@ -247,14 +249,15 @@ public final class ItemDigests {
         }
     }
 
+    // thirst, unhappiness, boredom, stress and food sickness are left out: their getters scale them by age, heat,
+    // freezing and cooking, and ItemStats stores the server's scaled value as the client's base
     private static void food(Sink out, Food food) {
         out.at("food").putFloat(food.getHungChange()).putFloat(food.getActualWeightUnmodded())
                 .putFloat(food.getCalories()).putFloat(food.getCarbohydrates()).putFloat(food.getLipids())
                 .putFloat(food.getProteins())
-                .putFloat(food.getThirstChange()).putInt(food.getFluReduction()).putFloat(food.getPainReduction())
-                .putFloat(food.getEndChange()).putInt(food.getFoodSicknessChange()).putFloat(food.getStressChange())
-                .putFloat(food.getFatigueChange()).putFloat(food.getUnhappyChange())
-                .putFloat(food.getBoredomChange()).putInt(food.getPoisonPower())
+                .putInt(food.getFluReduction()).putFloat(food.getPainReduction())
+                .putFloat(food.getEndChange())
+                .putFloat(food.getFatigueChange()).putInt(food.getPoisonPower())
                 .putInt(food.getPoisonDetectionLevel()).putBoolean(food.isAlcoholic()).putFloat(food.getBaseHunger())
                 .putFloat(food.getMinutesToCook()).putFloat(food.getMinutesToBurn()).putBoolean(food.isTainted());
         strings(out.at("extraItems"), food.getExtraItems());

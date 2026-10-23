@@ -40,6 +40,13 @@ Implemented deviations (phase A, 2026-10-24):
 - Malformed or out-of-scope client input stops checks for that connection or refuses the request; it never
   disables the server side. Snapshots and digests come only from a container the game still addresses under the
   same key, so an out-of-range index never becomes an emptied container on the client.
+- Per-connection entries also go 3000 frames after the last frame that covered them (check, 2026-10-24): the
+  player's own items never leave relevance, so entries of items that left the inventory would only grow.
+- The digest leaves out food stats whose getters scale them by age, heat, freezing or cooking (thirst, unhappiness,
+  boredom, stress, food sickness; `ItemStats` stores the server's scaled value as the client's base) and clothing
+  weight (follows wetness) (check, 2026-10-24).
+- The `addIncoming` hooks run while the gate is shut too and swallow the mod's id: a peer that failed still gets
+  packets until the other side stops, which the game would log or count toward a packet-anticheat kick.
 
 Implemented deviations (phase B, client, 2026-10-24):
 

@@ -1,6 +1,7 @@
 package com.dont39.pz.syncguard.server;
 
 import com.dont39.pz.syncguard.game.Containers;
+import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
 import com.dont39.pz.syncguard.game.OwnNetData;
@@ -65,6 +66,11 @@ public final class ServerSync {
     // a frame packet's entries, well within the connection's 1,000,000-byte send buffer
     private static final int FRAME_BYTES = 256 * 1024;
     private static final long SWEEP_NANOS = 1_000_000_000L;
+    /**
+     * Entries no frame covered for this many frames (at least 5 minutes) go: a client asks within seconds of a frame,
+     * and the player's own items never leave its relevance.
+     */
+    private static final long STALE_FRAMES = 3000;
 
     private static volatile boolean running;
     private static Thread mainThread;
@@ -122,13 +128,19 @@ public final class ServerSync {
 
     // ---- own packets (S1)
 
-    /** At GameServer.addIncoming HEAD, on the network thread: true when the packet is the mod's and now queued. */
+    /**
+     * At GameServer.addIncoming HEAD, on the network thread, also while the hooks are shut: true when the packet is
+     * the mod's, which is queued only while the server checks.
+     */
     public static boolean incoming(short id, ByteBufferReader in, UdpConnection connection) {
         if (id != Protocol.PACKET_ID) {
             return false;
         }
-        // the queue the game puts all in-scope types on, so ours keep their order with them
-        GameServer.MainLoopNetDataHighPriorityQ.add(new OwnNetData(Net.payload(in), connection.getConnectedGUID()));
+        if (running && Gate.INSTANCE.active()) {
+            // the queue the game puts all in-scope types on, so ours keep their order with them
+            GameServer.MainLoopNetDataHighPriorityQ.add(new OwnNetData(Net.payload(in),
+                    connection.getConnectedGUID()));
+        }
         return true;
     }
 
@@ -200,13 +212,23 @@ public final class ServerSync {
 
     /** At the RETURN of an in-scope packet class's write. */
     public static void written(INetworkPacket packet) {
-        if (running && !ownWrite) {
+        if (running && !ownWrite && Thread.currentThread() == mainThread) {
             written = packet;
         }
     }
 
     /** At PacketType.send HEAD: the packet written last goes to {@code connection}. Every packet passes here. */
     public static void sending(PacketType type, IConnection connection) {
+        if (!running) {
+            return;
+        }
+        if (Thread.currentThread() != mainThread) {
+            // another thread's send must not take the main thread's packet; an in-scope one is an error
+            if (PacketScope.kind(type) != null && connection instanceof UdpConnection c) {
+                activePeer(c);
+            }
+            return;
+        }
         INetworkPacket packet = written;
         if (packet == null) {
             return;
@@ -469,7 +491,8 @@ public final class ServerSync {
                 }
                 continue;
             }
-            p.versions.keySet().removeIf(k -> !relevant(p.connection, k));
+            long oldest = p.frame - STALE_FRAMES;
+            p.versions.entrySet().removeIf(e -> e.getValue() < oldest || !relevant(p.connection, e.getKey()));
         }
     }
 

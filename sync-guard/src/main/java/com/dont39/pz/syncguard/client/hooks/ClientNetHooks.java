@@ -17,8 +17,9 @@ public final class ClientNetHooks {
     private ClientNetHooks() {
     }
 
-    // Network thread. Cancels only the mod's own id, which the game would log as unknown.
-    @Inject(method = "addIncoming", at = @At("HEAD"), cancellable = true)
+    // Network thread. Cancels only the mod's own id, which the game would log as unknown; also after a failure, until
+    // the server has the Bye.
+    @Inject(method = "addIncoming", at = @At("HEAD"), cancellable = true, always = true)
     public static void incoming(short id, ByteBufferReader in, CallbackInfo ci) {
         if (ClientSync.incoming(id, in)) {
             ci.cancel();

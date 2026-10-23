@@ -1,6 +1,7 @@
 package com.dont39.pz.syncguard.client;
 
 import com.dont39.pz.syncguard.game.Containers;
+import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
 import com.dont39.pz.syncguard.game.OwnNetData;
@@ -113,12 +114,15 @@ public final class ClientSync {
         DebugType.Mod.println(PREFIX + "active: the server checks this client's containers and items");
     }
 
-    /** At GameClient.addIncoming HEAD, on the network thread: true when the packet is the mod's and now queued. */
+    /**
+     * At GameClient.addIncoming HEAD, on the network thread, also while the hooks are shut: true when the packet is
+     * the mod's, which is queued only while they are open.
+     */
     public static boolean incoming(short id, ByteBufferReader in) {
         if (id != Protocol.PACKET_ID) {
             return false;
         }
-        if (GameClient.connection != null) {
+        if (Gate.INSTANCE.active() && GameClient.connection != null) {
             // the game's main-loop queue, in order with the in-scope packets
             GameClient.MainLoopNetDataQ.add(new OwnNetData(Net.payload(in),
                     GameClient.connection.getConnectedGUID()));

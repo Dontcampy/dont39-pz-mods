@@ -21,7 +21,8 @@ end
 local function report(page)
     if page.onCharacter or not Dont39SyncGuard_containerShown then return end
     local pane = page.inventoryPane
-    local container = pane and pane.inventory
+    if not pane then error("the loot window has no inventory pane") end
+    local container = pane.inventory
     if container == page.dont39SyncGuardShown then return end
     page.dont39SyncGuardShown = container
     if container then Dont39SyncGuard_containerShown(container) end
