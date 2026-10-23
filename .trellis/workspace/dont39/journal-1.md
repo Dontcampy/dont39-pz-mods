@@ -818,3 +818,25 @@ Measured LuaManager.searchFolders offline: ~95% is a canonical-path lookup of th
 ### Status
 
 [OK] **Completed**
+
+
+## Session 35: GPU BC7 texture encoder (Faster Loading 0.5.0)
+<!-- trellis-session: v=2 fp=721bf539c1259cfb -->
+
+**Date**: 2026-10-23
+**Task**: GPU BC7 texture encoder (Faster Loading 0.5.0)
+**Branch**: `feat/gpu-bc7-encoder-2b7d0a`
+
+### Summary
+
+Planned and shipped a GPU BC7 encoder for Faster Loading's textureCompression: DirectXTex compute shader ported to GLSL (modes 4-7, alpha weight 4, nearest index in the encode pass), new switch textureBc7, CPU DXT5 where OpenGL 4.3 is missing. Quality on 21 tile pages: RGB 45.33 / over white 44.34 / over grey 45.06 dB vs DXT5 39.26 / 38.95 / 39.18; alpha 53.43 vs 58.15 (accepted). Render thread 1.34 ms a page (32% of DXT5), GPU ~4.5 ms. Live mod list joins: 57.4 -> 55.1 s; VRAM peak +39 MiB vs DXT5 after fixing encoder buffers that grew with the largest level (+922 MiB). Spec: GL work on the render thread, ported code, capability choices. User files restored after every in-game run.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9214c21` | Encode textures to BC7 on the GPU in Faster Loading 0.5.0 |
+
+### Status
+
+[OK] **Completed**
