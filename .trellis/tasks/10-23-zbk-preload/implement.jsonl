@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "ZabricKotlin swap rules; this task adds the premain swap"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Zabric preload registration and preload_mods rules"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loading on client and server, preload, loader seam"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Error, never degrade; never crash the game"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Lifecycle lines read by smokeTest"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and style"}
