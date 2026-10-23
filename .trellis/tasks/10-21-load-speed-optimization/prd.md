@@ -79,19 +79,24 @@ unkeyed jassimp cache broke body-mesh mods).
 
 ## Acceptance Criteria
 
-- [ ] AC1 (R1): a join report on the test server shows an "asset wait" entry whose span matches the DebugLog's
+- [x] AC1 (R1): a join report on the test server shows an "asset wait" entry whose span matches the DebugLog's
   `bWaitForAssetLoadingToFinish2` start/end within 50 ms, with per-task-type counts and worker time and the top
-  files/mods; the report's own overhead stays within run-to-run noise (±1.5 s).
-- [ ] AC2 (R2): planned in its child task once AC1 data exists; target set there.
-- [ ] AC3 (R3): a unit test compares the replacement against the real 42.21 method on the vanilla and every installed
+  files/mods; the report's own overhead stays within run-to-run noise (±1.5 s). (met; report overhead not measured,
+  accepted (child `archive/2026-10/10-21-asset-wait-breakdown`).)
+- [x] AC2 (R2): planned in its child task once AC1 data exists; target set there. (met: join 141.7 → 69.8 s
+  (`archive/2026-10/10-21-asset-wait-speedup`), then depth-map order and BC7.)
+- [x] AC3 (R3): a unit test compares the replacement against the real 42.21 method on the vanilla and every installed
   mod's script/tile-geometry files plus the quirk cases, byte for byte; in-game, the stripComments known-call time
-  drops by ≥ 1.5 s per launch and per join (median of 3 runs on vs off).
-- [ ] AC4 (R4): `loadList` equals vanilla's (dumped with the switch on vs off) on launch and join; `LoadDirBase` →
-  first file time drops by ≥ 50 % (median of 3 runs).
+  drops by ≥ 1.5 s per launch and per join (median of 3 runs on vs off). (met: launch −6.4 s, join −6.3 s
+  (`archive/2026-10/10-21-faster-loading-strip-comments`).)
+- [x] AC4 (R4): `loadList` equals vanilla's (dumped with the switch on vs off) on launch and join; `LoadDirBase` →
+  first file time drops by ≥ 50 % (median of 3 runs). (met (`archive/2026-10/10-21-lua-folder-walk`).)
 - [ ] AC5: with every switch on, launch and an MP join to the Linux test server complete with no new errors in
   `console.txt`, no checksum mismatch, and the 15 Java mods loaded; with every switch off, timings match the baseline
-  within noise.
-- [ ] AC6: the build gate passes (`.trellis/spec/mod/quality-guidelines.md`).
+  within noise. Open: not run with every switch on and off, nor on the Linux test server; every child joined a local
+  nosteam server whose ini has `DoLuaChecksum=false`, so the checksum is unverified.
+- [x] AC6: the build gate passes (`.trellis/spec/mod/quality-guidelines.md`). (met: build gate passes for
+  `faster-loading` and `loading-progress`.)
 
 ## Out of Scope
 

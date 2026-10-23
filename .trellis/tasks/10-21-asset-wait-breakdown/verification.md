@@ -36,7 +36,8 @@ frame), not by decoding or animations.
 
 ## Not met / open
 
-- **Overhead (±1.5 s) not isolated:** no runs with the report off; the join spread itself is ±12 s.
+- **Overhead (±1.5 s) not isolated:** no runs with the report off; the join spread itself is ±12 s. Accepted as not
+  measured by the user (2026-10-23) when the task was archived.
 - ~~Per-mod attribution gap~~ fixed: the first runs put 169 s of 190 s worker time in "in no mod's folder" because
   pack images were named `pack/image`. Pack images are now named by the `.pack` file the game opens, and the catch-all
   is split. Re-run (`join-attr1`, same setup): `access widener: ok (28 directives)`; of 294,586 ms worker time,

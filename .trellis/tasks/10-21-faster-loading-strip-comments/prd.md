@@ -25,13 +25,15 @@ Create the new client-only mod that will hold every load speed-up, with its firs
 
 ## Acceptance Criteria
 
-- [ ] Unit test: the replacement equals the real 42.21 method byte for byte on the vanilla and every installed mod's
+- [x] Unit test: the replacement equals the real 42.21 method byte for byte on the vanilla and every installed mod's
   script and tile-geometry files and on the quirk cases, and the real method returns it unchanged (the jar is the
   reference, run in the test).
-- [ ] In-game, the stripComments known-call time drops by ≥ 1.5 s per launch and per join (median of 3 runs, switch
+- [x] In-game, the stripComments known-call time drops by ≥ 1.5 s per launch and per join (median of 3 runs, switch
   on vs off), read from Loading Progress reports.
-- [ ] Launch and an MP join to the Linux test server: no new errors in `console.txt`, no checksum mismatch.
-- [ ] Build gate passes; README and Workshop text written; the mod staged for the user's own upload.
+- [ ] Launch and an MP join to the Linux test server: no new errors in `console.txt`, no checksum mismatch. No new
+  errors on the local nosteam server with the live mod list; the checksum not exercised (the live server has
+  `DoLuaChecksum=false`), carried to the parent's integration check (its AC5).
+- [x] Build gate passes; README and Workshop text written; the mod staged for the user's own upload.
 
 ## Out of Scope
 

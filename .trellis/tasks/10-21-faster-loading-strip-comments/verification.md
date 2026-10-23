@@ -40,5 +40,6 @@ Date: 2026-10-21/22. Build: this worktree (main c5a9100 + uncommitted `faster-lo
 
 ## Open
 
-- Workshop images (`mod/42/poster.png`, `mod/workshop/preview.png`) for the user to supply before staging.
-- Specs do not list the new module yet (spec-update step).
+- ~~Workshop images~~ done: `mod/42/poster.png`, `mod/workshop/preview.png` added with Faster Loading 0.5.0 (2026-10-23).
+- ~~Specs do not list the new module~~ done: `directory-structure.md` and later specs list `faster-loading`.
+- The Lua checksum on a real MP join: carried to the parent's integration check (AC5).
