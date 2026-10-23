@@ -18,8 +18,14 @@ local FIXES = {
     {
         key = "textureCompression",
         text = "TextureCompression",
-        comment = "# textureCompression: compress on all CPU cores the textures the game asks the graphics driver to"
-            .. " compress, to the same DXT5 format (true or false)",
+        comment = "# textureCompression: compress the textures the game asks the graphics driver to compress with the"
+            .. " mod's own encoder, BC7 on the GPU (textureBc7) or DXT5 on all CPU cores (true or false)",
+    },
+    {
+        key = "textureBc7",
+        text = "TextureBc7",
+        comment = "# textureBc7: with textureCompression on and OpenGL 4.3, compress to BC7 on the GPU, sharper at the"
+            .. " same video memory; off, or without OpenGL 4.3: DXT5 on all CPU cores (true or false)",
     },
     {
         key = "depthMapOrder",

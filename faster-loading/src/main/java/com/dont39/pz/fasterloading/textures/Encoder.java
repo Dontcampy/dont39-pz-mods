@@ -7,15 +7,16 @@ import java.nio.ByteBuffer;
  * a cache in front of one) implements this and the hook stays as it is.
  */
 public interface Encoder {
-    /** The compressed internal format of its blocks, as {@code glCompressedTexImage2D} takes it. */
+    /** The compressed internal format of the levels it defines, as {@code glCompressedTexImage2D} takes it. */
     int glInternalFormat();
 
     /** Its name and version: what its output depends on besides the pixels, e.g. for a cache key. */
     String id();
 
     /**
-     * The blocks of {@code width}×{@code height} tightly packed RGBA bytes starting at {@code rgba}'s position. Called
-     * on the GL thread with the context current; the caller closes the result after the upload.
+     * Defines {@code level} of the texture bound to {@code target} from {@code width}×{@code height} tightly packed
+     * RGBA bytes starting at {@code rgba}'s position, which the caller frees once this returns. Called on the GL
+     * thread with the context current; leaves the GL state it touched as it found it.
      */
-    Blocks encode(ByteBuffer rgba, int width, int height);
+    void define(int target, int level, int width, int height, ByteBuffer rgba);
 }

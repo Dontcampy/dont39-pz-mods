@@ -50,7 +50,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |
 | [Logging Guidelines](./logging-guidelines.md) | Logger, prefix, lifecycle lines, debug output |
-| [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, forbidden patterns |
+| [Quality Guidelines](./quality-guidelines.md) | Build gate, in-game verification, style, GL work on the render thread, forbidden patterns |
 | [Kotlin Runtime](./kotlin-runtime.md) | Rules for Kotlin modules and the library mod, version bumps |
 | [ZabricKotlin Utils](./zb-kt-utils.md) | Runtime every Kotlin feature builds on: feature base and hook gate, widening checks |
 

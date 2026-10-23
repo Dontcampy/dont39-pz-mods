@@ -1,6 +1,5 @@
 package com.dont39.pz.fasterloading.textures;
 
-import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL21;
@@ -25,7 +24,7 @@ public final class Upload {
 
     /**
      * Whether the GL reads a {@code width} pixels wide RGBA level from client memory row after row from the start, with
-     * no gap between rows, as {@link Encoder#encode} reads it.
+     * no gap between rows, as {@link Encoder#define} reads it.
      */
     public static boolean packedRows(int width) {
         return GL11.glGetInteger(GL21.GL_PIXEL_UNPACK_BUFFER_BINDING) == 0
@@ -36,27 +35,27 @@ public final class Upload {
     }
 
     /**
-     * Defines the bound texture's {@code level} from {@code encoder}'s blocks of {@code pixels}. Throws, naming the
-     * level, when the GL lacks the encoder's format or reports an error for the upload.
+     * Defines the bound texture's {@code level} by {@code encoder} from {@code pixels}. Throws, naming the level, when
+     * the GL reports an error for it.
      */
     public static void compressed(Encoder encoder, int target, int level, int width, int height, ByteBuffer pixels) {
-        if (!GL.getCapabilities().GL_EXT_texture_compression_s3tc) {
-            throw new IllegalStateException("the GL (" + GL11.glGetString(GL11.GL_RENDERER) + ", "
-                    + GL11.glGetString(GL11.GL_VERSION) + ") has no GL_EXT_texture_compression_s3tc for "
-                    + encoder.id());
-        }
-        try (Blocks blocks = encoder.encode(pixels, width, height)) {
-            // the game's texture path never reads the flags (checkGLErrorThrowTexture is off), so one set by earlier
-            // game code may still be pending and would read as ours; the game would not have looked at it either
-            for (int i = 0; i < 8 && GL11.glGetError() != GL11.GL_NO_ERROR; i++) {
-                // cleared
-            }
-            GL13.glCompressedTexImage2D(target, level, encoder.glInternalFormat(), width, height, 0, blocks.data());
-        }
+        clearErrors();
+        encoder.define(target, level, width, height, pixels);
         int error = GL11.glGetError();
         if (error != GL11.GL_NO_ERROR) {
             throw new IllegalStateException("the GL reported 0x" + Integer.toHexString(error) + " for a " + width + "x"
                     + height + " level " + level + " from " + encoder.id());
+        }
+    }
+
+    /**
+     * Clears the GL's pending error flags. The game's texture path never reads them (checkGLErrorThrowTexture is off),
+     * so one set by earlier game code may still be pending and would read as the mod's; the game would not have looked
+     * at it either.
+     */
+    public static void clearErrors() {
+        for (int i = 0; i < 8 && GL11.glGetError() != GL11.GL_NO_ERROR; i++) {
+            // cleared
         }
     }
 }

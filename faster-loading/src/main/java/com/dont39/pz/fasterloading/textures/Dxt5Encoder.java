@@ -1,6 +1,7 @@
 package com.dont39.pz.fasterloading.textures;
 
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.stb.STBDXT;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -48,6 +49,13 @@ public final class Dxt5Encoder implements Encoder {
     }
 
     @Override
+    public void define(int target, int level, int width, int height, ByteBuffer rgba) {
+        try (Blocks blocks = encode(rgba, width, height)) {
+            GL13.glCompressedTexImage2D(target, level, glInternalFormat(), width, height, 0, blocks.data());
+        }
+    }
+
+    /** The blocks of {@code width}×{@code height} tightly packed RGBA bytes starting at {@code rgba}'s position. */
     public Blocks encode(ByteBuffer rgba, int width, int height) {
         if (width < 1 || height < 1 || rgba.remaining() < (long) width * height * 4) {
             throw new IllegalArgumentException(width + "x" + height + " RGBA needs " + (long) width * height * 4

@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "mod layer rules and guide index"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook API, default gate, generated glue"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "throw on mismatch, GL error checks, restore paths"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "log prefix, one line for the encoder choice"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, third-party code and license rules, in-game verification"}
+{"file": ".trellis/tasks/10-22-gpu-bc7-encoder/research/bc7-prototype.md", "reason": "port deltas, perf traps (spills, uniforms, ring), measured quality and time, GL state the game uses"}
+{"file": ".trellis/tasks/archive/2026-10/10-21-asset-wait-speedup/design.md", "reason": "R2 hook, call shape and upload path this task changes"}
+{"file": ".trellis/tasks/archive/2026-10/10-21-asset-wait-speedup/research/upload-path.md", "reason": "where the game uploads pack pages and why the hook is at glTexImage2D"}
+{"file": "faster-loading/README.md", "reason": "the mod: switches, constraints, checks to update"}

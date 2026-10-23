@@ -81,7 +81,25 @@ Follow [`.editorconfig`](../../../.editorconfig). Bytecode level: see `PzJvm.kt`
 New code is Kotlin; Java only in `zabric`, `zabric-processor`, `zb-skip-online-checks`, the samples, and where
 [Kotlin Runtime](./kotlin-runtime.md) requires it. Copied third-party code keeps its language, license header and
 source commit, lives in a subpackage of the feature (all mod jars share one class loader), and its license text goes
-into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for bugs, not style.
+into the jar's `META-INF/licenses/` (`tunnel`: `kcp/`, `fec/rs/`). Review it for bugs, not style. A port into another
+language (an HLSL shader as GLSL) keeps the license header and source commit and lists its changes from the source
+in its header (`faster-loading` `textures/bc7/BC7Encode.comp`, `META-INF/licenses/DirectXTex.txt`).
+
+## GL Work on the Game's Render Thread
+
+What a hook does in GL runs inside the game's frame, on a driver that runs GL commands on a thread of its own
+(NVIDIA's threaded optimization). Measured in `faster-loading`'s BC7 encoder (`textures/bc7/Bc7Encoder`, numbers in
+`archive/2026-10/10-22-gpu-bc7-encoder/verification.md`):
+
+- Any `glGet*` or `glGetError` waits for the driver thread to catch up; count them per call into a hot path.
+- Never update a uniform of a program whose dispatches may still be in flight: the update waits for them. Pass
+  per-call values in a buffer.
+- Adding a level to a texture with GPU writes pending into it waits for them: allocate the levels first, then fill
+  them with `glCompressedTexSubImage2D` / `glTexSubImage2D`.
+- Every level of a texture needs the same internal format or the texture is incomplete; a fix that changes the format
+  takes every level or none.
+- Prove GL paths outside the game first with a hidden-window harness on the game's LWJGL (`qualityCheck`), and time
+  the GL thread and the GPU separately (`GL_TIME_ELAPSED`).
 
 ## Forbidden Patterns
 

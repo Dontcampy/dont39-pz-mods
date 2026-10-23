@@ -5,8 +5,11 @@ public enum Fix {
     STRIP_COMMENTS("stripComments", "comment stripping",
             "remove the comments of script and tile files in one pass, with the game's result"),
     TEXTURE_COMPRESSION("textureCompression", "texture compression",
-            "compress on all CPU cores the textures the game asks the graphics driver to compress, to the same DXT5"
-                    + " format"),
+            "compress the textures the game asks the graphics driver to compress with the mod's own encoder, BC7 on"
+                    + " the GPU (textureBc7) or DXT5 on all CPU cores"),
+    TEXTURE_BC7("textureBc7", "texture bc7",
+            "with textureCompression on and OpenGL 4.3, compress to BC7 on the GPU, sharper at the same video memory;"
+                    + " off, or without OpenGL 4.3: DXT5 on all CPU cores"),
     DEPTH_MAP_ORDER("depthMapOrder", "depth map order",
             "load the depth maps of the game and of different mods side by side instead of one mod after another"),
     LUA_FOLDER_WALK("luaFolderWalk", "lua folder walk",

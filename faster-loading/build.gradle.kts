@@ -16,7 +16,7 @@ plugins {
   id("buildsrc.convention.pz-junit")
 }
 
-version = "0.4.0"
+version = "0.5.0"
 
 val modId = pzMod.modId
 val pkg = pzMod.javaPkgName

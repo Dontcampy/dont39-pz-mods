@@ -1,0 +1,21 @@
+run      enc      launch      join      menu     world  entering      wait    budget     packs       gap  errors hung  gap in
+warm     bc7       61708     62544       494     22381     11060      3745      2130       422      1125     949    0  Loading mods
+off1     dxt5      32654     56903       518     22361     10455      2679       285       253      1312     949    0  Loading mods
+on1      bc7       30876     54942       516     20466      9950      3872      1882       423      1343     949    0  Loading mods
+off2     dxt5      31206     57368       502     22540     10492      3942       814       409      1325     949    0  Loading mods
+on2      bc7       30689     55396       550     20715     10277      3778      1913       422      1333     949    0  Loading mods
+off3     dxt5      30357     57628       547     22479     10571      2738       379       268      1327     949    0  Loading mods
+on3      bc7       30892     55101       548     19835     10753      3487      2500       388      1317     949    0  Loading mods
+offshot  dxt5      31031     57561       547     22774     10531      4154       918       442      1335     949    0  Loading mods
+onshot   bc7       30230     55307       553     20714     10254      4250      2622       466      1363     949    0  Loading mods
+off med            31206     57368       518     22479     10492      2738       379       268      1325
+on med             30876     55101       548     20466     10277      3778      1913       422      1333
+warm ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+off1 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+on1 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+off2 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+on2 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+off3 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+on3 ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+offshot ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
+onshot ERROR: General      f:0 at FluidContainerScript.load           > Sanitizing container name 'Large Bucket', name may not contain whitespaces.
