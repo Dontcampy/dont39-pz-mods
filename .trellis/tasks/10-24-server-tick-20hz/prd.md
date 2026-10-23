@@ -21,12 +21,12 @@ streaming) arrive sooner, and game behaviour per real second stays as at 10 Hz w
 
 ## Decisions
 
-- D1 (proposed) Opt-in, default 10 Hz: mods' `OnTick` work doubles and tick-counting mods change speed, which a server
+- D1 (user, 2026-10-24) Opt-in, default 10 Hz: mods' `OnTick` work doubles and tick-counting mods change speed, which a server
   owner must choose knowingly.
-- D2 (proposed) A sandbox option on the All-in-One page, integer ticks per second 10-20, default 10 (off).
-- D3 (proposed) Compensate the game's own 10 Hz assumptions that change gameplay: `Rand.AdjustForFramerate`, world
+- D2 (user, 2026-10-24) A sandbox option on the All-in-One page, integer ticks per second 10-20, default 10 (off).
+- D3 (planning, approved with the plan) Compensate the game's own 10 Hz assumptions that change gameplay: `Rand.AdjustForFramerate`, world
   sound lifetime, `setLockFPS`. Leave thrown-object flight time and the trailer drop roll as documented differences.
-- D4 (proposed) Dedicated servers only; a hosted (co-op) game keeps 10 Hz.
+- D4 (planning, approved with the plan) Dedicated servers only; a hosted (co-op) game keeps 10 Hz.
 
 ## Requirements
 
@@ -61,7 +61,3 @@ streaming) arrive sooner, and game behaviour per real second stays as at 10 Hz w
 - Compensating `IsoPhysicsObject`'s fixed fps, the trailer drop roll, or mods' tick counting.
 - The client's frame rate; the co-op host.
 - Workshop upload (the user uploads).
-
-## Open questions
-
-- Q1 D1/D2: opt-in integer 10-20 (proposed), an on/off 20 Hz switch, or default-on?

@@ -1,0 +1,4 @@
+{
+    "Sandbox_Dont39AllInOne_ServerTickRateTicksPerSecond": "Server ticks per second",
+    "Sandbox_Dont39AllInOne_ServerTickRateTicksPerSecond_tooltip": "How many times per second a dedicated server updates its world; the game's own rate is 10. Higher rates hand out the server's results sooner (item transfers, finished actions, other players' zombie updates) and stream the map to players faster. Each tick costs about as much as before: at 20 the server needs about 20% more CPU, reaches its limit at about half the players, and other mods' per-tick (OnTick) code runs twice as often, so mods that count ticks run faster. 10 turns it off. Dedicated servers only. Takes effect when the server starts."
+}

@@ -18,31 +18,37 @@ change takes a server restart.
 
 ## 2. Applying the rate
 
-State: `rate` (Int, 10 until applied), `mainThread`, `applied`.
+State: `pending` (the option's rate until the limiter is found), `rate` (10 until applied), `mainThread`, the found
+limiter.
 
-1. `PerformanceSettings.setLockFPS` `@ModifyVariable` HEAD. When the gate is open, `rate == 10`, the argument is 10
-   and the caller is `GameServer.main` (one `StackWalker` walk, only on this path): read the option. At 10, log
-   "off (option ... is 10)" and return 10. Otherwise remember `mainThread`, return N. The fps estimate at `main@2721`
-   then starts at N.
-2. `UpdateLimit.Check` `@Inject` HEAD with `@Self`. Returns at once unless a rate is pending and the call is on
-   `mainThread`. The first such call whose caller is `GameServer.main` is the loop's limiter (`main@3493`): if its
-   `getDelay()` is 100, `setUpdatePeriod(1000 / N)` and set `rate = N`; else it is a mismatch (step 4).
+1. `PerformanceSettings.setLockFPS` `@ModifyVariable` HEAD. Once, when the argument is 10 and the caller is
+   `GameServer.main` (one `StackWalker` walk, only on this path): read the option. At 10, log "off" and return 10.
+   Otherwise remember `mainThread`, set `pending = N`, return N. The fps estimate at `main@2721` then starts at N.
+2. `UpdateLimit.Check` `@Inject` HEAD with `@Self`. Returns at once unless a rate is pending, the call is on
+   `mainThread` and the limiter's `getDelay()` is 100. The first such call whose caller is `GameServer.main` is the
+   loop's limiter (`main@3495`, the first `Check` in `main`): `setUpdatePeriod(1000 / N)`, `rate = N`.
    `UpdateLimit.<init>(J)V` cannot be hooked alone (ZombieBuddy's matcher also takes `<init>(JJ)V`), hence `Check`.
-3. Ten seconds of ticks after applying, log the measured ticks per second (count `ServerMap.preupdate` HEAD calls on
-   `mainThread` in that window; the counter stops after the line). Outside the expected rate ± 5%: mismatch.
-4. Mismatch: restore `setUpdatePeriod(100)` when the limiter was changed, `setLockFPS(10)`, `rate = 10`, and
-   `disable(...)` with what differed (`Feature.disable`; [error-handling.md](../../spec/mod/error-handling.md)).
+3. `ServerMap.preupdate` `@Inject` HEAD, `always = true` (runs while the feature is off), on `mainThread` only:
+   - the feature is off (disabled by any error): restore (step 4) once;
+   - a rate is still pending at the first tick: no 100 ms limiter was checked from `main`, a mismatch;
+   - else count ticks for 10 s and log the measured rate. Above the limiter's rate + 5%: mismatch (something else
+     drives the ticks). Below − 5%: an error line naming the load as the cause (ticks overran the period), the rate
+     stays; the counter stops after the line.
+4. Mismatch: `disable(...)` with what differed (`Feature.disable`;
+   [error-handling.md](../../spec/mod/error-handling.md)), then restore: `setUpdatePeriod(100)` on the found limiter,
+   `setLockFPS(10)`, `rate = 10`.
 
-Compensations read `rate`, so they are vanilla until step 2 succeeded and after a mismatch.
+Compensations read `rate`, so they are vanilla until step 2 succeeded and after a restore; their hooks are gated, so
+they are vanilla as soon as the feature is off.
 
 ## 3. Compensations
 
-- `Rand.AdjustForFramerate(I)I` `@ModifyReturnValue` with the argument: on the server with `rate > 10` return
-  `(int)(n * rate / 30f)`, the game's client formula with `rate` as the fps (vanilla server: `n * 1/3`). All 48 game
-  call sites use this static method; none in vanilla Lua.
-- World sound lifetime: where `WorldSoundManager$WorldSound.init` sets `life = 16`, scale to `16 * rate / 10` on the
-  server (`@Inject` RETURN with `@Self`, only when `life == 16`, so overload chaining applies it once). The exact
-  overloads are picked at implementation; the processor rejects ambiguous ones.
+- `Rand.AdjustForFramerate(I)I` `@ModifyReturnValue` with the argument: with `rate > 10` return
+  `(int)(n * rate / 30f)`, the game's client formula with `rate` as the fps (vanilla server: `n * 0.33333334f`). All
+  48 game call sites use this static method; none in vanilla Lua.
+- World sound lifetime: only `WorldSoundManager$WorldSound.init(Object, IIIII, F, F, S)` stores `life = 16`; the
+  other overloads end in it, and `init(WorldSound)` copies an already scaled life. `@Inject` RETURN with `@Self` on that
+  overload scales `life` to `16 * rate / 10`, rounded.
 - Not compensated, stated in the README: `IsoPhysicsObject` flight time, the trailer drop roll, mods counting
   `OnTick` calls; `OnTick` handlers cost twice the CPU per second.
 

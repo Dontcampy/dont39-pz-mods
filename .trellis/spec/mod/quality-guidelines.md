@@ -70,6 +70,11 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
     join, repeat the on/off joins after a realistic menu stay (≥ 30 s). The asset wait's phases by task type come from
     Loading Progress's `<report>-files.csv` (`research/timeline.py` of `archive/2026-10/10-22-depth-map-speedup`); its
     pack-image backlog varies by run, so compare phases, not just the wait.
+11. Server load without people: the game's `zombie.network.FakeClientManager` logs in headless players that walk a
+    scenario and own and simulate zombies as game clients do. The server runs `-nosteam`; one client process per
+    `-id` (each takes local port 17500+id). Scenario, start script, A/B harness and summarizer:
+    `research/prototype/` of `archive/2026-10/10-24-server-tick-20hz`. Restore the save from one snapshot before
+    each run, or the runs drift apart as the world fills.
 
 If an in-game check was not done, say so in the task report.
 

@@ -65,6 +65,10 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
 - Library classes in the game jar (LWJGL) are hookable from a preloaded mod when the descriptor is JDK-only. A hook on
   a call the game makes from its first splash frame runs its pure argument checks before anything that needs the game
   up (settings, log, cache folder) (`TextureHooks.java`).
+- What no hook reaches (a method's local, or an overload ZombieBuddy's matcher cannot select alone, such as
+  `UpdateLimit.<init>(J)V` next to `<init>(JJ)V`) is taken at its first use instead: a hook on the method the
+  object is next called with, matching thread and caller frame on that path only, acting once
+  (`server-tick-rate`'s `TickHooks.kt`).
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
   tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 

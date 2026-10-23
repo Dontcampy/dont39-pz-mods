@@ -9,7 +9,7 @@ Project Zomboid (Build 42) mods on [ZombieBuddy](https://github.com/zed-0xff/Zom
 | `zabric`, `zabric-processor` | Zabric: loader layer, hook API and runtime (a mod), and its annotation processor; both on Maven Central |
 | `zb-kt`, `zb-kt-utils`, `zb-kt-utils-processor` | ZabricKotlin: the Kotlin runtime mod, the shared runtime it ships, and its KSP glue generator |
 | `dont39-all-in-one` | Dont39 All-in-One: the mod that bundles the feature modules |
-| `ime-keyboard-fix`, `missing-anim-folders`, `anim-extends-case`, `tunnel`, `network-status`, `mod-options-sidebar` | the features, one module each |
+| `ime-keyboard-fix`, `missing-anim-folders`, `anim-extends-case`, `tunnel`, `network-status`, `server-tick-rate`, `mod-options-sidebar` | the features, one module each |
 | `zb-skip-online-checks` | ZB Skip Online Checks, a mod for ZombieBuddy itself |
 | `buildSrc` | the convention plugins and build tasks every module uses |
 | `samples/zabric-java-hooks` | a standalone author build against the published Zabric artifacts |
