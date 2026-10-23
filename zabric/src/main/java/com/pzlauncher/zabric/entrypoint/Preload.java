@@ -8,6 +8,9 @@ import zombie.gameStates.ChooseGameInfo;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.pzlauncher.zabric.internal.Log.PREFIX;
 
@@ -17,6 +20,9 @@ import static com.pzlauncher.zabric.internal.Log.PREFIX;
  * the loader approved.
  */
 final class Preload {
+    // every registration finds them again
+    private static final Set<List<String>> reportedCycles = new HashSet<>();
+
     private Preload() {
     }
 
@@ -44,6 +50,16 @@ final class Preload {
         Path commonDir = mod.getCommonDir() == null ? null
                 : Path.of(mod.getCommonDir()).toAbsolutePath().normalize();
         Loader.PreloadEntry entry = Loader.keepPreloaded(modId, versionDir, commonDir);
+        if (!entry.reordered().isEmpty()) {
+            DebugType.Mod.println(PREFIX + "%s preload order in %s rewritten so that each mod follows the mods it"
+                    + " requires: %s", Loader.name(), entry.location(), String.join(", ", entry.reordered()));
+        }
+        for (List<String> cycle : entry.cycles()) {
+            if (reportedCycles.add(cycle)) {
+                DebugType.Mod.error(PREFIX + "%s preload mods in %s require each other, so they keep their stored"
+                        + " order: %s", Loader.name(), entry.location(), String.join(", ", cycle));
+            }
+        }
         if (preloaded && entry.wasCurrent()) {
             return;
         }

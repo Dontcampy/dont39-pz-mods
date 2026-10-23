@@ -1,6 +1,5 @@
 package com.dont39.pz.zbkt;
 
-import com.dont39.pz.zbkt.selfcheck.SelfCheck;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 
@@ -8,8 +7,8 @@ import java.util.Properties;
 
 /**
  * Called by ZombieBuddy when it reaches this jar in its pass over the mod list, before any mod that requires this one,
- * so a ZombieBuddy Main on purpose: it is the last point before those mods' classes load. Java only, no reference to any
- * kotlin.* type: it runs before the swap (checkBootstrapClasses).
+ * so a ZombieBuddy Main on purpose: when the mod was not preloaded, it is the last point before those mods' classes
+ * load. Java only, no reference to any kotlin.* type: it runs before the swap (checkBootstrapClasses).
  */
 public final class Main {
     private static final String PREFIX = "[ZabricKotlin] ";
@@ -30,22 +29,25 @@ public final class Main {
         DebugType.Mod.println(PREFIX + "%s loaded", version != null ? version : "dev");
         Properties runtime;
         try {
-            runtime = KotlinSwap.install();
+            runtime = Install.runtime();
         } catch (KotlinSwap.Failure f) {
             notReady(f.getMessage(), f.getCause());
             return;
         } catch (Throwable t) {
-            notReady("unexpected error while installing Kotlin: " + t, t);
+            notReady("unexpected error while installing Kotlin" + (Install.ranAtGameStart() ? " at game start" : "")
+                    + ": " + t, t);
             return;
         }
-        try {
-            SelfCheck.run();
-        } catch (Throwable t) {
-            notReady("self-check failed: " + t, t);
+        Throwable check = Install.selfCheck();
+        if (check != null) {
+            notReady("self-check failed: " + check, check);
             return;
         }
-        DebugType.Mod.println(PREFIX + "ready: Kotlin %s, kotlinx-coroutines %s, kotlinx-serialization %s",
-                runtime.getProperty("version"), runtime.getProperty("coroutines"), runtime.getProperty("serialization"));
+        String when = Install.ranAtGameStart() ? "installed at game start"
+                : "installed when the mod list loaded, not at game start; restart once so that it installs at game start";
+        DebugType.Mod.println(PREFIX + "ready: Kotlin %s, kotlinx-coroutines %s, kotlinx-serialization %s; %s",
+                runtime.getProperty("version"), runtime.getProperty("coroutines"), runtime.getProperty("serialization"),
+                when);
     }
 
     private static void notReady(String why, Throwable error) {

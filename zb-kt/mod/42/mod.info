@@ -8,5 +8,6 @@ require=\ZombieBuddy,\Zabric
 loadModAfter=\Zabric
 javaJarFile=media/java/ZabricKotlin.jar
 javaPkgName=com.dont39.pz.zbkt
+javaPreload=true
 ZBVersionMin=2.3.4
 versionMin=42.21.0

@@ -21,8 +21,12 @@ public final class Loader {
     private Loader() {
     }
 
-    /** What a {@link #keepPreloaded} call found: {@code wasCurrent} when nothing had to change; where the entry is. */
-    public record PreloadEntry(boolean wasCurrent, Path location) {
+    /**
+     * What a {@link #keepPreloaded} call found: {@code wasCurrent} when the mod's entry did not have to change; where the
+     * entries are; {@code reordered}, the new order when the stored one did not follow {@code require}, else empty;
+     * {@code cycles}, the groups of entries that require each other and keep their stored order.
+     */
+    public record PreloadEntry(boolean wasCurrent, Path location, List<String> reordered, List<List<String>> cycles) {
     }
 
     /** A jar the loader loaded, with the id of the mod it loaded it for. */
@@ -194,8 +198,9 @@ public final class Loader {
 
     /**
      * Makes the loader run {@code modId} at game start from {@code versionDir}, the folder the game uses this session,
-     * unless it already runs it from there or from a byte-identical copy. {@code commonDir}: the mod's common folder,
-     * null when it has none. Throws when the mod cannot be preloaded or the loader's settings cannot be updated.
+     * unless it already runs it from there or from a byte-identical copy, and keeps the preload order Zabric first, then
+     * by {@code require}. {@code commonDir}: the mod's common folder, null when it has none. Throws when the mod cannot
+     * be preloaded or the loader's settings cannot be updated.
      */
     public static PreloadEntry keepPreloaded(String modId, Path versionDir, Path commonDir) throws IOException {
         return PreloadConfig.keep(modId, versionDir, commonDir);

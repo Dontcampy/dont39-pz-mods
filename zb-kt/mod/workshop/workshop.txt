@@ -4,7 +4,7 @@ title=ZabricKotlin
 description=[h1]ZabricKotlin[/h1]
 description=A Kotlin runtime for ZombieBuddy Java mods, made by Dont39. Subscribe to it and enable it when a mod requires it; it does nothing on its own.
 description=
-description=Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked), Zabric and Project Zomboid 42.21. Load after ZombieBuddy and Zabric.
+description=Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked), Zabric and Project Zomboid 42.21. Load after ZombieBuddy and Zabric. On first launch, restart the game once when the main menu asks.
 description=
 description=For mod authors: [url=https://github.com/Dontcampy/dont39-pz-mods/blob/main/zb-kt/README.md]zb-kt/README.md[/url]. Source and feedback: [url=https://github.com/Dontcampy/dont39-pz-mods]github.com/Dontcampy/dont39-pz-mods[/url].
 description=

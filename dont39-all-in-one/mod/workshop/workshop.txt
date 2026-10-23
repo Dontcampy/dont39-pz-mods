@@ -10,7 +10,7 @@ description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=36198
 description=[*]Zabric and ZabricKotlin (also by Dont39)
 description=[*]Project Zomboid 42.21
 description=[/list]
-description=Load order: ZombieBuddy, Zabric, ZabricKotlin, Dont39 All-in-One. On first launch, restart the game once when the main menu asks.
+description=Load order: ZombieBuddy, Zabric, ZabricKotlin, Dont39 All-in-One. Restart the game once when the main menu asks: on first launch, and after some Zabric or ZabricKotlin updates.
 description=
 description=[h2]What it adds[/h2]
 description=[list]

@@ -44,13 +44,14 @@ fun runPzUntilInit(
 
 /**
  * Fails unless Zabric and ZabricKotlin are fully in effect in [log]: no preload registration this launch (that
- * needs another run, named by [rerun]), Zabric's widening summary ok, no entrypoint problem, ZabricKotlin ready.
+ * needs another run, named by [rerun]; unless [registrations], a launch meant to register), Zabric's widening summary
+ * ok, no entrypoint problem, ZabricKotlin ready.
  */
-fun checkPlatformLog(log: String, console: File, rerun: String) {
+fun checkPlatformLog(log: String, console: File, rerun: String, registrations: Boolean = false) {
   val lines = log.lines()
   lines.firstOrNull { "[Zabric] cannot register " in it }?.let { throw GradleException("$console: $it") }
   val registered = lines.filter { "[Zabric] " in it && " as a ZombieBuddy preload mod " in it }
-  if (registered.isNotEmpty()) {
+  if (registered.isNotEmpty() && !registrations) {
     throw GradleException(
       "Preload mods were registered this launch; run $rerun again:\n" +
         registered.joinToString("\n") { "  ${it.substringAfter("[Zabric] ")}" },

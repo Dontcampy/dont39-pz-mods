@@ -34,8 +34,8 @@ final class KotlinSwap {
         }
     }
 
-    /** Returns the shipped versions (stdlib.properties). */
-    static Properties install() throws Exception {
+    /** Returns the shipped versions (stdlib.properties). {@code atGameStart}: called from {@link PreMain}. */
+    static Properties install(boolean atGameStart) throws Exception {
         Properties p = new Properties();
         try (InputStream in = KotlinSwap.class.getResourceAsStream("stdlib.properties")) {
             if (in == null) {
@@ -57,7 +57,11 @@ final class KotlinSwap {
         for (Class<?> c : inst.getAllLoadedClasses()) {
             if (c.getName().startsWith("kotlin.")) {
                 throw new Failure("Kotlin was already loaded (" + c.getName() + ") before ZabricKotlin could"
-                        + " install the current one, by ZombieBuddy or another mod");
+                        + " install the current one, " + (atGameStart
+                        ? "at game start: by a preload mod that ZombieBuddy runs before ZabricKotlin, or by one that"
+                                + " uses Kotlin without requiring ZabricKotlin"
+                        : "by ZombieBuddy, a preload mod that uses Kotlin, or a mod above ZabricKotlin in the mod"
+                                + " list"));
             }
         }
 
