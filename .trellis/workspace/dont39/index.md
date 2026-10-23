@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 37
-- **Last Active**: 2026-10-23
+- **Total Sessions**: 38
+- **Last Active**: 2026-10-24
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~903 | Active |
+| `journal-1.md` | ~925 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 38 | 2026-10-24 | ZabricKotlin as a preload mod | `0be78f4` | `main` |
 | 37 | 2026-10-23 | Load speed optimization AC5 on the Linux test server | `6cabbe0`, `a1a055d` | `load-speed-optimization` |
 | 36 | 2026-10-23 | PR #24 review fixes | `97e28bd` | `feat/gpu-bc7-encoder-2b7d0a` |
 | 35 | 2026-10-23 | GPU BC7 texture encoder (Faster Loading 0.5.0) | `9214c21` | `feat/gpu-bc7-encoder-2b7d0a` |

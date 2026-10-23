@@ -901,3 +901,25 @@ AC5 run on a Linux test instance with the live 246-mod list and DoLuaChecksum=tr
 ### Next Steps
 
 - User restarts the live server from the panel; Workshop upload of Faster Loading 0.5.0 and Loading Progress 0.2.0 is the user's
+
+
+## Session 38: ZabricKotlin as a preload mod
+<!-- trellis-session: v=2 fp=0482e0e778ec200a -->
+
+**Date**: 2026-10-24
+**Task**: ZabricKotlin as a preload mod
+**Branch**: `main`
+
+### Summary
+
+ZabricKotlin 0.7.0 is a preload mod: PreMain swaps Kotlin at game start; on a launch where it is not preloaded its Main installs as before, the ready line says where, and Zabric registers it and asks for one restart (dialog/server log, no auto restart). A failed premain swap is reported, never retried; premain skips the swap when Zabric did not run at game start. Zabric 0.7.0 orders preload_mods by require (Zabric first, cycles kept and logged) and reads mod.info leniently like ZombieBuddy (non-UTF-8). Planning went through a wider scope (rewrite Loading Progress/Faster Loading in Kotlin, premain-only swap, automatic restart) that the user cut back to ZabricKotlin only, two swap points, restart prompt. Verified: build with 12 PreloadConfigTest tests, client smokeTest (MAIN install + registration, then installed at game start, notice not needed), serverSmokeTest three runs. Not checked by eye: the main menu restart dialog. PR #25, squash-merged.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0be78f4` | Install Kotlin at game start: ZabricKotlin 0.7.0 is a preload mod (#25) |
+
+### Status
+
+[OK] **Completed**
