@@ -12,9 +12,10 @@ final class LoaderMatcher {
 
     /**
      * {@code maps}: per advice that binds arguments, the types ZombieBuddy compares them with (null: not compared);
-     * {@code noParam}: some advice binds none.
+     * {@code noParam}: some advice binds none; {@code exact}: the advice binds them without {@code @Argument}.
      */
-    static <T> boolean selects(TypeSystem<T> types, List<T> params, List<List<T>> maps, boolean noParam) {
+    static <T> boolean selects(TypeSystem<T> types, List<T> params, List<List<T>> maps, boolean noParam,
+                               boolean exact) {
         int count = params.size();
         if (noParam && count == 0) {
             return true;
@@ -22,10 +23,10 @@ final class LoaderMatcher {
         if (noParam && maps.isEmpty()) {
             return false;
         }
-        int minParams = maps.stream().mapToInt(List::size).max().orElse(0);
+        int minParams = exact ? 0 : maps.stream().mapToInt(List::size).max().orElse(0);
         for (List<T> map : maps) {
-            // not exact: @Argument means "at least this many parameters"
-            if (count < map.size() || count < minParams) {
+            // @Argument means "at least this many parameters"
+            if (exact ? count != map.size() : count < map.size() || count < minParams) {
                 continue;
             }
             boolean all = true;

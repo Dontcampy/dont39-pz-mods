@@ -176,6 +176,18 @@ class WeaveTest {
     }
 
     @Test
+    void aShorterOverloadIsWovenWithoutItsLongerOnes() {
+        Shapes shapes = new Shapes("s");
+        Events.take();
+        assertEquals("s:x", shapes.add("x"));
+        assertEquals(List.of("beforeAdd s x", "add body x"), Events.take());
+        assertTrue(shapes.add("y", 2f));
+        assertEquals(List.of("add body y 2.0", "addedUses y 2.0 true"), Events.take());
+        assertTrue(shapes.add("z", 3f, true));
+        assertEquals(List.of("add body z 3.0 true"), Events.take());
+    }
+
+    @Test
     void modifyVariableOnAPackagePrivateMethodOfANestedClass() {
         Nested.Item item = new Nested().item;
         item.error = "taken";

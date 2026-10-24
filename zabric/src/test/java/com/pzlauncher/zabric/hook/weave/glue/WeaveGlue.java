@@ -247,6 +247,61 @@ public final class WeaveGlue {
         }
     }
 
+    @Patch(className = "com.pzlauncher.zabric.hook.weave.Shapes", methodName = "add", strictMatch = true)
+    public static final class Shapes_add {
+        private Shapes_add() {
+        }
+
+        @Patch.OnEnter
+        public static void enter(
+                java.lang.String arg0,
+                @Patch.This com.pzlauncher.zabric.hook.weave.Shapes self,
+                @Patch.Local("h0$active") boolean h0$active) {
+            h0$active = MOD.active(MOD.defaultGate());
+            if (h0$active) {
+                try {
+                    com.pzlauncher.zabric.hook.weave.ShapeHooks.beforeAdd(self, arg0,
+                            new CallbackInfoReturnable<java.lang.String>("add", false));
+                } catch (Throwable t) {
+                    MOD.failed(MOD.defaultGate(),
+                            "running ShapeHooks.beforeAdd on com.pzlauncher.zabric.hook.weave.Shapes.add", t);
+                }
+            }
+        }
+    }
+
+    @Patch(className = "com.pzlauncher.zabric.hook.weave.Shapes", methodName = "add", strictMatch = true)
+    public static final class Shapes_add_2 {
+        private Shapes_add_2() {
+        }
+
+        @Patch.OnEnter
+        public static void enter(
+                java.lang.String arg0,
+                float arg1,
+                @Patch.Local("h0$active") boolean h0$active) {
+            h0$active = MOD.active(MOD.defaultGate());
+        }
+
+        @Patch.OnExit
+        public static void exit(
+                java.lang.String arg0,
+                float arg1,
+                @Patch.Return boolean ret,
+                @Patch.Local("h0$active") boolean h0$active) {
+            boolean done = false;
+            if (h0$active && !done) {
+                try {
+                    CallbackInfoReturnable<java.lang.Boolean> ci = new CallbackInfoReturnable<>("add", false, ret);
+                    com.pzlauncher.zabric.hook.weave.ShapeHooks.addedUses(arg0, arg1, ci);
+                } catch (Throwable t) {
+                    MOD.failed(MOD.defaultGate(),
+                            "running ShapeHooks.addedUses on com.pzlauncher.zabric.hook.weave.Shapes.add", t);
+                }
+            }
+        }
+    }
+
     @Patch(className = "com.pzlauncher.zabric.hook.weave.Target", methodName = "compute", strictMatch = true)
     public static final class Target_compute {
         private Target_compute() {

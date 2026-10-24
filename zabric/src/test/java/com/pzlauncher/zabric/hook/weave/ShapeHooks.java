@@ -61,4 +61,15 @@ public final class ShapeHooks {
                                   boolean relay) {
         return relay ? self.name + "-" + host + "-" + port + "-" + password : original;
     }
+
+    // the shape of ItemContainer.AddItem(String) and AddItem(String, float), each beside a longer overload
+    @Inject(method = "add(Ljava/lang/String;)Ljava/lang/String;", at = @At("HEAD"))
+    public static void beforeAdd(@Self Shapes self, String type, CallbackInfoReturnable<String> cir) {
+        Events.add("beforeAdd " + self.name + " " + type);
+    }
+
+    @Inject(method = "add(Ljava/lang/String;F)Z", at = @At("RETURN"))
+    public static void addedUses(String type, float uses, CallbackInfoReturnable<Boolean> cir) {
+        Events.add("addedUses " + type + " " + uses + " " + cir.getReturnValue());
+    }
 }

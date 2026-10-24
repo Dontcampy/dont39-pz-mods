@@ -37,6 +37,11 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   overwrite each other (`NoClassDefFoundError ... wrong name` at load). A later name that clashes takes the next
   number, as an overload does; a name that clashes with none keeps its form, which released listings name
   (`patchName` in `PatchBuilder.java`).
+- ZombieBuddy applies `@Argument` glue to every longer overload whose first parameters accept it. Where that would
+  select another method, the generator binds the arguments by position instead, which ZombieBuddy matches to that
+  parameter count only (`PatchBuilder.positional`, `WeaveTest.aShorterOverloadIsWovenWithoutItsLongerOnes`); all
+  other glue keeps the `@Argument` shape released mods have. Still refused: another overload with as many parameters
+  that accepts the bound types (a bridge too), and `@ModifyVariable` there (a positional argument is read-only).
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
 - A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
