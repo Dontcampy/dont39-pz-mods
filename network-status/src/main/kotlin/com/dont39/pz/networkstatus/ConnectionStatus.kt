@@ -45,6 +45,7 @@ internal object ConnectionStatus {
     table.put("pingLast", connection.lastPing)
     table.put("pingAvg", connection.averagePing)
     table.put("pingLow", connection.lowestPing)
+    PacketTraffic.luaTable(connection)?.let { table.rawset("traffic", it) }
     // null when RakNet has none for this connection, possibly on Steam
     val stats = connection.statistics
     table.rawset("stats", stats != null)
@@ -56,6 +57,7 @@ internal object ConnectionStatus {
       table.put("lossTotal", if (sent > 0) resent / sent else 0.0)
       table.put("bytesSentPerSec", stats.lastActualBytesSent)
       table.put("bytesRecvPerSec", stats.lastActualBytesReceived)
+      table.put("bytesRecvTotal", stats.totalActualBytesReceived)
       table.put("resendMessages", stats.messagesInResendBuffer)
       table.put("resendBytes", stats.bytesInResendBuffer)
       table.rawset("congestionLimited", stats.isLimitedByCongestionControl)
