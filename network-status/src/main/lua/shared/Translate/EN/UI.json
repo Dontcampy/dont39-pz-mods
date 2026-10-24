@@ -1,7 +1,9 @@
 {
     "UI_Dont39AllInOne_NetworkStatus_Options": "Dont39 All-in-One: network status",
     "UI_Dont39AllInOne_NetworkStatus_Show": "Show network status icon",
-    "UI_Dont39AllInOne_NetworkStatus_ShowTooltip": "In multiplayer, a signal icon in the bottom-left corner: the bars show your ping, a warning triangle shows packet loss. Hover it for details.",
+    "UI_Dont39AllInOne_NetworkStatus_Report": "Write download breakdown to console.txt",
+    "UI_Dont39AllInOne_NetworkStatus_ReportTooltip": "When you leave a server, write to console.txt how much of each kind of game data you received in that session, one line per kind.",
+    "UI_Dont39AllInOne_NetworkStatus_ShowTooltip":"In multiplayer, a signal icon in the bottom-left corner: the bars show your ping, a warning triangle shows packet loss. Hover it for details.",
     "UI_Dont39AllInOne_NetworkStatus_Disabled": "The network status stopped after an error (details in console.txt).",
     "UI_Dont39AllInOne_NetworkStatus_Method": "Connection: %1",
     "UI_Dont39AllInOne_NetworkStatus_MethodUdp": "direct UDP",

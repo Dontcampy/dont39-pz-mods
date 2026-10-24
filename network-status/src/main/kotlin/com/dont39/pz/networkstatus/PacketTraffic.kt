@@ -1,6 +1,7 @@
 package com.dont39.pz.networkstatus
 
 import com.dont39.pz.common.put
+import com.dont39.pz.zbktutils.glue.LuaGlobal
 import com.pzlauncher.zabric.hook.At
 import com.pzlauncher.zabric.hook.CallbackInfo
 import com.pzlauncher.zabric.hook.Hooks
@@ -38,6 +39,16 @@ internal object PacketTraffic {
   // replaced only on the UdpEngine thread
   @Volatile
   private var session: Session? = null
+
+  // the mod option, off until the Lua side says otherwise
+  @Volatile
+  private var reportOn = false
+
+  /** The mod option that writes a session's table to console.txt when the session ends. */
+  @LuaGlobal("Dont39AllInOne_setNetworkTrafficReport")
+  fun setReport(on: Boolean) {
+    reportOn = on
+  }
 
   @Inject(method = ["addIncoming"], at = [At("HEAD")])
   fun received(id: Short, packet: ByteBufferReader?, ci: CallbackInfo) {
@@ -84,7 +95,7 @@ internal object PacketTraffic {
   }
 
   private fun report(ended: Session) {
-    if (!ended.reported.compareAndSet(false, true)) {
+    if (!ended.reported.compareAndSet(false, true) || !reportOn) {
       return
     }
     // info, not debug: the game drops debug lines even in -debug mode unless debuglog.cfg enables them

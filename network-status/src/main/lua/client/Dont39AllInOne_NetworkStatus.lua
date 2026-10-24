@@ -45,6 +45,7 @@ end
 
 local options = PZAPI.ModOptions:create(OPTIONS_ID, TEXT .. "Options")
 local showOption = options:addTickBox("show", TEXT .. "Show", true, TEXT .. "ShowTooltip")
+local reportOption = options:addTickBox("report", TEXT .. "Report", false, TEXT .. "ReportTooltip")
 
 local icon = nil
 local guard = Common.guard(PREFIX, function()
@@ -392,7 +393,23 @@ end
 
 local reportedNoJava = false
 
+-- the Java side writes the table when a session ends, possibly off the game thread, so it keeps its own copy
+local function pushReport()
+    if guard.disabled or not Dont39AllInOne_setNetworkTrafficReport then return end
+    local ok, err, trace = pcall(Dont39AllInOne_setNetworkTrafficReport, reportOption:getValue())
+    if not ok then
+        fail("passing the download table option to the Java side", err, trace)
+    end
+end
+
+function options:apply()
+    pushReport()
+end
+
+Events.OnConnected.Add(pushReport)
+
 Events.OnGameStart.Add(function()
+    pushReport()
     if guard.disabled or not isClient() then return end
     -- absent when ZombieBuddy did not load this mod's Java code
     if not Dont39AllInOne_getNetworkStatus then
