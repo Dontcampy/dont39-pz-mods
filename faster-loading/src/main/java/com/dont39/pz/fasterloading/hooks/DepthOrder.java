@@ -2,6 +2,7 @@ package com.dont39.pz.fasterloading.hooks;
 
 import com.dont39.pz.fasterloading.Mod;
 import com.dont39.pz.fasterloading.depth.Batch;
+import com.pzlauncher.zabric.widener.AccessWidener;
 import zombie.GameWindow;
 import zombie.debug.DebugType;
 import zombie.fileSystem.FileSystem;
@@ -20,26 +21,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * widens.
  */
 public final class DepthOrder {
-    private static boolean wideningReported;
-    private static boolean widened;
+    // null until asked
+    private static Boolean widened;
 
     private DepthOrder() {
     }
 
-    /** Whether Zabric applied the mod's access widener list, as the main entrypoint reported it. */
-    public static synchronized void widened(boolean applied) {
-        wideningReported = true;
-        widened = applied;
-    }
-
     /**
-     * Whether the members the mod's list widens are public; throws when the main entrypoint has not reported it yet,
-     * which the mod list's load does before the game queues its first depth maps.
+     * Whether the members the mod's list widens are public, asked of Zabric and logged at the first call: from the main
+     * entrypoint, or at the first depth maps when the mod is only preloaded, as then the main entrypoint never runs.
      */
-    static synchronized boolean widened() {
-        if (!wideningReported) {
-            throw new IllegalStateException("the depth map order ran before the mod's main entrypoint reported"
-                    + " whether the access widener applied");
+    public static synchronized boolean widened() {
+        if (widened == null) {
+            widened = AccessWidener.report(Mod.MOD_ID, DepthOrder.class) == null;
+            if (!widened) {
+                DebugType.Mod.warn(Mod.PREFIX + "depth map order idle: the access widener did not apply the mod's"
+                        + " list (line above)");
+            }
         }
         return widened;
     }
