@@ -14,7 +14,7 @@ Blocks until the console shows SERVER STARTED.
 Starts the game's own Prometheus exporter (-DprometheusPort) on that port; sampler.ps1 -PrometheusPort reads it.
 #>
 param([Parameter(Mandatory)] [string] $Label, [switch] $Wait, [int] $TimeoutSec = 900, [string] $Xmx = '16g',
-    [int] $PrometheusPort = 0)
+    [int] $PrometheusPort = 0, [string[]] $JvmArgs = @())
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 $name = $SG.ServerName
@@ -36,6 +36,7 @@ $vm = foreach ($a in @($json.vmArgs) + @($json.windows.'10'.vmArgs)) {
 }
 if (-not ($vm | Where-Object { $_ -like '-agentlib:zbNative*' })) { throw "no -agentlib:zbNative in $sd\ProjectZomboid64.json: ZombieBuddy is not installed on the server" }
 if ($PrometheusPort) { $vm += "-DprometheusPort=$PrometheusPort" }
+$vm += $JvmArgs
 $argList = @($vm) + @('-cp', ($json.classpath -join ';'), $json.mainClass.Replace('/', '.'),
     "-cachedir=$($SG.Cache)", '-servername', $name, '-adminpassword', (Get-AdminPassword), '-nosteam')
 

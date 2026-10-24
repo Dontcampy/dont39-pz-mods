@@ -99,17 +99,8 @@ $clientPlan = [ordered]@{}
 $clientSkip = [ordered]@{}
 foreach ($name in $plan.Keys) {
     $dst = Join-Path $SG.ClientMods $name
-    if ($stagedFolders.ContainsKey($name)) {
-        if ($name -eq 'Dont39SyncGuard') {
-            $a = Get-FileHash (Join-Path $stagedFolders[$name] $sgJarRel) -ErrorAction SilentlyContinue
-            $b = Get-FileHash (Join-Path $sgBuild $sgJarRel)
-            if (-not $a -or $a.Hash -ne $b.Hash) {
-                $msg = "$($stagedFolders[$name]) holds another Dont39SyncGuard jar than $sgBuild; run :sync-guard:deployWorkshop or remove that staging"
-                if ($DryRun) { Write-Warning $msg } else { throw $msg }
-            }
-        }
-        $clientSkip[$name] = "staged: $($stagedFolders[$name])"
-    } elseif ((Test-Path -LiteralPath $dst) -and -not $made.Contains($dst)) {
+    # a -nosteam client does not scan ~/Zomboid/Workshop, so staged mods are copied like the rest
+    if ((Test-Path -LiteralPath $dst) -and -not $made.Contains($dst)) {
         $clientSkip[$name] = "pre-existing, not ours: $dst"
     } else {
         $clientPlan[$name] = $plan[$name]
