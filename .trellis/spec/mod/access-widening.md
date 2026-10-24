@@ -13,7 +13,7 @@
 | List format and parser | `zabric/src/classtweaker/java/.../classtweaker/ClassTweaker.java` |
 | Target mod jars, widened compile jars, merged list | `pz-widening.gradle.kts`, `buildSrc/src/main/kotlin/widening/PzTargets.kt`, `ClassTweakerTasks.kt`; `mergeClassTweakers` in `dont39-all-in-one/build.gradle.kts`; a standalone mod ships its own list (`loading-progress/build.gradle.kts`, `faster-loading/build.gradle.kts`) and reports its status from its main entrypoint with `AccessWidener.report`, staying idle with the reason when the list is not in effect (`faster-loading/.../entrypoint/MainEntry.java`); `smokeTest` checks that report unless `widener = false` |
 | Game-start scan and widening, per-mod status | `zabric/.../widener/`: facade and per-mod status `AccessWidener.java`, scan `WidenerScan.java` / `ModFolders.java`, modifier changes `WidenerTransform.java` |
-| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list and jar hooks, `mod.info` rules) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java`, `JarLoadHook.java`, `ModInfo.java` |
+| ZombieBuddy access (Instrumentation, preload settings, mod records, mod-list and jar hooks, `mod.info` rules) | `zabric/.../loader/Loader.java`, `PreloadConfig.java`, `LoadStatus.java`, `ModsLoadedHook.java`, `JarLoadHook.java`, `PatchTargets.java`, `ModInfo.java` |
 | Entrypoints, preload registration, loader progress | `zabric/.../entrypoint/Lifecycle.java` (phases), `Entrypoints.java` (manifest, instantiation), `Preload.java`, `PreLaunchHook.java`, `LoaderProgress.java` / `JarListeners.java` |
 | Helpers shared by Zabric's packages (`[Zabric]` log prefix, jar reading) | `zabric/.../internal/` |
 | Hook runtime for other mods' glue | `zabric/.../hook/` ([Zabric Hooks](./zabric-hooks.md)) |
@@ -36,6 +36,12 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - A class loaded before Zabric's widener runs keeps its access ("already loaded before Zabric ran"), although the
   compile jars widen it. `zombie.ZomboidFileSystem` is one (ZombieBuddy patches it at premain); reach such a class
   through public members, as `Swap.kt` in `mod-sync` does. Only `smokeTest` catches this, not the build.
+- A class that first loads while the loader weaves a mod's patches into an already-loaded class is not widened either,
+  whichever mod's hook it was. Zabric loads the member types and nest members of the classes a jar's patches name
+  before the loader applies them (`loader/PatchTargets.java`): by reflection for a loaded target, from its class file
+  for one not loaded yet, which the loader can still load before it retransforms it (a glue signature names it). A
+  name-pattern patch, or a ZombieBuddy `Main` that loads its targets, can still cause it. Only a run with the full mod
+  list shows it, on the server too (`research/widening-during-weave.md` of task `10-24-mp-sync-loss-recovery`).
 - Read a target mod's version by name (`TargetMod.kt`): a `static final` constant is inlined at build time.
 - Target-mod types only in classes that load after the feature is active, never in the facade.
 
@@ -82,7 +88,8 @@ Reference feature: `ime-keyboard-fix` (game fields).
 - A problem is that mod's only and is never silenced (`AccessWidener.java`).
 - The author contract is in `zabric/README.md` (the Workshop page only links it). Changing it needs a new list header version.
 - After a ZombieBuddy update, recheck what `loader/` reads of ZombieBuddy's internals (`Loader.java`, `LoadStatus.java`),
-  its hooks on `loadMods` and `loadJar` (`ModsLoadedHook.java`, `JarLoadHook.java`), and its `mod.info` and jar rules,
+  its hooks on `loadMods` and `loadJar` (`ModsLoadedHook.java`, `JarLoadHook.java`), how it collects a jar's patches
+  and matches their targets (`PatchTargets.java`, against `PatchEngine.java`), and its `mod.info` and jar rules,
   which `ModInfo.java` re-implements (ZombieBuddy's parser is private; `LaunchOverride`'s refusal and
   `JavaMods.inFolder` use it).
 

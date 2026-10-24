@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -201,7 +202,8 @@ final class PatchBuilder<T> {
         String method = site.member.name().equals("<init>") ? "init" : site.member.name();
         String base = identifier(simple + "_" + method);
         String name = base;
-        for (int n = 2; !taken.add(name); n++) {
+        // case-folded: each is a class file, and names differing only in case overwrite each other on Windows
+        for (int n = 2; !taken.add(name.toLowerCase(Locale.ROOT)); n++) {
             name = base + "_" + n;
         }
         return name;

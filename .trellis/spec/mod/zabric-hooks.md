@@ -33,10 +33,15 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   test together.
 - `WeaveGlue.java` is the generator's reference (`GoldenTest`). A new glue shape gets a weave test case: ZombieBuddy
   drops advice that fails verification without an error, so before release only a weave test catches it.
+- Patch class names are unique ignoring case: each is a class file, and on Windows two names that differ only in case
+  overwrite each other (`NoClassDefFoundError ... wrong name` at load). A later name that clashes takes the next
+  number, as an overload does; a name that clashes with none keeps its form, which released listings name
+  (`patchName` in `PatchBuilder.java`).
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
 - A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
-  weave check); Zabric loads a target's member types before retransforming it (`WeaveCheck.java`).
+  weave check); Zabric loads a target's member types before it retransforms the target (`WeaveCheck.java`) and before
+  the loader applies a jar's patches (`loader/PatchTargets.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers

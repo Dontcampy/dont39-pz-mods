@@ -168,6 +168,47 @@ class HookRulesTest {
     }
 
     @Test
+    void namesDifferingOnlyInCaseGetTheirOwnPatchClasses() {
+        Compiler.Result result = compile("""
+                @Hooks(Cased.class)
+                public final class H {
+                    @Inject(method = "add", at = @At("HEAD"))
+                    public static void a(CallbackInfo ci) {
+                    }
+
+                    @Inject(method = "Add", at = @At("HEAD"))
+                    public static void b(CallbackInfo ci) {
+                    }
+
+                    @Inject(method = "other", at = @At("HEAD"))
+                    public static void c(CallbackInfo ci) {
+                    }
+                }
+                """, "t/Cased.java", """
+                package t;
+
+                public class Cased {
+                    public void add() {
+                    }
+
+                    public void Add() {
+                    }
+
+                    public void other() {
+                    }
+                }
+                """);
+        assertCompiles(result);
+        String glue = glue(result);
+        assertTrue(glue.contains("public static final class Cased_add {"));
+        assertTrue(glue.contains("public static final class Cased_Add_2 {"));
+        assertTrue(glue.contains("public static final class Cased_other {"));
+        assertFalse(glue.contains("public static final class Cased_Add {"));
+        assertTrue(result.resource("META-INF/zabric/hooks/h.H.txt")
+                .contains("hook t.Cased Add ()V glue.TestModGlue$Cased_Add_2\n"));
+    }
+
+    @Test
     void missingMethod() {
         assertError(hooks("""
                 @Inject(method = "nope", at = @At("HEAD"))
