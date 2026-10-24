@@ -54,6 +54,10 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
     snapshot cannot make equal, the digest fixes from the first field-diff run, `-Dsyncguard.debugDropModule`, and
     the driver showing containers in the loot window. Done 2026-10-24 (not run in game). In game: AC11 on
     `myserver1`'s list, then repeat AC1/AC6 to check that vanilla transfers still match after the grace.
+16. Digest tuning on the full list (AC6, AC11): key-level field diff, the per-side fields and mod data keys left out
+    or hashed as the packets carry them, open checks on a client that gets the mod from the server's list, the
+    driver's teleport next to containers. Done 2026-10-24 (`research/digest-tuning.md`; 600-s run: no frame
+    mismatch, 227 open checks).
 
 ## Validation
 

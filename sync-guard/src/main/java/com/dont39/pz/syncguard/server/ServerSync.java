@@ -578,7 +578,7 @@ public final class ServerSync {
         try {
             ck = Containers.keyOf(id);
         } catch (IllegalStateException e) {
-            // the client named a container type the game parses but never addresses, e.g. Undefined
+            // an address the game parses but this version of the mod cannot read
             return null;
         }
         if (ck == null) {

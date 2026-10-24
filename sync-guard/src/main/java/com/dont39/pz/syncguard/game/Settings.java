@@ -1,6 +1,7 @@
 package com.dont39.pz.syncguard.game;
 
 import zombie.debug.DebugType;
+import zombie.network.GameServer;
 
 import static com.dont39.pz.syncguard.Mod.PREFIX;
 
@@ -41,6 +42,10 @@ public final class Settings {
             DebugType.Mod.warn(PREFIX + "debug: logs every container or item update it sends or receives and every"
                     + " container whose items changed (-D%s); leave it off for play", TOUCHES);
         }
+        if (fieldDiff && GameServer.server) {
+            DebugType.Mod.println(PREFIX + "debug: logs the digest values of each item it sends in a snapshot (-D%s)",
+                    FIELD_DIFF);
+        }
     }
 
     /** {@code key=value} summary lines every this many seconds, and at the end of a connection. */
@@ -66,7 +71,7 @@ public final class Settings {
         return dropCommand;
     }
 
-    /** Client: logs which digest fields differ around each repair. */
+    /** Client: logs which digest fields differ around each repair. Server: logs each snapshot item's values. */
     public static boolean fieldDiff() {
         return fieldDiff;
     }

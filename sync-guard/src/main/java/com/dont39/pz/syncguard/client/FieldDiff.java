@@ -12,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.dont39.pz.syncguard.Mod.PREFIX;
 
@@ -23,10 +25,14 @@ import static com.dont39.pz.syncguard.Mod.PREFIX;
  * snapshot's own item digests tell which items really still differ after applying. Main thread only.
  */
 final class FieldDiff {
-    /** One item's per-field hashes and its whole digest. */
-    record Fields(String type, Map<String, Long> hashes, long digest) {
+    /** Differences listed per group and item; the rest are counted. */
+    private static final int SHOWN = 12;
+
+    /** One item's per-group hashes, its values by name, and its whole digest. */
+    record Fields(String type, Map<String, Long> hashes, Map<String, String> values, long digest) {
         static Fields of(InventoryItem item) {
-            return new Fields(item.getFullType(), ItemDigests.fields(item), ItemDigests.item(item));
+            ItemDigests.Fields f = ItemDigests.fields(item);
+            return new Fields(item.getFullType(), f.hashes(), f.values(), ItemDigests.item(item));
         }
     }
 
@@ -72,14 +78,15 @@ final class FieldDiff {
             List<String> fields = new ArrayList<>();
             s.hashes().forEach((field, hash) -> {
                 if (!Objects.equals(hash, c.hashes().get(field))) {
-                    fields.add(field);
+                    fields.add(field + values(field, c.values(), s.values()));
                 }
             });
-            c.hashes().keySet().stream().filter(f -> !s.hashes().containsKey(f)).forEach(fields::add);
+            c.hashes().keySet().stream().filter(f -> !s.hashes().containsKey(f)).forEach(f -> fields.add(f
+                    + " (only on the client)"));
             Long digest = digests.get(id);
             String verdict = digest == null ? "" : digest == c.digest() ? " [equal]" : " [differs]";
             if (!fields.isEmpty() || verdict.equals(" [differs]")) {
-                lines.add(id + " (" + s.type() + "): " + String.join(", ", fields) + verdict);
+                lines.add(id + " (" + s.type() + "): " + String.join("; ", fields) + verdict);
             }
         });
         client.forEach((id, c) -> {
@@ -88,6 +95,32 @@ final class FieldDiff {
             }
         });
         DebugType.Mod.println(PREFIX + "field diff: %s %s, against the server's copy: %s", name, when,
-                lines.isEmpty() ? "no item differs" : String.join("; ", lines));
+                lines.isEmpty() ? "no item differs" : String.join(" | ", lines));
+    }
+
+    // the group's values that differ, as "{name c=<client> s=<server>, ...}"; a value only one side has shows "-"
+    private static String values(String group, Map<String, String> client, Map<String, String> server) {
+        String prefix = group + ".";
+        Set<String> names = new TreeSet<>();
+        client.keySet().stream().filter(n -> n.startsWith(prefix)).forEach(names::add);
+        server.keySet().stream().filter(n -> n.startsWith(prefix)).forEach(names::add);
+        List<String> out = new ArrayList<>();
+        int more = 0;
+        for (String n : names) {
+            String c = client.getOrDefault(n, "-");
+            String s = server.getOrDefault(n, "-");
+            if (c.equals(s)) {
+                continue;
+            }
+            if (out.size() < SHOWN) {
+                out.add(n.substring(prefix.length()) + " c=" + c + " s=" + s);
+            } else {
+                more++;
+            }
+        }
+        if (more > 0) {
+            out.add("+" + more + " more");
+        }
+        return out.isEmpty() ? "" : "{" + String.join(", ", out) + "}";
     }
 }

@@ -21,8 +21,8 @@ public final class LuaTableHash {
         /** Whether the game saves and sends the pair; it drops the others, so they cannot match. */
         boolean saved(Object key, Object value);
 
-        /** A key of the outermost table that each side writes for itself, so it cannot match. */
-        default boolean ownPerSide(Object key) {
+        /** A pair of the outermost table that each side writes for itself, so it cannot match. */
+        default boolean ownPerSide(Object key, Object value) {
             return false;
         }
     }
@@ -40,11 +40,54 @@ public final class LuaTableHash {
         }
         Unordered pairs = new Unordered();
         tables.forEach(table, (k, v) -> {
-            if (tables.saved(k, v) && !(depth == 0 && tables.ownPerSide(k))) {
+            if (tables.saved(k, v) && !(depth == 0 && tables.ownPerSide(k, v))) {
                 pairs.add(Digest.of(value(k, tables, depth), value(v, tables, depth)));
             }
         });
         return pairs.get();
+    }
+
+    /**
+     * The pairs {@link #hash} covers, as {@code path -> value} for the field diff: nested tables down to
+     * {@code maxDepth} levels, deeper ones as their hash. Paths join keys with dots; the order is the table's own.
+     */
+    public static void describe(Object table, Tables tables, int maxDepth, BiConsumer<String, String> out) {
+        describe(table, tables, "", 0, maxDepth, out);
+    }
+
+    // returns how many values it described; an empty nested table is one, "{}"
+    private static int describe(Object table, Tables tables, String prefix, int depth, int maxDepth,
+            BiConsumer<String, String> out) {
+        int[] n = {0};
+        tables.forEach(table, (k, v) -> {
+            if (!tables.saved(k, v) || (depth == 0 && tables.ownPerSide(k, v))) {
+                return;
+            }
+            String path = prefix + k;
+            if (tables.isTable(v) && depth < maxDepth) {
+                if (describe(v, tables, path + ".", depth + 1, maxDepth, out) == 0) {
+                    out.accept(path, "{}");
+                }
+            } else {
+                out.accept(path, summary(v, tables, depth));
+            }
+            n[0]++;
+        });
+        return n[0];
+    }
+
+    private static String summary(Object v, Tables tables, int depth) {
+        if (v instanceof String s) {
+            return '"' + (s.length() > 40 ? s.substring(0, 40) + "..." : s) + '"';
+        }
+        if (v instanceof Number n) {
+            double d = n.doubleValue();
+            return d == Math.rint(d) && Math.abs(d) < 1e15 ? Long.toString((long) d) : Double.toString(d);
+        }
+        if (tables.isTable(v)) {
+            return String.format("table#%016x", table(v, tables, depth + 1));
+        }
+        return String.valueOf(v);
     }
 
     private static long value(Object v, Tables tables, int depth) {

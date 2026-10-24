@@ -109,6 +109,20 @@ Implemented deviations (content changes, D7, 2026-10-24):
 - `-Dsyncguard.debugDropModule=<module>[.<command>]` drops a mod's server commands at the client's
   `onClientPacket` HEAD (every one, or every n-th with `debugDropDelta`), for AC11.
 
+Implemented deviations (digest tuning, 2026-10-24; evidence in `research/digest-tuning.md`):
+
+- Digest values follow what the field packets carry: a custom colour as `Color.colorToABGR` (8 bits per channel), a
+  food's poison power and detection level as bytes with -1 read as 0 (`ItemStats` leaves -1 out). Left out: a food's
+  actual weight and, for a food with `ReplaceOnUse`, its weight (both follow the item's name, which is per side until
+  an `ItemStats` copies the server's), a sharp weapon's maximum damage (sent scaled, scaled again on the client).
+- Mod data pairs one side writes for itself are left out: `RPGInventoryDiscovered` and `RPGInventoryTransferRules`
+  (RPGInventory's client), `usedDelta` when 0 (`Clothing.getUsedDelta` writes it on whichever side reads it).
+- `-Dsyncguard.debugFieldDiff` lists the differing values per field (mod data by key path) on the client, and on the
+  server logs each snapshot item's values.
+- The client exposes its Lua function itself when the game built the Lua environment before the jar loaded (a join
+  that enables the mod through the server's list); the loader's pass had run before it.
+- A container id of type `Undefined` (the loot window's own floor container) is not checked, like a floor container.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with

@@ -160,7 +160,7 @@ Events.OnFETick.Add(pump)
 local spot = { name = cfg.spotName or "?", x = num("x", 0), y = num("y", 0), z = num("z", 0) }
 local radius = num("radius", 20)
 local stats = { cycles = 0, taken = 0, putBack = 0, moved = 0, eats = 0, walkFails = 0, errors = 0, shown = 0,
-    notShown = 0 }
+    notShown = 0, teleports = 0 }
 local endAt = 0
 local finished = false
 
@@ -172,9 +172,9 @@ end
 local function statsLine()
     local cell = getCell()
     return string.format("cycles=%d taken=%d putBack=%d moved=%d eats=%d walkFails=%d errors=%d shown=%d"
-        .. " notShown=%d pos=%s zombies=%d",
+        .. " notShown=%d teleports=%d pos=%s zombies=%d",
         stats.cycles, stats.taken, stats.putBack, stats.moved, stats.eats, stats.walkFails, stats.errors, stats.shown,
-        stats.notShown, pos(), cell and cell:getZombieList():size() or -1)
+        stats.notShown, stats.teleports, pos(), cell and cell:getZombieList():size() or -1)
 end
 
 local godReplied = false
@@ -258,10 +258,24 @@ local function showInLoot(e)
     for _, button in ipairs(loot.backpacks or {}) do
         if button.inventory == e.cont then
             loot:selectContainer(button)
+            -- whether Sync Guard's open check Lua saw it (Dont39SyncGuard_OpenCheck.lua marks the page)
+            if stats.shown < 3 then
+                mark(string.format("open: shown; global=%s marked=%s explored=%s", type(Dont39SyncGuard_containerShown),
+                    tostring(loot.dont39SyncGuardShown == e.cont), tostring(e.cont:isExplored())))
+            end
             return true
         end
     end
-    return "not listed in the loot window (" .. #(loot.backpacks or {}) .. " buttons)"
+    local p = getPlayer()
+    local sq = e.cont:getSourceGrid() or e.sq
+    local cur = p:getCurrentSquare()
+    local types = {}
+    for _, button in ipairs(loot.backpacks or {}) do
+        table.insert(types, tostring(button.inventory and button.inventory:getType()))
+    end
+    return string.format("not listed in the loot window: player %s, container %s at %d,%d,%d, reach=%s,"
+        .. " buttons [%s]", pos(), tostring(e.cont:getType()), sq:getX(), sq:getY(), sq:getZ(),
+        tostring(cur and (cur == sq or cur:canReachTo(sq))), table.concat(types, " "))
 end
 
 local function open(e)
@@ -355,11 +369,49 @@ local function finish()
     end
 end
 
+-- next to the container and able to reach it, as the loot window needs (ISInventoryPage:refreshBackpacks)
+local function beside(sq)
+    local p = getPlayer()
+    local cur = p:getCurrentSquare()
+    return cur ~= nil and math.abs(sq:getX() + 0.5 - p:getX()) <= 1.6 and math.abs(sq:getY() + 0.5 - p:getY()) <= 1.6
+        and sq:getZ() == cur:getZ() and (cur == sq or cur:canReachTo(sq))
+end
+
+-- the walk fails where the path is blocked (prison fences); an admin teleport to a free square next to it then
+local function teleportBeside(e, fn)
+    local adj = AdjacentFreeTileFinder.Find(e.sq, getPlayer())
+    if not adj then
+        stats.walkFails = stats.walkFails + 1
+        mark("walk: no free square next to " .. e.sq:getX() .. "," .. e.sq:getY())
+        fn(false)
+        return
+    end
+    stats.teleports = stats.teleports + 1
+    SendCommandToServer(string.format("/teleportto %d,%d,%d", adj:getX(), adj:getY(), adj:getZ()))
+    waitFor(function() return beside(e.sq) end, 10000, function(ok)
+        if not ok then
+            stats.walkFails = stats.walkFails + 1
+            mark("teleport: not beside " .. e.sq:getX() .. "," .. e.sq:getY() .. " at " .. pos())
+        end
+        fn(ok)
+    end, restart)
+end
+
 local function walkThen(e, fn)
-    luautils.walkAdj(getPlayer(), e.sq, true)
+    if beside(e.sq) then
+        fn(true)
+        return
+    end
+    if not luautils.walkAdj(getPlayer(), e.sq, true) then
+        teleportBeside(e, fn)
+        return
+    end
     stepWhenIdle(30000, function(done)
-        if not done then stats.walkFails = stats.walkFails + 1 end
-        fn(done)
+        if done and beside(e.sq) then
+            fn(true)
+        else
+            teleportBeside(e, fn)
+        end
     end)
 end
 

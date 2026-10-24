@@ -3,6 +3,7 @@ package com.dont39.pz.syncguard.server;
 import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
+import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.protocol.ContainerDigest;
 import com.dont39.pz.syncguard.protocol.ItemKey;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
@@ -123,6 +124,9 @@ final class Snapshots {
             add.setData(container, new ArrayList<>(items));
             add.write(new ByteBufferWriter(b));
         });
+        if (Settings.fieldDiff()) {
+            logValues(job, items);
+        }
         for (int i = 0; i < digests.length; i++) {
             InventoryItem item = items.get(i);
             w.item(item.getID(), digests[i], fields(player, item), item.hasModData() ? modData(item) : null,
@@ -130,6 +134,25 @@ final class Snapshots {
         }
         w.finish();
         return Snapshot.State.PRESENT;
+    }
+
+    /** Longest value list logged per item; clothing visuals alone have over a hundred values. */
+    private static final int LOGGED_CHARS = 4000;
+
+    // the client's field diff compares with the item as the snapshot's save restores it; this is the live item
+    private static void logValues(Peer.Job job, List<InventoryItem> items) {
+        for (InventoryItem item : items) {
+            StringBuilder b = new StringBuilder();
+            ItemDigests.fields(item).values().forEach((name, value) -> {
+                // unset clothing visuals
+                if (!(name.startsWith("visual.") && value.equals("0.0"))) {
+                    b.append(b.isEmpty() ? "" : ", ").append(name).append('=').append(value);
+                }
+            });
+            String values = b.length() > LOGGED_CHARS ? b.substring(0, LOGGED_CHARS) + "..." : b.toString();
+            DebugType.Mod.println(PREFIX + "field values: %s item %d (%s): %s", job.key(), item.getID(),
+                    item.getFullType(), values);
+        }
     }
 
     private static Payload fields(IsoPlayer player, InventoryItem item) {

@@ -143,8 +143,8 @@ class DigestTest {
             }
 
             @Override
-            public boolean ownPerSide(Object key) {
-                return "own".equals(key);
+            public boolean ownPerSide(Object key, Object value) {
+                return "own".equals(key) || ("lazy".equals(key) && Double.valueOf(0).equals(value));
             }
         };
         assertEquals(LuaTableHash.EMPTY, LuaTableHash.hash(Map.of("own", "x"), ownName));
@@ -152,6 +152,8 @@ class DigestTest {
                 LuaTableHash.hash(Map.of("k", 1.0, "own", "y"), ownName));
         assertNotEquals(LuaTableHash.hash(Map.of("t", Map.of("own", "x")), ownName),
                 LuaTableHash.hash(Map.of("t", Map.of("own", "y")), ownName));
+        assertEquals(LuaTableHash.EMPTY, LuaTableHash.hash(Map.of("lazy", 0.0), ownName));
+        assertNotEquals(LuaTableHash.EMPTY, LuaTableHash.hash(Map.of("lazy", 0.5), ownName));
     }
 
     @Test

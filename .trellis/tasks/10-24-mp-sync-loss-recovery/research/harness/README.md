@@ -167,6 +167,8 @@ server: `setup-server.ps1` without `-WithSyncGuard`. AC11 drops the mod's transf
 `-ClientJvmArgs '-Dsyncguard.debugDropModule=VacMod13.AddItem'` (a module, or `module.command`; every one, or every
 n-th with `-Dsyncguard.debugDropDelta=n`, which also drops every n-th vanilla in-scope update); the driver shows each
 container in the loot window before it takes from it, so open checks run too (`shown=` / `notShown=` in its lines).
+The window lists only containers next to the player, so where the walk there fails (the prison's fences), the driver
+teleports to a free square next to the container (`/teleportto`, counted as `teleports=`).
 
 ## Cleanup
 

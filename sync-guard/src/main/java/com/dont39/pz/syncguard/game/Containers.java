@@ -30,8 +30,9 @@ public final class Containers {
     }
 
     /**
-     * The key of the container {@code id} addresses, or null for a floor container: the game builds a throwaway one
-     * from the square's items on each side, and square object lists are out of scope.
+     * The key of the container {@code id} addresses, or null for a floor container (the game builds a throwaway one
+     * from the square's items on each side, and square object lists are out of scope) and for one the game leaves
+     * undefined (the loot window's own floor container off any square).
      */
     public static ContainerKey keyOf(ContainerID id) {
         ContainerID.ContainerType type = id.getContainerType();
@@ -39,7 +40,8 @@ public final class Containers {
             throw new IllegalStateException("a ContainerID without a type");
         }
         // a floor id lists squares, which wire() has no room for
-        return type == ContainerID.ContainerType.Floor ? null : keyOf(wire(id));
+        return type == ContainerID.ContainerType.Floor || type == ContainerID.ContainerType.Undefined ? null
+                : keyOf(wire(id));
     }
 
     /** The key of the game's bytes {@code wire}; null for a floor container. */

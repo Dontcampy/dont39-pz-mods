@@ -1,5 +1,6 @@
 package com.dont39.pz.syncguard.entrypoint;
 
+import com.dont39.pz.syncguard.LuaGlobals;
 import com.dont39.pz.syncguard.client.ClientSync;
 import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.Gate;
@@ -39,6 +40,12 @@ public final class MainEntry implements MainEntrypoint {
             return;
         }
         if (!GameServer.server) {
+            try {
+                LuaGlobals.exposeIfMissing();
+            } catch (RuntimeException e) {
+                DebugType.Mod.printException(e, PREFIX + "off: its Lua functions could not be added", LogSeverity.Error);
+                return;
+            }
             Gate.INSTANCE.open(ClientSync::stop);
             DebugType.Mod.println(PREFIX + "ready on a client; it turns on for a server that runs it too");
             Settings.reportClientSwitches();
