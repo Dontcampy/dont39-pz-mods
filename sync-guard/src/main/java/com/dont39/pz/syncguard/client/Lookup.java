@@ -16,7 +16,7 @@ final class Lookup {
      */
     record Found(ContainerID id, ContainerKey key, ItemContainer container) {
         String name(WireKey wire) {
-            String where = key != null ? key.toString() : "a container the game could not find";
+            String where = key != null ? key.toString() : "a floor container";
             return wire.isItem() ? "item " + wire.itemId() + " in " + where : where;
         }
     }
@@ -25,11 +25,11 @@ final class Lookup {
     }
 
     static Found find(WireKey wire, UdpConnection connection) {
+        ContainerKey key = Containers.keyOf(wire.containerBytes());
         ContainerID id = Containers.parse(wire.containerBytes(), connection);
         if (id == null) {
-            return new Found(null, null, null);
+            return new Found(null, key, null);
         }
-        ContainerKey key = Containers.keyOf(wire.containerBytes());
         ItemContainer container = key != null && Containers.live(id.getContainer(), key) ? id.getContainer() : null;
         return new Found(id, key, container);
     }

@@ -5,8 +5,12 @@ import com.dont39.pz.syncguard.protocol.ContainerWire;
 import com.dont39.pz.syncguard.protocol.ProtocolException;
 import zombie.core.network.ByteBufferReader;
 import zombie.inventory.ItemContainer;
+import zombie.inventory.types.InventoryContainer;
 import zombie.network.IConnection;
 import zombie.network.fields.ContainerID;
+import zombie.vehicles.BaseVehicle;
+import zombie.vehicles.VehicleManager;
+import zombie.vehicles.VehiclePart;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -62,14 +66,15 @@ public final class Containers {
     }
 
     /**
-     * The game's address of {@code container} as it is now, or null when the game cannot address it any more (taken
-     * out of the world: the game throws "Unable to resolve container location").
+     * The game's address of {@code container} as it is now, or null when the game cannot address it any more: taken
+     * out of the world, or its parent object off its square.
      */
     public static ContainerID locate(ItemContainer container) {
         ContainerID id = new ContainerID();
         try {
             id.set(container);
-        } catch (IllegalStateException e) {
+        } catch (RuntimeException e) {
+            // "Unable to resolve container location" for no place; a parent object without a square fails inside set
             return null;
         }
         return id;
@@ -86,11 +91,8 @@ public final class Containers {
      * online id, as a client does.
      */
     public static Address address(ItemContainer container) {
-        ContainerID id = new ContainerID();
-        try {
-            id.set(container);
-        } catch (RuntimeException e) {
-            // set throws for a container in no place, and fails on a parent object that has no square
+        ContainerID id = locate(container);
+        if (id == null) {
             return null;
         }
         ContainerID.ContainerType type = id.getContainerType();
@@ -121,10 +123,37 @@ public final class Containers {
 
     /**
      * Reads {@code wire} as the game's packets do; ends in the game's lookup, so {@code getContainer()} is set. Null
-     * when the game's lookup throws, as it does for a parent that is gone (a player who left). Throws when the bytes
-     * are not one whole container id.
+     * when the game's lookup throws, as it does for a parent that is gone (a player who left), and for a bag or vehicle
+     * part that is gone. Throws when the bytes are not one whole container id.
      */
     public static ContainerID parse(byte[] wire, IConnection connection) {
+        ContainerKey key = keyOf(wire);
+        if (key != null && !parentThere(key, wire, connection)) {
+            return null;
+        }
+        return lookUp(wire, connection);
+    }
+
+    // the game's lookup logs an error for each of these that is gone, and a frame entry may name one that just left
+    private static boolean parentThere(ContainerKey key, byte[] wire, IConnection connection) {
+        return switch (key.kind()) {
+            case BAG -> {
+                ContainerID owner = lookUp(ContainerWire.ownerInventory(wire), connection);
+                ItemContainer inventory = owner == null ? null : owner.getContainer();
+                yield inventory != null && inventory.getItemWithIDRecursiv(key.sub()) instanceof InventoryContainer;
+            }
+            case VEHICLE, VEHICLE_BAG -> {
+                BaseVehicle vehicle = VehicleManager.instance.getVehicleByID((short) key.owner());
+                VehiclePart part = vehicle == null ? null : vehicle.getPartByIndex(key.index());
+                ItemContainer items = part == null ? null : part.getItemContainer();
+                yield items != null && (key.kind() == ContainerKey.Kind.VEHICLE
+                        || items.getItemWithID(key.sub()) instanceof InventoryContainer);
+            }
+            default -> true;
+        };
+    }
+
+    private static ContainerID lookUp(byte[] wire, IConnection connection) {
         ContainerID id = new ContainerID();
         ByteBufferReader in = new ByteBufferReader(ByteBuffer.wrap(wire));
         try {

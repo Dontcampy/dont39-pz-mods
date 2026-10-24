@@ -185,7 +185,7 @@ public final class ItemDigests {
         /** {@code values}: null when only hashing. */
         Group(Map<String, String> values, String group) {
             this.values = values;
-            this.prefix = group + ".";
+            this.prefix = values == null ? null : group + ".";
         }
 
         boolean describing() {

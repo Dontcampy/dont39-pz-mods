@@ -137,8 +137,9 @@ public final class ClientSync {
 
     /** At GameClient.mainLoopDealWithNetData HEAD; the game then drops the packet, which has no type. */
     public static void dispatch(ZomboidNetData data) {
-        // the game pools its packets: a mark must not outlive this one
-        if (!own.remove(data) || !active) {
+        // the game pools its packets: a mark must not outlive this one, and a typed instance carries a stale mark of
+        // one the game dropped unrun
+        if (!own.remove(data) || data.type != null || !active) {
             return;
         }
         Message m = Codec.decode(data.buffer.bb.duplicate());

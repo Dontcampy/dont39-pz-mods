@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,6 +59,16 @@ class ContainerWireTest {
     void bagInAPlayerInventory() {
         byte[] wire = bytes(out().put(INVENTORY_CONTAINER).putShort((short) 12).put((byte) 0).putInt(987654));
         assertEquals(ContainerKey.bag(12, 987654), ContainerWire.decode(wire));
+    }
+
+    @Test
+    void ownerInventoryOfABag() {
+        byte[] bag = bytes(out().put(INVENTORY_CONTAINER).putShort((short) 12).put((byte) 1).putInt(987654));
+        byte[] inventory = bytes(out().put(PLAYER_INVENTORY).putShort((short) 12).put((byte) 1));
+        assertArrayEquals(inventory, ContainerWire.ownerInventory(bag));
+        byte[] notABag = bytes(out().put(PLAYER_INVENTORY).putShort((short) 12).put((byte) 1));
+        assertThrows(ProtocolException.class, () -> ContainerWire.ownerInventory(notABag));
+        assertThrows(ProtocolException.class, () -> ContainerWire.ownerInventory(new byte[] {INVENTORY_CONTAINER, 0}));
     }
 
     @Test

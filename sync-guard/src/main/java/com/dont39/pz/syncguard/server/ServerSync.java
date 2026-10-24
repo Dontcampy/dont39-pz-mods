@@ -101,6 +101,8 @@ public final class ServerSync {
     private static boolean anyActive;
     // debug only: item changes of containers off the main thread since the last summary, which are not recorded
     private static final AtomicLong offThreadChanges = new AtomicLong();
+    // debug only: packets the game sent since the last summary, by type
+    private static final Map<String, Integer> sentTypes = new HashMap<>();
     // each touched object's entry, computed once per tick for all connections
     private static final Map<Key, SyncFrame.Entry> digests = new HashMap<>();
     private static final Counters total = new Counters(null);
@@ -148,6 +150,10 @@ public final class ServerSync {
 
     /** At GameServer.disconnect HEAD. */
     public static void disconnected(UdpConnection connection) {
+        if (Thread.currentThread() != mainThread) {
+            // the peers are the main thread's; the sweep drops a connection that left
+            return;
+        }
         Peer p = peers.remove(connection);
         if (p != null && p.active) {
             connectionSummary(p);
@@ -636,9 +642,6 @@ public final class ServerSync {
      * {@code key=value} pairs of plain numbers, which the load-test tools parse. Counters run from the server's start
      * (the connection's join); tick times cover the time since the last line.
      */
-    // debug only: packets the game sent since the last summary, by type
-    private static final Map<String, Integer> sentTypes = new HashMap<>();
-
     private static void summary() {
         if (!sentTypes.isEmpty()) {
             debug("sent since the last summary: %s", sentTypes);

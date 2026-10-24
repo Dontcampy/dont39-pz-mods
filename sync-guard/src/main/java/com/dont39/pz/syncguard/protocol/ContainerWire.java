@@ -45,6 +45,24 @@ public final class ContainerWire {
         }
     }
 
+    /**
+     * The id of the inventory that holds the bag {@code bagWire} addresses, so the owner is found without the game's
+     * bag lookup. Throws {@link ProtocolException} for bytes that are not a bag in a player inventory.
+     */
+    public static byte[] ownerInventory(byte[] bagWire) {
+        ByteBuffer in = ByteBuffer.wrap(bagWire);
+        try {
+            if ((in.get() & 0xFF) != INVENTORY_CONTAINER) {
+                throw new ProtocolException("not a bag in a player inventory");
+            }
+            ByteBuffer out = ByteBuffer.allocate(1 + Short.BYTES + 1).put((byte) PLAYER_INVENTORY);
+            out.putShort(in.getShort()).put(in.get());
+            return out.array();
+        } catch (BufferUnderflowException e) {
+            throw new ProtocolException("a container id ends early", e);
+        }
+    }
+
     private static ContainerKey read(ByteBuffer in) {
         int type = in.get() & 0xFF;
         switch (type) {

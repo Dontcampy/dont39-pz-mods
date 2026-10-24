@@ -233,3 +233,16 @@ Both found by AC9's "a log line on both sides" (`ac11-add1`: the server logged n
 Rebuilt with `:sync-guard:build :sync-guard:assembleMod` (passes). Runs from `compat-on2` on use these lines
 (`compat-on2` to `ac1-vanilla2` with the first wording "as <the container it opened | a sync frame entry> differed on
 the client").
+
+## After the final review (2026-10-24, not re-run in game)
+
+- `sendItemsToContainer: can't find inventory container` (seen only with Sync Guard active): most likely Sync Guard's
+  own lookups of a bag that had already left the inventory, which run the game's container lookup and so its error
+  line. `Containers.parse` now checks the bag and vehicle part first, as the game does, and returns no container
+  instead. Not confirmed in game.
+- `ContainerID.set` throws a NullPointerException for a container whose object has left its square; `locate` now treats
+  any runtime exception as "no address". Before, such a container touched in the same tick could disable the mod for
+  the session.
+- `container already has id` stays open. Hypothesis from the review: Sync Guard moves the four item-field packet types
+  onto ordered channel 1, which changes their timing against the transfer mod's channel-0 broadcasts. Test: a run with
+  Sync Guard active but without the channel change.
