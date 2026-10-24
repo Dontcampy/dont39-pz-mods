@@ -77,6 +77,13 @@ Implemented deviations (hardening, 2026-10-24):
 - `ConnectToServerState` is still woven on the server too (no per-side hooks), which can stop other mods' widening of
   its nest members until Zabric loads a target's member types before ZombieBuddy weaves it.
 
+Implemented deviations (first in-game run, 2026-10-24):
+
+- The client reads the trailer at `GameClient.sendPlayerConnect` RETURN from `ConnectToServerState.instance` (public,
+  set by each join's `enter()`), not at `ConnectToServerState.exit`: `MainScreenState.update` calls `exit` only while
+  the main screen still updates, which stops once the world loads, so the join never activated. `ConnectToServerState`
+  is no longer woven at all, which also stops Sync Guard from disturbing other mods' widening of its nested classes.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with

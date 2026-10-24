@@ -48,7 +48,6 @@ public final class ClientSync {
     private static final int MAX_IDS = 20;
 
     // this join's: whether the server offers our protocol, and whether the client said Hello
-    private static boolean offered;
     private static boolean active;
     private static Thread mainThread;
     // a failure off the main thread or inside a game send: the next frame says Bye
@@ -79,12 +78,23 @@ public final class ClientSync {
     }
 
     /**
-     * At ConnectToServerState.exit HEAD. Read here, not where the game parses the connection-details: a client that
-     * enables the mod only with the server's mod list loads it inside the join, after that.
+     * At GameClient.sendPlayerConnect RETURN: PlayerConnect is out, so a Hello on its channel follows it. The trailer
+     * is read here, not where the game parses the connection-details (a client that enables the mod only with the
+     * server's mod list loads it inside the join, after that) nor at ConnectToServerState.exit (the main screen calls
+     * it only while it still updates, which ends once the world loads).
      */
-    public static void joinEnds(ConnectToServerState join) {
+    public static void playerConnectSent() {
+        if (active) {
+            return;
+        }
         reset();
         String target = GameClient.ip + ":" + GameClient.port;
+        // set by each join's enter()
+        ConnectToServerState join = ConnectToServerState.instance;
+        if (join == null) {
+            DebugType.Mod.println(PREFIX + "join to %s: inactive, as the game kept no connection-details", target);
+            return;
+        }
         // the join's copy is exactly as long as the data, as the game receives connection-details in parts
         Trailer.Decoded decoded = Trailer.decode(join.connectionDetails.bb);
         if (decoded instanceof Trailer.Decoded.None none) {
@@ -95,16 +105,6 @@ public final class ClientSync {
         if (protocol != Protocol.VERSION) {
             DebugType.Mod.println(PREFIX + "join to %s: inactive, as the server speaks protocol %d and this version of"
                     + " the mod %d; update Sync Guard on the side that is older", target, protocol, Protocol.VERSION);
-            return;
-        }
-        offered = true;
-        DebugType.Mod.println(PREFIX + "join to %s: the server runs Sync Guard; checks start once the player is in",
-                target);
-    }
-
-    /** At GameClient.sendPlayerConnect RETURN: PlayerConnect is out, so a Hello on its channel follows it. */
-    public static void playerConnectSent() {
-        if (!offered || active) {
             return;
         }
         active = true;
@@ -445,7 +445,6 @@ public final class ClientSync {
 
     // before each join and after leaving
     private static void reset() {
-        offered = false;
         active = false;
         byePending = false;
         // marks of packets the game dropped without running them (a lost connection)
@@ -460,7 +459,6 @@ public final class ClientSync {
     /** Undoes what the client changed in the game, after a failure; the hooks are shut already. */
     public static void stop() {
         boolean was = active;
-        offered = false;
         active = false;
         own.clear();
         PacketScope.restore();
