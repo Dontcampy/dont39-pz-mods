@@ -33,6 +33,10 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   test together.
 - `WeaveGlue.java` is the generator's reference (`GoldenTest`). A new glue shape gets a weave test case: ZombieBuddy
   drops advice that fails verification without an error, so before release only a weave test catches it.
+- Patch class names are unique ignoring case: each is a class file, and on Windows two names that differ only in case
+  overwrite each other (`NoClassDefFoundError ... wrong name` at load). A later name that clashes takes the next
+  number, as an overload does; a name that clashes with none keeps its form, which released listings name
+  (`patchName` in `PatchBuilder.java`).
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
 - A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
