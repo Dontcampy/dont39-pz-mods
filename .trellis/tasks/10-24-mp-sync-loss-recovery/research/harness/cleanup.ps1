@@ -20,7 +20,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $moved = Join-Path $SG.State "cleanup\$stamp"
 
 # 1. copies
-$roots = @((Join-Path $SG.Cache 'mods') + '\', $SG.ClientMods + '\')
+$roots = @(((Join-Path $SG.Cache 'mods') + '\'), ($SG.ClientMods + '\'))
 $n = 0
 if (Test-Path $SG.Manifest) {
     foreach ($p in Get-Content $SG.Manifest -Encoding utf8) {
