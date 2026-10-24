@@ -61,6 +61,8 @@ loading-progress/                    shipped mod: client-only Java mod, preloade
                                      frames and a timing report per load, switches on a mod options page (its README)
 faster-loading/                      shipped mod: client-only Java mod, preloaded with launch-wide hooks; load-time fixes,
                                      one switch each in its ini and options page (its README)
+sync-guard/                          shipped mod: Java mod for client and dedicated server, not preloaded; detects and
+                                     repairs lost container and item sync, with its own packets (zombiebuddy-patching.md)
 mod-settings/                        no project: the switches ini reader/writer (Switches.java), its options page
                                      (Switches.lua) and the page's test check (SwitchesPage.java), which pz-switches
                                      compiles into <javaPkgName>.settings and ships as <modId>_Switches.lua, since the

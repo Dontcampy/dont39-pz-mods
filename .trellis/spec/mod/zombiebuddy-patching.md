@@ -173,6 +173,30 @@ For a feature that adds to the multiplayer join. Reference: `mod-sync`.
   that is immutable and volatile (the list is built off the game thread), and turned off on every way out: Back, a lost
   connection, the game's end (`client/swap/Swap.kt`, `ClientHooks.kt`). For the next launch, use Zabric's
   `LaunchOverride` instead.
+- A mod a client enables only through the server's mod list loads inside the join, after `ConnectionDetails.parse`,
+  and `ConnectToServerState.exit` does not run during the join (the main screen calls it only while it still updates,
+  which stops once the world loads). Such a mod reads the trailer from the public `ConnectToServerState.instance` at
+  `GameClient.sendPlayerConnect` `RETURN` (`sync-guard` `ClientSync.playerConnectSent`).
+
+---
+
+## Own Network Packets
+
+For a feature that sends its own messages between client and server. Reference: `sync-guard`
+(`game/Net.java`, `client/hooks/NetDataHooks.java`, `server/hooks/NetHooks.java`, `server/hooks/LoopHooks.java`).
+
+- Header 134 and a reserved short id outside the `PacketTypes` enum; the first byte of the body is the feature's
+  protocol version.
+- Client: a cancellable `ZomboidNetData.read` `HEAD` hook fills the data for the reserved id and skips the
+  unknown-id error, so vanilla queues it in arrival order with its own packets; dispatch at
+  `mainLoopDealWithNetData` `HEAD`. Server: cancel at `GameServer.addIncoming` `HEAD` (before
+  `AntiCheat.PacketType.act`, which kicks or bans at some settings) into the feature's own queue, drained on the main
+  thread.
+- The receive hooks run even while the feature's hooks are shut (`always`), and always consume the reserved id: once
+  one side stops, the other may still send.
+- Send only from the feature's own handlers or tick hooks, never inside a vanilla send: the connection's writer is
+  shared and `bufferLock` is reentrant, so a nested send corrupts the vanilla packet (`Net.send` refuses).
+- Send only to a peer that said it runs the feature (a hello after the join), never to a vanilla peer.
 
 ---
 
@@ -199,6 +223,10 @@ For a feature that changes the game's own Lua UI. Reference:
 - Call them directly: [Access Widening](./access-widening.md).
 - No work that can fail in an object initializer: hooks live on those objects, and a failed initializer makes every
   later call fail inside the target mod.
+- Other mods can replace a vanilla network path entirely (on a large server list, item transfers went through a mod's
+  `sendServerCommand` broadcasts and no vanilla transfer packet was sent; `sync-guard` task research
+  `modded-transfer-path.md`). A feature that watches vanilla packets for a kind of change also watches where the
+  change happens (`sync-guard` `server/hooks/ContentHooks.java`), and is tested on the target server's mod list.
 
 ---
 
