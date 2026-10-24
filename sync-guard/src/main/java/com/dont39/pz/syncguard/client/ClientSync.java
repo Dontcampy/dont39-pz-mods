@@ -460,6 +460,7 @@ public final class ClientSync {
         if (repairs > 0) {
             counters.notices++;
             HaloTextHelper.addText(player, Translator.getText(NOTICE, repairs));
+            DebugType.Mod.println(PREFIX + "repair notice shown for %d repairs", repairs);
         }
     }
 

@@ -229,6 +229,28 @@ local function pick(exclude)
     return nil
 end
 
+-- weight is defined below; a source container must still hold something the loop would take
+local hasLoot
+
+-- a container to take from: one of the 30 nearest that still holds light items, as earlier runs empty the nearest;
+-- none in the scan widens it (up to 60)
+local function pickSource()
+    while true do
+        local n, found = 0, {}
+        for _, e in ipairs(containers) do
+            if e.obj:getSquare() ~= nil and hasLoot(e) then
+                table.insert(found, e)
+                n = n + 1
+                if n >= 30 then break end
+            end
+        end
+        if n > 0 then return found[ZombRand(n) + 1] end
+        if radius >= 60 then return pick(nil) end
+        radius = math.min(radius * 2, 60)
+        scan()
+    end
+end
+
 local function idle()
     local q = ISTimedActionQueue.getTimedActionQueue(getPlayer())
     return #q.queue == 0
@@ -237,7 +259,8 @@ end
 local cycle -- forward
 local function restart()
     stats.errors = stats.errors + 1
-    if not finished then after(3000, cycle) end
+    -- a test stops at its first error (its own lines say where)
+    if not finished and (cfg.test or "") == "" then after(3000, cycle) end
 end
 local function step(ms, fn) after(ms, fn, restart) end
 local function stepWhenIdle(timeoutMs, fn)
@@ -296,6 +319,14 @@ end
 local function weight(it)
     local ok, w = pcall(function() return it:getActualWeight() end)
     return ok and w or 99
+end
+
+hasLoot = function(e)
+    local items = e.cont:getItems()
+    for i = 0, math.min(items:size(), 12) - 1 do
+        if weight(items:get(i)) <= 3 then return true end
+    end
+    return false
 end
 
 local carried = {}
@@ -428,7 +459,7 @@ cycle = function()
         step(5000, cycle)
         return
     end
-    local a = pick(nil)
+    local a = pickSource()
     if not a then
         step(1000, cycle)
         return
@@ -472,6 +503,235 @@ cycle = function()
     end)
 end
 
+-- ---- tests (cfg test=<name>): one scripted check instead of the loop; the server half is SGTestDriver_Server.lua ----
+
+Events.OnServerCommand.Add(function(module, command, args)
+    if module == "SGTest" and command == "result" then mark("server " .. tostring(args and args.line)) end
+end)
+
+-- logTransfers=1: each Multiplayer Weight Limit Breaker AddItem whose target container holds an instance of the item
+-- other than this client's own copy (the game then logs "Error, container already has id"); the check holds whether
+-- this handler runs before or after the mod's
+if cfg.logTransfers == "1" then
+    Events.OnServerCommand.Add(function(module, command, args)
+        if module ~= "VacMod13" or command ~= "AddItem" or not args or not VacMod13 or not VacMod13.findContainer then
+            return
+        end
+        local ok, err = pcall(function()
+            local c = VacMod13.findContainer(args.container_id)
+            local there = c and args.item_id and c:getItemWithID(args.item_id)
+            if not there then return end
+            local own = args.pid == getPlayer():getOnlineID()
+            local action = own and VacMod13.ActionQueue and VacMod13.ActionQueue[args.id]
+            local mine = action and action.items and action.items[args.item_id]
+            if mine and there == mine then return end
+            local at = mine and mine:getContainer()
+            mark(string.format("transfer: AddItem of %s into %s finds another instance there; own=%s action=%s"
+                .. " status=%s client copy in %s", tostring(args.item_id), tostring(c:getType()), tostring(own),
+                tostring(action ~= nil), tostring(action and action.status), tostring(at and at:getType())))
+        end)
+        if not ok then mark("transfer log error " .. tostring(err)) end
+    end)
+end
+
+local function objIndex(e) return e.sq:getObjects():indexOf(e.obj) end
+local function contIndex(e)
+    for c = 0, e.obj:getContainerCount() - 1 do
+        if e.obj:getContainerByIndex(c) == e.cont then return c end
+    end
+    return -1
+end
+local function where(e)
+    return string.format("%d,%d,%d obj %d cont %d (%s)", e.sq:getX(), e.sq:getY(), e.sq:getZ(), objIndex(e),
+        contIndex(e), tostring(e.cont:getType()))
+end
+
+-- asks the server to change the container without telling this client (SGTestDriver_Server.lua)
+local function changeOnServer(e, how, n, tag)
+    sendClientCommand(getPlayer(), "SGTest", "changeContainer", { x = e.sq:getX(), y = e.sq:getY(), z = e.sq:getZ(),
+        obj = objIndex(e), cont = contIndex(e), type = e.cont:getType(), how = how, n = n or 1, tag = tag })
+end
+
+-- explored containers holding at least min items, one entry per container
+local function withItems(min)
+    local out, seen = {}, {}
+    for _, e in ipairs(containers) do
+        if not seen[e.cont] and e.cont:isExplored() and e.cont:getItems():size() >= min then
+            seen[e.cont] = true
+            table.insert(out, e)
+        end
+    end
+    return out
+end
+
+-- scans with a wider radius (up to 60) until at least count containers hold min items
+local function scanFor(min, count)
+    scan()
+    while #withItems(min) < count and radius < 60 do
+        radius = math.min(radius * 2, 60)
+        scan()
+    end
+    return withItems(min)
+end
+
+local tests = {}
+
+-- AC5: one carried item in the primary hand and one worn clothing item leave the inventory on the server only; the
+-- driver logs each change of the client's state until Sync Guard's snapshot has taken them off
+function tests.equipRemove(done)
+    local p = getPlayer()
+    local worn
+    local wi = p:getWornItems()
+    for i = 0, wi:size() - 1 do
+        local it = wi:get(i):getItem()
+        if it and instanceof(it, "Clothing") and not instanceof(it, "InventoryContainer") then worn = it break end
+    end
+    if not worn then
+        mark("error test equipRemove: no worn clothing")
+        done()
+        return
+    end
+    local function pickHeld()
+        local items = p:getInventory():getItems()
+        for i = 0, items:size() - 1 do
+            local it = items:get(i)
+            if it ~= worn and not p:isEquippedClothing(it) and not p:isEquipped(it) and not instanceof(it, "InventoryContainer")
+                and weight(it) <= 3 then
+                return it
+            end
+        end
+    end
+    local function run(held)
+        if not held then
+            mark("error test equipRemove: nothing to hold")
+            done()
+            return
+        end
+        ISTimedActionQueue.add(ISEquipWeaponAction:new(p, held, 50, true, false))
+        stepWhenIdle(30000, function()
+            if p:getPrimaryHandItem() ~= held then
+                mark("error test equipRemove: " .. held:getFullType() .. " not in the primary hand after equipping")
+                done()
+                return
+            end
+            local hid, wid = held:getID(), worn:getID()
+            local inv = p:getInventory()
+            local function state()
+                return string.format("held %d (%s): inInventory=%s inHand=%s; worn %d (%s): inInventory=%s worn=%s",
+                    hid, held:getFullType(), tostring(inv:containsID(hid)), tostring(p:getPrimaryHandItem() == held),
+                    wid, worn:getFullType(), tostring(inv:containsID(wid)), tostring(p:isEquippedClothing(worn)))
+            end
+            mark("test equipRemove before: " .. state())
+            sendClientCommand(p, "SGTest", "removePlayerItems", { ids = hid .. "," .. wid })
+            local t0, last, reheld = now(), "", false
+            waitFor(function()
+                -- the server clears a hand item that left its inventory and sends Equip to the owner; the item goes
+                -- back into this client's hand once, as if that Equip were lost, so the snapshot meets it held
+                if not reheld and inv:containsID(hid) and p:getPrimaryHandItem() ~= held then
+                    reheld = true
+                    p:setPrimaryHandItem(held)
+                    mark("test equipRemove +" .. (now() - t0) .. "ms: the game took the item out of the hand; back"
+                        .. " in the hand on this client only (a lost Equip)")
+                end
+                local s = state()
+                if s ~= last then
+                    last = s
+                    mark("test equipRemove +" .. (now() - t0) .. "ms: " .. s)
+                end
+                return now() - t0 > 20000
+            end, 25000, function()
+                -- the server still names the removed item as its hand item; this sets it to nothing
+                sendClientCommand(p, "SGTest", "clearHands", {})
+                after(2000, done)
+            end)
+        end)
+    end
+    local held = pickHeld()
+    if held then
+        run(held)
+        return
+    end
+    -- nothing carried yet: take one item first
+    local from = scanFor(1, 1)[1]
+    if not from then
+        run(nil)
+        return
+    end
+    walkThen(from, function()
+        open(from)
+        takeFrom(from)
+        stepWhenIdle(30000, function() run(pickHeld()) end)
+    end)
+end
+
+-- AC4: container A emptied with removeAllItems (as fire does; seen by Sync Guard's content hooks), container B's item
+-- list cleared directly (no hook sees it, so only the open check can find it)
+function tests.empty(done)
+    local cands = scanFor(2, 4)
+    local a, b = cands[1], nil
+    for _, e in ipairs(cands) do
+        -- not next to the player, so the loot window does not show it before the driver opens it
+        if e ~= a and e.obj ~= (a and a.obj) and e.d >= 16 then b = e break end
+    end
+    if not a or not b then
+        mark("error test empty: need two explored containers with items, found " .. #cands)
+        done()
+        return
+    end
+    local function counts()
+        return string.format("A %s items=%d; B %s items=%d", where(a), a.cont:getItems():size(), where(b),
+            b.cont:getItems():size())
+    end
+    mark("test empty before: " .. counts())
+    changeOnServer(a, "removeAll", nil, "A")
+    changeOnServer(b, "listClear", nil, "B")
+    after(8000, function()
+        mark("test empty +8s, B not opened yet: " .. counts())
+        walkThen(b, function(ok)
+            open(b)
+            mark("test empty: opened B (beside=" .. tostring(ok) .. ")")
+            after(5000, function()
+                mark("test empty +5s after opening B: " .. counts())
+                done()
+            end)
+        end)
+    end)
+end
+
+-- AC9: one container changed on the server, then ten more 4 s later, inside the notice's 10-s window
+function tests.burst(done)
+    local cands = scanFor(1, 11)
+    if #cands < 11 then
+        mark("error test burst: need 11 explored containers with items, found " .. #cands)
+        done()
+        return
+    end
+    mark("test burst first: " .. where(cands[1]))
+    changeOnServer(cands[1], "Remove", 1, "burst0")
+    after(4000, function()
+        for i = 2, 11 do changeOnServer(cands[i], "Remove", 1, "burst" .. (i - 1)) end
+        mark("test burst: ten more sent")
+        after(30000, done)
+    end)
+end
+
+-- Multiplayer Weight Limit Breaker replaces the game's transaction functions and keeps the originals in VacMod13.raw;
+-- vanillaTransfers=1 puts them back, so transfers go through the game's own container packets (AC1)
+local function useVanillaTransfers()
+    if not (VacMod13 and VacMod13.raw) then
+        mark("vanillaTransfers: VacMod13.raw not found; transfers stay as they are")
+        return
+    end
+    local names = {}
+    for k, f in pairs(VacMod13.raw) do
+        if type(f) == "function" then
+            _G[k] = f
+            table.insert(names, k)
+        end
+    end
+    mark("vanillaTransfers: restored " .. table.concat(names, " "))
+end
+
 local function progress()
     if finished then return end
     local ok, line = pcall(statsLine)
@@ -482,6 +742,23 @@ end
 local function beginLoop()
     endAt = now() + num("duration", 1800) * 1000
     after(60000, progress)
+    if cfg.vanillaTransfers == "1" then useVanillaTransfers() end
+    if cfg.test and cfg.test ~= "" then
+        local t = tests[cfg.test]
+        if not t then
+            mark("error unknown test " .. cfg.test)
+            finish()
+            return
+        end
+        mark("test " .. cfg.test .. " start at " .. pos())
+        step(0, function()
+            t(function()
+                mark("test " .. cfg.test .. " end")
+                finish()
+            end)
+        end)
+        return
+    end
     if cfg.loop == "0" then
         mark("loop off; staying at " .. pos())
         after(num("duration", 1800) * 1000, finish)

@@ -20,10 +20,28 @@ How long the loot loop runs at the spot; -Quit quits the game after it.
 
 .PARAMETER NoLoop
 Stays at the spot without looting (zombies and the player's presence only).
+
+.PARAMETER Test
+Runs one scripted check instead of the loot loop, then finishes: equipRemove (AC5), empty (AC4), burst (AC9); see the
+harness README, "Driver tests".
+
+.PARAMETER VanillaTransfers
+Puts back the game's own transaction functions that Multiplayer Weight Limit Breaker replaces, so the driver's
+transfers go through the game's container packets (AC1).
+
+.PARAMETER LogTransfers
+Logs each Multiplayer Weight Limit Breaker AddItem whose item the target container already holds (the game's
+"Error, container already has id"), with where the client's own copy is.
+
+.PARAMETER NoZombieBuddy
+Launches without ZombieBuddy's -agentlib:zbNative, so no Java mod runs: the mods' Lua loads as on a client without
+ZombieBuddy (AC8's vanilla client).
 #>
 param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $DurationSec = 1800, [switch] $Quit,
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
-    [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @())
+    [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @(),
+    [ValidateSet('', 'equipRemove', 'empty', 'burst')] [string] $Test = '', [switch] $VanillaTransfers,
+    [switch] $NoZombieBuddy, [switch] $LogTransfers)
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 if (-not (Test-Path (Join-Path $SG.Backup 'hashes.txt'))) { throw 'no client backup; run backup-client.ps1 first' }
@@ -49,6 +67,7 @@ $cfg = [ordered]@{
     label = $Label; ip = '127.0.0.1'; port = $SG.GamePort; user = 'admin'; pw = Get-AdminPassword
     spotName = $s.Name; x = $s.X; y = $s.Y; z = $s.Z; duration = $DurationSec; quit = [int][bool]$Quit
     loop = [int](-not $NoLoop); invisible = [int](-not $Visible); radius = $Radius; take = $Take; eatEvery = $EatEvery
+    test = $Test; vanillaTransfers = [int][bool]$VanillaTransfers; logTransfers = [int][bool]$LogTransfers
 }
 Set-Content -Path $SG.DriverCfg -Value (($cfg.Keys | ForEach-Object { "$_=$($cfg[$_])" }) -join "`n") -Encoding ascii -NoNewline
 Remove-Item $SG.DriverState, $SG.DriverStop -ErrorAction SilentlyContinue
@@ -57,7 +76,11 @@ $gd = $SG.pzDir
 $json = Get-Content (Join-Path $gd 'ProjectZomboid64.json') -Raw | ConvertFrom-Json
 $winArgs = @($json.windows.PSObject.Properties | Where-Object { [Environment]::OSVersion.Version -ge [version]$_.Name } |
         Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1 | ForEach-Object { $_.Value.vmArgs })
-$vm = foreach ($a in @($json.vmArgs) + $winArgs) { if ($a -eq '-Dzomboid.steam=1') { '-Dzomboid.steam=0' } else { $a } }
+$vm = foreach ($a in @($json.vmArgs) + $winArgs) {
+    if ($a -eq '-Dzomboid.steam=1') { '-Dzomboid.steam=0' }
+    elseif ($NoZombieBuddy -and $a -like '-agentlib:zbNative*') { }
+    else { $a }
+}
 $argList = @($vm) + $JvmArgs + @('-cp', ($json.classpath -join ';'), $json.mainClass.Replace('/', '.'), '-nosteam')
 
 if (-not ('SgWin' -as [type])) {

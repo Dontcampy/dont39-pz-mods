@@ -88,6 +88,12 @@ final class Snapshots {
         if (tooLarge) {
             DebugType.Mod.warn(PREFIX + "%s: %s does not fit into one packet; it is not repaired", p.name(),
                     job.key());
+        } else {
+            // the server's half of a repair's log (R9); the client logs what the snapshot changed
+            DebugType.Mod.println(PREFIX + "%s: sent the server's state of %s (%s), as %s", p.name(), job.key(),
+                    state == Snapshot.State.PRESENT ? "present" : "no longer there",
+                    job.opened() ? "the client's own check of it differed" : "it differed from a sync frame entry on"
+                            + " the client");
         }
         out.flip();
         int bytes = Net.send(p.connection, Protocol.SHARED_CHANNEL, b -> b.put(out));

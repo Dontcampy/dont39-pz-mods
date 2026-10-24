@@ -137,6 +137,10 @@ $r = "$env:TEMP\sgtest\runs"
     -Out '.trellis\tasks\10-24-mp-sync-loss-recovery\research\load-test-table.md'
 ```
 
+Zombies of earlier runs stay in the save: before spawning, clear the spot with
+`& "$h\rcon.ps1" 'removezombies -x 7560 -y 11815 -z 0 -radius 150'`, so both runs start alike. The AC7 runs of
+2026-10-24 (`../load-test.md`) also read the server's heap with `jcmd <pid> GC.heap_info` every 5 s (see Gaps).
+
 More zombies: `spawn-zombies.ps1 -Count 300 -Repeat 3 -IntervalSec 120` (from a second shell while the sampler runs).
 The driver's progress (`progress cycles=.. taken=.. moved=.. eats=.. zombies=..`, every 60 s) is in
 `~/Zomboid/Lua/sgtest_state.txt` during the run and in the run folder after `stop-client.ps1`; compare the two runs'
@@ -170,6 +174,29 @@ container in the loot window before it takes from it, so open checks run too (`s
 The window lists only containers next to the player, so where the walk there fails (the prison's fences), the driver
 teleports to a free square next to the container (`/teleportto`, counted as `teleports=`).
 
+## Driver tests
+
+`start-client.ps1 -Test <name>` (or `run-scenario.ps1 -ClientArgs @{ Test = '<name>' }`) runs one scripted check at
+the spot instead of the loot loop, then finishes (and quits with `-Quit`). The server half,
+`SGTestDriver/42/media/lua/server/SGTestDriver_Server.lua`, changes a container on the server on the driver's client
+command (`SGTest`) without any packet to the client, as a lost or never-sent update leaves it; it prints
+`[SGTEST] server: ...` and answers with `SGTest.result`, which the driver writes as `server ...` lines.
+
+| Test | What it does | Expect |
+|---|---|---|
+| `equipRemove` (AC5) | Equips a carried item in the primary hand (`ISEquipWeaponAction`; takes one from a container first if nothing is carried) and picks a worn clothing item; the server removes both from the inventory (the worn one also from its worn list; its hands stay, then `clearHands`). The driver logs every change of `inInventory` / `inHand` / `worn` for 20 s | Sync Guard's snapshot removes both: worn and in hand until the `repaired ... removed [...]` line, then neither |
+| `empty` (AC4) | Container A emptied with `removeAllItems` (as fire empties a burning object; Sync Guard's content hooks see it), container B (at least 4 squares away) by clearing its item list directly (nothing sees it); counts after 8 s, then opens B in the loot window and counts again | A empty on the client after the frame's grace; B unchanged until opened, empty after its open check |
+| `burst` (AC9) | One item removed from one container, then 4 s later one from each of ten more | One notice for the first repair, then one notice for the ten (`repair notice shown for N repairs`) |
+
+`-LogTransfers` logs each Multiplayer Weight Limit Breaker `AddItem` whose target container holds another instance of
+its item (the game's `Error, container already has id`), with where the client's own copy is (`transfer: ...` lines).
+`-NoZombieBuddy` launches the client without ZombieBuddy's agent: every mod's Lua loads, no Java mod runs (AC8's
+vanilla client).
+
+`-VanillaTransfers` puts back the game's transaction functions that Multiplayer Weight Limit Breaker replaces (it
+keeps them in `VacMod13.raw`), so the loop's transfers go through the game's own container packets, which
+`-Dsyncguard.debugDropDelta=n` can drop (AC1). Wrappers other mods put around those functions after it are dropped too.
+
 ## Cleanup
 
 ```powershell
@@ -187,14 +214,16 @@ Afterwards check the launcher has not rewritten `default.txt` since (it keeps `d
 
 ## Gaps
 
-- Nothing here ran against the game yet: only `setup-server.ps1 -DryRun`, parse checks, a Kahlua compile of the
-  driver, and offline runs of the RCON client (fake server), `sampler.ps1` (dummy process), `summarize.ps1` and
-  `diff-errors.ps1` (synthetic data). Driver steps (container scan, loot window, transfers, eating, char creation)
-  follow vanilla Lua and the load-speed task's driver, unverified in this build.
+- Run in game on 2026-10-24 (`../acceptance.md`, `../load-test.md`): setup, start/stop, the driver's join, loop and
+  tests, `spawn-zombies.ps1`, `sampler.ps1`, `summarize.ps1`, `diff-errors.ps1`.
+- `stats performance all` gets no reply over RCON on this server, so `sampler.ps1`'s heap and update-max columns stay
+  empty; the AC7 runs read the server's heap with `jcmd <pid> GC.heap_info` instead.
+- Zombies spawned by `createhorde2` stay in the save: clear the spot before a load run with
+  `removezombies -x X -y Y -z Z -radius R` (without `-remove true`, which only marks the calling connection, and RCON
+  has none).
+- The tests and the loop empty the containers next to the prison spot over time; the loop takes from containers that
+  still hold light items and widens its scan when none does.
 - Drinking is not implemented; the driver eats (a quarter of a carried food item every 10 cycles).
 - AC6 needs two clients; this machine runs one through these scripts (both would share `~/Zomboid`). The second
   client is a person, or a second install with its own `-cachedir` and mod copies (not scripted).
-- Sync Guard's summary line format is not defined yet; `summarize.ps1` reads any `key=value` pairs. Design logs the
-  summary every 10 minutes, which gives three points in a 30-minute run: the mod needs a shorter period for load runs
-  (debug option) or a separate per-minute load line.
 - Per-process network counters: Windows has none without ETW; the server's own statistics above replace them.

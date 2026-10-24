@@ -537,7 +537,7 @@ public final class ServerSync {
             boolean refused = key == null || !p.versions.containsKey(key) || p.queued.size() >= MAX_QUEUED;
             p.session.requested(refused);
             if (!refused && p.queued.add(key)) {
-                p.snapshots.add(new Peer.Job(key, wire));
+                p.snapshots.add(new Peer.Job(key, wire, false));
             }
         }
     }
@@ -563,7 +563,7 @@ public final class ServerSync {
         p.session.check(differed);
         p.versions.putIfAbsent(key, p.frame);
         if (differed && p.queued.size() < MAX_QUEUED && p.queued.add(key)) {
-            p.snapshots.add(new Peer.Job(key, o.key()));
+            p.snapshots.add(new Peer.Job(key, o.key(), true));
         }
     }
 

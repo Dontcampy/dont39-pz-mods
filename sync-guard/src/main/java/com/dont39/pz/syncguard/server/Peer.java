@@ -14,8 +14,8 @@ import java.util.Set;
 
 /** One connection's sync state on the server. Main thread only. */
 final class Peer {
-    /** A snapshot the client asked for. */
-    record Job(Key key, WireKey wire) {
+    /** A snapshot the client asked for; {@code opened}: after the client's OpenCheck, not a frame entry. */
+    record Job(Key key, WireKey wire, boolean opened) {
     }
 
     final UdpConnection connection;
