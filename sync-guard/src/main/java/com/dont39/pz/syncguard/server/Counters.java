@@ -8,6 +8,7 @@ final class Counters {
     private long frames;
     private long entries;
     private long gone;
+    private long changed;
     private long checks;
     private long mismatches;
     private long requested;
@@ -21,13 +22,15 @@ final class Counters {
         this.total = total;
     }
 
-    void frame(int entries, int gone, int bytes) {
+    /** {@code changed}: entries recorded from a content change (D7). */
+    void frame(int entries, int gone, int changed, int bytes) {
         this.frames++;
         this.entries += entries;
         this.gone += gone;
+        this.changed += changed;
         this.bytes += bytes;
         if (total != null) {
-            total.frame(entries, gone, bytes);
+            total.frame(entries, gone, changed, bytes);
         }
     }
 
@@ -66,6 +69,7 @@ final class Counters {
     void appendTo(StringBuilder out) {
         out.append(" checks=").append(checks).append(" mismatches=").append(mismatches)
                 .append(" frames=").append(frames).append(" entries=").append(entries).append(" gone=").append(gone)
+                .append(" changed=").append(changed)
                 .append(" requested=").append(requested).append(" refused=").append(refused)
                 .append(" snapshotsSent=").append(snapshots).append(" tooLarge=").append(tooLarge)
                 .append(" bytesOut=").append(bytes);

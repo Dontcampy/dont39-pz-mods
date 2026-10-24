@@ -73,6 +73,38 @@ public final class Containers {
         return id;
     }
 
+    /** A container's key and the game's bytes for it. */
+    public record Address(ContainerKey key, byte[] wire) {
+    }
+
+    /**
+     * Where a client finds {@code container}, or null when the game's own lookup of its address would not end at
+     * this very container: a floor container, one not in the world, a bag in a world or corpse container (the game
+     * addresses it as its outer container), an object no longer on its square. Server only: resolves players by
+     * online id, as a client does.
+     */
+    public static Address address(ItemContainer container) {
+        ContainerID id = new ContainerID();
+        try {
+            id.set(container);
+        } catch (RuntimeException e) {
+            // set throws for a container in no place, and fails on a parent object that has no square
+            return null;
+        }
+        ContainerID.ContainerType type = id.getContainerType();
+        if (type == null || type == ContainerID.ContainerType.Undefined || type == ContainerID.ContainerType.Floor) {
+            return null;
+        }
+        byte[] wire = wire(id);
+        ContainerKey key = keyOf(wire);
+        // indexOf of an object no longer on its square; the game's lookup would log an error for it
+        if (key.kind().square() && key.index() < 0) {
+            return null;
+        }
+        ContainerID back = parse(wire, null);
+        return back != null && back.getContainer() == container ? new Address(key, wire) : null;
+    }
+
     /**
      * Whether {@code container} is still the one the game addresses as {@code key}: not taken out of the world, not
      * at another object index, not a stand-in the game's lookup made up for an index out of range.

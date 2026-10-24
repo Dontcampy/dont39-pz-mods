@@ -25,6 +25,10 @@ public final class Codec {
     static final byte OPEN_CHECK = 5;
     static final byte BYE = 6;
 
+    // a frame entry's flags
+    static final int GONE = 1;
+    static final int CHANGED = 2;
+
     private static final int MAX_STRING = 256;
 
     private Codec() {
@@ -43,7 +47,7 @@ public final class Codec {
             out.putLong(f.version()).putInt(f.entries().size());
             for (SyncFrame.Entry e : f.entries()) {
                 e.key().write(out);
-                out.put((byte) (e.gone() ? 1 : 0));
+                out.put((byte) ((e.gone() ? GONE : 0) | (e.changed() ? CHANGED : 0)));
                 if (!e.gone()) {
                     out.putLong(e.digest());
                 }
@@ -115,8 +119,12 @@ public final class Codec {
         List<SyncFrame.Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             WireKey key = WireKey.read(in);
-            boolean gone = flag(in);
-            entries.add(new SyncFrame.Entry(key, gone, gone ? 0 : in.getLong()));
+            int flags = in.get();
+            if ((flags & ~(GONE | CHANGED)) != 0) {
+                throw new ProtocolException("unknown frame entry flags " + flags);
+            }
+            boolean gone = (flags & GONE) != 0;
+            entries.add(new SyncFrame.Entry(key, gone, gone ? 0 : in.getLong(), (flags & CHANGED) != 0));
         }
         return new SyncFrame(version, entries);
     }
@@ -140,20 +148,12 @@ public final class Codec {
         }
         long digest = in.getLong();
         byte[] add = blob(in);
-        int count = count(in, Integer.BYTES * 5);
+        int count = count(in, Integer.BYTES * 5 + Long.BYTES);
         List<Snapshot.Item> items = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            items.add(new Snapshot.Item(in.getInt(), blob(in), blob(in), blob(in), blob(in)));
+            items.add(new Snapshot.Item(in.getInt(), in.getLong(), blob(in), blob(in), blob(in), blob(in)));
         }
         return new Snapshot(key, version, states[state], digest, add, items);
-    }
-
-    private static boolean flag(ByteBuffer in) {
-        return switch (in.get()) {
-            case 0 -> false;
-            case 1 -> true;
-            default -> throw new ProtocolException("a flag is neither 0 nor 1");
-        };
     }
 
     /** A count whose elements take at least {@code minSize} bytes each, so a bad one cannot allocate much. */

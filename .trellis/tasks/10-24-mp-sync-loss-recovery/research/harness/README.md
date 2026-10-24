@@ -163,7 +163,10 @@ What the columns mean (details in `Get-Help "$h\sampler.ps1" -Full`):
 The same scripts serve AC1-AC6, AC8 and AC9: `start-client.ps1 -NoLoop` puts the client at the spot without the
 loop (play by hand, or with Sync Guard's debug switch); `rcon.ps1` runs any console command. AC8's vanilla client on
 a modded server: remove `~/Zomboid/mods/Dont39SyncGuard` (setup copies it back); its modded client on a vanilla
-server: `setup-server.ps1` without `-WithSyncGuard`.
+server: `setup-server.ps1` without `-WithSyncGuard`. AC11 drops the mod's transfer broadcasts on the client with
+`-ClientJvmArgs '-Dsyncguard.debugDropModule=VacMod13.AddItem'` (a module, or `module.command`; every one, or every
+n-th with `-Dsyncguard.debugDropDelta=n`, which also drops every n-th vanilla in-scope update); the driver shows each
+container in the loot window before it takes from it, so open checks run too (`shown=` / `notShown=` in its lines).
 
 ## Cleanup
 

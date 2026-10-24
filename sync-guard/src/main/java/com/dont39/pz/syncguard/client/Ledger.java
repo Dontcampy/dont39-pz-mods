@@ -13,8 +13,8 @@ import java.util.Set;
 
 /**
  * What the client remembers per object for one session (R5, R6, R7): snapshots asked for and applied, objects given
- * up on, entries whose object is not here yet. No game types, so its rules are tested without the game. Times in
- * milliseconds. Main thread only.
+ * up on, entries whose object is not here yet, entries waiting out their grace period, items a snapshot could not
+ * make equal. No game types, so its rules are tested without the game. Times in milliseconds. Main thread only.
  */
 final class Ledger {
     /** How long an entry whose object the client cannot find is retried. */
@@ -33,6 +33,25 @@ final class Ledger {
      * in: checked at once it would differ by the items still on their way.
      */
     static final long FILL_MS = 3_000;
+    /**
+     * A frame entry recorded from a content change waits this long before it is compared: a mod's own sync of the
+     * change (a server command, unordered on another channel) may arrive after the frame.
+     */
+    static final long GRACE_MS = 1_500;
+    /** Newer entries for the same key restart the wait, up to this long after the first one. */
+    static final long GRACE_MAX_MS = 6_000;
+    /** Entries waiting at once; past it the longest-waiting one is compared at once. */
+    static final int MAX_WAITING = 4_096;
+    /** Items whose snapshot left them differing; past it the oldest is forgotten and found again. */
+    static final int MAX_ACCEPTED = 4_096;
+
+    /** A frame entry waiting out its grace period; {@code since}: when its key's first entry came. */
+    record Waiting(WireKey key, boolean gone, long digest, long version, long since, long due) {
+    }
+
+    /** An item a snapshot could not make equal: the client's digest after it, and the server's. */
+    private record Accepted(long mine, long server) {
+    }
 
     /** A frame entry whose object the client did not find; {@code since}: when it was first seen. */
     record Unresolved(WireKey key, boolean gone, long digest, long version, long since, String name) {
@@ -47,6 +66,9 @@ final class Ledger {
     private final Map<WireKey, Long> filling = new LinkedHashMap<>();
     private final Set<WireKey> givenUp = new HashSet<>();
     private final Map<WireKey, Unresolved> unresolved = new LinkedHashMap<>();
+    // by when the key was last deferred, the longest-waiting first
+    private final Map<WireKey, Waiting> waiting = new LinkedHashMap<>();
+    private final Map<Integer, Accepted> accepted = new LinkedHashMap<>();
     private long nextRetry;
 
     /** Whether a frame entry is as old as or older than the last snapshot applied for its key. */
@@ -107,6 +129,7 @@ final class Ledger {
         givenUp.add(key);
         requested.remove(key);
         unresolved.remove(key);
+        waiting.remove(key);
     }
 
     boolean givenUp(WireKey key) {
@@ -145,6 +168,70 @@ final class Ledger {
             }
         }
         return true;
+    }
+
+    /** Whether an entry for {@code key} is waiting: a newer one waits too, or it would be compared first. */
+    boolean isWaiting(WireKey key) {
+        return waiting.containsKey(key);
+    }
+
+    /**
+     * Keeps the newest entry per key until its grace ends. Returns the longest-waiting entry when the bound pushed
+     * it out, to compare now, else null.
+     */
+    Waiting defer(WireKey key, boolean gone, long digest, long version, long now) {
+        Waiting before = waiting.remove(key);
+        long since = before == null ? now : before.since();
+        long due = Math.min(now + GRACE_MS, since + GRACE_MAX_MS);
+        waiting.put(key, new Waiting(key, gone, digest, version, since, due));
+        if (waiting.size() <= MAX_WAITING) {
+            return null;
+        }
+        Iterator<Waiting> it = waiting.values().iterator();
+        Waiting oldest = it.next();
+        it.remove();
+        return oldest;
+    }
+
+    /** The entries whose grace ended by {@code now}; they leave the ledger. */
+    List<Waiting> due(long now) {
+        List<Waiting> out = new ArrayList<>();
+        for (Iterator<Waiting> it = waiting.values().iterator(); it.hasNext(); ) {
+            Waiting w = it.next();
+            if (now >= w.due()) {
+                it.remove();
+                out.add(w);
+            }
+        }
+        return out;
+    }
+
+    int waitingCount() {
+        return waiting.size();
+    }
+
+    /**
+     * A snapshot left item {@code itemId} at digest {@code mine} where the server has {@code server}: its fields hold
+     * something a snapshot cannot repair. True the first time for the item this session.
+     */
+    boolean accept(int itemId, long mine, long server) {
+        boolean first = accepted.remove(itemId) == null;
+        accepted.put(itemId, new Accepted(mine, server));
+        if (accepted.size() > MAX_ACCEPTED) {
+            Iterator<Accepted> it = accepted.values().iterator();
+            it.next();
+            it.remove();
+        }
+        return first;
+    }
+
+    /**
+     * The digest to compare for item {@code itemId} whose own digest is {@code own}: the server's from the snapshot
+     * that left it differing, while the item is as that snapshot left it; its own otherwise.
+     */
+    long digestOf(int itemId, long own) {
+        Accepted a = accepted.get(itemId);
+        return a != null && a.mine() == own ? a.server() : own;
     }
 
     int unresolvedCount() {

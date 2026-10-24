@@ -43,11 +43,30 @@ class CodecTest {
         SyncFrame frame = new SyncFrame(42, List.of(
                 new SyncFrame.Entry(PLAYER, false, 0x0123_4567_89AB_CDEFL),
                 new SyncFrame.Entry(ITEM, true, 0),
-                new SyncFrame.Entry(ITEM, false, -1)));
+                new SyncFrame.Entry(ITEM, false, -1),
+                new SyncFrame.Entry(PLAYER, false, 7, true),
+                new SyncFrame.Entry(PLAYER, true, 0, true)));
         SyncFrame read = roundTrip(frame, SyncFrame.class);
         assertEquals(frame, read);
         int size = frame.entries().stream().mapToInt(Codec::size).sum();
         assertEquals(2 + Long.BYTES + Integer.BYTES + size, encode(frame).remaining());
+    }
+
+    @Test
+    void frameEntryFlags() {
+        SyncFrame frame = new SyncFrame(1, List.of(new SyncFrame.Entry(PLAYER, false, 5, true)));
+        ByteBuffer b = encode(frame);
+        int flags = b.limit() - Long.BYTES - 1;
+        assertEquals(Codec.CHANGED, b.get(flags));
+        b.put(flags, (byte) 4);
+        assertTrue(assertThrows(ProtocolException.class, () -> Codec.decode(b)).getMessage().contains("flags"));
+    }
+
+    @Test
+    void asChangedKeepsTheRest() {
+        SyncFrame.Entry e = new SyncFrame.Entry(ITEM, false, 9);
+        assertFalse(e.changed());
+        assertEquals(new SyncFrame.Entry(ITEM, false, 9, true), e.asChanged());
     }
 
     @Test
@@ -84,8 +103,8 @@ class CodecTest {
         ByteBuffer out = ByteBuffer.allocate(4096);
         SnapshotWriter.start(out, PLAYER, 9, Snapshot.State.PRESENT, 77)
                 .add(b -> b.put(bytes("add")))
-                .item(1, b -> b.put(bytes("fields1")), null, b -> b.put(bytes("stats1")), null)
-                .item(2, b -> b.put(bytes("fields2")), b -> b.put(bytes("mod2")), b -> b.put(bytes("stats2")),
+                .item(1, 11, b -> b.put(bytes("fields1")), null, b -> b.put(bytes("stats1")), null)
+                .item(2, -22, b -> b.put(bytes("fields2")), b -> b.put(bytes("mod2")), b -> b.put(bytes("stats2")),
                         b -> b.put(bytes("weapon2")))
                 .finish();
         Snapshot s = assertInstanceOf(Snapshot.class, Codec.decode(out.flip()));
@@ -97,12 +116,14 @@ class CodecTest {
         assertEquals(2, s.items().size());
         Snapshot.Item first = s.items().get(0);
         assertEquals(1, first.id());
+        assertEquals(11, first.digest());
         assertArrayEquals(bytes("fields1"), first.fields());
         assertEquals(0, first.modData().length);
         assertArrayEquals(bytes("stats1"), first.stats());
         assertEquals(0, first.weapon().length);
         Snapshot.Item second = s.items().get(1);
         assertEquals(2, second.id());
+        assertEquals(-22, second.digest());
         assertArrayEquals(bytes("mod2"), second.modData());
         assertArrayEquals(bytes("weapon2"), second.weapon());
     }
@@ -122,7 +143,7 @@ class CodecTest {
     void snapshotWriterOrder() {
         ByteBuffer out = ByteBuffer.allocate(256);
         SnapshotWriter w = SnapshotWriter.start(out, ITEM, 3, Snapshot.State.PRESENT, 0);
-        assertThrows(IllegalStateException.class, () -> w.item(1, null, null, null, null));
+        assertThrows(IllegalStateException.class, () -> w.item(1, 0, null, null, null, null));
         assertThrows(IllegalStateException.class, w::finish);
         w.add(null);
         assertThrows(IllegalStateException.class, () -> w.add(null));

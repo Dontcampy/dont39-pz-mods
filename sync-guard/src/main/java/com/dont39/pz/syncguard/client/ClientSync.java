@@ -152,7 +152,10 @@ public final class ClientSync {
         }
     }
 
-    /** At PacketType.onClientPacket HEAD, for every packet: true to drop it ({@code -Dsyncguard.debugDropDelta}). */
+    /**
+     * At PacketType.onClientPacket HEAD, for every packet: true to drop it ({@code -Dsyncguard.debugDropDelta},
+     * {@code -Dsyncguard.debugDropModule}).
+     */
     public static boolean dropDelta(PacketType type, ByteBufferReader in) {
         return DeltaDrop.drop(type, in);
     }
@@ -174,9 +177,21 @@ public final class ClientSync {
         long now = System.currentTimeMillis();
         Asks asks = new Asks();
         for (SyncFrame.Entry e : frame.entries()) {
-            check(e.key(), e.gone(), e.digest(), frame.version(), now, asks);
+            if (e.changed() || ledger.isWaiting(e.key())) {
+                counters.deferred++;
+                Ledger.Waiting pushedOut = ledger.defer(e.key(), e.gone(), e.digest(), frame.version(), now);
+                if (pushedOut != null) {
+                    check(pushedOut, now, asks);
+                }
+            } else {
+                check(e.key(), e.gone(), e.digest(), frame.version(), now, asks);
+            }
         }
         asks.send();
+    }
+
+    private static void check(Ledger.Waiting w, long now, Asks asks) {
+        check(w.key(), w.gone(), w.digest(), w.version(), now, asks);
     }
 
     /** One entry against the client's state; a {@code gone} entry: the server no longer finds the object there. */
@@ -201,7 +216,7 @@ public final class ClientSync {
         if (!wire.isItem()) {
             // a container the server no longer addresses there: its parent's own entry covers the move
             if (!gone) {
-                long mine = ItemDigests.container(container);
+                long mine = containerDigest(container);
                 if (mine != digest) {
                     mismatch(wire, found.name(wire), container.getItems(), mine, digest, now, asks);
                 }
@@ -213,7 +228,7 @@ public final class ClientSync {
             if (item != null) {
                 // the server cannot snapshot an item it no longer has there: it compares the whole container
                 WireKey whole = WireKey.container(wire.containerBytes());
-                long mine = ItemDigests.container(container);
+                long mine = containerDigest(container);
                 counters.mismatches++;
                 if (ledger.ask(whole, now)) {
                     counters.requested++;
@@ -225,10 +240,15 @@ public final class ClientSync {
             }
             return;
         }
-        long mine = item == null ? 0 : ItemDigests.item(item);
+        long mine = item == null ? 0 : ledger.digestOf(item.getID(), ItemDigests.item(item));
         if (item == null || mine != digest) {
             mismatch(wire, found.name(wire), item == null ? List.of() : List.of(item), mine, digest, now, asks);
         }
+    }
+
+    // items a snapshot could not make equal count as the server has them, while they stay as it left them
+    private static long containerDigest(ItemContainer container) {
+        return ItemDigests.container(container, ledger::digestOf);
     }
 
     private static void mismatch(WireKey wire, String name, Collection<InventoryItem> items, long mine, long server,
@@ -278,6 +298,7 @@ public final class ClientSync {
             case MATCHED -> {
                 counters.snapshotsApplied++;
                 ledger.applied(wire, s.version());
+                stuck(r);
                 if (debug()) {
                     DebugType.Mod.debugln(PREFIX + "snapshot of %s: nothing to change, the client had caught up",
                             r.name());
@@ -289,6 +310,7 @@ public final class ClientSync {
                 counters.repaired++;
                 ledger.applied(wire, s.version());
                 DebugType.Mod.println(PREFIX + "repaired %s from the server's state:%s", r.name(), ids(r));
+                stuck(r);
             }
             case UNREPAIRABLE -> {
                 counters.unrepairable++;
@@ -305,6 +327,25 @@ public final class ClientSync {
         if (r.changedAnything()) {
             notices.repaired();
             notice(System.currentTimeMillis());
+        }
+    }
+
+    /**
+     * Items the snapshot could not make equal: compared as the server has them while they stay as it left them, so
+     * the rest of their container is still checked. Logged once per item.
+     */
+    private static void stuck(Reconcile.Result r) {
+        List<Integer> first = new ArrayList<>();
+        for (Reconcile.Stuck item : r.stuck()) {
+            if (ledger.accept(item.id(), item.mine(), item.server())) {
+                first.add(item.id());
+            }
+        }
+        if (!first.isEmpty()) {
+            counters.stuckItems += first.size();
+            DebugType.Mod.warn(PREFIX + "items %s in %s still differ from the server's after its snapshot, in fields"
+                    + " a snapshot cannot set; until either side changes them they are compared as the server has"
+                    + " them", list(first), r.name());
         }
     }
 
@@ -356,7 +397,7 @@ public final class ClientSync {
 
     private static void openCheck(WireKey wire, ItemContainer container) {
         counters.openChecks++;
-        send(new Message.OpenCheck(wire, ItemDigests.container(container)));
+        send(new Message.OpenCheck(wire, containerDigest(container)));
     }
 
     // ---- every frame
@@ -380,6 +421,7 @@ public final class ClientSync {
         if (ledger.retry(now, retry, expired)) {
             Asks asks = new Asks();
             retry.forEach(u -> check(u.key(), u.gone(), u.digest(), u.version(), now, asks));
+            ledger.due(now).forEach(w -> check(w, now, asks));
             asks.send();
             expiredLine(expired);
             for (WireKey wire : ledger.filled(now)) {
@@ -424,7 +466,7 @@ public final class ClientSync {
     /** One line of {@code key=value} numbers, as the server's, for the load-test tools. */
     private static void summary() {
         StringBuilder line = new StringBuilder("scope=client");
-        counters.appendTo(line, ledger.unresolvedCount());
+        counters.appendTo(line, ledger.unresolvedCount(), ledger.waitingCount());
         DebugType.Mod.println(PREFIX + "%s", line);
     }
 

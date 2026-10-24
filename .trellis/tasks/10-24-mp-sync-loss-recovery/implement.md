@@ -49,6 +49,11 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
 14. In-game verification AC1-AC9 on the modded local server; the load scenario (AC7) runs mod off, then mod on, same
     script and duration; results and the off/on table in `research/load-test.md`. Then Workshop staging for the user
     to upload.
+15. Content changes (D7, R3, R5; `design.md`, "content changes"): server mutation hooks and end-of-tick recording,
+    the frame entries' `changed` flag, the client's grace period, per-item server digests in snapshots for items a
+    snapshot cannot make equal, the digest fixes from the first field-diff run, `-Dsyncguard.debugDropModule`, and
+    the driver showing containers in the loot window. Done 2026-10-24 (not run in game). In game: AC11 on
+    `myserver1`'s list, then repeat AC1/AC6 to check that vanilla transfers still match after the grace.
 
 ## Validation
 

@@ -42,7 +42,7 @@ import java.util.function.BiConsumer;
  * updates them); attached slot, slot type and model (the hotbar resets them on the client without a sync); tainted
  * water (setData never sets it); activated, key id, stash map, infection, world scale and rotations (only in the full
  * save, not in a field packet); a name that is not custom (each side translates it into its own language); food
- * stats and clothing weight derived from those.
+ * stats and clothing weight derived from those; the mod data key {@code customName} (each side writes its own).
  * Main thread only: one scratch buffer.
  */
 public final class ItemDigests {
@@ -99,6 +99,13 @@ public final class ItemDigests {
         public boolean saved(Object key, Object value) {
             return KahluaTableImpl.canSave(key, value);
         }
+
+        // InventoryItem.setCustomName(boolean) writes the item's name before the change, in each side's language;
+        // ItemStats and SyncItemFields call it on every apply, so a snapshot rewrites it on the client
+        @Override
+        public boolean ownPerSide(Object key) {
+            return "customName".equals(key);
+        }
     };
 
     private ItemDigests() {
@@ -108,11 +115,22 @@ public final class ItemDigests {
         return CHECKED.contains(field);
     }
 
+    /** The digest to use for an item, given its own. */
+    @FunctionalInterface
+    public interface ItemDigest {
+        long of(int itemId, long own);
+    }
+
     /** Bags' contents are their own containers. */
     public static long container(ItemContainer container) {
+        return container(container, (id, own) -> own);
+    }
+
+    /** With {@code digest} deciding each item's digest from its own. */
+    public static long container(ItemContainer container, ItemDigest digest) {
         ContainerDigest d = new ContainerDigest();
         for (InventoryItem item : container.getItems()) {
-            d.add(item.getID(), item.getFullType(), item(item));
+            d.add(item.getID(), item.getFullType(), digest.of(item.getID(), item(item)));
         }
         return d.get();
     }
@@ -267,12 +285,11 @@ public final class ItemDigests {
         }
     }
 
+    // none and empty alike: ItemStats creates an empty list on the client where the server may have none
     private static void strings(Digest d, List<String> list) {
-        d.putBoolean(list != null);
-        if (list != null) {
-            d.putInt(list.size());
-            list.forEach(d::putString);
-        }
+        List<String> values = list != null ? list : List.of();
+        d.putInt(values.size());
+        values.forEach(d::putString);
     }
 
     private static void literature(Sink out, Literature literature) {

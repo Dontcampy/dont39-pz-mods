@@ -40,23 +40,34 @@ import zombie.vehicles.VehicleManager;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.dont39.pz.syncguard.Mod.PREFIX;
 
 /**
  * The server's side (R1, R3, R4, R6, R7): records which connection was sent or sent which in-scope object during a
- * tick, and at the tick's end sends each connection one frame with those objects' digests; answers snapshot requests
- * and open checks within a budget. Everything but {@link #incoming} runs on the server's main thread.
+ * tick, and which containers' contents changed (D7), and at the tick's end sends each connection one frame with those
+ * objects' digests; answers snapshot requests and open checks within a budget. Everything but {@link #incoming} and
+ * {@link #contentChanged} runs on the server's main thread.
  */
 public final class ServerSync {
-    /** One object touched this tick, as the first packet that touched it addressed it. */
-    record Touch(Key key, ItemContainer container, byte[] wire) {
+    /**
+     * One object touched this tick, as the first packet or change that touched it addressed it. {@code changed}: its
+     * contents changed this tick, so the client gives a mod's own sync of it time to land.
+     */
+    record Touch(Key key, ItemContainer container, byte[] wire, boolean changed) {
+        Touch asChanged() {
+            return changed ? this : new Touch(key, container, wire, true);
+        }
     }
 
     /** A packet of the mod as the network thread took it: the bytes after the header. */
@@ -84,6 +95,12 @@ public final class ServerSync {
     private static final Queue<Inbound> due = new ConcurrentLinkedQueue<>();
 
     private static final Map<UdpConnection, Peer> peers = new HashMap<>();
+    // containers whose items changed on the main thread since the last tick's end (D7)
+    private static final Set<ItemContainer> changed = Collections.newSetFromMap(new IdentityHashMap<>());
+    // whether any connection is checked: changes are recorded only then
+    private static boolean anyActive;
+    // debug only: item changes of containers off the main thread since the last summary, which are not recorded
+    private static final AtomicLong offThreadChanges = new AtomicLong();
     // each touched object's entry, computed once per tick for all connections
     private static final Map<Key, SyncFrame.Entry> digests = new HashMap<>();
     private static final Counters total = new Counters(null);
@@ -116,6 +133,7 @@ public final class ServerSync {
         running = false;
         inbound.clear();
         due.clear();
+        changed.clear();
         PacketScope.restore();
     }
 
@@ -211,6 +229,7 @@ public final class ServerSync {
             throw new ProtocolException("a second Hello");
         }
         p.active = true;
+        anyActive = true;
         p.modVersion = h.modVersion();
         DebugType.Mod.println(PREFIX + "%s (connection %d): checking its sync (Sync Guard %s on the client)",
                 p.name(), p.connection.getIndex(), h.modVersion());
@@ -355,7 +374,7 @@ public final class ServerSync {
             debug("touch %s %s: %s", id.getContainerType(), key, container == null ? "no container" : "recorded");
         }
         if (key != null) {
-            p.touched.computeIfAbsent(key, k -> new Touch(k, container, Containers.wire(id)));
+            p.touched.computeIfAbsent(key, k -> new Touch(k, container, Containers.wire(id), false));
         }
     }
 
@@ -367,8 +386,50 @@ public final class ServerSync {
                     container == null ? "no container" : "recorded");
         }
         if (key != null) {
-            p.touched.computeIfAbsent(new ItemKey(key, itemId), k -> new Touch(k, container, Containers.wire(id)));
+            p.touched.computeIfAbsent(new ItemKey(key, itemId),
+                    k -> new Touch(k, container, Containers.wire(id), false));
         }
+    }
+
+    /**
+     * At the HEAD of each ItemContainer method through which items enter or leave a container (D7), on either side
+     * and any thread. Only the server's main thread counts: chunk loading builds containers on its own threads, and
+     * those reach clients with the chunk.
+     */
+    public static void contentChanged(ItemContainer container) {
+        if (!running || !anyActive) {
+            return;
+        }
+        if (Thread.currentThread() == mainThread) {
+            changed.add(container);
+        } else if (Settings.touches()) {
+            offThreadChanges.incrementAndGet();
+        }
+    }
+
+    /**
+     * Each container changed this tick, as one touch for every checked connection the game sends that container's
+     * changes to; a send of the same key this tick is marked changed too, as the change may also travel another way.
+     */
+    private static void recordChanges(List<Peer> checked) {
+        for (ItemContainer container : changed) {
+            Containers.Address at = Containers.address(container);
+            int to = 0;
+            if (at != null) {
+                for (Peer p : checked) {
+                    if (relevant(p.connection, at.key())) {
+                        p.touched.merge(at.key(), new Touch(at.key(), container, at.wire(), true),
+                                (sent, change) -> sent.asChanged());
+                        to++;
+                    }
+                }
+            }
+            if (Settings.touches()) {
+                debug("content change of %s: recorded for %d connections",
+                        at == null ? "a container the game does not address" : at.key(), to);
+            }
+        }
+        changed.clear();
     }
 
     private static void debug(String format, Object... args) {
@@ -385,10 +446,18 @@ public final class ServerSync {
         long start = System.nanoTime();
         mainThread = Thread.currentThread();
         digests.clear();
+        List<Peer> checked = new ArrayList<>();
+        anyActive = false;
         for (Peer p : peers.values()) {
-            if (!p.active || !p.connection.isFullyConnected()) {
-                continue;
+            anyActive |= p.active;
+            if (p.active && p.connection.isFullyConnected()) {
+                checked.add(p);
             }
+        }
+        if (!changed.isEmpty()) {
+            recordChanges(checked);
+        }
+        for (Peer p : checked) {
             if (!p.touched.isEmpty()) {
                 sendFrame(p);
             }
@@ -411,8 +480,13 @@ public final class ServerSync {
         long version = ++p.frame;
         List<SyncFrame.Entry> entries = new ArrayList<>(p.touched.size());
         int gone = 0;
+        int changes = 0;
         for (Touch t : p.touched.values()) {
             SyncFrame.Entry e = digests.computeIfAbsent(t.key(), k -> resolve(t));
+            if (t.changed()) {
+                e = e.asChanged();
+                changes++;
+            }
             entries.add(e);
             if (e.gone()) {
                 gone++;
@@ -434,7 +508,7 @@ public final class ServerSync {
             }
         }
         bytes += sendFrame(p, version, entries.subList(from, entries.size()));
-        p.session.frame(entries.size(), gone, bytes);
+        p.session.frame(entries.size(), gone, changes, bytes);
     }
 
     private static int sendFrame(Peer p, long version, List<SyncFrame.Entry> entries) {
@@ -569,6 +643,10 @@ public final class ServerSync {
         if (!sentTypes.isEmpty()) {
             debug("sent since the last summary: %s", sentTypes);
             sentTypes.clear();
+        }
+        long offThread = offThreadChanges.getAndSet(0);
+        if (offThread > 0) {
+            debug("%d item changes of containers off the main thread since the last summary, not recorded", offThread);
         }
         int connections = 0;
         int state = 0;

@@ -18,14 +18,15 @@ import static com.dont39.pz.syncguard.Mod.PREFIX;
 /**
  * {@code -Dsyncguard.debugFieldDiff}: which digest fields differ per item, for the in-game run that settles
  * {@code ItemDigests.Checked}. The client records its fields at a mismatch; when the snapshot comes, its item list is
- * the server's copy (as the game saves an item, so fields the save leaves out show up on both lines), and the record
- * and the state after applying are each compared with it. Main thread only.
+ * the server's copy (as the game saves and loads an item on this client, so fields the save leaves out or the load
+ * resets show up on both lines), and the record and the state after applying are each compared with it. The
+ * snapshot's own item digests tell which items really still differ after applying. Main thread only.
  */
 final class FieldDiff {
-    /** One item's per-field hashes. */
-    record Fields(String type, Map<String, Long> hashes) {
+    /** One item's per-field hashes and its whole digest. */
+    record Fields(String type, Map<String, Long> hashes, long digest) {
         static Fields of(InventoryItem item) {
-            return new Fields(item.getFullType(), ItemDigests.fields(item));
+            return new Fields(item.getFullType(), ItemDigests.fields(item), ItemDigests.item(item));
         }
     }
 
@@ -47,17 +48,20 @@ final class FieldDiff {
 
     /**
      * After a snapshot was applied: {@code before} is the client's state when it was applied, used when no mismatch
-     * was recorded (an open check).
+     * was recorded (an open check); {@code digests}: the server's item digests from the snapshot.
      */
     void applied(WireKey key, String name, Map<Integer, Fields> before, Map<Integer, Fields> after,
-            Map<Integer, Fields> server) {
+            Map<Integer, Fields> server, Map<Integer, Long> digests) {
         Map<Integer, Fields> recorded = atMismatch.remove(key);
         log(name, recorded != null ? "at the mismatch" : "before the snapshot", recorded != null ? recorded : before,
-                server);
-        log(name, "after the snapshot", after, server);
+                server, Map.of());
+        log(name, "after the snapshot", after, server, digests);
     }
 
-    private static void log(String name, String when, Map<Integer, Fields> client, Map<Integer, Fields> server) {
+    // with digests: an item marked "equal" matches the server's own digest, so its listed fields differ only from
+    // the saved copy
+    private static void log(String name, String when, Map<Integer, Fields> client, Map<Integer, Fields> server,
+            Map<Integer, Long> digests) {
         List<String> lines = new ArrayList<>();
         server.forEach((id, s) -> {
             Fields c = client.get(id);
@@ -72,8 +76,10 @@ final class FieldDiff {
                 }
             });
             c.hashes().keySet().stream().filter(f -> !s.hashes().containsKey(f)).forEach(fields::add);
-            if (!fields.isEmpty()) {
-                lines.add(id + " (" + s.type() + "): " + String.join(", ", fields));
+            Long digest = digests.get(id);
+            String verdict = digest == null ? "" : digest == c.digest() ? " [equal]" : " [differs]";
+            if (!fields.isEmpty() || verdict.equals(" [differs]")) {
+                lines.add(id + " (" + s.type() + "): " + String.join(", ", fields) + verdict);
             }
         });
         client.forEach((id, c) -> {

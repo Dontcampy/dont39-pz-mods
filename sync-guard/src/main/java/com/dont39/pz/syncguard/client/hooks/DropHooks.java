@@ -11,9 +11,9 @@ import zombie.core.network.ByteBufferReader;
 import zombie.network.PacketTypes.PacketType;
 
 /**
- * {@code -Dsyncguard.debugDropDelta} (off by default): every in-game packet the client handles passes here before the
- * game parses it, the one place all eight in-scope types share (SyncItemModData applies in its parse). Cancels only
- * a packet the switch drops.
+ * {@code -Dsyncguard.debugDropDelta} and {@code -Dsyncguard.debugDropModule} (off by default): every in-game packet
+ * the client handles passes here before the game parses it, the one place all eight in-scope types share
+ * (SyncItemModData applies in its parse), server commands included. Cancels only a packet a switch drops.
  */
 @Hooks(value = PacketType.class, gate = Gate.class)
 public final class DropHooks {

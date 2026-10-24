@@ -125,6 +125,36 @@ class DigestTest {
     }
 
     @Test
+    void aKeyEachSideWritesForItselfIsLeftOutAtTheTopOnly() {
+        LuaTableHash.Tables ownName = new LuaTableHash.Tables() {
+            @Override
+            public boolean isTable(Object value) {
+                return MAPS.isTable(value);
+            }
+
+            @Override
+            public void forEach(Object table, BiConsumer<Object, Object> pair) {
+                MAPS.forEach(table, pair);
+            }
+
+            @Override
+            public boolean saved(Object key, Object value) {
+                return MAPS.saved(key, value);
+            }
+
+            @Override
+            public boolean ownPerSide(Object key) {
+                return "own".equals(key);
+            }
+        };
+        assertEquals(LuaTableHash.EMPTY, LuaTableHash.hash(Map.of("own", "x"), ownName));
+        assertEquals(LuaTableHash.hash(Map.of("k", 1.0), ownName),
+                LuaTableHash.hash(Map.of("k", 1.0, "own", "y"), ownName));
+        assertNotEquals(LuaTableHash.hash(Map.of("t", Map.of("own", "x")), ownName),
+                LuaTableHash.hash(Map.of("t", Map.of("own", "y")), ownName));
+    }
+
+    @Test
     void aCycleIsAnError() {
         Map<Object, Object> loop = new LinkedHashMap<>();
         loop.put("self", loop);

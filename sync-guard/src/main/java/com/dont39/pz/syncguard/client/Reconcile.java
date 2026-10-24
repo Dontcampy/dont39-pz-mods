@@ -1,6 +1,7 @@
 package com.dont39.pz.syncguard.client;
 
 import com.dont39.pz.syncguard.game.ItemDigests;
+import com.dont39.pz.syncguard.protocol.ContainerDigest;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
 import com.dont39.pz.syncguard.protocol.WireKey;
 import zombie.Lua.LuaEventManager;
@@ -21,6 +22,7 @@ import zombie.vehicles.VehiclePart;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,19 +38,26 @@ import java.util.function.BooleanSupplier;
  */
 final class Reconcile {
     enum Outcome {
-        /** Something changed and the digest now matches. */
+        /** Something changed and the digest now matches, apart from items in both whose fields still differ. */
         REPAIRED,
-        /** Nothing needed to change: the client caught up since it asked. */
+        /** Nothing needed to change: the client caught up since it asked (stuck items aside, as for REPAIRED). */
         MATCHED,
-        /** The digest still differs, or the game failed on the snapshot. */
+        /** Items or their types still differ, or the game failed on the snapshot. */
         UNREPAIRABLE,
         /** The client no longer has the object under that key. */
         NOT_FOUND
     }
 
-    /** {@code failure}: why it is unrepairable; {@code cause}: the game's exception behind it, if any. */
+    /** An item the snapshot left differing: its digest on the client after it, and the server's. */
+    record Stuck(int id, long mine, long server) {
+    }
+
+    /**
+     * {@code failure}: why it is unrepairable; {@code cause}: the game's exception behind it, if any. {@code stuck}:
+     * items that still differ while everything else now matches.
+     */
     record Result(Outcome outcome, String name, List<Integer> added, List<Integer> removed, List<Integer> changed,
-            String failure, Throwable cause) {
+            List<Stuck> stuck, String failure, Throwable cause) {
         boolean changedAnything() {
             return !added.isEmpty() || !removed.isEmpty() || !changed.isEmpty();
         }
@@ -71,7 +80,7 @@ final class Reconcile {
         String name = found.name(wire);
         ItemContainer container = found.container();
         if (container == null) {
-            return new Result(Outcome.NOT_FOUND, name, List.of(), List.of(), List.of(), null, null);
+            return new Result(Outcome.NOT_FOUND, name, List.of(), List.of(), List.of(), List.of(), null, null);
         }
         Set<Integer> serverIds = new HashSet<>();
         s.items().forEach(i -> serverIds.add(i.id()));
@@ -102,7 +111,7 @@ final class Reconcile {
                         connection);
             }
         } catch (Failed f) {
-            return new Result(Outcome.UNREPAIRABLE, name, List.of(), List.of(), List.of(), f.getMessage(),
+            return new Result(Outcome.UNREPAIRABLE, name, List.of(), List.of(), List.of(), List.of(), f.getMessage(),
                     f.getCause());
         }
         Map<Integer, InventoryItem> after = covered(container, wire);
@@ -115,19 +124,35 @@ final class Reconcile {
                 changed.add(id);
             }
         });
+        Map<Integer, Long> server = new HashMap<>();
+        s.items().forEach(i -> server.put(i.id(), i.digest()));
+        Map<Integer, Long> now = digests(after);
         if (diff != null) {
-            diff.applied(wire, name, beforeFields, FieldDiff.of(after.values()), serverFields);
+            diff.applied(wire, name, beforeFields, FieldDiff.of(after.values()), serverFields, server);
         }
-        boolean matches = wire.isItem()
-                ? after.size() == 1 && ItemDigests.item(after.values().iterator().next()) == s.digest()
-                : ItemDigests.container(container) == s.digest();
-        Result result = new Result(Outcome.REPAIRED, name, added, removed, changed, null, null);
+        // items in both whose fields still differ; everything else must match, with those taken as the server has them
+        List<Stuck> stuck = new ArrayList<>();
+        now.forEach((id, digest) -> {
+            Long theirs = server.get(id);
+            if (theirs != null && theirs.longValue() != digest) {
+                stuck.add(new Stuck(id, digest, theirs));
+            }
+        });
+        boolean matches;
+        if (wire.isItem()) {
+            matches = after.size() == 1 && server.containsKey(wire.itemId());
+        } else {
+            ContainerDigest d = new ContainerDigest();
+            after.forEach((id, item) -> d.add(id, item.getFullType(), server.getOrDefault(id, now.get(id))));
+            matches = d.get() == s.digest();
+        }
         if (!matches) {
-            return new Result(Outcome.UNREPAIRABLE, name, added, removed, changed,
+            return new Result(Outcome.UNREPAIRABLE, name, added, removed, changed, List.of(),
                     "its digest still differs from the server's after the snapshot", null);
         }
+        Result result = new Result(Outcome.REPAIRED, name, added, removed, changed, stuck, null, null);
         return result.changedAnything() ? result
-                : new Result(Outcome.MATCHED, name, added, removed, changed, null, null);
+                : new Result(Outcome.MATCHED, name, added, removed, changed, stuck, null, null);
     }
 
     /** The client's items the snapshot covers: all of a container's, or the one item. */

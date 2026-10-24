@@ -20,6 +20,11 @@ public final class LuaTableHash {
 
         /** Whether the game saves and sends the pair; it drops the others, so they cannot match. */
         boolean saved(Object key, Object value);
+
+        /** A key of the outermost table that each side writes for itself, so it cannot match. */
+        default boolean ownPerSide(Object key) {
+            return false;
+        }
     }
 
     private LuaTableHash() {
@@ -35,7 +40,7 @@ public final class LuaTableHash {
         }
         Unordered pairs = new Unordered();
         tables.forEach(table, (k, v) -> {
-            if (tables.saved(k, v)) {
+            if (tables.saved(k, v) && !(depth == 0 && tables.ownPerSide(k))) {
                 pairs.add(Digest.of(value(k, tables, depth), value(v, tables, depth)));
             }
         });

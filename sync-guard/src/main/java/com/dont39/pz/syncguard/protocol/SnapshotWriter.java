@@ -41,12 +41,12 @@ public final class SnapshotWriter {
         return this;
     }
 
-    /** Null for a payload not sent. */
-    public SnapshotWriter item(int id, Payload fields, Payload modData, Payload stats, Payload weapon) {
+    /** {@code digest}: the item's digest on the server. Null for a payload not sent. */
+    public SnapshotWriter item(int id, long digest, Payload fields, Payload modData, Payload stats, Payload weapon) {
         if (countAt < 0) {
             throw new IllegalStateException("items come after add");
         }
-        out.putInt(id);
+        out.putInt(id).putLong(digest);
         blob(fields);
         blob(modData);
         blob(stats);

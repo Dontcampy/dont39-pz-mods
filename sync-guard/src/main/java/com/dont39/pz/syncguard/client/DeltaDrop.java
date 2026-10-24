@@ -18,16 +18,22 @@ import static com.dont39.pz.syncguard.Mod.PREFIX;
 
 /**
  * {@code -Dsyncguard.debugDropDelta=n} (AC1): drops every n-th container or item update the game receives while the
- * client checks, before the game reads it, as a lost update would be. Main thread only.
+ * client checks, before the game reads it, as a lost update would be. {@code -Dsyncguard.debugDropModule=m[.command]}
+ * (AC11) drops a mod's server commands the same way, every n-th of them or every one without debugDropDelta. Main
+ * thread only.
  */
 final class DeltaDrop {
     private static long seen;
+    private static long seenCommands;
 
     private DeltaDrop() {
     }
 
     /** True to drop the packet; called for every packet the client handles in game. */
     static boolean drop(PacketType type, ByteBufferReader in) {
+        if (Settings.dropModule() != null && type == PacketType.ClientCommand && ClientSync.checking()) {
+            return dropCommand(in);
+        }
         int every = Settings.dropDelta();
         if (every <= 0 || !ClientSync.checking()) {
             return false;
@@ -38,6 +44,27 @@ final class DeltaDrop {
         }
         DebugType.Mod.warn(PREFIX + "debug: dropped incoming %s (update %d) for %s", type.name(), seen,
                 target(kind, in));
+        ClientSync.dropped();
+        return true;
+    }
+
+    // a server command starts with its module and command name (GameClient.receiveClientCommand)
+    private static boolean dropCommand(ByteBufferReader in) {
+        ByteBufferReader r = new ByteBufferReader(in.bb.duplicate());
+        String module = r.getUTF();
+        if (!module.equals(Settings.dropModule())) {
+            return false;
+        }
+        String command = r.getUTF();
+        if (Settings.dropCommand() != null && !command.equals(Settings.dropCommand())) {
+            return false;
+        }
+        int every = Math.max(Settings.dropDelta(), 1);
+        if (++seenCommands % every != 0) {
+            return false;
+        }
+        DebugType.Mod.warn(PREFIX + "debug: dropped incoming server command %s.%s (%d)", module, command,
+                seenCommands);
         ClientSync.dropped();
         return true;
     }

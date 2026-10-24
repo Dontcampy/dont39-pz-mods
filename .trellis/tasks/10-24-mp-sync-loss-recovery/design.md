@@ -84,6 +84,31 @@ Implemented deviations (first in-game run, 2026-10-24):
   the main screen still updates, which stops once the world loads, so the join never activated. `ConnectToServerState`
   is no longer woven at all, which also stops Sync Guard from disturbing other mods' widening of its nested classes.
 
+Implemented deviations (content changes, D7, 2026-10-24):
+
+- HEAD hooks on the `ItemContainer` methods that change the item list themselves (`server/hooks/ContentHooks.java`
+  lists them and what they miss) mark the container changed; only the server's main thread counts, only while a
+  connection is checked. At the end of the tick each changed container that the game's lookup of its own address
+  resolves back to (`Containers.address`) becomes a touch for every checked connection `relevant` to it, the same rule
+  as the sweep; a send of the same key in that tick is marked changed too, as the change may also travel another way.
+- `AddItem(String)` and `AddItem(String, float)` are not hooked: ZombieBuddy's matcher would apply their glue to the
+  longer overloads too, which Zabric refuses. `AddItems(String, int)` and `addItem(ItemKey)` cover two of their callers.
+  Hooking them needs a Zabric option first.
+- Frame entries carry a `changed` flag (protocol 1, unreleased). The client keeps the newest such entry per key and
+  compares it after `Ledger.GRACE_MS`; later entries for a waiting key wait with it. Vanilla-only entries compare on
+  arrival as before.
+- Snapshots carry each item's server digest. Items in both that a snapshot leaves differing are compared as the server
+  has them while they stay as it left them (`Ledger.digestOf`), logged once; their container is no longer given up.
+  Only differing item ids or types still make a key unrepairable.
+- Digest (first field-diff run, `research/modded-transfer-path.md`): no list and an empty list hash alike for food
+  spices and extra items (`ItemStats` creates an empty list where the server has none); the mod data key
+  `customName` is left out (`InventoryItem.setCustomName` writes each side's own name into it, and every `ItemStats` /
+  `SyncItemFields` apply calls it). The other `food` differences in that run were measured against the snapshot's saved
+  copy, which `Food.load` rebuilds on the client; field-diff lines now mark each item `[equal]` or `[differs]` by the
+  server's own digest.
+- `-Dsyncguard.debugDropModule=<module>[.<command>]` drops a mod's server commands at the client's
+  `onClientPacket` HEAD (every one, or every n-th with `debugDropDelta`), for AC11.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with

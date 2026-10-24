@@ -8,6 +8,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LedgerTest {
@@ -102,6 +103,86 @@ class LedgerTest {
         assertTrue(l.open(A, Ledger.OPEN_MS));
         assertTrue(l.ask(B, 0));
         assertFalse(l.open(B, 0), "not while its snapshot is asked for");
+    }
+
+    @Test
+    void aChangedEntryWaitsOutItsGrace() {
+        Ledger l = new Ledger();
+        assertNull(l.defer(A, false, 11, 1, 1_000));
+        assertTrue(l.isWaiting(A));
+        assertTrue(l.due(1_000 + Ledger.GRACE_MS - 1).isEmpty());
+        List<Ledger.Waiting> due = l.due(1_000 + Ledger.GRACE_MS);
+        assertEquals(1, due.size());
+        assertEquals(11, due.get(0).digest());
+        assertFalse(l.isWaiting(A), "once");
+        assertEquals(0, l.waitingCount());
+    }
+
+    @Test
+    void aNewerEntryReplacesTheWaitingOneAndRestartsItsWait() {
+        Ledger l = new Ledger();
+        l.defer(A, false, 11, 1, 0);
+        l.defer(A, true, 0, 2, 1_000);
+        assertEquals(1, l.waitingCount());
+        assertTrue(l.due(Ledger.GRACE_MS).isEmpty(), "the newer entry's wait counts");
+        List<Ledger.Waiting> due = l.due(1_000 + Ledger.GRACE_MS);
+        assertEquals(1, due.size());
+        Ledger.Waiting w = due.get(0);
+        assertEquals(2, w.version(), "the newest entry is compared");
+        assertTrue(w.gone());
+        assertEquals(0, w.since());
+    }
+
+    @Test
+    void aKeyThatKeepsChangingIsStillCompared() {
+        Ledger l = new Ledger();
+        for (long t = 0; t < Ledger.GRACE_MAX_MS; t += 500) {
+            l.defer(A, false, t, t, t);
+            assertTrue(l.due(t).isEmpty());
+        }
+        assertEquals(1, l.due(Ledger.GRACE_MAX_MS).size(), "at most GRACE_MAX_MS after the first entry");
+    }
+
+    @Test
+    void waitingEntriesAreBounded() {
+        Ledger l = new Ledger();
+        for (int i = 0; i < Ledger.MAX_WAITING; i++) {
+            assertNull(l.defer(WireKey.item(new byte[] {1}, i), false, i, 1, i));
+        }
+        Ledger.Waiting out = l.defer(A, false, 1, 1, Ledger.MAX_WAITING);
+        assertEquals(WireKey.item(new byte[] {1}, 0), out.key(), "the longest-waiting one is compared at once");
+        assertEquals(Ledger.MAX_WAITING, l.waitingCount());
+    }
+
+    @Test
+    void aGivenUpKeyStopsWaiting() {
+        Ledger l = new Ledger();
+        l.defer(A, false, 1, 1, 0);
+        l.giveUp(A);
+        assertFalse(l.isWaiting(A));
+    }
+
+    @Test
+    void anAcceptedItemCountsAsTheServerHasItWhileUnchanged() {
+        Ledger l = new Ledger();
+        assertEquals(5, l.digestOf(42, 5));
+        assertTrue(l.accept(42, 5, 9));
+        assertEquals(9, l.digestOf(42, 5));
+        assertEquals(6, l.digestOf(42, 6), "changed on the client: its own digest again");
+        assertEquals(7, l.digestOf(43, 7));
+        assertFalse(l.accept(42, 6, 10), "reported once per item");
+        assertEquals(10, l.digestOf(42, 6));
+        assertEquals(5, l.digestOf(42, 5), "only the latest pair");
+    }
+
+    @Test
+    void acceptedItemsAreBounded() {
+        Ledger l = new Ledger();
+        for (int i = 0; i <= Ledger.MAX_ACCEPTED; i++) {
+            l.accept(i, 1, 2);
+        }
+        assertEquals(1, l.digestOf(0, 1), "the oldest is forgotten");
+        assertEquals(2, l.digestOf(Ledger.MAX_ACCEPTED, 1));
     }
 
     @Test

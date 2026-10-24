@@ -3,6 +3,7 @@ package com.dont39.pz.syncguard.server;
 import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
+import com.dont39.pz.syncguard.protocol.ContainerDigest;
 import com.dont39.pz.syncguard.protocol.ItemKey;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
 import com.dont39.pz.syncguard.protocol.Protocol;
@@ -106,7 +107,14 @@ final class Snapshots {
             return Snapshot.State.GONE;
         }
         List<InventoryItem> items = only != null ? List.of(only) : new ArrayList<>(container.getItems());
-        long digest = only != null ? ItemDigests.item(only) : ItemDigests.container(container);
+        long[] digests = new long[items.size()];
+        ContainerDigest whole = new ContainerDigest();
+        for (int i = 0; i < digests.length; i++) {
+            InventoryItem item = items.get(i);
+            digests[i] = ItemDigests.item(item);
+            whole.add(item.getID(), item.getFullType(), digests[i]);
+        }
+        long digest = only != null ? digests[0] : whole.get();
         // the game's field packets name a player; the owner's, or the asking player for a world container
         IsoPlayer player = container.getCharacter() instanceof IsoPlayer owner ? owner : requester;
         SnapshotWriter w = SnapshotWriter.start(out, job.wire(), version, Snapshot.State.PRESENT, digest);
@@ -115,8 +123,9 @@ final class Snapshots {
             add.setData(container, new ArrayList<>(items));
             add.write(new ByteBufferWriter(b));
         });
-        for (InventoryItem item : items) {
-            w.item(item.getID(), fields(player, item), item.hasModData() ? modData(item) : null,
+        for (int i = 0; i < digests.length; i++) {
+            InventoryItem item = items.get(i);
+            w.item(item.getID(), digests[i], fields(player, item), item.hasModData() ? modData(item) : null,
                     stats(container, item), item instanceof HandWeapon weapon ? weapon(player, weapon) : null);
         }
         w.finish();

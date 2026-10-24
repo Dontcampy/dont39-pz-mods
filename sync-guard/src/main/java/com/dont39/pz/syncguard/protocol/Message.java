@@ -13,8 +13,19 @@ public sealed interface Message {
      * frame's number as every entry's version.
      */
     record SyncFrame(long version, List<Entry> entries) implements Message {
-        /** {@code gone}: the server no longer finds the object there; {@code digest} is then 0. */
-        public record Entry(WireKey key, boolean gone, long digest) {
+        /**
+         * {@code gone}: the server no longer finds the object there; {@code digest} is then 0. {@code changed}: its
+         * contents changed on the server this tick, by whatever route reached the clients (D7); the client compares
+         * it only after a grace period, as a mod's own sync of the change may arrive after the frame.
+         */
+        public record Entry(WireKey key, boolean gone, long digest, boolean changed) {
+            public Entry(WireKey key, boolean gone, long digest) {
+                this(key, gone, digest, false);
+            }
+
+            public Entry asChanged() {
+                return changed ? this : new Entry(key, gone, digest, true);
+            }
         }
     }
 
@@ -36,7 +47,8 @@ public sealed interface Message {
             TOO_LARGE
         }
 
-        public record Item(int id, byte[] fields, byte[] modData, byte[] stats, byte[] weapon) {
+        /** {@code digest}: the server's item digest, to tell which items a snapshot could not make equal. */
+        public record Item(int id, long digest, byte[] fields, byte[] modData, byte[] stats, byte[] weapon) {
         }
     }
 

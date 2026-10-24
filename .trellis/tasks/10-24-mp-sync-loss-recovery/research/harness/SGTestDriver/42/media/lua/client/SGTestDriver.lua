@@ -159,7 +159,8 @@ Events.OnFETick.Add(pump)
 
 local spot = { name = cfg.spotName or "?", x = num("x", 0), y = num("y", 0), z = num("z", 0) }
 local radius = num("radius", 20)
-local stats = { cycles = 0, taken = 0, putBack = 0, moved = 0, eats = 0, walkFails = 0, errors = 0 }
+local stats = { cycles = 0, taken = 0, putBack = 0, moved = 0, eats = 0, walkFails = 0, errors = 0, shown = 0,
+    notShown = 0 }
 local endAt = 0
 local finished = false
 
@@ -170,9 +171,10 @@ end
 
 local function statsLine()
     local cell = getCell()
-    return string.format("cycles=%d taken=%d putBack=%d moved=%d eats=%d walkFails=%d errors=%d pos=%s zombies=%d",
-        stats.cycles, stats.taken, stats.putBack, stats.moved, stats.eats, stats.walkFails, stats.errors, pos(),
-        cell and cell:getZombieList():size() or -1)
+    return string.format("cycles=%d taken=%d putBack=%d moved=%d eats=%d walkFails=%d errors=%d shown=%d"
+        .. " notShown=%d pos=%s zombies=%d",
+        stats.cycles, stats.taken, stats.putBack, stats.moved, stats.eats, stats.walkFails, stats.errors, stats.shown,
+        stats.notShown, pos(), cell and cell:getZombieList():size() or -1)
 end
 
 local godReplied = false
@@ -245,11 +247,30 @@ local function stepWhenIdle(timeoutMs, fn)
     end, restart)
 end
 
-local function open(e)
+-- shows the container in the loot window as a click on its button does (ISInventoryPage:selectContainer), which is
+-- where Sync Guard's open check (Dont39SyncGuard_OpenCheck.lua) reports it; what went wrong is logged, never thrown
+local function showInLoot(e)
     local loot = getPlayerLoot(0)
-    if loot then
-        loot:refreshBackpacks()
-        loot:selectButtonForContainer(e.cont)
+    if not loot or not loot.refreshBackpacks or not loot.selectContainer then
+        return "no loot window with refreshBackpacks/selectContainer"
+    end
+    loot:refreshBackpacks()
+    for _, button in ipairs(loot.backpacks or {}) do
+        if button.inventory == e.cont then
+            loot:selectContainer(button)
+            return true
+        end
+    end
+    return "not listed in the loot window (" .. #(loot.backpacks or {}) .. " buttons)"
+end
+
+local function open(e)
+    local ok, shown = pcall(showInLoot, e)
+    if ok and shown == true then
+        stats.shown = stats.shown + 1
+    else
+        stats.notShown = stats.notShown + 1
+        mark("open: " .. tostring(shown))
     end
     -- as ISInventoryPage:checkExplored, for a container the loot window did not list
     if not e.cont:isExplored() then
