@@ -13,10 +13,12 @@ public final class Settings {
     private static final int SUMMARY_DEFAULT = 600;
     private static final String DROP_DELTA = "syncguard.debugDropDelta";
     private static final String FIELD_DIFF = "syncguard.debugFieldDiff";
+    private static final String TOUCHES = "syncguard.debugTouches";
 
     private static int summarySeconds = SUMMARY_DEFAULT;
     private static int dropDelta;
     private static boolean fieldDiff;
+    private static boolean touches;
 
     private Settings() {
     }
@@ -25,6 +27,11 @@ public final class Settings {
         summarySeconds = positive(SUMMARY, SUMMARY_DEFAULT);
         dropDelta = positive(DROP_DELTA, 0);
         fieldDiff = Boolean.parseBoolean(System.getProperty(FIELD_DIFF));
+        touches = Boolean.parseBoolean(System.getProperty(TOUCHES));
+        if (touches) {
+            DebugType.Mod.warn(PREFIX + "debug: logs every container or item update it sends or receives (-D%s);"
+                    + " leave it off for play", TOUCHES);
+        }
     }
 
     /** {@code key=value} summary lines every this many seconds, and at the end of a connection. */
@@ -40,6 +47,11 @@ public final class Settings {
     /** Client: logs which digest fields differ around each repair. */
     public static boolean fieldDiff() {
         return fieldDiff;
+    }
+
+    /** Server: logs what happens to each in-scope update, to find updates the checks miss. */
+    public static boolean touches() {
+        return touches;
     }
 
     /** Logs the debug switches that are on; called once on a client. */

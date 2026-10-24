@@ -238,6 +238,9 @@ public final class ServerSync {
     public static void written(INetworkPacket packet) {
         if (running && !ownWrite && Thread.currentThread() == mainThread) {
             written = packet;
+        } else if (Settings.touches() && running && !ownWrite) {
+            debug("write of %s on thread %s, not the main thread %s", packet.getClass().getSimpleName(),
+                    Thread.currentThread().getName(), mainThread == null ? "(no tick yet)" : mainThread.getName());
         }
     }
 
@@ -245,6 +248,9 @@ public final class ServerSync {
     public static void sending(PacketType type, IConnection connection) {
         if (!running) {
             return;
+        }
+        if (Settings.touches() && Thread.currentThread() == mainThread) {
+            sentTypes.merge(type.name(), 1, Integer::sum);
         }
         if (Thread.currentThread() != mainThread) {
             // another thread's send must not take the main thread's packet; an in-scope one is an error
@@ -255,6 +261,9 @@ public final class ServerSync {
         }
         INetworkPacket packet = written;
         if (packet == null) {
+            if (Settings.touches() && PacketScope.kind(type) != null) {
+                debug("send of %s with no write seen before it", type.name());
+            }
             return;
         }
         written = null;
@@ -262,6 +271,8 @@ public final class ServerSync {
             Peer p = activePeer(c);
             if (p != null) {
                 touch(p, packet);
+            } else if (Settings.touches()) {
+                debug("send of %s to %s, not an active connection", type.name(), c.getConnectedGUID());
             }
         }
     }
@@ -340,6 +351,9 @@ public final class ServerSync {
     private static void touchContainer(Peer p, ContainerID id) {
         ItemContainer container = id.getContainer();
         ContainerKey key = container != null ? Containers.keyOf(id) : null;
+        if (Settings.touches()) {
+            debug("touch %s %s: %s", id.getContainerType(), key, container == null ? "no container" : "recorded");
+        }
         if (key != null) {
             p.touched.computeIfAbsent(key, k -> new Touch(k, container, Containers.wire(id)));
         }
@@ -348,9 +362,17 @@ public final class ServerSync {
     private static void touchItem(Peer p, ContainerID id, int itemId) {
         ItemContainer container = id.getContainer();
         ContainerKey key = container != null ? Containers.keyOf(id) : null;
+        if (Settings.touches()) {
+            debug("touch item %d in %s %s: %s", itemId, id.getContainerType(), key,
+                    container == null ? "no container" : "recorded");
+        }
         if (key != null) {
             p.touched.computeIfAbsent(new ItemKey(key, itemId), k -> new Touch(k, container, Containers.wire(id)));
         }
+    }
+
+    private static void debug(String format, Object... args) {
+        DebugType.Mod.println(PREFIX + "debug: " + format, args);
     }
 
     // ---- end of tick (R4)
@@ -540,7 +562,14 @@ public final class ServerSync {
      * {@code key=value} pairs of plain numbers, which the load-test tools parse. Counters run from the server's start
      * (the connection's join); tick times cover the time since the last line.
      */
+    // debug only: packets the game sent since the last summary, by type
+    private static final Map<String, Integer> sentTypes = new HashMap<>();
+
     private static void summary() {
+        if (!sentTypes.isEmpty()) {
+            debug("sent since the last summary: %s", sentTypes);
+            sentTypes.clear();
+        }
         int connections = 0;
         int state = 0;
         for (Peer p : peers.values()) {

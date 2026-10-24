@@ -23,7 +23,7 @@ Stays at the spot without looting (zombies and the player's presence only).
 #>
 param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $DurationSec = 1800, [switch] $Quit,
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
-    [switch] $WaitArrived, [int] $JoinTimeoutSec = 900)
+    [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @())
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 if (-not (Test-Path (Join-Path $SG.Backup 'hashes.txt'))) { throw 'no client backup; run backup-client.ps1 first' }
@@ -58,7 +58,7 @@ $json = Get-Content (Join-Path $gd 'ProjectZomboid64.json') -Raw | ConvertFrom-J
 $winArgs = @($json.windows.PSObject.Properties | Where-Object { [Environment]::OSVersion.Version -ge [version]$_.Name } |
         Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1 | ForEach-Object { $_.Value.vmArgs })
 $vm = foreach ($a in @($json.vmArgs) + $winArgs) { if ($a -eq '-Dzomboid.steam=1') { '-Dzomboid.steam=0' } else { $a } }
-$argList = @($vm) + @('-cp', ($json.classpath -join ';'), $json.mainClass.Replace('/', '.'), '-nosteam')
+$argList = @($vm) + $JvmArgs + @('-cp', ($json.classpath -join ';'), $json.mainClass.Replace('/', '.'), '-nosteam')
 
 if (-not ('SgWin' -as [type])) {
     Add-Type @'

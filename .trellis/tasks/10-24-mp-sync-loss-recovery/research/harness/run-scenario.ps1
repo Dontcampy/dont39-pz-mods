@@ -8,6 +8,7 @@ param(
     [Parameter(Mandatory)] [string] $Label,
     [int] $DurationSec = 300,
     [string[]] $ServerJvmArgs = @(),
+    [string[]] $ClientJvmArgs = @(),
     [hashtable] $ClientArgs = @{},
     [int] $Horde = 0
 )
@@ -16,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 
 & "$PSScriptRoot\start-server.ps1" -Label $Label -Wait -JvmArgs $ServerJvmArgs
 try {
-    & "$PSScriptRoot\start-client.ps1" -Label $Label -DurationSec $DurationSec -Quit -JoinTimeoutSec 600 -WaitArrived @ClientArgs
+    & "$PSScriptRoot\start-client.ps1" -Label $Label -DurationSec $DurationSec -Quit -JoinTimeoutSec 600 -WaitArrived -JvmArgs $ClientJvmArgs @ClientArgs
     if ($Horde -gt 0) { & "$PSScriptRoot\spawn-zombies.ps1" -Count $Horde }
     $deadline = (Get-Date).AddSeconds($DurationSec + 180)
     # the driver marks the end of its loop with a "done" line before it quits

@@ -85,6 +85,12 @@ that unnecessary; PZ's losses are apply-side, so that check is what this mod add
 - D5 (user): the player's own inventory and the bags in it are in scope. Snapshots reconcile in place by item id;
   an extra item that is held or worn is taken off through vanilla's unequip/unwear path first.
 - D6 (user): on a repair the player sees a small notice and the log gets a line.
+- D7 (user, 2026-10-24, after `research/modded-transfer-path.md`): the server also records a container as touched
+  when its contents change (items added or removed), however the change reaches clients, including mods' own Lua
+  sync (on `myserver1`, "Multiplayer Weight Limit Breaker" replaces vanilla transfers with unversioned
+  `sendServerCommand` broadcasts). Frames carry these entries to every active connection the container is relevant
+  to, marked as change-recorded; the client waits a short grace period before comparing them, so a mod's own
+  unordered sync packet can land first.
 
 ## Scope
 
@@ -110,11 +116,13 @@ but not repaired by this task (its object list is out of scope); it is reported,
   field update cannot overtake its item's add and a sync frame arrives after the deltas it covers.
 - R3. The server records (connection, object) as touched when it sends an in-scope packet to a connection, and when
   it processes an in-scope packet from a client (accepted or rejected), for that sender. Sends from net-drain
-  iterations count.
+  iterations count. It also records a container as touched, for every active connection it is relevant to, when its
+  contents change on the server's main thread by any route (D7).
 - R4. At the end of each world tick the server computes one digest per touched object over the state vanilla syncs
   (excluding fields vanilla never sends, such as `age`, `heat`, `itemHeat`, `freezingTime`) and sends each connection
   with touched objects one sync frame: object key, version, digest.
-- R5. The client compares each sync-frame entry with its own state. On a digest mismatch it requests one snapshot of
+- R5. The client compares each sync-frame entry with its own state; an entry recorded from a content change is
+  compared only after a grace period, against the newest frame entry for that object. On a digest mismatch it requests one snapshot of
   that object (deduplicated while pending). An entry whose object it cannot resolve yet is retried for a bounded
   time, then checked or dropped with a log line.
 - R6. A snapshot carries the object's full state with version and digest. The client reconciles in place by item id:
@@ -153,6 +161,9 @@ but not repaired by this task (its object list is out of scope); it is reported,
   mod packets sent and no errors; the modded side logs that it is inactive and why.
 - [ ] AC9 (R9). An injected loss shows one notice on screen, a log line on both sides, and the counters in the
   summary; ten injected losses within the rate limit show one notice with the count.
+- [ ] AC11 (D7). On `myserver1`'s mod list (transfers through "Multiplayer Weight Limit Breaker"), a transfer whose
+  mod broadcast the test drops on the client is detected and repaired; normal transfers cause no mismatch after the
+  grace period.
 - [ ] AC10 (D4). `./gradlew build` passes; `assembleMod` yields the mod folder with `mod.info`, jar and translations.
   The smoke run uses the local dedicated server with the user's modded server config (`myserver1`, its full mod
   list plus Sync Guard) and a client joining it, to check compatibility with those mods: both sides log Sync Guard
