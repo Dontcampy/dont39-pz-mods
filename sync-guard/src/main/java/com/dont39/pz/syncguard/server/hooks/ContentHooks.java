@@ -15,10 +15,9 @@ import java.util.ArrayList;
 
 /**
  * The ItemContainer methods that add items to or remove them from its list themselves; the others (DoAddItem,
- * AddItems of items, SpawnItem of an item, removeItemWithID, takeItemsFrom, ...) call one of these. A change by any
- * route counts, as a mod may sync it its own way (D7). Not seen: AddItem(String) and AddItem(String, float), which
- * Zabric cannot hook apart from their longer overloads, except through AddItems(String, int) and addItem(ItemKey);
- * code that edits the public item list directly.
+ * AddItems of items or of a type, addItem(ItemKey), SpawnItem of an item, removeItemWithID, takeItemsFrom, ...) call
+ * one of these. A change by any route counts, as a mod may sync it its own way (D7). Not seen: code that edits the
+ * public item list directly.
  */
 @Hooks(value = ItemContainer.class, gate = Gate.class)
 public final class ContentHooks {
@@ -37,16 +36,14 @@ public final class ContentHooks {
         ServerSync.contentChanged(container);
     }
 
-    // AddItem(String) for each
-    @Inject(method = "AddItems(Ljava/lang/String;I)Ljava/util/ArrayList;", at = @At("HEAD"))
-    public static void addItemsOfType(@Self ItemContainer container,
-            CallbackInfoReturnable<ArrayList<InventoryItem>> ci) {
+    // Lua's container:AddItem("Base.X")
+    @Inject(method = "AddItem(Ljava/lang/String;)Lzombie/inventory/InventoryItem;", at = @At("HEAD"))
+    public static void addItemOfType(@Self ItemContainer container, CallbackInfoReturnable<InventoryItem> ci) {
         ServerSync.contentChanged(container);
     }
 
-    // AddItem(String)
-    @Inject(method = "addItem(Lzombie/scripting/objects/ItemKey;)Lzombie/inventory/InventoryItem;", at = @At("HEAD"))
-    public static void addItemOfKey(@Self ItemContainer container, CallbackInfoReturnable<InventoryItem> ci) {
+    @Inject(method = "AddItem(Ljava/lang/String;F)Z", at = @At("HEAD"))
+    public static void addItemWithUses(@Self ItemContainer container, CallbackInfoReturnable<Boolean> ci) {
         ServerSync.contentChanged(container);
     }
 

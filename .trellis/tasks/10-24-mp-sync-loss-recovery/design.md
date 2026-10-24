@@ -91,9 +91,9 @@ Implemented deviations (content changes, D7, 2026-10-24):
   connection is checked. At the end of the tick each changed container that the game's lookup of its own address
   resolves back to (`Containers.address`) becomes a touch for every checked connection `relevant` to it, the same rule
   as the sweep; a send of the same key in that tick is marked changed too, as the change may also travel another way.
-- `AddItem(String)` and `AddItem(String, float)` are not hooked: ZombieBuddy's matcher would apply their glue to the
-  longer overloads too, which Zabric refuses. `AddItems(String, int)` and `addItem(ItemKey)` cover two of their callers.
-  Hooking them needs a Zabric option first.
+- `AddItem(String)` and `AddItem(String, float)` are hooked since Zabric binds a shorter overload's arguments by
+  position (task `10-24-zabric-exact-overload`); `AddItems(String, int)` and `addItem(ItemKey)` go through
+  `AddItem(String)` and are no longer hooked themselves.
 - Frame entries carry a `changed` flag (protocol 1, unreleased). The client keeps the newest such entry per key and
   compares it after `Ledger.GRACE_MS`; later entries for a waiting key wait with it. Vanilla-only entries compare on
   arrival as before.
