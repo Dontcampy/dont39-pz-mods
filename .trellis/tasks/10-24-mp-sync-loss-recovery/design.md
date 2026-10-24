@@ -45,8 +45,9 @@ Implemented deviations (phase A, 2026-10-24):
 - The digest leaves out food stats whose getters scale them by age, heat, freezing or cooking (thirst, unhappiness,
   boredom, stress, food sickness; `ItemStats` stores the server's scaled value as the client's base) and clothing
   weight (follows wetness) (check, 2026-10-24).
-- The `addIncoming` hooks run while the gate is shut too and swallow the mod's id: a peer that failed still gets
-  packets until the other side stops, which the game would log or count toward a packet-anticheat kick.
+- The receive hooks (server `GameServer.addIncoming`, client `ZomboidNetData.read`) run while the gate is shut too
+  and swallow the mod's id: a peer that failed still gets packets until the other side stops, which the game would
+  log or count toward a packet-anticheat kick.
 
 Implemented deviations (phase B, client, 2026-10-24):
 
@@ -62,16 +63,35 @@ Implemented deviations (phase B, client, 2026-10-24):
   the session goes on, as the game itself drops a packet whose handler throws.
 - `Bye` (C→S, no body): the client stops for the session (a failure, or leaving); the server stops sending to it.
 
+Implemented deviations (hardening, 2026-10-24):
+
+- Less access widening (`research/widening-during-weave.md`: in the first in-game run, members of classes first
+  loaded while ZombieBuddy wove a hook were not widened). Container keys are read from the bytes the public
+  `ContainerID.write` produces (`protocol/ContainerWire`, unit-tested on byte fixtures); the game's `ContainerType`
+  order is checked at the main entrypoint. No main-loop queue is widened any more (see Own packets).
+- Widening that stays, as no public route exists: `UdpConnection.bufferLock` (nothing public tells whether this
+  thread is inside a game send); `ConnectToServerState.connectionDetails` (private, no getter; the public
+  `ConnectionDetails.parse` runs before a mod enabled by the server's list is loaded); the in-scope packets'
+  `containerId` / `itemId` / `id` and `AddInventoryItemToContainerPacket.items` (private or package-private, no
+  getters; reading them from the written bytes would repeat each packet's layout).
+- `ConnectToServerState` is still woven on the server too (no per-side hooks), which can stop other mods' widening of
+  its nest members until Zabric loads a target's member types before ZombieBuddy weaves it.
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with
   `UdpConnection.startPacket` / `endPacket(priority, RELIABLE_ORDERED, channel)` on the shared channel (R2).
-- Settled by S1 (`research/spike-s1-s5.md`): header 134 + reserved short id `0x5347`. Cancellable HEAD hooks on
-  `GameServer.addIncoming` / `GameClient.addIncoming` (network thread, enqueue only) put our message on the queue
-  vanilla uses for the in-scope types (server `MainLoopNetDataHighPriorityQ`, client `MainLoopNetDataQ` with `time`
-  set like vanilla), as a `ZomboidNetData` subclass with capacity 0 so it never returns to the pool; HEAD hooks on
-  both `mainLoopDealWithNetData` dispatch it on the main thread in arrival order. Cancelling at `addIncoming` keeps
-  the server's `AntiCheat.PacketType.act` from firing. Both queue fields need widening.
+- Settled by S1 (`research/spike-s1-s5.md`): header 134 + reserved short id `0x5347`.
+- Client: a cancellable HEAD hook on `ZomboidNetData.read` (network thread, `always`) does what `read` does for our
+  id minus its unknown-id error line and marks the instance (identity set; the pool reuses instances, so the mark is
+  removed at dispatch and cleared per join and on failure). Vanilla `GameClient.addIncoming` then queues it with
+  `time` set, in order with the in-scope packets; the `mainLoopDealWithNetData` HEAD hook dispatches marked ones and
+  vanilla drops the typeless entry. While the gate is shut the hook only swallows the id.
+- Server: a cancellable HEAD hook on `GameServer.addIncoming` (`always`) takes our id before vanilla routes an unknown
+  type to `AntiCheat.PacketType.act`, onto the mod's own queue. A HEAD hook on `PoolCaps.updateServerCaps`, which
+  `GameServer.main` calls first in every pass of its loop (ticking or not) and nothing else calls, runs what arrived
+  before the previous pass started: vanilla ran every packet that arrived before those during that pass, so a
+  `Hello` is handled after its client's `PlayerConnect` (sent first, on the same reliable-ordered channel).
 - Send with `startPacket()` / `endPacket(1, 3, 1)` (HIGH, RELIABLE_ORDERED, channel 1), only from our own handlers or
   the end-of-tick hook, never inside a vanilla send (`bufferLock` is reentrant and a nested send corrupts the vanilla
   packet). `Hello` goes from a RETURN hook on `GameClient.sendPlayerConnect`.

@@ -4,7 +4,6 @@ import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
-import com.dont39.pz.syncguard.game.OwnNetData;
 import com.dont39.pz.syncguard.game.PacketScope;
 import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.protocol.Codec;
@@ -27,7 +26,6 @@ import zombie.inventory.ItemContainer;
 import zombie.network.GameServer;
 import zombie.network.IConnection;
 import zombie.network.PacketTypes.PacketType;
-import zombie.network.ZomboidNetData;
 import zombie.network.fields.ContainerID;
 import zombie.network.packets.AddInventoryItemToContainerPacket;
 import zombie.network.packets.INetworkPacket;
@@ -46,6 +44,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.dont39.pz.syncguard.Mod.PREFIX;
 
@@ -57,6 +57,10 @@ import static com.dont39.pz.syncguard.Mod.PREFIX;
 public final class ServerSync {
     /** One object touched this tick, as the first packet that touched it addressed it. */
     record Touch(Key key, ItemContainer container, byte[] wire) {
+    }
+
+    /** A packet of the mod as the network thread took it: the bytes after the header. */
+    private record Inbound(byte[] payload, long connectionGuid) {
     }
 
     static final int SNAPSHOTS_PER_TICK = 8;
@@ -74,6 +78,10 @@ public final class ServerSync {
 
     private static volatile boolean running;
     private static Thread mainThread;
+
+    // the mod's packets: filled on the network thread, taken at a main-loop pass's start, run at the next one's
+    private static final Queue<Inbound> inbound = new ConcurrentLinkedQueue<>();
+    private static final Queue<Inbound> due = new ConcurrentLinkedQueue<>();
 
     private static final Map<UdpConnection, Peer> peers = new HashMap<>();
     // each touched object's entry, computed once per tick for all connections
@@ -106,6 +114,8 @@ public final class ServerSync {
     /** Undoes {@link #start} after a failure; the hooks are shut already. */
     public static void stop() {
         running = false;
+        inbound.clear();
+        due.clear();
         PacketScope.restore();
     }
 
@@ -137,19 +147,33 @@ public final class ServerSync {
             return false;
         }
         if (running && Gate.INSTANCE.active()) {
-            // the queue the game puts all in-scope types on, so ours keep their order with them
-            GameServer.MainLoopNetDataHighPriorityQ.add(new OwnNetData(Net.payload(in),
-                    connection.getConnectedGUID()));
+            inbound.add(new Inbound(Net.payload(in), connection.getConnectedGUID()));
         }
         return true;
     }
 
-    /** At GameServer.mainLoopDealWithNetData HEAD; the game then discards the packet, which has no type. */
-    public static void dispatch(ZomboidNetData data) {
-        if (!(data instanceof OwnNetData own) || !running) {
+    /**
+     * At PoolCaps.updateServerCaps HEAD: the start of each pass of the server's main loop, ticking or not, before it
+     * runs the game's queued packets. Runs what arrived before the previous pass started: the game ran every packet
+     * that arrived before those in that pass, so a Hello comes after its client's PlayerConnect.
+     */
+    public static void loopStarts() {
+        if (!running) {
             return;
         }
-        UdpConnection c = GameServer.udpEngine.getActiveConnection(own.connection);
+        for (Inbound m; (m = due.poll()) != null; ) {
+            dispatch(m);
+        }
+        for (Inbound m; (m = inbound.poll()) != null; ) {
+            due.add(m);
+        }
+    }
+
+    private static void dispatch(Inbound own) {
+        if (!running) {
+            return;
+        }
+        UdpConnection c = GameServer.udpEngine.getActiveConnection(own.connectionGuid());
         if (c == null) {
             return;
         }

@@ -1,6 +1,7 @@
 package com.dont39.pz.syncguard.entrypoint;
 
 import com.dont39.pz.syncguard.client.ClientSync;
+import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.PacketScope;
 import com.dont39.pz.syncguard.game.Settings;
@@ -31,6 +32,7 @@ public final class MainEntry implements MainEntrypoint {
         }
         try {
             PacketScope.resolve();
+            Containers.check();
         } catch (IllegalStateException e) {
             DebugType.Mod.printException(e, PREFIX + "off: the game's packets differ from the ones this version of"
                     + " the mod checks", LogSeverity.Error);

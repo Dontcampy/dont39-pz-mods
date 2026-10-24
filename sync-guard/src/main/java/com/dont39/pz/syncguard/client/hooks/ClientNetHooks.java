@@ -7,23 +7,13 @@ import com.pzlauncher.zabric.hook.CallbackInfo;
 import com.pzlauncher.zabric.hook.Hooks;
 import com.pzlauncher.zabric.hook.Inject;
 import zombie.characters.IsoPlayer;
-import zombie.core.network.ByteBufferReader;
 import zombie.network.GameClient;
 import zombie.network.ZomboidNetData;
 
-/** The client's packet queue, its frame and its PlayerConnect. */
+/** The client's queued packets, its frame and its PlayerConnect. */
 @Hooks(value = GameClient.class, gate = Gate.class)
 public final class ClientNetHooks {
     private ClientNetHooks() {
-    }
-
-    // Network thread. Cancels only the mod's own id, which the game would log as unknown; also after a failure, until
-    // the server has the Bye.
-    @Inject(method = "addIncoming", at = @At("HEAD"), cancellable = true, always = true)
-    public static void incoming(short id, ByteBufferReader in, CallbackInfo ci) {
-        if (ClientSync.incoming(id, in)) {
-            ci.cancel();
-        }
     }
 
     @Inject(method = "mainLoopDealWithNetData", at = @At("HEAD"))

@@ -4,7 +4,6 @@ import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.Gate;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
-import com.dont39.pz.syncguard.game.OwnNetData;
 import com.dont39.pz.syncguard.game.PacketScope;
 import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.protocol.Codec;
@@ -30,10 +29,11 @@ import zombie.network.PacketTypes.PacketType;
 import zombie.network.ZomboidNetData;
 import zombie.network.fields.ContainerID;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dont39.pz.syncguard.Mod.PREFIX;
 
@@ -53,6 +53,8 @@ public final class ClientSync {
     private static Thread mainThread;
     // a failure off the main thread or inside a game send: the next frame says Bye
     private static volatile boolean byePending;
+    // the game's queued packets that are the mod's; ZomboidNetData keeps Object's identity equals
+    private static final Set<ZomboidNetData> own = ConcurrentHashMap.newKeySet();
 
     private static Ledger ledger = new Ledger();
     private static ClientCounters counters = new ClientCounters();
@@ -115,27 +117,31 @@ public final class ClientSync {
     }
 
     /**
-     * At GameClient.addIncoming HEAD, on the network thread, also while the hooks are shut: true when the packet is
-     * the mod's, which is queued only while they are open.
+     * At ZomboidNetData.read HEAD, on the network thread, also while the hooks are shut: true when the packet is the
+     * mod's, which the game then queues with no type, in arrival order with the in-scope packets. Its data is filled
+     * as read does, without the unknown-id error, only while the hooks are open; the game drops it otherwise.
      */
-    public static boolean incoming(short id, ByteBufferReader in) {
+    public static boolean incoming(ZomboidNetData data, short id, ByteBufferReader in, UdpConnection connection) {
         if (id != Protocol.PACKET_ID) {
             return false;
         }
-        if (Gate.INSTANCE.active() && GameClient.connection != null) {
-            // the game's main-loop queue, in order with the in-scope packets
-            GameClient.MainLoopNetDataQ.add(new OwnNetData(Net.payload(in),
-                    GameClient.connection.getConnectedGUID()));
+        data.type = null;
+        if (Gate.INSTANCE.active()) {
+            data.connection = connection.getConnectedGUID();
+            data.buffer.put(in.bb);
+            data.buffer.flip();
+            own.add(data);
         }
         return true;
     }
 
-    /** At GameClient.mainLoopDealWithNetData HEAD; the game then discards the packet, which has no type. */
+    /** At GameClient.mainLoopDealWithNetData HEAD; the game then drops the packet, which has no type. */
     public static void dispatch(ZomboidNetData data) {
-        if (!(data instanceof OwnNetData own) || !active) {
+        // the game pools its packets: a mark must not outlive this one
+        if (!own.remove(data) || !active) {
             return;
         }
-        Message m = Codec.decode(ByteBuffer.wrap(own.payload()));
+        Message m = Codec.decode(data.buffer.bb.duplicate());
         if (m instanceof SyncFrame frame) {
             frame(frame);
         } else if (m instanceof Snapshot snapshot) {
@@ -442,6 +448,8 @@ public final class ClientSync {
         offered = false;
         active = false;
         byePending = false;
+        // marks of packets the game dropped without running them (a lost connection)
+        own.clear();
         PacketScope.restore();
         ledger = new Ledger();
         counters = new ClientCounters();
@@ -454,6 +462,7 @@ public final class ClientSync {
         boolean was = active;
         offered = false;
         active = false;
+        own.clear();
         PacketScope.restore();
         if (!was) {
             return;

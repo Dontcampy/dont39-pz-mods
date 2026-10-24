@@ -9,9 +9,8 @@ import com.pzlauncher.zabric.hook.Inject;
 import zombie.core.network.ByteBufferReader;
 import zombie.core.raknet.UdpConnection;
 import zombie.network.GameServer;
-import zombie.network.ZomboidNetData;
 
-/** The server's packet queues and connections. */
+/** The server's incoming packets and connections. */
 @Hooks(value = GameServer.class, gate = Gate.class)
 public final class NetHooks {
     private NetHooks() {
@@ -24,11 +23,6 @@ public final class NetHooks {
         if (ServerSync.incoming(id, in, connection)) {
             ci.cancel();
         }
-    }
-
-    @Inject(method = "mainLoopDealWithNetData", at = @At("HEAD"))
-    public static void dispatch(ZomboidNetData data, CallbackInfo ci) {
-        ServerSync.dispatch(data);
     }
 
     @Inject(method = "disconnect", at = @At("HEAD"))

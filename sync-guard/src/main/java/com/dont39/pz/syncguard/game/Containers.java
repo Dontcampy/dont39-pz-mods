@@ -1,21 +1,32 @@
 package com.dont39.pz.syncguard.game;
 
 import com.dont39.pz.syncguard.protocol.ContainerKey;
+import com.dont39.pz.syncguard.protocol.ContainerWire;
+import com.dont39.pz.syncguard.protocol.ProtocolException;
 import zombie.core.network.ByteBufferReader;
-import zombie.core.network.ByteBufferWriter;
 import zombie.inventory.ItemContainer;
 import zombie.network.IConnection;
 import zombie.network.fields.ContainerID;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
 /** Containers as the game addresses them on the wire ({@code ContainerID}), and the mod's keys for them. */
 public final class Containers {
-    // a ContainerID without floor squares, which keyOf never takes, is a few dozen bytes
+    // a ContainerID without floor squares is a few dozen bytes
     private static final int MAX_WIRE = 256;
 
     private Containers() {
+    }
+
+    /** Throws when the game's container types are not the ones {@link ContainerWire} reads. */
+    public static void check() {
+        List<String> types = Arrays.stream(ContainerID.ContainerType.values()).map(Enum::name).toList();
+        if (!types.equals(ContainerWire.TYPES)) {
+            throw new IllegalStateException("the game's container types are " + types + ", this version of the mod"
+                    + " reads " + ContainerWire.TYPES);
+        }
     }
 
     /**
@@ -23,29 +34,28 @@ public final class Containers {
      * from the square's items on each side, and square object lists are out of scope.
      */
     public static ContainerKey keyOf(ContainerID id) {
-        ContainerID.ContainerType type = id.containerType;
+        ContainerID.ContainerType type = id.getContainerType();
         if (type == null) {
             throw new IllegalStateException("a ContainerID without a type");
         }
-        return switch (type) {
-            case PlayerInventory -> ContainerKey.player(id.playerId.getID());
-            case InventoryContainer -> ContainerKey.bag(id.playerId.getID(), id.worldItemId);
-            case IsoObject -> ContainerKey.object(id.x, id.y, id.z, id.index);
-            case ObjectContainer -> ContainerKey.objectContainer(id.x, id.y, id.z, id.index, id.containerIndex);
-            case Vehicle -> ContainerKey.vehicle(id.vid, id.index);
-            case ObjectInVehicle -> ContainerKey.vehicleBag(id.vid, id.index, id.worldItemId);
-            case DeadBody -> ContainerKey.corpse(id.x, id.y, id.z, id.index);
-            case WorldObject -> ContainerKey.worldItem(id.x, id.y, id.z, id.worldItemId);
-            case Floor -> null;
-            default -> throw new IllegalStateException("a ContainerID of type " + type + ", which this version of"
-                    + " the mod does not know");
-        };
+        // a floor id lists squares, which wire() has no room for
+        return type == ContainerID.ContainerType.Floor ? null : keyOf(wire(id));
+    }
+
+    /** The key of the game's bytes {@code wire}; null for a floor container. */
+    public static ContainerKey keyOf(byte[] wire) {
+        try {
+            return ContainerWire.decode(wire);
+        } catch (ProtocolException e) {
+            throw new IllegalStateException("a container id this version of the mod cannot read: " + e.getMessage(),
+                    e);
+        }
     }
 
     /** The bytes the game's packets carry for {@code id}. */
     public static byte[] wire(ContainerID id) {
         ByteBuffer b = ByteBuffer.allocate(MAX_WIRE);
-        id.write(new ByteBufferWriter(b));
+        id.write(b);
         return Arrays.copyOf(b.array(), b.position());
     }
 

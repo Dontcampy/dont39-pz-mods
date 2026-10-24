@@ -29,7 +29,7 @@ final class Lookup {
         if (id == null) {
             return new Found(null, null, null);
         }
-        ContainerKey key = Containers.keyOf(id);
+        ContainerKey key = Containers.keyOf(wire.containerBytes());
         ItemContainer container = key != null && Containers.live(id.getContainer(), key) ? id.getContainer() : null;
         return new Found(id, key, container);
     }
