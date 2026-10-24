@@ -14,11 +14,13 @@ import java.lang.instrument.ClassFileTransformer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -68,10 +70,10 @@ class PatchTargetsTest {
         Path notAJar = Files.writeString(dir.resolve("not.jar"), "no jar");
         PatchTargets.prepare(notAJar, "", () -> {
             throw new AssertionError("a blank package has no patches");
-        });
+        }, getClass().getClassLoader());
         PatchTargets.prepare(dir.resolve("gone.jar"), "a.b", () -> {
             throw new AssertionError("the loader reports a missing jar itself");
-        });
+        }, getClass().getClassLoader());
     }
 
     // the cause, as the loader weaves a loaded class: a type it first loads there passes every transformer by
@@ -83,7 +85,7 @@ class PatchTargetsTest {
             targets.define(UNPREP + ".target.Host");
             Weaving.weave(UNPREP);
         }
-        assertEquals(Set.of(UNPREP + ".target.Host"), recorder.seen);
+        assertEquals(List.of(UNPREP + ".target.Host"), recorder.seen);
         assertTrue(targets.defined.contains(UNPREP + ".target.FieldType"), "the weave loaded it");
     }
 
@@ -94,13 +96,21 @@ class PatchTargetsTest {
         Recorder recorder = new Recorder(targets);
         try (Recorder r = recorder.install()) {
             targets.define(target + "Host");
-            PatchTargets.prepare(glueJar(), PREP, Weaving.instrumentation()::getAllLoadedClasses);
+            PatchTargets.prepare(glueJar(), PREP, () -> loadedBy(targets), targets);
             Weaving.weave(PREP);
+            assertFalse(targets.defined.contains(target + "Unloaded"), "a target that is not loaded stays so");
+            // as the game loads it later
+            targets.define(target + "Unloaded");
         }
         for (String name : List.of("FieldType", "ParamType", "ReturnType", "Host$Member", "Second", "SecondField")) {
             assertTrue(recorder.seen.contains(target + name), name + " in " + recorder.seen);
         }
-        assertFalse(targets.defined.contains(target + "NeverLoaded"), "a target that is not loaded stays so");
+        int unloaded = recorder.seen.indexOf(target + "Unloaded");
+        for (String name : List.of("UnloadedField", "UnloadedParam", "UnloadedReturn", "UnloadedException",
+                "Unloaded$Member")) {
+            int at = recorder.seen.indexOf(target + name);
+            assertTrue(at >= 0 && at < unloaded, name + " before Unloaded in " + recorder.seen);
+        }
     }
 
     @Test
@@ -109,10 +119,26 @@ class PatchTargetsTest {
         Class<?> holder = loader.define(MEMBERS + ".Holder");
         Class<?> good = loader.define(MEMBERS + ".Good");
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> PatchTargets.loadMemberTypes(
-                Set.of(holder.getName(), good.getName()), () -> new Class<?>[]{holder, good}));
+                Set.of(holder.getName(), good.getName()), () -> new Class<?>[]{holder, good}, loader));
         assertTrue(e.getMessage().startsWith("cannot load the member types of " + MEMBERS + ".Holder: "
                 + NoClassDefFoundError.class.getName()), e.getMessage());
         assertTrue(loader.defined.contains(MEMBERS + ".GoodField"), loader.defined.toString());
+    }
+
+    @Test
+    void aTypeThatFailsInAClassFileIsReportedAfterTheRest() {
+        FreshLoader loader = new FreshLoader(MEMBERS + ".", MEMBERS + ".Missing");
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> PatchTargets.loadMemberTypes(
+                Set.of(MEMBERS + ".Holder", MEMBERS + ".Good", "zombie.NotThere"), () -> new Class<?>[0], loader));
+        assertTrue(e.getMessage().startsWith("cannot load " + MEMBERS + ".Missing, a member type of " + MEMBERS
+                + ".Holder: "), e.getMessage());
+        assertEquals(Set.of(MEMBERS + ".GoodField"), loader.defined, "the targets stay unloaded");
+    }
+
+    private static Class<?>[] loadedBy(ClassLoader loader) {
+        return Arrays.stream(Weaving.instrumentation().getAllLoadedClasses())
+                .filter(c -> c.getClassLoader() == loader)
+                .toArray(Class<?>[]::new);
     }
 
     // the test's class files of the glue package, as a mod's jar
@@ -149,7 +175,8 @@ class PatchTargetsTest {
 
     // stands in for the access widener: a transformer of the loader's agent
     private static final class Recorder implements ClassFileTransformer, AutoCloseable {
-        final Set<String> seen = ConcurrentHashMap.newKeySet();
+        // in load order
+        final List<String> seen = new CopyOnWriteArrayList<>();
         private final ClassLoader of;
 
         Recorder(ClassLoader of) {

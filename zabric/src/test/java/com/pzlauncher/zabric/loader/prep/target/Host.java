@@ -33,7 +33,25 @@ class Second {
 class SecondField {
 }
 
-class NeverLoaded {
-    public void run() {
+class Unloaded {
+    UnloadedField field;
+
+    public UnloadedReturn run(UnloadedParam[] p) throws UnloadedException {
+        return null;
     }
+
+    static final class Member {
+    }
+}
+
+class UnloadedField {
+}
+
+class UnloadedParam {
+}
+
+class UnloadedReturn {
+}
+
+class UnloadedException extends Exception {
 }

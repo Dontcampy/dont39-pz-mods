@@ -21,9 +21,9 @@ public final class PrepGlue {
         }
     }
 
-    // never loaded: preparing must not load it
-    @Patch(className = "com.pzlauncher.zabric.loader.prep.target.NeverLoaded", methodName = "run")
-    public static final class NeverLoaded_run {
+    // not loaded: preparing loads its member types, not it
+    @Patch(className = "com.pzlauncher.zabric.loader.prep.target.Unloaded", methodName = "run")
+    public static final class Unloaded_run {
         @Patch.OnEnter
         public static void enter() {
         }

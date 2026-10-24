@@ -152,7 +152,8 @@ public final class JarLoadHook {
 
     private static void prepare(Path jar, String pkg) {
         try {
-            PatchTargets.prepare(jar, pkg, instrumentation::getAllLoadedClasses);
+            // the loader appends mod jars to it and looks its targets up there
+            PatchTargets.prepare(jar, pkg, instrumentation::getAllLoadedClasses, ClassLoader.getSystemClassLoader());
         } catch (Throwable t) {
             IllegalStateException e = new IllegalStateException("classes that first load while " + Loader.name()
                     + " weaves the patches of " + jar + " can miss access widening: " + t, t);

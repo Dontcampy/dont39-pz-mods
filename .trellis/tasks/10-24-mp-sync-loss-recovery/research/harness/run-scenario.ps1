@@ -7,14 +7,14 @@ DurationSec waits for the driver here.
 param(
     [Parameter(Mandatory)] [string] $Label,
     [int] $DurationSec = 300,
-    [string[]] $ServerArgs = @(),
-    [string[]] $ClientArgs = @(),
+    [string[]] $ServerJvmArgs = @(),
+    [hashtable] $ClientArgs = @{},
     [int] $Horde = 0
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\common.ps1"
 
-& "$PSScriptRoot\start-server.ps1" -Label $Label -Wait @ServerArgs
+& "$PSScriptRoot\start-server.ps1" -Label $Label -Wait -JvmArgs $ServerJvmArgs
 try {
     & "$PSScriptRoot\start-client.ps1" -Label $Label -DurationSec $DurationSec -Quit -JoinTimeoutSec 600 -WaitArrived @ClientArgs
     if ($Horde -gt 0) { & "$PSScriptRoot\spawn-zombies.ps1" -Count $Horde }
