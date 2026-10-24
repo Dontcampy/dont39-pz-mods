@@ -36,7 +36,8 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
 - A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
-  weave check); Zabric loads a target's member types before retransforming it (`WeaveCheck.java`).
+  weave check); Zabric loads a target's member types before it retransforms the target (`WeaveCheck.java`) and before
+  the loader applies a jar's patches (`loader/PatchTargets.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers

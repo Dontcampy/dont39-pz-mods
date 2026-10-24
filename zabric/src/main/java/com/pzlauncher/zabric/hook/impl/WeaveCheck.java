@@ -1,6 +1,7 @@
 package com.pzlauncher.zabric.hook.impl;
 
 import com.pzlauncher.zabric.hook.HookGate;
+import com.pzlauncher.zabric.internal.MemberTypes;
 import com.pzlauncher.zabric.loader.Loader;
 import net.bytebuddy.jar.asm.ClassReader;
 import net.bytebuddy.jar.asm.ClassVisitor;
@@ -135,11 +136,7 @@ final class WeaveCheck implements ClassFileTransformer {
         Throwable failed = null;
         retransforming.set(check);
         try {
-            // the loader reads these by reflection inside the transformation; loaded here, every transformer sees them
-            target.getDeclaredMethods();
-            target.getDeclaredConstructors();
-            target.getDeclaredFields();
-            target.getNestMembers();
+            MemberTypes.load(target);
             inst.retransformClasses(target);
         } catch (Throwable t) {
             failed = t;

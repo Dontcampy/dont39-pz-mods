@@ -181,6 +181,11 @@ public final class Lifecycle {
             if (lost != null) {
                 progressLost(lost);
             }
+            Throwable unprepared = Loader.weavePrepEscaped();
+            if (unprepared != null) {
+                DebugType.Mod.printException(unprepared, PREFIX + "access widener: " + unprepared.getMessage(),
+                        LogSeverity.Error);
+            }
             if (stopped) {
                 HookRuntime.closeAll();
                 return;
@@ -241,6 +246,9 @@ public final class Lifecycle {
             HookRuntime.releaseLog();
         }
         if (progressFailure != null) {
+            // the same hook prepares the classes the loader weaves mods' patches into
+            DebugType.Mod.error(PREFIX + "access widener: classes that first load while %s weaves mods' patches can"
+                    + " miss widening this session: its hook on the mod jars is not installed", Loader.name());
             progressLost(new IllegalStateException("cannot install its hook on " + Loader.name()
                     + "'s Java mod jars: " + progressFailure, progressFailure));
         }
