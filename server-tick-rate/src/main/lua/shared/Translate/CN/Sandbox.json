@@ -1,4 +1,4 @@
 {
     "Sandbox_Dont39AllInOne_ServerTickRateTicksPerSecond": "服务器每秒刻数",
-    "Sandbox_Dont39AllInOne_ServerTickRateTicksPerSecond_tooltip": "专用服务器每秒更新世界的次数，游戏自身为 10。更高的值让服务器的处理结果（物品转移、完成的动作、其他玩家的僵尸更新）更早送达，地图也更快传给玩家。每一刻的开销与原来大致相同：设为 20 时服务器约多用 20% 的 CPU，大约在一半的玩家数时就达到上限，其他模组的每刻（OnTick）代码执行次数翻倍，按刻计数的模组会变快。10 表示关闭。仅限专用服务器。服务器启动时生效。"
+    "Sandbox_Dont39AllInOne_ServerTickRateTicksPerSecond_tooltip": "专用服务器每秒更新世界的次数，游戏自身为 10。更高的值让服务器的处理结果（物品转移、完成的动作、其他玩家的僵尸更新）更早送达，地图也更快传给玩家。每一刻的开销与原来大致相同：设为 20 时服务器约多用 20%% 的 CPU，大约在一半的玩家数时就达到上限，其他模组的每刻（OnTick）代码执行次数翻倍，按刻计数的模组会变快。10 表示关闭。仅限专用服务器。服务器启动时生效。"
 }
