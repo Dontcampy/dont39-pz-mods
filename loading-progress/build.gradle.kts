@@ -5,8 +5,8 @@ import buildsrc.convention.mod.pzDir
 import buildsrc.convention.mod.pzUserDir
 import buildsrc.convention.smoke.GameSmokeTest
 
-// Java: its hooks are written for zabric-processor, the javac glue front end; the KSP one serves only
-// All-in-One features.
+// Java: its hooks are written for zabric-processor, the javac glue front end; the KSP one serves Kotlin
+// modules (All-in-One features, pz-kotlin-mod).
 plugins {
   id("buildsrc.convention.pz-java")
   id("buildsrc.convention.pz-mod")
