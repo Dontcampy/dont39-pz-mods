@@ -1,7 +1,6 @@
 package com.dont39.pz.serverreborn.networksyncoptimization.client
 
 import com.dont39.pz.serverreborn.ServerReborn
-import com.dont39.pz.serverreborn.ServerRebornGate
 import com.dont39.pz.serverreborn.ServerRebornLua
 import com.dont39.pz.zbktutils.glue.LuaGlobal
 import se.krka.kahlua.integration.expose.LuaJavaClassExposer
@@ -28,11 +27,11 @@ internal object LuaGlobals {
   /** The container the loot window shows now (R7); anything else is ignored. */
   @LuaGlobal(CONTAINER_SHOWN)
   fun containerShown(container: Any?) {
-    if (!ServerRebornGate.active() || GameServer.server || container !is ItemContainer) return
+    if (!ServerReborn.active() || GameServer.server || container !is ItemContainer) return
     try {
       ClientSync.containerShown(container)
     } catch (t: Throwable) {
-      ServerRebornGate.disable("checking a container the loot window shows", t)
+      ServerReborn.disable("checking a container the loot window shows", t)
     }
   }
 }

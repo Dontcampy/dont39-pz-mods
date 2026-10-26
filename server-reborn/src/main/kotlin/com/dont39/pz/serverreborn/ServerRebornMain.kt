@@ -20,7 +20,7 @@ object ServerRebornMain : MainEntrypoint {
       ServerReborn.warn { "idle: the access widener did not apply the mod's list (line above)" }
       return
     }
-    ServerRebornGate.targetProblem()?.let { problem ->
+    ServerReborn.targetProblem()?.let { problem ->
       ServerReborn.error { "off: $problem" }
       return
     }
@@ -39,14 +39,15 @@ object ServerRebornMain : MainEntrypoint {
           ServerReborn.error("off: its Lua functions could not be added", e)
           return
         }
-        ServerRebornGate.open(ClientSync::stop)
+        ServerReborn.open(ClientSync::stop)
         ServerReborn.log { "ready on a client; it turns on for a server that runs it too" }
         Settings.reportClientSwitches()
       }
       GameServer.coop -> ServerReborn.log { "off on a co-op host: it runs on dedicated servers only" }
       else -> {
         ServerSync.start()
-        ServerRebornGate.open(ServerSync::stop)
+        // the tick rate needs no undo here: it puts the game's rate back itself at the next tick's start (ServerLoop)
+        ServerReborn.open(ServerSync::stop)
         ServerReborn.log { "active on a dedicated server: joining clients that run it are checked" }
       }
     }

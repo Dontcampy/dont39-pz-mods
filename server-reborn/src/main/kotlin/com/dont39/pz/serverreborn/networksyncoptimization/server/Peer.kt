@@ -20,7 +20,7 @@ internal class Peer(val connection: UdpConnection, total: Counters) {
   val versions = HashMap<Key, Long>()
 
   /** This tick's objects, kept until the connection is fully connected. */
-  val touched = LinkedHashMap<Key, ServerSync.Touch>()
+  val touched = LinkedHashMap<Key, Touches.Touch>()
 
   /** The last frame's number; snapshots carry it as their version. */
   var frame = 0L

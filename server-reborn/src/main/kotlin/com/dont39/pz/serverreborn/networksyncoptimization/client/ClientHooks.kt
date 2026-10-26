@@ -1,6 +1,6 @@
 package com.dont39.pz.serverreborn.networksyncoptimization.client
 
-import com.dont39.pz.serverreborn.ServerRebornGate
+import com.dont39.pz.serverreborn.ServerReborn
 import com.pzlauncher.zabric.hook.At
 import com.pzlauncher.zabric.hook.CallbackInfo
 import com.pzlauncher.zabric.hook.Hooks
@@ -17,7 +17,7 @@ import zombie.network.PacketTypes.PacketType
 import zombie.network.ZomboidNetData
 
 /** The client's queued packets, its frame and its PlayerConnect. */
-@Hooks(GameClient::class, gate = ServerRebornGate::class)
+@Hooks(GameClient::class, gate = ServerReborn::class)
 internal object ClientNetHooks {
   @Inject(method = ["mainLoopDealWithNetData"], at = [At("HEAD")])
   fun dispatch(data: ZomboidNetData?, ci: CallbackInfo) = ClientSync.dispatch(data!!)
@@ -31,7 +31,7 @@ internal object ClientNetHooks {
 }
 
 /** A container the player opens for the first time on this client (R7). */
-@Hooks(ItemContainer::class, gate = ServerRebornGate::class)
+@Hooks(ItemContainer::class, gate = ServerReborn::class)
 internal object ContainerHooks {
   // the game's Lua calls it only for a container this client has not explored, before the game fills it
   @Inject(method = ["requestServerItemsForContainer"], at = [At("HEAD")])
@@ -47,7 +47,7 @@ internal object ContainerHooks {
  * client handles passes here before the game parses it, the one place all eight in-scope types share (SyncItemModData
  * applies in its parse), server commands included. Cancels only a packet a switch drops.
  */
-@Hooks(PacketType::class, gate = ServerRebornGate::class)
+@Hooks(PacketType::class, gate = ServerReborn::class)
 internal object DropHooks {
   @Inject(method = ["onClientPacket"], at = [At("HEAD")], cancellable = true)
   fun received(@Self type: PacketType, input: ByteBufferReader?, ci: CallbackInfo) {
@@ -58,7 +58,7 @@ internal object DropHooks {
 }
 
 /** Leaving a game, where a server's session ends. */
-@Hooks(IngameState::class, gate = ServerRebornGate::class)
+@Hooks(IngameState::class, gate = ServerReborn::class)
 internal object LeaveHooks {
   @Inject(method = ["exit"], at = [At("HEAD")])
   fun leave(ci: CallbackInfo) {
@@ -72,7 +72,7 @@ internal object LeaveHooks {
  * The client's received packets as GameClient.addIncoming reads them for its queue. On the server the mod's id never
  * gets here: GameServer.addIncoming is cancelled for it first.
  */
-@Hooks(ZomboidNetData::class, gate = ServerRebornGate::class)
+@Hooks(ZomboidNetData::class, gate = ServerReborn::class)
 internal object NetDataHooks {
   // Network thread. Also after a failure, until the server has the Bye: read would log the mod's id as unknown.
   @Inject(method = ["read"], at = [At("HEAD")], cancellable = true, always = true)

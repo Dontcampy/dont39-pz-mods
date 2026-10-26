@@ -37,19 +37,21 @@ internal object Snapshots {
   /** Longest value list logged per item; clothing visuals alone have over a hundred values. */
   private const val LOGGED_CHARS = 4000
 
-  /** Sends queued snapshots up to the per-tick budget; a single one may exceed the bytes. */
+  // per connection and frame, so at most 80 snapshots and 640 KiB per second
+  private const val SNAPSHOTS_PER_FRAME = 8
+  private const val SNAPSHOT_BYTES_PER_FRAME = 64 * 1024
+
+  /** At a frame, sends queued snapshots up to the frame's budget; a single one may exceed the bytes. */
   fun serve(p: Peer) {
     if (p.snapshots.isEmpty()) return
     val player = p.player ?: return
     var sent = 0
     var bytes = 0
-    while (p.snapshots.isNotEmpty() && sent < ServerSync.SNAPSHOTS_PER_TICK &&
-      bytes < ServerSync.SNAPSHOT_BYTES_PER_TICK
-    ) {
+    while (p.snapshots.isNotEmpty() && sent < SNAPSHOTS_PER_FRAME && bytes < SNAPSHOT_BYTES_PER_FRAME) {
       val job = p.snapshots.removeFirst()
       p.queued.remove(job.key)
       // read once already when asked; null when the parent left since
-      val at = ServerSync.parse(p, job.wire.containerBytes)
+      val at = Requests.parse(p, job.wire.containerBytes)
       bytes += send(p, job, at?.container, player)
       sent++
     }
@@ -61,7 +63,7 @@ internal object Snapshots {
     out.clear()
     var tooLarge = false
     val state = try {
-      ServerSync.ownWrite = true
+      Touches.ownWrite = true
       write(out, job, container, version, requester)
     } catch (_: BufferOverflowException) {
       tooLarge = true
@@ -69,7 +71,7 @@ internal object Snapshots {
       SnapshotWriter.start(out, job.wire, version, Snapshot.State.TOO_LARGE, 0).add(null).finish()
       Snapshot.State.TOO_LARGE
     } finally {
-      ServerSync.ownWrite = false
+      Touches.ownWrite = false
     }
     if (state == Snapshot.State.PRESENT) {
       p.versions[job.key] = version

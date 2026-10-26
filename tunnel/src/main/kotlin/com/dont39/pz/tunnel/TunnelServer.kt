@@ -1,9 +1,9 @@
 package com.dont39.pz.tunnel
 
-import com.dont39.pz.common.SandboxOption
 import com.dont39.pz.common.describe
 import com.dont39.pz.tunnel.transport.kcp.KcpTransport
 import com.dont39.pz.tunnel.transport.tcp.TcpTransport
+import com.dont39.pz.zbktutils.SandboxOption
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 import zombie.network.GameServer

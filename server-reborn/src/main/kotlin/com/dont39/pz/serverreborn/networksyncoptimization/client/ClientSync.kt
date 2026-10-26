@@ -1,7 +1,6 @@
 package com.dont39.pz.serverreborn.networksyncoptimization.client
 
 import com.dont39.pz.serverreborn.ServerReborn
-import com.dont39.pz.serverreborn.ServerRebornGate
 import com.dont39.pz.serverreborn.networksyncoptimization.game.Containers
 import com.dont39.pz.serverreborn.networksyncoptimization.game.ItemDigests
 import com.dont39.pz.serverreborn.networksyncoptimization.game.Net
@@ -118,7 +117,7 @@ internal object ClientSync {
   fun incoming(data: ZomboidNetData, id: Short, input: ByteBufferReader?, connection: UdpConnection?): Boolean {
     if (id != Protocol.PACKET_ID) return false
     data.type = null
-    if (ServerRebornGate.active()) {
+    if (ServerReborn.active()) {
       data.connection = connection!!.connectedGUID
       data.buffer.put(input!!.bb)
       data.buffer.flip()

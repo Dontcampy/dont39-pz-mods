@@ -1,7 +1,6 @@
 package com.dont39.pz.serverreborn.servertickrate
 
 import com.dont39.pz.serverreborn.ServerReborn
-import com.dont39.pz.serverreborn.ServerRebornGate
 import com.dont39.pz.serverreborn.servertickrate.TickScale.MAX_RATE
 import com.dont39.pz.serverreborn.servertickrate.TickScale.VANILLA_RATE
 import java.util.Locale
@@ -29,10 +28,6 @@ internal object ServerTickRate {
   @Volatile
   private var decided = false
 
-  // GameServer.main's thread, once its setLockFPS took the option's rate
-  @Volatile
-  private var mainThread: Thread? = null
-
   // the 100 ms limiter GameServer.main built just before it sets the lock fps
   @Volatile
   private var built: UpdateLimit? = null
@@ -40,6 +35,9 @@ internal object ServerTickRate {
   // what the compensations read: the game's rate until the limiter runs at another
   @Volatile
   private var rate = VANILLA_RATE
+
+  /** The world ticks per second now. */
+  val ticksPerSecond get() = rate
 
   // main thread only
   private var limit: UpdateLimit? = null
@@ -60,7 +58,7 @@ internal object ServerTickRate {
     check(wanted in VANILLA_RATE..MAX_RATE) { "sandbox option $OPTION is $wanted, outside $VANILLA_RATE-$MAX_RATE" }
     val limit = built
     if (limit == null) {
-      ServerRebornGate.disable(
+      ServerReborn.disable(
         "setting the server's tick rate",
         IllegalStateException("GameServer.main set the lock fps without building a $VANILLA_PERIOD ms limiter first"),
       )
@@ -70,7 +68,6 @@ internal object ServerTickRate {
     val period = TickScale.periodMillis(wanted)
     limit.setUpdatePeriod(period)
     this.limit = limit
-    mainThread = Thread.currentThread()
     rate = wanted
     measuredTicks = 0
     ServerReborn.log { "tick rate on: $wanted ticks per second (period $period ms)" }
@@ -89,15 +86,12 @@ internal object ServerTickRate {
     built = limit
   }
 
-  /** At `ServerMap.preupdate` HEAD, the start of each tick; also while the mod is off, to undo the rate. */
+  /** At the start of each tick, on the main thread; also while the mod is off, to undo the rate. */
   fun tick() {
-    if (Thread.currentThread() !== mainThread) {
-      return
-    }
     if (rate == VANILLA_RATE) {
       return
     }
-    if (!ServerRebornGate.active()) {
+    if (!ServerReborn.active()) {
       restore()
       return
     }
@@ -158,7 +152,7 @@ internal object ServerTickRate {
   }
 
   private fun mismatch(what: String) {
-    ServerRebornGate.disable("setting the server's tick rate", IllegalStateException(what))
+    ServerReborn.disable("setting the server's tick rate", IllegalStateException(what))
     restore()
   }
 
