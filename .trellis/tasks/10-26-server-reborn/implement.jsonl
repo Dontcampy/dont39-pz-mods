@@ -8,5 +8,5 @@
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "Gate, report, disable; mismatch is an error"}
 {"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Prefix, lifecycle lines, summaries"}
 {"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, in-game verification, style"}
-{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/design.md", "reason": "Sync Guard behaviour and decisions D1-D8 the port must keep"}
-{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/spike-s2-s4.md", "reason": "Touch-recording hooks, keys, digest fields, reconcile sequence"}
+{"file": ".trellis/tasks/archive/2026-10/10-24-mp-sync-loss-recovery/design.md", "reason": "Sync Guard behaviour and decisions D1-D8 the port must keep"}
+{"file": ".trellis/tasks/archive/2026-10/10-24-mp-sync-loss-recovery/research/spike-s2-s4.md", "reason": "Touch-recording hooks, keys, digest fields, reconcile sequence"}

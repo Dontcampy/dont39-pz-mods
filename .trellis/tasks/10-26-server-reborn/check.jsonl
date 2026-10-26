@@ -4,4 +4,4 @@
 {"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook object rules and gates"}
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "Failure handling"}
 {"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log wording and prefix"}
-{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/design.md", "reason": "Behaviour the port must keep"}
+{"file": ".trellis/tasks/archive/2026-10/10-24-mp-sync-loss-recovery/design.md", "reason": "Behaviour the port must keep"}

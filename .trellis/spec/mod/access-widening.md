@@ -41,7 +41,7 @@ Reference feature: `ime-keyboard-fix` (game fields).
   before the loader applies them (`loader/PatchTargets.java`): by reflection for a loaded target, from its class file
   for one not loaded yet, which the loader can still load before it retransforms it (a glue signature names it). A
   name-pattern patch, or a ZombieBuddy `Main` that loads its targets, can still cause it. Only a run with the full mod
-  list shows it, on the server too (`research/widening-during-weave.md` of task `10-24-mp-sync-loss-recovery`).
+  list shows it, on the server too (`research/widening-during-weave.md` of the archived task `10-24-mp-sync-loss-recovery`).
 - Read a target mod's version by name (`TargetMod.kt`): a `static final` constant is inlined at build time.
 - Target-mod types only in classes that load after the feature is active, never in the facade.
 

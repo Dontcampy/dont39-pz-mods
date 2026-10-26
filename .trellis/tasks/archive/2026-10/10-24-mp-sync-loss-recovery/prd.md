@@ -183,3 +183,10 @@ but not repaired by this task (its object list is out of scope); it is reported,
 
 All in-game tests run on this machine's local dedicated server (`pzServerDir`), not the Linux test server
 (user, 2026-10-24).
+
+## Superseded (2026-10-26)
+
+Superseded by `10-26-server-reborn`: Sync Guard ships as the network sync optimization of the Kotlin mod Server Reborn
+(`server-reborn/`), and `sync-guard/` is removed. The test harness moved to that task's `research/harness/`. Open
+items carried there as follow-ups: AC2, AC3, AC6 and the client error `container already has id`
+(`research/acceptance.md`).
