@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 41
+- **Total Sessions**: 42
 - **Last Active**: 2026-10-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~983 | Active |
+| `journal-1.md` | ~1009 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 42 | 2026-10-26 | Server Reborn: merge Sync Guard and Server tick rate into one Kotlin mod; review fixes | `69c4b12`, `78ab9ee`, `262a04e`, `75e82a5`, `758768e` | `feat/server-reborn-46640e` |
 | 41 | 2026-10-26 | Faster Loading: depth map order without its main entrypoint | `8fe95ce`, `fff5405` | `feat/jolly-taussig-87321c` |
 | 40 | 2026-10-26 | Server tick rate option (20 Hz) | `079d7a9`, `66c768b`, `028c679` | `feat/nostalgic-elion-ecd9c5` |
 | 39 | 2026-10-24 | Per-packet-type download stats in Network Status | `fa31814` | `worktree-mp-download-stats` |

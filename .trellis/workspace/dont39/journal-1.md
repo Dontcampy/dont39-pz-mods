@@ -981,3 +981,29 @@ Root cause: Zabric runs main only for mods the mod list loads; preload-only Fast
 ### Status
 
 [OK] **Completed**
+
+
+## Session 42: Server Reborn: merge Sync Guard and Server tick rate into one Kotlin mod; review fixes
+<!-- trellis-session: v=2 fp=2a0860af6521f161 -->
+
+**Date**: 2026-10-26
+**Task**: Server Reborn: merge Sync Guard and Server tick rate into one Kotlin mod; review fixes
+**Branch**: `feat/server-reborn-46640e`
+
+### Summary
+
+Server Reborn (PR #32, supersedes #28, now closed): Sync Guard as network sync optimization plus the server tick rate in one Kotlin mod, one gate. Linux test instance at 20 Hz with a real client passed. After an architecture/performance/reuse review: ZabricKotlin 0.8.0 adds ModGate and SandboxOption; ServerLoop owns the main loop; sync frames and snapshot budgets capped at 10 per second whatever the tick rate; ServerSync.stop thread-safe; ServerSync split; shared pz-kotlin-glue convention, registerSmokeTest helper, Zabric-Main check. Local 20 Hz smoke join passed. Release: Zabric 0.7.1 and ZabricKotlin 0.8.0 first.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `69c4b12` | test(server-reborn): real client at 20 Hz on the Linux test instance; harness -ServerHost |
+| `78ab9ee` | docs(task): fix a path in the Linux test notes |
+| `262a04e` | build: share the Kotlin glue convention and the smoke-test setup; check Zabric-Main exists |
+| `75e82a5` | refactor(server-reborn): one server loop, frames at most 10 per second, ServerSync split |
+| `758768e` | docs: ModGate, SandboxOption, ServerLoop and time-paced sends in the specs; 20 Hz smoke run |
+
+### Status
+
+[OK] **Completed**
