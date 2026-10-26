@@ -176,14 +176,15 @@ For a feature that adds to the multiplayer join. Reference: `mod-sync`.
 - A mod a client enables only through the server's mod list loads inside the join, after `ConnectionDetails.parse`,
   and `ConnectToServerState.exit` does not run during the join (the main screen calls it only while it still updates,
   which stops once the world loads). Such a mod reads the trailer from the public `ConnectToServerState.instance` at
-  `GameClient.sendPlayerConnect` `RETURN` (`sync-guard` `ClientSync.playerConnectSent`).
+  `GameClient.sendPlayerConnect` `RETURN` (`server-reborn` `ClientSync.playerConnectSent`).
 
 ---
 
 ## Own Network Packets
 
-For a feature that sends its own messages between client and server. Reference: `sync-guard`
-(`game/Net.java`, `client/hooks/NetDataHooks.java`, `server/hooks/NetHooks.java`, `server/hooks/LoopHooks.java`).
+For a feature that sends its own messages between client and server. Reference: `server-reborn`'s network sync
+optimization (`networksyncoptimization/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` and
+`LoopHooks` in `server/ServerHooks.kt`).
 
 - Header 134 and a reserved short id outside the `PacketTypes` enum; the first byte of the body is the feature's
   protocol version.
@@ -224,9 +225,10 @@ For a feature that changes the game's own Lua UI. Reference:
 - No work that can fail in an object initializer: hooks live on those objects, and a failed initializer makes every
   later call fail inside the target mod.
 - Other mods can replace a vanilla network path entirely (on a large server list, item transfers went through a mod's
-  `sendServerCommand` broadcasts and no vanilla transfer packet was sent; `sync-guard` task research
-  `modded-transfer-path.md`). A feature that watches vanilla packets for a kind of change also watches where the
-  change happens (`sync-guard` `server/hooks/ContentHooks.java`), and is tested on the target server's mod list.
+  `sendServerCommand` broadcasts and no vanilla transfer packet was sent; research `modded-transfer-path.md` of the
+  archived task `10-24-mp-sync-loss-recovery`). A feature that watches vanilla packets for a kind of change also
+  watches where the change happens (`ContentHooks` in `server-reborn`'s `server/ServerHooks.kt`), and is tested on the
+  target server's mod list.
 
 ---
 

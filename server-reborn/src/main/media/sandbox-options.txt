@@ -1,0 +1,4 @@
+VERSION = 1,
+
+option Dont39ServerReborn_ServerTickRate.TicksPerSecond
+{type = integer, min = 10, max = 20, default = 10, page = Dont39ServerReborn, translation = Dont39ServerReborn_ServerTickRateTicksPerSecond,}

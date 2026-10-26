@@ -10,9 +10,8 @@ import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import com.pzlauncher.zabric.widener.AccessWidener
 import zombie.network.GameServer
 
-// not named Main: ZombieBuddy loads and initializes a class of that name in javaPkgName as its own entry point
-
 /** Decides, once the mod list has loaded, whether the mod's hooks open, and reports it. */
+// not named Main: ZombieBuddy loads and initializes a class of that name in javaPkgName as its own entry point
 object ServerRebornMain : MainEntrypoint {
   override fun onMain() {
     ServerReborn.log { "${ServerRebornMain::class.java.`package`.implementationVersion} loaded" }
