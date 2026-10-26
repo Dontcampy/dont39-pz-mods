@@ -16,10 +16,12 @@ buildSrc/src/main/kotlin/
   pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
   pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, classtweaker variants
   pz-bundled-feature.gradle.kts      every feature: pz-bundled plus the descriptor variant; Lua-only features apply it
-  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled-feature, pz-widening, KSP glue,
-                                     allinone-common compile-only
-  pz-kotlin-mod.gradle.kts           a Kotlin mod built from one module: pz-kotlin, pz-mod, pz-widening, KSP glue into its
-                                     javaPkgName, packaging and smokeTest
+  pz-kotlin-glue.gradle.kts          every Kotlin module with KSP glue: pz-kotlin, KSP, zb-kt-utils and Zabric
+                                     compile-only; the next two set where the glue goes (pzGlue, mod/PzGlue.kt)
+  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin-glue into the bundling mod's package,
+                                     pz-bundled-feature, pz-widening, allinone-common compile-only
+  pz-kotlin-mod.gradle.kts           a Kotlin mod built from one module: pz-kotlin-glue into its javaPkgName, pz-mod,
+                                     pz-widening, packaging, the Zabric-Main check and smokeTest
   pz-widening.gradle.kts             pzTargets and the module's .classtweaker: widened compile jars (access-widening.md)
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
@@ -28,7 +30,7 @@ buildSrc/src/main/kotlin/
   mod/                               machine paths, mod.info, typed extensions, JVM levels, version catalog
   feature/                           the variants projects exchange data through, feature descriptors, initFeatures(),
                                      the merged media folder (MergeMedia.kt)
-  smoke/                             smoke tests
+  smoke/                             smoke tests; registerSmokeTest() for a shipped mod's smokeTest
   widening/                          target mods and widened compile jars (see access-widening.md)
   check/                             class-reference checks, checkGlue, checkJdkGlue (see zombiebuddy-patching.md,
                                      kotlin-runtime.md, zabric-hooks.md)
@@ -150,4 +152,5 @@ already runs after every mod's shared Lua. Its status line goes in `smokeTest`'s
 A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts. A Kotlin mod
 of its own (not bundled) applies `buildsrc.convention.pz-kotlin-mod` (reference: `server-reborn/`); its areas are
 packages of the one module, and All-in-One stays one module per feature because a feature may later become a mod of
-its own.
+its own. Areas that run on the dedicated server's main loop share one loop object at the module's root for its
+thread, tick rate and tick boundaries (`ServerLoop.kt`), rather than each finding them itself.

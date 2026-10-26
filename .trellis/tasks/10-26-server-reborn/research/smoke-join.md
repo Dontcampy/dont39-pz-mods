@@ -28,3 +28,17 @@ Runs in `%TEMP%\sgtest\runs\smoke3` (server, first join) and `smoke4` (client, s
   every mod folder (All-in-One's missing-anim-folders fixes that; it was not on the list), and Faster Loading's
   `hooks stopped` from the staged pre-#31 Faster Loading jar.
 - `cleanup.ps1` restored the client (0 differences) and Loading Progress's reports.
+
+## After the review changes, at 20 Hz (2026-10-26)
+
+Same local `srmin` set-up, with ZabricKotlin 0.8.0 (`ModGate`, `SandboxOption`) and the sandbox option at 20; runs
+`rv1`-`rv5` in `%TEMP%\sgtest\runs`.
+
+- Server (after the preload restart): `hooks ready (16 hook classes)` (the loop hooks now in `ServerLoop.kt`),
+  `active on a dedicated server`, `tick rate on: 20 ticks per second (period 50 ms)`, `the server ticked 19.99 times
+  per second in its first 10 s`.
+- First join (new character): inactive, the known gap. Second join, 3 min of the driver's loop at Rosewood prison (10
+  cycles, 19 items taken, 20 containers shown): connection summary `checks=52 mismatches=0 frames=23 entries=47`; client
+  `active`. No error from the mod, Zabric or ZombieBuddy; only the game's missing `AnimSets`/`actiongroups` folders and
+  the staged pre-#31 Faster Loading jar's `hooks stopped`, as before.
+- `cleanup.ps1`: client restored, 0 differences.

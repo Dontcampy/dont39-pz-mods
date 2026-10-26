@@ -77,7 +77,7 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   up (settings, log, cache folder) (`TextureHooks.java`).
 - A method's local is taken where the method builds it: a hook on its constructor that keeps the instance only when
   the caller frame is that method, checked only on that path and only until it acted once
-  (`server-reborn`'s `servertickrate/TickHooks.kt`, `UpdateLimit.<init>(J)V`).
+  (`server-reborn`'s `servertickrate/TickRateHooks.kt`, `UpdateLimit.<init>(J)V`).
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
   tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 

@@ -183,8 +183,8 @@ For a feature that adds to the multiplayer join. Reference: `mod-sync`.
 ## Own Network Packets
 
 For a feature that sends its own messages between client and server. Reference: `server-reborn`'s network sync
-optimization (`networksyncoptimization/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` and
-`LoopHooks` in `server/ServerHooks.kt`).
+optimization (`networksyncoptimization/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` in
+`server/ServerHooks.kt`; the main loop's pass and tick hooks in `ServerLoop.kt`).
 
 - Header 134 and a reserved short id outside the `PacketTypes` enum; the first byte of the body is the feature's
   protocol version.
@@ -198,6 +198,8 @@ optimization (`networksyncoptimization/`: `game/Net.kt`, `NetDataHooks` in `clie
 - Send only from the feature's own handlers or tick hooks, never inside a vanilla send: the connection's writer is
   shared and `bufferLock` is reentrant, so a nested send corrupts the vanilla packet (`Net.send` refuses).
 - Send only to a peer that said it runs the feature (a hello after the join), never to a vanilla peer.
+- Pace sends and budgets by time, not by world tick: the tick rate is a sandbox option, so per-tick counts would grow
+  with it (`Frames.kt`, at most 10 frames per second).
 
 ---
 

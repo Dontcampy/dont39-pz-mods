@@ -127,3 +127,24 @@ Server tick rate inside that lifecycle:
 Each step is its own commit on `feat/server-reborn-46640e`. The old modules are deleted only after the new module
 builds and its tests pass; reverting those commits restores them. Nothing outside this repo changes: no Zabric or
 ZabricKotlin release.
+
+## After the PR review (2026-10-26)
+
+Changes to the design above, from the architecture, performance and reuse review of #32:
+
+- Gate: `ServerRebornGate` became `ServerReborn` itself, an `object` extending zb-kt-utils' new `ModGate` (open with
+  undo, first failure only, prefixed log lines); `SandboxOption` moved from `allinone-common` to zb-kt-utils, and
+  `tunnel` and `mod-sync` read it there. Both are new in ZabricKotlin 0.8.0, which ships before Server Reborn and the
+  next All-in-One.
+- `ServerLoop` (root package) owns the dedicated server's main loop for both areas: its thread, the current tick rate,
+  and the pass start (`PoolCaps.updateServerCaps`), tick start (`ServerMap.preupdate`, `always`, replaces
+  `TickStart`) and tick end (`ServerMap.postupdate`) hooks.
+- Sync frames and snapshot budgets go at most 10 times per second whatever the tick rate (`Frames.due`): every tick at
+  10 Hz, every other one at 11-20 Hz. Touches still record every tick. The frame-counted stale window stays at least
+  5 minutes.
+- `ServerSync.stop()` may run on any thread: it touches only thread-safe state; the main thread drops peers, recorded
+  changes and frame entries at the next tick start.
+- `ServerSync` split by concern: `ServerSync` (lifecycle, peers, own packets, end of tick, sweep), `Touches`,
+  `Frames`, `Requests`, `Relevance`, `ServerSummary`.
+- Build: shared glue convention for `pz-feature` and `pz-kotlin-mod`, one smoke-test helper, and a check that the
+  `Zabric-Main` class exists.
