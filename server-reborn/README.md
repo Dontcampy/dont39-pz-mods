@@ -1,5 +1,7 @@
 # Server Reborn
 
+Still in development and not stable yet.
+
 A Kotlin mod for multiplayer servers, made for game 42.21: network sync optimization (formerly the Sync Guard mod) and
 the server tick rate (formerly an All-in-One feature). Both run on one lifecycle: they are checked, turned on and, after
 an error, turned off together. Needed on the dedicated server and the clients; requires ZombieBuddy, Zabric and

@@ -1,6 +1,7 @@
 version=1
 title=Server Reborn
 description=[h1]Server Reborn[/h1]
+description=[b]Still in development and not stable yet: try it on a test server or back up your save first, and report problems below.[/b]
 description=Makes multiplayer servers more reliable and more responsive. Add it to the server's mod list; players get it with the server's mods. 中文说明在下方。
 description=
 description=[h2]Network sync optimization[/h2]
@@ -20,6 +21,7 @@ description=[*]Project Zomboid 42.21
 description=[/list]
 description=
 description=[h1]服务器重生[/h1]
+description=[b]本模组仍在开发中，尚不稳定：请先在测试服务器上试用或备份存档，遇到问题请在下方反馈。[/b]
 description=让多人游戏服务器更可靠、响应更快。加入服务器的模组列表即可；玩家加入时会随服务器的模组一起获取。
 description=
 description=[h2]网络同步优化[/h2]
