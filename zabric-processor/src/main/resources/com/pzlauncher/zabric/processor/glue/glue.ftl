@@ -10,6 +10,10 @@
 @Patch.This<#t>
 <#break>
 <#case "arg">
+<#if p.positional>
+${p.type} ${p.name}<#rt>
+<#return>
+</#if>
 @Patch.Argument(<#if p.writable>value = ${p.index}, readOnly = false<#else>${p.index}</#if>)<#t>
 <#break>
 <#case "return">

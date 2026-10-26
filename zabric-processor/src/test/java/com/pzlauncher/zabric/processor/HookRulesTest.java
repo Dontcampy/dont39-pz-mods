@@ -136,13 +136,13 @@ class HookRulesTest {
         Compiler.Result result = compile("""
                 @Hooks(targets = "t.Target")
                 public final class H {
-                    @Inject(method = "prefix(I)V", at = @At("HEAD"))
-                    public static void h(CallbackInfo ci) {
+                    @Inject(method = "name(Ljava/lang/String;)Ljava/lang/String;", at = @At("HEAD"))
+                    public static void h(CallbackInfoReturnable<String> ci) {
                     }
                 }
                 """);
-        assertError(result, "H.h: ZombieBuddy's patch matcher would also apply the glue for t.Target.prefix(I)V to"
-                + " prefix(ILjava/lang/String;)V");
+        assertCompiles(result);
+        assertTrue(glue(result).contains("@Patch(className = \"t.Target\", methodName = \"name\", strictMatch = true)"));
     }
 
     @Test
@@ -248,19 +248,68 @@ class HookRulesTest {
     }
 
     @Test
-    void loaderMatcherWouldAlsoSelectALongerOverload() {
-        assertError(hooks("""
+    void aShorterOverloadBindsItsArgumentsByPosition() {
+        Compiler.Result result = hooks("""
                 @Inject(method = "prefix(I)V", at = @At("HEAD"))
-                public static void h(CallbackInfo ci) {
+                public static void h(@Self Target self, int x, CallbackInfo ci) {
                 }
-                """), "H.h: ZombieBuddy's patch matcher would also apply the glue for t.Target.prefix(I)V to"
-                + " prefix(ILjava/lang/String;)V", "Zabric cannot hook t.Target.prefix(I)V alone");
-        // the longer overload is not selected by the glue of the shorter
-        assertCompiles(hooks("""
+
+                @Inject(method = "prefix(I)V", at = @At("RETURN"))
+                public static void after(@Self Target self, int x, CallbackInfo ci) {
+                }
+                """);
+        assertCompiles(result);
+        String glue = glue(result);
+        // the loader matches an advice with unannotated arguments to methods of exactly that many parameters
+        assertFalse(glue.contains("@Patch.Argument"));
+        assertEquals(2, glue.split("\\(\n {16}int arg0,\n {16}@Patch\\.This t\\.Target self,", -1).length - 1);
+        // the longer overload keeps the @Argument shape: the shorter's glue does not select it
+        assertTrue(glue(hooks("""
                 @Inject(method = "prefix(ILjava/lang/String;)V", at = @At("HEAD"))
                 public static void h(CallbackInfo ci) {
                 }
-                """));
+                """)).contains("@Patch.Argument(0) int arg0"));
+    }
+
+    @Test
+    void aShorterOverloadsArgumentCannotBeModified() {
+        assertError(hooks("""
+                @ModifyVariable(method = "prefix(I)V", at = @At("HEAD"), argsOnly = true)
+                public static int h(int x) {
+                    return x;
+                }
+                """), "H.h: ZombieBuddy's patch matcher would also apply the glue for t.Target.prefix(I)V to"
+                + " prefix(ILjava/lang/String;)V", "@ModifyVariable needs that binding",
+                "Zabric cannot change an argument of t.Target.prefix(I)V alone");
+    }
+
+    @Test
+    void anOverloadWithTheSameCountStillClashes() {
+        Compiler.Result result = compile("""
+                @Hooks(Clash.class)
+                public final class H {
+                    @Inject(method = "take(Ljava/lang/CharSequence;)V", at = @At("HEAD"))
+                    public static void h(CallbackInfo ci) {
+                    }
+                }
+                """, "t/Clash.java", """
+                package t;
+
+                public class Clash {
+                    public void take(CharSequence s) {
+                    }
+
+                    public void take(String s) {
+                    }
+
+                    public void take(CharSequence s, int n) {
+                    }
+                }
+                """);
+        assertError(result, "H.h: ZombieBuddy's patch matcher would also apply the glue for"
+                + " t.Clash.take(Ljava/lang/CharSequence;)V to take(Ljava/lang/String;)V: it selects every method of"
+                + " that name with 1 parameter that accept the bound arguments", "Zabric cannot hook"
+                + " t.Clash.take(Ljava/lang/CharSequence;)V alone");
     }
 
     @Test

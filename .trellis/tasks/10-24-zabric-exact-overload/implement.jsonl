@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook generator rules, weave test and golden glue requirements"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "loader seam and ZombieBuddy patch behaviour"}

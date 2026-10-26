@@ -127,7 +127,8 @@ final class PatchBuilder<T> {
                 maps.add(exitMap);
             }
         }
-        if (!checkMatcher(site, maps, node, handlers, writable)) {
+        Boolean positional = positional(site, maps, node, handlers, writable);
+        if (positional == null) {
             return null;
         }
 
@@ -159,41 +160,68 @@ final class PatchBuilder<T> {
         String ownerSource = types.erasedName(site.targetClass.type());
         GlueModel.Target target = new GlueModel.Target(site.targetClass.binaryName(), ownerSource, member.name(),
                 analysis.descriptor(member), args, types.erasedName(member.returnType()));
-        return new GlueModel.Patch(patchName(site, patchNames), target, blocks);
+        return new GlueModel.Patch(patchName(site, patchNames), target, positional, blocks);
     }
 
-    private boolean checkMatcher(Site<T> site, List<List<T>> maps, Object node, String handlers,
-                                 Set<Integer> writable) {
-        boolean noParam = site.member.params().isEmpty();
+    /**
+     * Whether the glue binds the arguments without {@code @Argument}, which the loader matches to methods of exactly
+     * that many parameters: only where {@code @Argument}, matched to longer ones too, would select another method.
+     * Null after reporting.
+     */
+    private Boolean positional(Site<T> site, List<List<T>> maps, Object node, String handlers, Set<Integer> writable) {
+        int count = site.member.params().size();
         List<String> selected = new ArrayList<>();
+        if (!selects(site, maps, false, selected)) {
+            boolean arrays = writable.stream().anyMatch(k -> types.component(site.member.params().get(k)) != null);
+            error(node, handlers + ": ZombieBuddy's patch matcher would not select " + site.label
+                    + " for the generated glue" + (arrays ? " (it compares an array argument with the array's"
+                    + " component type, so @ModifyVariable cannot change an array argument other than Object[])" : ""));
+            return null;
+        }
+        if (selected.isEmpty()) {
+            return false;
+        }
+        String clash = handlers + ": ZombieBuddy's patch matcher would also apply the glue for " + site.label + " to ";
+        if (count == 0) {
+            error(node, clash + String.join(", ", selected) + ": it selects every method of that name without"
+                    + " parameters. Zabric cannot hook " + site.label + " alone");
+            return null;
+        }
+        if (!writable.isEmpty()) {
+            // Byte Buddy binds an argument without @Argument read-only
+            error(node, clash + String.join(", ", selected) + ": it selects every method of that name whose first "
+                    + count + " parameters accept the bound arguments, and @ModifyVariable needs that binding."
+                    + " Zabric cannot change an argument of " + site.label + " alone");
+            return null;
+        }
+        List<String> sameCount = new ArrayList<>();
+        selects(site, maps, true, sameCount);
+        if (!sameCount.isEmpty()) {
+            error(node, clash + String.join(", ", sameCount) + ": it selects every method of that name with "
+                    + count + (count == 1 ? " parameter" : " parameters") + " that accept the bound arguments. Zabric"
+                    + " cannot hook " + site.label + " alone");
+            return null;
+        }
+        return true;
+    }
+
+    /** Whether the loader would select the site's method; adds the other methods it would select to {@code others}. */
+    private boolean selects(Site<T> site, List<List<T>> maps, boolean exact, List<String> others) {
+        boolean noParam = site.member.params().isEmpty();
         boolean intended = false;
         for (Member<T> m : site.targetClass.members()) {
             if (!m.name().equals(site.member.name()) || !m.hasBody()
-                    || !LoaderMatcher.selects(types, m.params(), maps, noParam)) {
+                    || !LoaderMatcher.selects(types, m.params(), maps, noParam, exact)) {
                 continue;
             }
             if (m == site.member) {
                 intended = true;
             } else {
-                selected.add(m.name() + analysis.descriptor(m)
+                others.add(m.name() + analysis.descriptor(m)
                         + (m.bridge() ? " (a bridge method the compiler adds)" : ""));
             }
         }
-        if (!intended) {
-            boolean arrays = writable.stream().anyMatch(k -> types.component(site.member.params().get(k)) != null);
-            error(node, handlers + ": ZombieBuddy's patch matcher would not select " + site.label
-                    + " for the generated glue" + (arrays ? " (it compares an array argument with the array's"
-                    + " component type, so @ModifyVariable cannot change an array argument other than Object[])" : ""));
-            return false;
-        }
-        if (!selected.isEmpty()) {
-            error(node, handlers + ": ZombieBuddy's patch matcher would also apply the glue for " + site.label
-                    + " to " + String.join(", ", selected) + ": it selects every method of that name whose first "
-                    + site.member.params().size() + " parameters accept the bound arguments. Zabric cannot hook "
-                    + site.label + " alone");
-            return false;
-        }
-        return true;
+        return intended;
     }
 
     private static String patchName(Site<?> site, Set<String> taken) {

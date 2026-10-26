@@ -65,26 +65,26 @@ public final class GlueWriter {
         }
     }
 
-    /** {@code kind}: self, arg, return, thrown or local. */
-    public record Param(String kind, int index, boolean writable, String type, String name) {
+    /** {@code kind}: self, arg, return, thrown or local; {@code positional}: an arg without annotation. */
+    public record Param(String kind, int index, boolean writable, boolean positional, String type, String name) {
         static Param self(String type) {
-            return new Param("self", -1, false, type, "self");
+            return new Param("self", -1, false, false, type, "self");
         }
 
-        static Param arg(int index, boolean writable, String type) {
-            return new Param("arg", index, writable, type, "arg" + index);
+        static Param arg(int index, boolean writable, boolean positional, String type) {
+            return new Param("arg", index, writable, positional, type, "arg" + index);
         }
 
         static Param ret(boolean writable, String type) {
-            return new Param("return", -1, writable, type, "ret");
+            return new Param("return", -1, writable, false, type, "ret");
         }
 
         static Param thrown() {
-            return new Param("thrown", -1, false, "Throwable", "thrown");
+            return new Param("thrown", -1, false, false, "Throwable", "thrown");
         }
 
         static Param local(String name, String type) {
-            return new Param("local", -1, false, type, name);
+            return new Param("local", -1, false, false, type, name);
         }
     }
 
@@ -134,13 +134,15 @@ public final class GlueWriter {
                     gateLocal(n, block), shares, heads, exits));
         }
 
+        // the loader binds an argument without annotation to the target's argument at the advice parameter's index
+        boolean positional = patch.positional();
         List<Param> enter = new ArrayList<>();
         if (calls.stream().anyMatch(c -> c.at() == At.HEAD && c.uses(Value.Kind.SELF))) {
             enter.add(Param.self(target.ownerSource()));
         }
         for (int k = 0; k < target.args().size(); k++) {
             GlueModel.Arg arg = target.args().get(k);
-            enter.add(Param.arg(k, arg.writable(), arg.binding()));
+            enter.add(positional ? k : enter.size(), Param.arg(k, arg.writable(), positional, arg.binding()));
         }
         for (BlockView block : blocks) {
             enter.add(Param.local(block.gateLocal(), "boolean"));
@@ -161,7 +163,7 @@ public final class GlueWriter {
                 exit.add(Param.self(target.ownerSource()));
             }
             for (int k = 0; k < target.args().size(); k++) {
-                exit.add(Param.arg(k, false, target.args().get(k).binding()));
+                exit.add(positional ? k : exit.size(), Param.arg(k, false, positional, target.args().get(k).binding()));
             }
             if (nonVoid) {
                 exit.add(Param.ret(retWritable, target.returnType()));

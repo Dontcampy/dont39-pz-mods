@@ -20,8 +20,11 @@ public final class GlueModel {
         }
     }
 
-    /** One loader patch class: every handler of the compilation on one target method. */
-    public record Patch(String name, Target target, List<Block> blocks) {
+    /**
+     * One loader patch class: every handler of the compilation on one target method. {@code positional}: the arguments
+     * are bound without {@code @Argument}, so the loader applies it to methods of exactly that many parameters only.
+     */
+    public record Patch(String name, Target target, boolean positional, List<Block> blocks) {
     }
 
     /** {@code owner}: binary name; {@code ownerSource}: canonical name; {@code returnType}: erased. */
