@@ -20,7 +20,7 @@ without the mod.
 
 The Windows client, `-nosteam` and driven by the harness (`start-client.ps1 -ServerHost 192.168.50.249 -ServerPort
 48261`, ZombieBuddy `allow-all` for the launch), joined `myserver2` at option 20 (mods as above plus `SGTestDriver`).
-Consoles in `srtest-results/console-client20.log` and `%TEMP%\sgtestuns\linux1`-`linux4`.
+Consoles in `srtest-results/console-client20.log` and `%TEMP%\sgtest\runs\linux1`-`linux4`.
 
 - First join (new character): not checked, the known first-join gap (`smoke-join.md`).
 - Second join, existing character, 3 min of the driver's loop at Rosewood prison (14 cycles, 33 items taken, 28
