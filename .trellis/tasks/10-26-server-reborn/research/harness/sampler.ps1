@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Appends one CSV row every IntervalSec while the test server runs: process CPU and memory of server and client, the
-server's own statistics over RCON, and the newest Sync Guard summary line from the server console.
+server's own statistics over RCON, and the newest Server Reborn summary line from the server console.
 
 .DESCRIPTION
 Process columns: CPU % of the whole machine (TotalProcessorTime delta / wall time / logical cores), working set and
@@ -10,17 +10,17 @@ private bytes in MB.
 Server statistics come from the console command "stats <name> all" (zombie.network.statistics; updated every
 MultiplayerStatisticsPeriod seconds, which setup-server.ps1 sets to 1):
 - net_actual_sent / net_actual_recv: RakNet's running totals (total-actual-bytes-sent/-received) summed over the
-  connected peers, i.e. everything on the wire including Sync Guard's own packets and RakNet resends; the rate
+  connected peers, i.e. everything on the wire including Server Reborn's own packets and RakNet resends; the rate
   columns are their deltas per second (empty when a peer joined or left in between).
 - net_game_sent / net_game_recv: bytes of packets with a known PacketType in the last statistics period
-  (sent-bytes/received-bytes; NetworkStatistic.addOutcomePacket skips ids outside PacketTypes, so Sync Guard's own
+  (sent-bytes/received-bytes; NetworkStatistic.addOutcomePacket skips ids outside PacketTypes, so Server Reborn's own
   packets are not in them).
 - srv_heap_used_mb: memory-used of "stats performance" (JVM heap in use); srv_update_avg_ms / srv_update_max_ms:
   the main loop's update period.
 With -PrometheusPort (start-server.ps1 -PrometheusPort, the game's exporter) also the exporter's JVM heap gauge and
 the cumulative packet_send/packet_receive byte sums over all packet types.
 
-Sync Guard: the newest server console line containing [Dont39SyncGuard] and key=value pairs is kept whole in
+Server Reborn: the newest server console line containing [Dont39ServerReborn] and key=value pairs is kept whole in
 sg_line (summarize.ps1 reads its keys) with the time it was seen; empty while the mod is off.
 
 .PARAMETER DurationSec
@@ -62,7 +62,7 @@ function Read-NewConsole {
         if ($cut -lt 0) { return }
         $script:consolePos += [Text.Encoding]::UTF8.GetByteCount($text.Substring(0, $cut + 1))
         foreach ($l in $text.Substring(0, $cut) -split "`r?`n") {
-            if ($l.Contains('[Dont39SyncGuard]') -and $l -match '\w+=-?\d') {
+            if ($l.Contains('[Dont39ServerReborn]') -and $l -match '\w+=-?\d') {
                 $script:sgLine = $l.Trim(); $script:sgSeen = (Get-Date).ToString('HH:mm:ss')
             }
         }

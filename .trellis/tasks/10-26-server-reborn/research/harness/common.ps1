@@ -1,4 +1,4 @@
-# Shared paths and helpers of the Sync Guard test harness; every script dot-sources this file.
+# Shared paths and helpers of the Server Reborn test harness; every script dot-sources this file.
 $ErrorActionPreference = 'Stop'
 
 $SG = [ordered]@{
@@ -14,6 +14,9 @@ $SG = [ordered]@{
     ZbConfig   = Join-Path $env:USERPROFILE '.zombie_buddy'
     Harness    = $PSScriptRoot
 }
+# the server the last setup-server.ps1 made: sgtest, or srmin with -Minimal
+$SG.ServerNameFile = Join-Path $SG.State 'server-name.txt'
+if (Test-Path $SG.ServerNameFile) { $SG.ServerName = (Get-Content $SG.ServerNameFile -Raw).Trim() }
 $SG.AdminPwFile = Join-Path $SG.Cache 'harness-adminpw.txt'
 $SG.Manifest = Join-Path $SG.State 'copies.txt'
 $SG.Backup = Join-Path $SG.State 'backup'

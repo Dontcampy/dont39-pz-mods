@@ -4,7 +4,7 @@ Turns the sampler CSVs of the mod-off and mod-on load runs into the off/on table
 
 .DESCRIPTION
 Prints Markdown (and writes it to -Out): one table of process, JVM and network figures off vs on, then the keys of
-Sync Guard's summary lines from the on run (first, last, max and the rate of a running counter). -OwnBytesKey names
+Server Reborn's summary lines from the on run (first, last, max and the rate of a running counter). -OwnBytesKey names
 the summary key that counts the mod's own bytes sent; its rate over the wire rate is the mod's share.
 #>
 param([Parameter(Mandatory)] [string] $Off, [Parameter(Mandatory)] [string] $On, [string] $Out,
@@ -64,7 +64,7 @@ foreach ($m in $metrics) {
     $lines.Add("| $($m[0]) | $(Fmt $a $m[3]) | $(Fmt $b $m[3]) | $(Delta $a $b $m[3]) |")
 }
 
-# Sync Guard summary lines of the on run: each distinct line once, with the run time it was first sampled at
+# Server Reborn summary lines of the on run: each distinct line once, with the run time it was first sampled at
 $seen = @{}
 $points = foreach ($r in $onRows) {
     if ($r.sg_line -and -not $seen.ContainsKey($r.sg_line)) {
@@ -77,10 +77,10 @@ $points = foreach ($r in $onRows) {
 $points = @($points)
 $lines.Add('')
 if (-not $points.Count) {
-    $lines.Add('No Sync Guard summary line in the on run (sg_line empty).')
+    $lines.Add('No Server Reborn summary line in the on run (sg_line empty).')
 } else {
     $keys = @($points | ForEach-Object { $_.kv.Keys } | Select-Object -Unique | Sort-Object)
-    $lines.Add("Sync Guard summary keys, on run ($($points.Count) distinct lines):")
+    $lines.Add("Server Reborn summary keys, on run ($($points.Count) distinct lines):")
     $lines.Add('')
     $lines.Add('| Key | First | Last | Max | Rate /s (last - first) |')
     $lines.Add('|---|---:|---:|---:|---:|')
@@ -95,7 +95,7 @@ if (-not $points.Count) {
     $wire = Mean (Nums $onRows 'net_out_Bps')
     if ($rates.ContainsKey($OwnBytesKey) -and $null -ne $rates[$OwnBytesKey] -and $wire) {
         $lines.Add('')
-        $lines.Add("Sync Guard's own bytes ($OwnBytesKey): $(Fmt $rates[$OwnBytesKey] 0) B/s = $(Fmt ($rates[$OwnBytesKey] * 100 / $wire) 2)% of the server's mean wire output.")
+        $lines.Add("Server Reborn's own bytes ($OwnBytesKey): $(Fmt $rates[$OwnBytesKey] 0) B/s = $(Fmt ($rates[$OwnBytesKey] * 100 / $wire) 2)% of the server's mean wire output.")
     }
 }
 $lines

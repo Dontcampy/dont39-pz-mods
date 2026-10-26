@@ -1,24 +1,30 @@
 <#
 .SYNOPSIS
 Creates or updates the local test server "sgtest" from ~/Zomboid/Server/myserver1.* in the short cache folder, and
-copies the mods it needs (real copies, not junctions) for the server and the client.
+copies the mods it needs (real copies, not junctions) for the server and the client. With -Minimal, the server
+"srmin" instead: myserver1's settings with only Zabric, ZabricKotlin, Server Reborn and the driver.
 
 .DESCRIPTION
-Idempotent: rerun it to switch Sync Guard on or off (only Mods= changes) or to refresh the copies. Every copy it
+Idempotent: rerun it to switch Server Reborn on or off (only Mods= changes) or to refresh the copies. Every copy it
 makes is listed in the manifest for cleanup.ps1; a folder it did not make is never overwritten.
 
 Mod sources: each Mods= id from the Workshop content of the ini's WorkshopItems; ids staged in
 ~/Zomboid/Workshop/<id>/Contents/mods/<id> (Zabric, ZabricKotlin, Dont39AllInOne: what the client's preload config
-uses) from there; Dont39SyncGuard from sync-guard/build/mod; SGTestDriver from this folder.
+uses) from there; Dont39ServerReborn from server-reborn/build/mod; SGTestDriver from this folder.
 
-.PARAMETER WithSyncGuard
-Adds Dont39SyncGuard to Mods= right after Zabric; without it Mods= has no Dont39SyncGuard.
+.PARAMETER WithServerReborn
+Adds Dont39ServerReborn to Mods= right after ZabricKotlin; without it Mods= has no Dont39ServerReborn.
+
+.PARAMETER Minimal
+Mods= is Zabric, ZabricKotlin (and Server Reborn) only, with no Workshop items, the vanilla map, no spawn files and a
+save of its own (server "srmin"), for a smoke join. The other scripts use the server the last setup chose.
 
 .PARAMETER DryRun
 Prints what would be copied and the total size, changes nothing.
 #>
-param([switch] $WithSyncGuard, [switch] $DryRun, [string] $SourceServer = 'myserver1')
+param([switch] $WithServerReborn, [switch] $Minimal, [switch] $DryRun, [string] $SourceServer = 'myserver1')
 . (Join-Path $PSScriptRoot 'common.ps1')
+$SG.ServerName = if ($Minimal) { 'srmin' } else { 'sgtest' }
 
 $srcDir = Join-Path $SG.Zomboid 'Server'
 $iniSrc = Join-Path $srcDir "$SourceServer.ini"
@@ -28,6 +34,7 @@ $kv = @{}
 foreach ($l in $iniLines) { if ($l -match '^([A-Za-z0-9_]+)=(.*)$') { $kv[$Matches[1]] = $Matches[2] } }
 $modIds = @($kv['Mods'] -split ';' | Where-Object { $_ } | ForEach-Object { $_.TrimStart('\') })
 $items = @($kv['WorkshopItems'] -split ';' | Where-Object { $_ })
+if ($Minimal) { $modIds = @('Zabric', 'ZabricKotlin'); $items = @() }
 
 # ---- resolve mod folders ----
 
@@ -59,8 +66,8 @@ foreach ($item in $items) {
 }
 
 $stagedRoot = Join-Path $SG.Zomboid 'Workshop'
-$sgBuild = Join-Path $SG.Repo 'sync-guard\build\mod\Dont39SyncGuard'
-$sgJarRel = '42\media\java\Dont39SyncGuard.jar'
+$srBuild = Join-Path $SG.Repo 'server-reborn\build\mod\Dont39ServerReborn'
+$srJarRel = '42\media\java\Dont39ServerReborn.jar'
 $plan = [ordered]@{}   # dest folder name -> source path
 $origin = @{}          # dest folder name -> where it came from
 $missing = @(); $ambiguous = @()
@@ -69,7 +76,7 @@ function Add-Plan([string] $Name, [string] $Source, [string] $From) {
     $plan[$Name] = $Source; $origin[$Name] = $From
 }
 foreach ($id in $modIds) {
-    if ($id -in 'Dont39SyncGuard', 'SGTestDriver') { continue }
+    if ($id -in 'Dont39ServerReborn', 'SGTestDriver') { continue }
     $staged = Join-Path $stagedRoot "$id\Contents\mods\$id"
     if (Test-Path -LiteralPath (Join-Path $staged '42\mod.info')) { Add-Plan $id $staged 'staged'; continue }
     if (-not $byId.ContainsKey($id)) { $missing += $id; continue }
@@ -80,10 +87,10 @@ foreach ($id in $modIds) {
     Add-Plan $pick.Name $pick.Path "workshop $($pick.Item)"
 }
 Add-Plan 'SGTestDriver' (Join-Path $PSScriptRoot 'SGTestDriver') 'harness'
-$sgBuilt = Test-Path -LiteralPath (Join-Path $sgBuild $sgJarRel)
-if ($sgBuilt) { Add-Plan 'Dont39SyncGuard' $sgBuild 'repo build' }
-elseif ($WithSyncGuard -and -not $DryRun) { throw "no $sgBuild\$sgJarRel; run :sync-guard:assembleMod first" }
-if ($WithSyncGuard -and 'Zabric' -notin $modIds) { throw "Mods= of $iniSrc has no Zabric to put Dont39SyncGuard after" }
+$srBuilt = Test-Path -LiteralPath (Join-Path $srBuild $srJarRel)
+if ($srBuilt) { Add-Plan 'Dont39ServerReborn' $srBuild 'repo build' }
+elseif ($WithServerReborn -and -not $DryRun) { throw "no $srBuild\$srJarRel; run :server-reborn:assembleMod first" }
+if ($WithServerReborn -and 'ZabricKotlin' -notin $modIds) { throw "Mods= of $iniSrc has no ZabricKotlin to put Dont39ServerReborn after" }
 
 # ---- client side: what the client already sees stays as it is ----
 
@@ -123,7 +130,7 @@ function Format-Size([long] $b) { '{0:N2} GB' -f ($b / 1GB) }
 if ($missingItems) { Write-Warning "Workshop items not downloaded: $($missingItems -join ', ')" }
 if ($missing) { Write-Warning "mod ids not found in any Workshop item or staging: $($missing -join ', ')" }
 foreach ($a in $ambiguous) { Write-Warning "several folders for $a" }
-if (-not $sgBuilt) { Write-Warning "Sync Guard not built ($sgBuild); it is left out of the copies" }
+if (-not $srBuilt) { Write-Warning "Server Reborn not built ($srBuild); it is left out of the copies" }
 foreach ($k in $clientSkip.Keys) { "client keeps $k ($($clientSkip[$k]))" }
 
 if ($DryRun) {
@@ -148,9 +155,9 @@ $pw = Get-AdminPassword
 
 $mods = [Collections.Generic.List[string]]::new()
 foreach ($id in $modIds) {
-    if ($id -eq 'Dont39SyncGuard' -or $id -eq 'SGTestDriver') { continue }
+    if ($id -eq 'Dont39ServerReborn' -or $id -eq 'SGTestDriver') { continue }
     $mods.Add($id)
-    if ($id -eq 'Zabric' -and $WithSyncGuard) { $mods.Add('Dont39SyncGuard') }
+    if ($id -eq 'ZabricKotlin' -and $WithServerReborn) { $mods.Add('Dont39ServerReborn') }
 }
 $mods.Add('SGTestDriver')
 $set = [ordered]@{
@@ -158,6 +165,7 @@ $set = [ordered]@{
     RCONPassword = $pw; Password = ''; Public = 'false'; PVP = 'false'; PauseEmpty = 'false'; UPnP = 'false'
     BackupsOnStart = 'false'; BackupsOnVersionChange = 'false'; MultiplayerStatisticsPeriod = 1
 }
+if ($Minimal) { $set.WorkshopItems = ''; $set.Map = 'Muldraugh, KY' }
 $seen = @{}
 $out = foreach ($l in $iniLines) {
     if ($l -match '^([A-Za-z0-9_]+)=' -and $set.Contains($Matches[1])) { $seen[$Matches[1]] = $true; "$($Matches[1])=$($set[$Matches[1]])" }
@@ -167,6 +175,7 @@ $unset = @($set.Keys | Where-Object { -not $seen.ContainsKey($_) })
 if ($unset) { throw "$iniSrc has no $($unset -join ', ')" }
 $name = $SG.ServerName
 Write-Utf8Lines (Join-Path $SG.Cache "Server\$name.ini") $out
+Set-Content -Path $SG.ServerNameFile -Value $name -NoNewline -Encoding ascii
 
 # sandbox: the tunnel and mod sync stay off (the tunnel refuses a server on this machine)
 $sb = [IO.File]::ReadAllText((Join-Path $srcDir "${SourceServer}_SandboxVars.lua"))
@@ -174,7 +183,8 @@ $sb = $sb -replace '(Dont39AllInOne_TcpTunnel = \{[^}]*?Port = )\d+', '${1}0'
 $sb = $sb -replace '(Dont39AllInOne_Tunnel = \{[^}]*?KcpPort = )\d+', '${1}0'
 $sb = $sb -replace '(Dont39AllInOne_ModSync = \{[^}]*?Port = )\d+', '${1}0'
 [IO.File]::WriteAllText((Join-Path $SG.Cache "Server\${name}_SandboxVars.lua"), $sb, [Text.UTF8Encoding]::new($false))
-foreach ($f in Get-ChildItem -LiteralPath $srcDir -File | Where-Object { $_.Name -like "${SourceServer}_spawn*.lua" }) {
+# the spawn files name the source's map mods
+foreach ($f in Get-ChildItem -LiteralPath $srcDir -File | Where-Object { -not $Minimal -and $_.Name -like "${SourceServer}_spawn*.lua" }) {
     $text = [IO.File]::ReadAllText($f.FullName) -replace [regex]::Escape("${SourceServer}_"), "${name}_"
     [IO.File]::WriteAllText((Join-Path $SG.Cache "Server\$($f.Name -replace "^$([regex]::Escape($SourceServer))_", "${name}_")"),
         $text, [Text.UTF8Encoding]::new($false))
@@ -197,6 +207,6 @@ foreach ($k in $plan.Keys) { Copy-ModFolder (Join-Path $SG.Cache 'mods') $k $pla
 foreach ($k in $clientPlan.Keys) { Copy-ModFolder $SG.ClientMods $k $clientPlan[$k]; $n++ }
 $global:LASTEXITCODE = 0
 
-"server ini: $($SG.Cache)\Server\$name.ini; Sync Guard $(if ($WithSyncGuard) { 'on' } else { 'off' }); $($mods.Count) mods"
+"server ini: $($SG.Cache)\Server\$name.ini; Server Reborn $(if ($WithServerReborn) { 'on' } else { 'off' }); $($mods.Count) mods"
 "ports: game $($SG.GamePort), UDP $($SG.UdpPort), RCON $($SG.RconPort); admin password in $($SG.AdminPwFile)"
 "copied/refreshed $n folders; manifest $($SG.Manifest)"

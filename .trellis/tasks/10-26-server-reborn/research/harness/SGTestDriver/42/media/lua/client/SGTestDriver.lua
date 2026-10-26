@@ -1,4 +1,4 @@
--- Test driver of Sync Guard's local test harness (research/harness, not shipped). Idle unless Zomboid/Lua/sgtest.txt
+-- Test driver of Server Reborn's local test harness (research/harness, not shipped). Idle unless Zomboid/Lua/sgtest.txt
 -- exists (start-client.ps1 writes it). Joins the server from the main menu, then in game: god mode, teleport to the
 -- test spot, and loops over nearby containers (open, take, put back or move, eat now and then) until the duration
 -- ends. Steps go to Zomboid/Lua/sgtest_state.txt and console.txt with the prefix [SGTEST].
@@ -271,7 +271,7 @@ local function stepWhenIdle(timeoutMs, fn)
 end
 
 -- shows the container in the loot window as a click on its button does (ISInventoryPage:selectContainer), which is
--- where Sync Guard's open check (Dont39SyncGuard_OpenCheck.lua) reports it; what went wrong is logged, never thrown
+-- where Server Reborn's open check (Dont39ServerReborn_OpenCheck.lua) reports it; what went wrong is logged, never thrown
 local function showInLoot(e)
     local loot = getPlayerLoot(0)
     if not loot or not loot.refreshBackpacks or not loot.selectContainer then
@@ -281,10 +281,10 @@ local function showInLoot(e)
     for _, button in ipairs(loot.backpacks or {}) do
         if button.inventory == e.cont then
             loot:selectContainer(button)
-            -- whether Sync Guard's open check Lua saw it (Dont39SyncGuard_OpenCheck.lua marks the page)
+            -- whether Server Reborn's open check Lua saw it (Dont39ServerReborn_OpenCheck.lua marks the page)
             if stats.shown < 3 then
-                mark(string.format("open: shown; global=%s marked=%s explored=%s", type(Dont39SyncGuard_containerShown),
-                    tostring(loot.dont39SyncGuardShown == e.cont), tostring(e.cont:isExplored())))
+                mark(string.format("open: shown; global=%s marked=%s explored=%s", type(Dont39ServerReborn_containerShown),
+                    tostring(loot.dont39ServerRebornShown == e.cont), tostring(e.cont:isExplored())))
             end
             return true
         end
@@ -582,7 +582,7 @@ end
 local tests = {}
 
 -- AC5: one carried item in the primary hand and one worn clothing item leave the inventory on the server only; the
--- driver logs each change of the client's state until Sync Guard's snapshot has taken them off
+-- driver logs each change of the client's state until Server Reborn's snapshot has taken them off
 function tests.equipRemove(done)
     local p = getPlayer()
     local worn
@@ -669,7 +669,7 @@ function tests.equipRemove(done)
     end)
 end
 
--- AC4: container A emptied with removeAllItems (as fire does; seen by Sync Guard's content hooks), container B's item
+-- AC4: container A emptied with removeAllItems (as fire does; seen by Server Reborn's content hooks), container B's item
 -- list cleared directly (no hook sees it, so only the open check can find it)
 function tests.empty(done)
     local cands = scanFor(2, 4)
@@ -722,9 +722,9 @@ end
 
 -- AC12: items moved from the inventory into a bag inside a world container and back, for the whole duration.
 -- RPGInventory replaces such transfers (ISInventoryTransferAction:new returns its ISRPGNestedTransfer) and syncs them
--- with its own broadcast RPGInventoryNestedTransfer.moved, which -Dsyncguard.debugDropModule drops on this client.
--- Each move logs where the items are on this client right after it and 4 s later (after Sync Guard's grace and
--- snapshot); every third round shows the bag in the loot window (Sync Guard's open check).
+-- with its own broadcast RPGInventoryNestedTransfer.moved, which -Dserverreborn.debugDropModule drops on this client.
+-- Each move logs where the items are on this client right after it and 4 s later (after Server Reborn's grace and
+-- snapshot); every third round shows the bag in the loot window (Server Reborn's open check).
 function tests.nested(done)
     local p = getPlayer()
     local inv = p:getInventory()
@@ -787,7 +787,7 @@ function tests.nested(done)
         loot:setNewContainer(bc)
         n.shown = n.shown + 1
         mark("test nested: bag " .. bagId .. " shown in the loot window; open check marked="
-            .. tostring(loot.dont39SyncGuardShown == bc))
+            .. tostring(loot.dont39ServerRebornShown == bc))
     end
 
     local round -- forward

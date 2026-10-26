@@ -1,11 +1,13 @@
-# Sync Guard test harness (not shipped)
+# Server Reborn test harness (not shipped)
 
-Local dedicated server `sgtest` built from the user's `myserver1` config, one `-nosteam` client driven by the
-`SGTestDriver` Lua mod, a sampler and the comparison scripts for AC10 (compatibility) and AC7 (load): step
-12 of `../../implement.md`; all in-game tests run on this machine (`prd.md`).
+Local dedicated server `sgtest` built from the user's `myserver1` config (or `srmin`, the same settings with a
+minimal mod list), one `-nosteam` client driven by the `SGTestDriver` Lua mod, a sampler and the comparison scripts.
+Written for Sync Guard's acceptance runs (archived task `10-24-mp-sync-loss-recovery`, whose AC numbers the sections
+below keep); renamed for Server Reborn, whose smoke join is the first section. All in-game tests run on this
+machine.
 
 PowerShell 7 on Windows. Run every script from the repo root as `& "$h\<script>.ps1"` after
-`$h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'`. `Get-Help "$h\<script>.ps1" -Full` shows each
+`$h = '.trellis\tasks\10-26-server-reborn\research\harness'`. `Get-Help "$h\<script>.ps1" -Full` shows each
 script's parameters.
 
 ## Files
@@ -13,16 +15,16 @@ script's parameters.
 | File | What it does |
 |---|---|
 | `common.ps1` | Paths, ports, test spots, RCON client, helpers; dot-sourced by the others |
-| `setup-server.ps1` | Server `sgtest` in the cache folder from `myserver1`, mod copies for server and client; `-WithSyncGuard`, `-DryRun` |
+| `setup-server.ps1` | Server `sgtest` in the cache folder from `myserver1`, mod copies for server and client; `-WithServerReborn`, `-Minimal` (server `srmin`), `-DryRun` |
 | `start-server.ps1` / `stop-server.ps1` | Start (`-Wait` for `SERVER STARTED`) and stop (RCON `quit`) the server; console and logs go to the run folder |
 | `backup-client.ps1` | Backs up the user's client files before a series |
 | `start-client.ps1` / `stop-client.ps1` | Launch the client; the driver joins and runs the scenario. Stop and collect its console |
 | `SGTestDriver/` | Lua-only client mod: join, god mode, teleport, loot/move/eat loop, progress lines `[SGTEST]` |
 | `spawn-zombies.ps1` | `createhorde2` at the test spot over RCON, repeatable |
 | `rcon.ps1` | Any server console command over RCON, e.g. `& "$h\rcon.ps1" players` |
-| `sampler.ps1` | One CSV row per 5 s: CPU, memory, server network and heap statistics, newest Sync Guard summary line |
+| `sampler.ps1` | One CSV row per 5 s: CPU, memory, server network and heap statistics, newest Server Reborn summary line |
 | `summarize.ps1` | Off/on table of two sampler CSVs, for `research/load-test.md` |
-| `diff-errors.ps1` | Error lines only the run with Sync Guard has (AC10) |
+| `diff-errors.ps1` | Error lines only the run with Server Reborn has (AC10) |
 | `cleanup.ps1` | Removes the copies, restores the client backup, deletes the cache folder |
 
 ## Where things go
@@ -40,12 +42,12 @@ and never printed. The driver's config holds it only until the join starts (the 
 
 ## Prerequisites
 
-- Sync Guard built: `JAVA_HOME=~/.jdks/graalvm-ce-25.0.2 ./gradlew :sync-guard:build :sync-guard:assembleMod`.
+- Server Reborn built: `JAVA_HOME=~/.jdks/graalvm-ce-25.0.2 ./gradlew :server-reborn:build :server-reborn:assembleMod`.
 - Zabric, ZabricKotlin and Dont39AllInOne are taken from their Workshop staging (`~/Zomboid/Workshop/<id>/Contents/mods/<id>`),
   the copies the client's preload config (`~/.zombie_buddy/config.json`) already uses. To test current repo builds of
-  those, run their `deployWorkshop` first. If `~/Zomboid/Workshop/Dont39SyncGuard` exists, its jar must equal the
+  those, run their `deployWorkshop` first. If `~/Zomboid/Workshop/Dont39ServerReborn` exists, its jar must equal the
   build's (`setup-server.ps1` stops otherwise).
-- Every Workshop item of `myserver1` subscribed and downloaded (`setup-server.ps1 -DryRun` warns about missing ones).
+- Without `-Minimal`: every Workshop item of `myserver1` subscribed and downloaded (`setup-server.ps1 -DryRun` warns about missing ones).
 - About 29 GB free on C: (14.3 GB for the server's copies, 14.3 GB for the client's; dry run 2026-10-24).
 - The game closed: one client at a time, it shares `~/Zomboid/console.txt`.
 
@@ -79,6 +81,26 @@ The client has no command-line auto-join: `+connect host:port` and `+password` o
 still asks for the account (`MainScreen.lua` 1801-1817, `BootstrapConnectPopup:connect`). The driver therefore joins
 from the main menu with `ConnectToServer:connect`, as the load-speed task's driver did.
 
+## Sequence: Server Reborn smoke join (minimal list)
+
+Zabric, ZabricKotlin, Server Reborn and the driver only, on a save of its own, so it needs no `myserver1` mod copies.
+Back up the Loading Progress reports and check `default.txt` first (the launcher rewrites it).
+
+```powershell
+$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+& "$h\backup-client.ps1"
+& "$h\setup-server.ps1" -Minimal -WithServerReborn
+& "$h\start-server.ps1" -Label smoke -Wait
+& "$h\start-client.ps1" -Label smoke -NoLoop -DurationSec 60 -Quit
+& "$h\stop-client.ps1"; & "$h\stop-server.ps1"
+Select-String -Path "$env:TEMP\sgtest\runs\smoke\*-console.txt" -Pattern 'Dont39ServerReborn|hooks stopped|ERROR'
+& "$h\cleanup.ps1"
+```
+
+Pass: server `active on a dedicated server` and the tick rate `off` at 10; client `ready on a client` and active for
+the server; no `hooks stopped`, `disabled` or error line from the mod, Zabric or ZombieBuddy. A fresh `srmin` may
+need one restart after the server registers Zabric's preload (see the next section).
+
 ## Sequence: smoke and compatibility (AC10)
 
 The first start of a fresh server registers Zabric's preload in the server's own ZombieBuddy config and generates the
@@ -86,23 +108,23 @@ world, and the first join creates the character; a warm-up run takes those, so t
 existing world with an existing character.
 
 ```powershell
-$h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'
+$h = '.trellis\tasks\10-26-server-reborn\research\harness'
 & "$h\backup-client.ps1"
 & "$h\setup-server.ps1" -DryRun             # check sources and size first
-& "$h\setup-server.ps1"                     # Sync Guard off
+& "$h\setup-server.ps1"                     # Server Reborn off
 
 # warm-up (restart once if the console asks for it after the preload registration)
 & "$h\start-server.ps1" -Label warmup -Wait
 & "$h\start-client.ps1" -Label warmup -NoLoop -DurationSec 60 -Quit
 & "$h\stop-client.ps1"; & "$h\stop-server.ps1"
 
-# without Sync Guard
+# without Server Reborn
 & "$h\start-server.ps1" -Label compat-off -Wait
 & "$h\start-client.ps1" -Label compat-off -DurationSec 300 -Quit
 & "$h\stop-client.ps1"; & "$h\stop-server.ps1"
 
-# with Sync Guard (only Mods= changes)
-& "$h\setup-server.ps1" -WithSyncGuard
+# with Server Reborn (only Mods= changes)
+& "$h\setup-server.ps1" -WithServerReborn
 & "$h\start-server.ps1" -Label compat-on -Wait
 & "$h\start-client.ps1" -Label compat-on -DurationSec 300 -Quit
 & "$h\stop-client.ps1"; & "$h\stop-server.ps1"
@@ -110,11 +132,11 @@ $h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'
 $r = "$env:TEMP\sgtest\runs"
 & "$h\diff-errors.ps1" -Without "$r\compat-off\server-console.txt" -With "$r\compat-on\server-console.txt"
 & "$h\diff-errors.ps1" -Without "$r\compat-off\client-console.txt" -With "$r\compat-on\client-console.txt"
-Select-String -Path "$r\compat-on\*-console.txt" -Pattern 'Dont39SyncGuard'   # ready and active on both sides
+Select-String -Path "$r\compat-on\*-console.txt" -Pattern 'Dont39ServerReborn'   # ready and active on both sides
 ```
 
 `stop-client.ps1` waits for the driver's own quit (`-Quit`), otherwise asks it to quit through `sgtest_stop.txt` and
-kills the client after 90 s. `diff-errors.ps1` exits with 1 when the run with Sync Guard has an error signature the
+kills the client after 90 s. `diff-errors.ps1` exits with 1 when the run with Server Reborn has an error signature the
 other has not; check the "more often" list too.
 
 ## Sequence: load scenario (AC7)
@@ -123,9 +145,9 @@ Same script and duration with the mod off, then on; one client in god mode at th
 moving items. Run the warm-up above first if the server is fresh.
 
 ```powershell
-$h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'
+$h = '.trellis\tasks\10-26-server-reborn\research\harness'
 foreach ($mode in 'off', 'on') {
-    if ($mode -eq 'on') { & "$h\setup-server.ps1" -WithSyncGuard } else { & "$h\setup-server.ps1" }
+    if ($mode -eq 'on') { & "$h\setup-server.ps1" -WithServerReborn } else { & "$h\setup-server.ps1" }
     & "$h\start-server.ps1" -Label "load-$mode" -Wait
     & "$h\start-client.ps1" -Label "load-$mode" -Spot prison -DurationSec 1800 -Quit -WaitArrived
     & "$h\spawn-zombies.ps1" -Spot prison -Count 300
@@ -134,7 +156,7 @@ foreach ($mode in 'off', 'on') {
 }
 $r = "$env:TEMP\sgtest\runs"
 & "$h\summarize.ps1" -Off "$r\load-off\samples.csv" -On "$r\load-on\samples.csv" -SkipFirstSec 60 `
-    -Out '.trellis\tasks\10-24-mp-sync-loss-recovery\research\load-test-table.md'
+    -Out '.trellis\tasks\10-26-server-reborn\research\load-test-table.md'
 ```
 
 Zombies of earlier runs stay in the save: before spawning, clear the spot with
@@ -149,11 +171,11 @@ The driver's progress (`progress cycles=.. taken=.. moved=.. eats=.. zombies=..`
 What the columns mean (details in `Get-Help "$h\sampler.ps1" -Full`):
 
 - `net_out_Bps` / `net_in_Bps`: deltas of RakNet's running byte totals summed over connected peers
-  (`total-actual-bytes-sent/-received`): everything on the wire, Sync Guard's packets and resends included.
-- `net_game_sent` / `net_game_recv`: bytes of packets with a known `PacketType` in the last 1 s period. Sync Guard's own
+  (`total-actual-bytes-sent/-received`): everything on the wire, Server Reborn's packets and resends included.
+- `net_game_sent` / `net_game_recv`: bytes of packets with a known `PacketType` in the last 1 s period. Server Reborn's own
   packets (id outside `PacketTypes`) are not in them: `NetworkStatistic.addOutcomePacket` skips unknown ids.
 - `srv_heap_used_mb`: `memory-used` of `stats performance`; `srv_update_*_ms`: the main loop's update period.
-- `sg_line`: the newest server console line with `[Dont39SyncGuard]` and `key=value` pairs. `summarize.ps1` tabulates
+- `sg_line`: the newest server console line with `[Dont39ServerReborn]` and `key=value` pairs. `summarize.ps1` tabulates
   every key of the on run (first, last, max, rate) and computes the mod's share of the wire output from the key named
   by `-OwnBytesKey` (default `bytesOut`, a running byte counter). So the mod's summary line must carry its counters,
   state size, own byte counters and end-of-tick percentiles as `key=value` with plain numbers, and be logged often
@@ -165,11 +187,11 @@ What the columns mean (details in `Get-Help "$h\sampler.ps1" -Full`):
 ## Other acceptance runs
 
 The same scripts serve AC1-AC6, AC8 and AC9: `start-client.ps1 -NoLoop` puts the client at the spot without the
-loop (play by hand, or with Sync Guard's debug switch); `rcon.ps1` runs any console command. AC8's vanilla client on
-a modded server: remove `~/Zomboid/mods/Dont39SyncGuard` (setup copies it back); its modded client on a vanilla
-server: `setup-server.ps1` without `-WithSyncGuard`. AC11 drops the mod's transfer broadcasts on the client with
-`-ClientJvmArgs '-Dsyncguard.debugDropModule=VacMod13.AddItem'` (a module, or `module.command`; every one, or every
-n-th with `-Dsyncguard.debugDropDelta=n`, which also drops every n-th vanilla in-scope update); the driver shows each
+loop (play by hand, or with Server Reborn's debug switch); `rcon.ps1` runs any console command. AC8's vanilla client on
+a modded server: remove `~/Zomboid/mods/Dont39ServerReborn` (setup copies it back); its modded client on a vanilla
+server: `setup-server.ps1` without `-WithServerReborn`. AC11 drops the mod's transfer broadcasts on the client with
+`-ClientJvmArgs '-Dserverreborn.debugDropModule=VacMod13.AddItem'` (a module, or `module.command`; every one, or every
+n-th with `-Dserverreborn.debugDropDelta=n`, which also drops every n-th vanilla in-scope update); the driver shows each
 container in the loot window before it takes from it, so open checks run too (`shown=` / `notShown=` in its lines).
 The window lists only containers next to the player, so where the walk there fails (the prison's fences), the driver
 teleports to a free square next to the container (`/teleportto`, counted as `teleports=`).
@@ -184,23 +206,23 @@ command (`SGTest`) without any packet to the client, as a lost or never-sent upd
 
 | Test | What it does | Expect |
 |---|---|---|
-| `equipRemove` (AC5) | Equips a carried item in the primary hand (`ISEquipWeaponAction`; takes one from a container first if nothing is carried) and picks a worn clothing item; the server removes both from the inventory (the worn one also from its worn list; its hands stay, then `clearHands`). The driver logs every change of `inInventory` / `inHand` / `worn` for 20 s | Sync Guard's snapshot removes both: worn and in hand until the `repaired ... removed [...]` line, then neither |
-| `empty` (AC4) | Container A emptied with `removeAllItems` (as fire empties a burning object; Sync Guard's content hooks see it), container B (at least 4 squares away) by clearing its item list directly (nothing sees it); counts after 8 s, then opens B in the loot window and counts again | A empty on the client after the frame's grace; B unchanged until opened, empty after its open check |
+| `equipRemove` (AC5) | Equips a carried item in the primary hand (`ISEquipWeaponAction`; takes one from a container first if nothing is carried) and picks a worn clothing item; the server removes both from the inventory (the worn one also from its worn list; its hands stay, then `clearHands`). The driver logs every change of `inInventory` / `inHand` / `worn` for 20 s | Server Reborn's snapshot removes both: worn and in hand until the `repaired ... removed [...]` line, then neither |
+| `empty` (AC4) | Container A emptied with `removeAllItems` (as fire empties a burning object; Server Reborn's content hooks see it), container B (at least 4 squares away) by clearing its item list directly (nothing sees it); counts after 8 s, then opens B in the loot window and counts again | A empty on the client after the frame's grace; B unchanged until opened, empty after its open check |
 | `burst` (AC9) | One item removed from one container, then 4 s later one from each of ten more | One notice for the first repair, then one notice for the ten (`repair notice shown for N repairs`) |
-| `nested` (AC12) | A bag inside a world container: one already lying in a container nearby, else a carried loose bag or one the server half gives (`giveBag`, `Base.Bag_Schoolbag`), put into the nearest container with items. Then until `-DurationSec` ends: up to `-Take` light loose items from the inventory into the bag and back with `ISInventoryTransferUtil.newInventoryTransferAction`, which RPGInventory turns into its `ISRPGNestedTransfer` (logged as `via ...`; `notNested=` counts others). Each move logs where the items are on the client right after and 4 s later (`test nested in/out +0s/+4s: id:bag|inventory|nowhere`); every third round the bag is shown in the loot window (`setNewContainer`, Sync Guard's open check). Ends with `test nested result ...` | With the drop: per move `dropped incoming server command RPGInventoryNestedTransfer.moved`, then `repaired bag <id> in container ... of object ...` and `repaired inventory of player ...` lines, and the items where they belong at `+4s` (`atBagAfter=` equals `into=`). Without it: no `repaired` line, client `mismatches=0` |
+| `nested` (AC12) | A bag inside a world container: one already lying in a container nearby, else a carried loose bag or one the server half gives (`giveBag`, `Base.Bag_Schoolbag`), put into the nearest container with items. Then until `-DurationSec` ends: up to `-Take` light loose items from the inventory into the bag and back with `ISInventoryTransferUtil.newInventoryTransferAction`, which RPGInventory turns into its `ISRPGNestedTransfer` (logged as `via ...`; `notNested=` counts others). Each move logs where the items are on the client right after and 4 s later (`test nested in/out +0s/+4s: id:bag|inventory|nowhere`); every third round the bag is shown in the loot window (`setNewContainer`, Server Reborn's open check). Ends with `test nested result ...` | With the drop: per move `dropped incoming server command RPGInventoryNestedTransfer.moved`, then `repaired bag <id> in container ... of object ...` and `repaired inventory of player ...` lines, and the items where they belong at `+4s` (`atBagAfter=` equals `into=`). Without it: no `repaired` line, client `mismatches=0` |
 
-AC12 (RPGInventory, Workshop 3800660445, is on `myserver1`'s list; Sync Guard on): the dropped run, then the
+AC12 (RPGInventory, Workshop 3800660445, is on `myserver1`'s list; Server Reborn on): the dropped run, then the
 normal one, each five minutes at the prison spot.
 
 ```powershell
-$h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'
-& "$h\setup-server.ps1" -WithSyncGuard
+$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+& "$h\setup-server.ps1" -WithServerReborn
 & "$h\run-scenario.ps1" -Label ac12-drop -DurationSec 300 `
-    -ClientJvmArgs '-Dsyncguard.debugDropModule=RPGInventoryNestedTransfer.moved' -ClientArgs @{ Test = 'nested' }
+    -ClientJvmArgs '-Dserverreborn.debugDropModule=RPGInventoryNestedTransfer.moved' -ClientArgs @{ Test = 'nested' }
 & "$h\run-scenario.ps1" -Label ac12-normal -DurationSec 300 -ClientArgs @{ Test = 'nested' }
 $r = "$env:TEMP\sgtest\runs"
 Select-String -Path "$r\ac12-*\sgtest_state.txt" -Pattern 'test nested (result|in \+4s)'
-Select-String -Path "$r\ac12-*\*-console.txt" -Pattern 'Dont39SyncGuard.*(repaired|could not|scope=|dropped)'
+Select-String -Path "$r\ac12-*\*-console.txt" -Pattern 'Dont39ServerReborn.*(repaired|could not|scope=|dropped)'
 ```
 
 `-LogTransfers` logs each Multiplayer Weight Limit Breaker `AddItem` whose target container holds another instance of
@@ -210,7 +232,7 @@ vanilla client).
 
 `-VanillaTransfers` puts back the game's transaction functions that Multiplayer Weight Limit Breaker replaces (it
 keeps them in `VacMod13.raw`), so the loop's transfers go through the game's own container packets, which
-`-Dsyncguard.debugDropDelta=n` can drop (AC1). Wrappers other mods put around those functions after it are dropped too.
+`-Dserverreborn.debugDropDelta=n` can drop (AC1). Wrappers other mods put around those functions after it are dropped too.
 
 ## Cleanup
 

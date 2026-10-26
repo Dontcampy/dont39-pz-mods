@@ -1,4 +1,4 @@
--- Server half of Sync Guard's test driver (research/harness, not shipped). On the driver's client command it changes
+-- Server half of Server Reborn's test driver (research/harness, not shipped). On the driver's client command it changes
 -- a container on the server without any packet to the client, as a lost or never-sent update leaves it (AC4, AC5,
 -- AC9), or gives the player a bag (AC12). Each change is printed with the prefix [SGTEST] and answered with the server
 -- command SGTest.result.

@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-Compares the error lines of two consoles of the same side (server or client), without and with Sync Guard (AC10).
+Compares the error lines of two consoles of the same side (server or client), without and with Server Reborn (AC10).
 
 .DESCRIPTION
 Error lines are those matching -Pattern. Each is reduced to a signature (timestamps, frame and time stamps, numbers,
-hex ids removed) so the same error from two runs compares equal. Prints the signatures only the run with Sync Guard
+hex ids removed) so the same error from two runs compares equal. Prints the signatures only the run with Server Reborn
 has (the AC10 failures), those only the run without has, and those the run with has more often, with counts and one
-original line each. Exit code 1 when the run with Sync Guard has any signature the other has not.
+original line each. Exit code 1 when the run with Server Reborn has any signature the other has not.
 #>
 param([Parameter(Mandatory)] [string] $Without, [Parameter(Mandatory)] [string] $With,
     [string] $Pattern = '^ERROR:|\bERROR\b|Exception|^\s*Caused by:|\w+Error\b|STACK TRACE|attempted index|Callframe at|SEVERE')
@@ -37,12 +37,12 @@ $more = @($b.Keys | Where-Object { $a.ContainsKey($_) -and $b[$_].Count -gt $a[$
 "without: $Without ($($a.Count) signatures, $(($a.Values | Measure-Object Count -Sum).Sum) lines)"
 "with:    $With ($($b.Count) signatures, $(($b.Values | Measure-Object Count -Sum).Sum) lines)"
 ''
-"== only with Sync Guard: $($onlyWith.Count)"
+"== only with Server Reborn: $($onlyWith.Count)"
 foreach ($k in $onlyWith) { "  x$($b[$k].Count) line $($b[$k].LineNo): $($b[$k].Example)" }
 ''
-"== more often with Sync Guard: $($more.Count)"
+"== more often with Server Reborn: $($more.Count)"
 foreach ($k in $more) { "  $($a[$k].Count) -> $($b[$k].Count) line $($b[$k].LineNo): $($b[$k].Example)" }
 ''
-"== only without Sync Guard: $($onlyWithout.Count)"
+"== only without Server Reborn: $($onlyWithout.Count)"
 foreach ($k in $onlyWithout) { "  x$($a[$k].Count) line $($a[$k].LineNo): $($a[$k].Example)" }
 if ($onlyWith.Count) { exit 1 }
