@@ -31,10 +31,10 @@ not hit it.
 
 ## Acceptance Criteria
 
-- [ ] `./gradlew :faster-loading:build` green.
-- [ ] A harness client run (preload-only, `-nosteam` join of the 244-mod server) logs no `hooks stopped` for
-      `Dont39FasterLoading`, logs `[Dont39FasterLoading] access widener: ok`, and `depth map order:` lines.
-- [ ] Spec line in `access-widening.md` updated to say where the status is asked.
+- [x] `./gradlew :faster-loading:build` green.
+- [x] A harness client run (preload-only, `-nosteam` join of the 244-mod server) logs no `hooks stopped` for
+      `Dont39FasterLoading`, logs `[Dont39FasterLoading] access widener: ok`, and `depth map order:` lines (`research/harness-join.md`, 2026-10-26).
+- [x] Spec line in `access-widening.md` updated to say where the status is asked.
 
 ## Out of scope
 
