@@ -12,7 +12,7 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.12.0"
+version = "0.13.0"
 
 // the bundled features, in init order
 val features = listOf(
