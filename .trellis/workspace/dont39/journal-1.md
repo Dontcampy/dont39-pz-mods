@@ -923,3 +923,25 @@ ZabricKotlin 0.7.0 is a preload mod: PreMain swaps Kotlin at game start; on a la
 ### Status
 
 [OK] **Completed**
+
+
+## Session 39: Per-packet-type download stats in Network Status
+<!-- trellis-session: v=2 fp=69fcb0e601622097 -->
+
+**Date**: 2026-10-24
+**Task**: Per-packet-type download stats in Network Status
+**Branch**: `worktree-mp-download-stats`
+
+### Summary
+
+Network Status counts the client's received game packets by type at GameClient.addIncoming: tooltip shows total, share of RakNet bytes and top 6 types; full table logged at info when the session ends. Verified on local -nosteam servers (4 mods; live 244 mods with insane zombies, god mode, prison and military base). Findings: map chunks are resent in full on revisit; with many zombies, zombie sync dominates; each hit on a player sends ~5 KB (PlayerDamage, SyncVisuals, SyncClothing, PVPEvents). Specs: debug lines need debuglog.cfg even in -debug; unattended runs avoid -debug; /godmode -true for test characters.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fa31814` | Show received game data by packet type in Network Status |
+
+### Status
+
+[OK] **Completed**

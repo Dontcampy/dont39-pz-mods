@@ -63,7 +63,11 @@ A literal `%` in a pattern is written `%%`.
 
 - Output about a target mod's behaviour is gated on **that mod's own debug option** and logged with `log { }`, so
   players can turn it on with the mod's logs.
-- Other diagnostic output uses `debug { }`: the game's debug level, shown only in `-debug` mode.
+- Other diagnostic output uses `debug { }`: the game's debug level. It needs `-debug` **and** a `debuglog.cfg` that
+  enables Debug for `Mod`: in `-debug` mode the game's default severity is General
+  (`DebugLog.getDefaultLogSeverity`), so these lines are dropped unless the player edits that file.
+- A diagnostic the player turns on to read, logged once per session (a summary when the session ends), uses
+  `log { }`: `PacketTraffic.report` in `network-status`.
 - Never log per frame: aggregate and emit a periodic summary.
 
 Reference files are in `ime-keyboard-fix/src/main/kotlin/com/dont39/pz/imekeyboardfix/` and
