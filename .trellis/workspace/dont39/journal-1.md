@@ -959,3 +959,25 @@ Network Status counts the client's received game packets by type at GameClient.a
 ### Summary
 
 Researched the B42 dedicated server's hardcoded 10 Hz tick (zombie/player/vehicle sync relayed from clients, tick-bound logic), measured 10 vs 20 Hz with FakeClientManager load on the Linux test server (+20% process CPU, flat bandwidth, exact game time), and shipped server-tick-rate: an opt-in sandbox option 10-20 that retunes GameServer.main's limiter and lock fps and scales Rand.AdjustForFramerate and world sound life. Verified on the test server; short real-client play test accepted by the user.
+
+## Session 41: Faster Loading: depth map order without its main entrypoint
+<!-- trellis-session: v=2 fp=bbf2ce35d0d69e35 -->
+
+**Date**: 2026-10-26
+**Task**: Faster Loading: depth map order without its main entrypoint
+**Branch**: `feat/jolly-taussig-87321c`
+
+### Summary
+
+Root cause: Zabric runs main only for mods the mod list loads; preload-only Faster Loading (e.g. the -nosteam Sync Guard harness client) threw at the first TileDepthTextureManager.init and Zabric stopped all its hooks. DepthOrder.widened() now asks AccessWidener.report once, from main or the first depth maps. Build green; harness join checked (widener ok, depth map order ran, no hooks stopped); user state restored. PR #31.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8fe95ce` | Faster Loading: ask Zabric for the widener status at first use, not only from main |
+| `fff5405` | chore(task): Faster Loading preload-only fix checked in a harness join |
+
+### Status
+
+[OK] **Completed**
