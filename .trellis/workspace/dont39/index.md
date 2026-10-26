@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 39
-- **Last Active**: 2026-10-24
+- **Total Sessions**: 41
+- **Last Active**: 2026-10-26
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~947 | Active |
+| `journal-1.md` | ~970 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 41 | 2026-10-26 | Faster Loading: depth map order without its main entrypoint | `8fe95ce`, `fff5405` | `feat/jolly-taussig-87321c` |
 | 39 | 2026-10-24 | Per-packet-type download stats in Network Status | `fa31814` | `worktree-mp-download-stats` |
 | 38 | 2026-10-24 | ZabricKotlin as a preload mod | `0be78f4` | `main` |
 | 37 | 2026-10-23 | Load speed optimization AC5 on the Linux test server | `6cabbe0`, `a1a055d` | `load-speed-optimization` |
