@@ -1,0 +1,65 @@
+-- Server Reborn's network sync optimization: tells the Java side which container the loot window shows, so it checks
+-- it with the server once (R7). The game asks the server only for containers this client never explored, so an
+-- explored one that changed unseen (a fire emptied it) is caught only here.
+
+require "ISUI/ISInventoryPage"
+
+local PREFIX = "[Dont39ServerReborn] "
+local disabled = false -- after an error in this file; final for the session
+
+-- [trace]: the Lua stack where the error was raised (the game's pcall returns it third).
+local function fail(what, err, trace)
+    if disabled then return end
+    disabled = true
+    pcall(function()
+        DebugType.Mod:error(PREFIX .. "open checks off after an error while " .. what .. ": " .. tostring(err) .. "\n"
+            .. tostring(trace))
+    end)
+end
+
+-- the loot page's container, once per change; the player's own inventory is checked by the server's frames
+local function report(page)
+    if page.onCharacter or not Dont39ServerReborn_containerShown then return end
+    local pane = page.inventoryPane
+    if not pane then error("the loot window has no inventory pane") end
+    local container = pane.inventory
+    if container == page.dont39ServerRebornShown then return end
+    page.dont39ServerRebornShown = container
+    if container then Dont39ServerReborn_containerShown(container) end
+end
+
+local function guarded(page)
+    if disabled then return end
+    local ok, err, trace = pcall(report, page)
+    if not ok then fail("reporting the shown container", err, trace) end
+end
+
+if not ISInventoryPage or not ISInventoryPage.selectContainer or not ISInventoryPage.setNewContainer
+    or not Events.OnRefreshInventoryWindowContainers then
+    pcall(function()
+        DebugType.Mod:error(PREFIX .. "open checks off: the game's loot window (ISInventoryPage.selectContainer,"
+            .. " setNewContainer, OnRefreshInventoryWindowContainers) was not found")
+    end)
+    return
+end
+
+-- a click on a container
+local vanilla = ISInventoryPage.selectContainer
+function ISInventoryPage:selectContainer(button)
+    -- outside pcall, so vanilla's errors surface as without this mod
+    vanilla(self, button)
+    guarded(self)
+end
+
+-- a click on a container in the world, and mods that show a container without a button for it (RPGInventory's
+-- bags inside other containers)
+local vanillaNew = ISInventoryPage.setNewContainer
+function ISInventoryPage:setNewContainer(inventory)
+    vanillaNew(self, inventory)
+    guarded(self)
+end
+
+-- the window picked a container itself, e.g. as the player walked up to it
+Events.OnRefreshInventoryWindowContainers.Add(function(page, stage)
+    if stage == "end" then guarded(page) end
+end)

@@ -60,10 +60,11 @@ tasks.jar {
   // build data only (the source list)
   exclude("META-INF/dont39/**")
   if (pzWidening.listed) {
-    // where Zabric reads it at game start
+    // where Zabric reads it at game start; a local, as the configuration cache cannot keep a script reference
+    val listName = "$modId.classtweaker"
     from(pzWidening.expanded) {
       into("META-INF/zabric")
-      rename { "$modId.classtweaker" }
+      rename { listName }
     }
   }
 }
