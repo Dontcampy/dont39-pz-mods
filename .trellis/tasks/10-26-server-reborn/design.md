@@ -83,16 +83,18 @@ Server tick rate inside that lifecycle:
 
 ## Port rules (Java → Kotlin)
 
-- Byte-for-byte the same wire and digests: explicit widths and signedness, `ByteBuffer` order, `Int` overflow in
-  hashes, map iteration order where the digest or wire depends on it (`LinkedHashMap` where Java used it).
+- The wire and digests only need to agree between the two sides, which both run the new code: no byte-for-byte
+  equality with the Java build. Where the game or All-in-One's mod sync record defines bytes (packet fields, the
+  connection details the trailer goes into), keep their widths, signedness and order.
 - Records → `data class`, sealed interfaces → `sealed interface`, static utility classes → `object`, static mutable
   state → `object` properties with the same `@Volatile` / thread confinement.
 - Hook classes → top-level `internal object`s with public handlers (`HookReader.kt`), `gate = ServerRebornGate::class`;
   the same targets, injection points, `always`, `@Share`/`@Thrown`/`@Self`, and the exact-overload targets
   (`AddItem(String)`, `AddItem(String,float)`).
 - Idiomatic Kotlin over micro-allocation, also per tick; comments short, why only.
-- The 90 JUnit tests become Kotlin tests with the same cases and expected values (golden digests included);
-  `TickScaleTest` moves as is.
+- Tests are rewritten in Kotlin to cover the same behaviours, table-driven where cases share a shape: one table of
+  message round trips, one of container addresses (plain and nested), one of refusals and truncations; the digest,
+  trailer, ledger, notice and timing rules as named cases. `TickScaleTest` moves as is.
 
 ## All-in-One and old modules
 

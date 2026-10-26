@@ -33,6 +33,10 @@ User request (2026-10-26): "将syncguard和servertickrate合并，mod改叫serve
   features may later become mods of their own).
 - Design from scratch; no backward compatibility needed. No `Feature`, `zb-kt-utils`, processor-rule or ZabricKotlin
   change is needed for this model.
+- Tests are simplified: table-driven Kotlin unit tests covering the same behaviours (no test count, no byte-for-byte
+  equality with the Java build: both sides run the new code and nothing was published); one smoke join on a minimal
+  mod list instead of `myserver1`'s list and its error diff. Compatibility with other mods rests on Sync Guard's
+  runs and the user's Linux-server test.
 - `10-24-mp-sync-loss-recovery` is archived as superseded; its harness moves into this task; its open items become
   follow-ups (below).
 
@@ -63,12 +67,13 @@ Defaults taken: mod id `Dont39ServerReborn`, package `com.dont39.pz.serverreborn
 - [ ] AC1 (R1, R2, R6, R7). `JAVA_HOME=~/.jdks/graalvm-ce-25.0.2 ./gradlew build :server-reborn:assembleMod` passes;
   the mod folder holds `mod.info`, the jar with its widening list, the Lua, EN/CN translations and
   `sandbox-options.txt`.
-- [ ] AC2 (R2, R3). The 90 Sync Guard tests and 5 tick-rate tests exist in Kotlin with unchanged expected values and
-  pass.
-- [ ] AC3 (R3, R4). One smoke join on the harness's local `-nosteam` server (copy of `myserver1`, default options):
-  the server logs the mod active on a dedicated server and the tick rate off at 10; the client logs ready and active
-  for the server; no `hooks stopped` or `disabled` line; no error signature on either side that the archived
-  `compat-off2` run lacks.
+- [ ] AC2 (R2, R3). Kotlin unit tests cover every behaviour Sync Guard's 90 tests and the tick rate's 5 tests cover
+  (message and key round trips, refusals, truncation, digest relations, trailer placement, ledger and notice rules,
+  timings, tick scaling), table-driven where cases share a shape, and pass.
+- [ ] AC3 (R3, R4). One smoke join on a local `-nosteam` server with only Zabric, ZabricKotlin and Server Reborn
+  (default options): the server logs the mod active on a dedicated server and the tick rate off at 10; the client
+  logs ready and active for the server; no `hooks stopped`, `disabled` or other error line from the mod, Zabric or
+  ZombieBuddy on either side.
 - [ ] AC4 (R5, R7). No `Dont39SyncGuard`, `syncguard.` switch, `Dont39AllInOne_ServerTickRate`, `sync-guard` or
   `server-tick-rate` module name left outside git history, archived tasks and journals, except deliberate "formerly"
   mentions.
@@ -76,7 +81,8 @@ Defaults taken: mod id `Dont39ServerReborn`, package `com.dont39.pz.serverreborn
 
 ## Out of Scope / Follow-ups
 
-- 20 Hz in game, and a tick-rate mismatch turning the mod off: the user's combined Linux-server test.
+- 20 Hz in game, a tick-rate mismatch turning the mod off, and compatibility with a full mod list: the user's
+  combined Linux-server test.
 - Sync Guard's open items, carried over: AC2 (no field update lost after its add under loss), AC6 (two clients, 30
   min, no false mismatch), AC3 (its example is not rejected on B42; needs another rejected change), and the client
   error `container already has id` seen only with the mod active (`research/acceptance.md` of the archived task).
