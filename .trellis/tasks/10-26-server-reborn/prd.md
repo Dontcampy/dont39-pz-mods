@@ -81,8 +81,8 @@ Defaults taken: mod id `Dont39ServerReborn`, package `com.dont39.pz.serverreborn
 
 ## Out of Scope / Follow-ups
 
-- 20 Hz in game, a tick-rate mismatch turning the mod off, and compatibility with a full mod list: the user's
-  combined Linux-server test.
+- 20 Hz and a tick-rate mismatch turning the mod off: passed on the Linux test instance (`research/linux-test.md`).
+  Still open: a real client at 20 Hz with Server Reborn, and the full mod list.
 - Sync Guard's open items, carried over: AC2 (no field update lost after its add under loss), AC6 (two clients, 30
   min, no false mismatch), AC3 (its example is not rejected on B42; needs another rejected change), and the client
   error `container already has id` seen only with the mod active (`research/acceptance.md` of the archived task).
