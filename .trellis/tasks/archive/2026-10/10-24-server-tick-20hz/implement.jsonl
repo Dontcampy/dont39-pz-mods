@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature checklist"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook rules: overloads, rewrite not cancel"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature base, gate, disable"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "mismatch: error and disable"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "lifecycle lines, nothing per tick"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, in-game verification"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules"}
+{"file": ".trellis/tasks/10-24-server-tick-20hz/research/findings.md", "reason": "game evidence and measurements"}
+{"file": ".trellis/tasks/10-24-server-tick-20hz/research/tick-counted-logic.md", "reason": "tick-bound game logic details"}

@@ -28,8 +28,9 @@ import static net.bytebuddy.matcher.ElementMatchers.is;
  * Advice on the entry of ZombieBuddy's {@code Loader.loadMods(List)} and around each {@code loadJar} of its MAIN pass,
  * which it calls in a loop once it has decided on every mod, and a transformer that counts the classes its thread
  * transforms or loads inside each jar. The pass's end ({@link #passEnded}) comes from Zabric's own hook on its exit.
- * Public only because the advice is inlined into that class and calls {@link #passStarting}, {@link #jarLoading} and
- * {@link #jarLoaded}.
+ * On entry to every {@code loadJar}, of any phase, it also prepares the loaded classes the jar's patches name
+ * ({@link PatchTargets}). Public only because the advice is inlined into that class and calls {@link #passStarting},
+ * {@link #jarLoading} and {@link #jarLoaded}.
  */
 public final class JarLoadHook {
     private static final String LOADER = "me.zed_0xff.zombie_buddy.Loader";
@@ -37,6 +38,8 @@ public final class JarLoadHook {
     private static volatile Loader.JarListener listener;
     private static volatile Object mainPhase;
     private static final AtomicReference<Throwable> escaped = new AtomicReference<>();
+    // not a lost pass: the loader's weaving goes on as without Zabric
+    private static final AtomicReference<Throwable> unprepared = new AtomicReference<>();
     private static final Counter COUNTER = new Counter();
     private static Instrumentation instrumentation;
 
@@ -136,8 +139,32 @@ public final class JarLoadHook {
         }
     }
 
+    /** What preparing a jar's patch targets could not do since the last call, or null. */
+    static Throwable takeUnprepared() {
+        return unprepared.getAndSet(null);
+    }
+
     /** Called by the advice. Never throws into loadJar. */
-    public static synchronized void jarLoading(Path jar, Object phase) {
+    public static void jarLoading(Path jar, String pkg, Object phase) {
+        follow(jar, phase);
+        prepare(jar, pkg);
+    }
+
+    private static void prepare(Path jar, String pkg) {
+        try {
+            // the loader appends mod jars to it and looks its targets up there
+            PatchTargets.prepare(jar, pkg, instrumentation::getAllLoadedClasses, ClassLoader.getSystemClassLoader());
+        } catch (Throwable t) {
+            IllegalStateException e = new IllegalStateException("classes that first load while " + Loader.name()
+                    + " weaves the patches of " + jar + " can miss access widening: " + t, t);
+            Throwable first = unprepared.compareAndExchange(null, e);
+            if (first != null) {
+                first.addSuppressed(e);
+            }
+        }
+    }
+
+    private static synchronized void follow(Path jar, Object phase) {
         if (phase != mainPhase || passFailed) {
             return;
         }
@@ -284,8 +311,9 @@ public final class JarLoadHook {
 
     private static final class JarAdvice {
         @Advice.OnMethodEnter(suppress = Throwable.class)
-        static void enter(@Advice.Argument(0) Path jar, @Advice.Argument(3) Object phase) {
-            jarLoading(jar, phase);
+        static void enter(@Advice.Argument(0) Path jar, @Advice.Argument(1) String pkg,
+                          @Advice.Argument(3) Object phase) {
+            jarLoading(jar, pkg, phase);
         }
 
         // also when loadJar throws, so that the listener hears the jar's end and the counting stops

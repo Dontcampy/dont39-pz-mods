@@ -1,6 +1,7 @@
 package com.pzlauncher.zabric.internal;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,10 +46,24 @@ public final class GameFolders {
      * and a dedicated server's own. Either may not exist.
      */
     public static List<Path> workshopContent() {
-        Path cwd = Path.of("").toAbsolutePath();
-        return List.of(
-                // client: the game folder is steamapps/common/ProjectZomboid of a Steam library
-                cwd.resolve("../../workshop/content/" + APP).normalize(),
-                cwd.resolve("steamapps/workshop/content/" + APP).normalize());
+        return workshopContent(Path.of("").toAbsolutePath().normalize());
+    }
+
+    static List<Path> workshopContent(Path cwd) {
+        List<Path> folders = new ArrayList<>();
+        // client: the game runs in steamapps/common/ProjectZomboid of a Steam library, on Linux in its projectzomboid
+        for (Path dir = cwd; dir != null && dir.getParent() != null; dir = dir.getParent()) {
+            Path steamapps = dir.getParent();
+            if (isNamed(dir, "common") && isNamed(steamapps, "steamapps")) {
+                folders.add(steamapps.resolve("workshop/content/" + APP));
+                break;
+            }
+        }
+        folders.add(cwd.resolve("steamapps/workshop/content/" + APP));
+        return List.copyOf(folders);
+    }
+
+    private static boolean isNamed(Path dir, String name) {
+        return dir.getFileName() != null && dir.getFileName().toString().equalsIgnoreCase(name);
     }
 }

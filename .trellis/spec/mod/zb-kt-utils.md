@@ -12,6 +12,13 @@
   use Zabric's annotations ([Zabric Hooks](./zabric-hooks.md)) and Lua functions `@LuaGlobal` in `glue/Glue.kt`
   ([ZombieBuddy Patching](./zombiebuddy-patching.md#patch-classes)).
 - `Feature` is the hook gate of the module's hook objects (`Feature.kt`), so a failing hook disables only its feature.
+- A Kotlin mod of its own whose parts its main entrypoint decides together, and which undo their game changes on the
+  first failure, rather than idling lazily on a target mod: its facade extends `ModGate` (`ModGate.kt`), is named as
+  the gate of every hook object, and is opened with the undo; the entrypoint runs the widening and hook-target checks
+  (`ServerReborn.kt`, `ServerRebornMain.kt` in `server-reborn`). Zabric's default gate is no substitute: its first
+  failure stops `always` hooks too and calls nothing back. New in ZabricKotlin 0.8.0.
+- A sandbox option is read through `SandboxOption` (`SandboxOption.kt`): a missing or retyped option throws. New in
+  ZabricKotlin 0.8.0 (was `allinone-common`'s): release ZabricKotlin before a mod that calls it.
 - `Feature.whyNotActive()` gives the player-facing reason a feature does not run (null when active), e.g. for a Lua
   check that refuses an action (`Tunnel.luaProblem`). New in ZabricKotlin after 0.4.0: release ZabricKotlin before a
   mod that calls it.

@@ -1,4 +1,4 @@
-package com.dont39.pz.common
+package com.dont39.pz.zbktutils
 
 import zombie.SandboxOptions
 import zombie.config.BooleanConfigOption

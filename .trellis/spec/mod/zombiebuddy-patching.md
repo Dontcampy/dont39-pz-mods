@@ -75,7 +75,7 @@ What is not behind the seam and needs rework when switching loaders:
 | Build plugin, signing, `ZombieBuddy.jar` on the compile classpath | [`pz-java.gradle.kts`](../../../buildSrc/src/main/kotlin/pz-java.gradle.kts); test classpaths in `pz-loader-test.gradle.kts` and `zabric-processor`; the release workflow's `.github/actions/pz-jars` |
 | The loader package `checkLoaderRefs` looks for | `CheckLoaderRefs.kt` |
 | A mod whose target is the loader (rewrite or drop it) | `zb-skip-online-checks` |
-| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one`, `loading-progress` and `faster-loading`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
+| Smoke launch and the loader's log lines the tests expect | `PzSmoke.kt`, `GameSmokeTest.kt` (`smokeTest` of `dont39-all-in-one`, `loading-progress`, `faster-loading` and `server-reborn`), `ServerSmokeTest.kt` (`serverSmokeTest` of `zb-kt`) in `buildSrc` |
 | Texts naming ZombieBuddy | Workshop texts (`mod/workshop/workshop.txt`), log messages and comments outside Zabric |
 
 ---
@@ -173,6 +173,33 @@ For a feature that adds to the multiplayer join. Reference: `mod-sync`.
   that is immutable and volatile (the list is built off the game thread), and turned off on every way out: Back, a lost
   connection, the game's end (`client/swap/Swap.kt`, `ClientHooks.kt`). For the next launch, use Zabric's
   `LaunchOverride` instead.
+- A mod a client enables only through the server's mod list loads inside the join, after `ConnectionDetails.parse`,
+  and `ConnectToServerState.exit` does not run during the join (the main screen calls it only while it still updates,
+  which stops once the world loads). Such a mod reads the trailer from the public `ConnectToServerState.instance` at
+  `GameClient.sendPlayerConnect` `RETURN` (`server-reborn` `ClientSync.playerConnectSent`).
+
+---
+
+## Own Network Packets
+
+For a feature that sends its own messages between client and server. Reference: `server-reborn`'s network sync
+optimization (`network/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` in
+`server/ServerHooks.kt`; the main loop's pass and tick hooks in `ServerLoop.kt`).
+
+- Header 134 and a reserved short id outside the `PacketTypes` enum; the first byte of the body is the feature's
+  protocol version.
+- Client: a cancellable `ZomboidNetData.read` `HEAD` hook fills the data for the reserved id and skips the
+  unknown-id error, so vanilla queues it in arrival order with its own packets; dispatch at
+  `mainLoopDealWithNetData` `HEAD`. Server: cancel at `GameServer.addIncoming` `HEAD` (before
+  `AntiCheat.PacketType.act`, which kicks or bans at some settings) into the feature's own queue, drained on the main
+  thread.
+- The receive hooks run even while the feature's hooks are shut (`always`), and always consume the reserved id: once
+  one side stops, the other may still send.
+- Send only from the feature's own handlers or tick hooks, never inside a vanilla send: the connection's writer is
+  shared and `bufferLock` is reentrant, so a nested send corrupts the vanilla packet (`Net.send` refuses).
+- Send only to a peer that said it runs the feature (a hello after the join), never to a vanilla peer.
+- Pace sends and budgets by time, not by world tick: the tick rate is a sandbox option, so per-tick counts would grow
+  with it (`Frames.kt`, at most 10 frames per second).
 
 ---
 
@@ -199,6 +226,11 @@ For a feature that changes the game's own Lua UI. Reference:
 - Call them directly: [Access Widening](./access-widening.md).
 - No work that can fail in an object initializer: hooks live on those objects, and a failed initializer makes every
   later call fail inside the target mod.
+- Other mods can replace a vanilla network path entirely (on a large server list, item transfers went through a mod's
+  `sendServerCommand` broadcasts and no vanilla transfer packet was sent; research `modded-transfer-path.md` of the
+  archived task `10-24-mp-sync-loss-recovery`). A feature that watches vanilla packets for a kind of change also
+  watches where the change happens (`ContentHooks` in `server-reborn`'s `server/ServerHooks.kt`), and is tested on the
+  target server's mod list.
 
 ---
 

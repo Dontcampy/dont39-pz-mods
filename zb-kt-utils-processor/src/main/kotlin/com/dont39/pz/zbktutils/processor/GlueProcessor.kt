@@ -21,7 +21,7 @@ import com.pzlauncher.zabric.processor.glue.Reporter
 
 private const val FEATURE = "com.dont39.pz.zbktutils.Feature"
 
-/** Set by pz-feature.gradle.kts. */
+/** Set by pz-feature.gradle.kts and pz-kotlin-mod.gradle.kts. */
 private const val OPTION_FEATURE = "dont39.feature"
 private const val OPTION_PACKAGE = "dont39.gluePackage"
 private const val OPTION_LUA_PREFIX = "dont39.luaPrefix"
@@ -54,7 +54,9 @@ class GlueProcessor(
     firstRound = false
     val missing = OPTIONS.filter { options[it].isNullOrBlank() }
     if (missing.isNotEmpty()) {
-      missing.forEach { error(null, "KSP option $it is missing; apply the buildsrc.convention.pz-feature plugin") }
+      missing.forEach {
+        error(null, "KSP option $it is missing; apply the buildsrc.convention.pz-feature or pz-kotlin-mod plugin")
+      }
       return emptyList()
     }
     val pkg = options.getValue(OPTION_PACKAGE)

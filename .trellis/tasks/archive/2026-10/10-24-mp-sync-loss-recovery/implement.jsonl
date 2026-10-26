@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview, standalone vs All-in-One, pre-development checklist"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Module layout and naming for a new standalone mod module"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loading on client and server, Extending the Join (trailer convention), gating, threading"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API and zabric-processor for the Java hooks"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Widening PacketType fields, UdpConnection and packet internals"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Gate, report, disable; never wrap vanilla handlers"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Prefix, lifecycle lines, no per-frame logging, counters summary"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smokeTest, in-game verification"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/vanilla-sync.md", "reason": "Packet reliability table, discard points, hook points"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/server-change-flow.md", "reason": "Server change paths, fan-out, container identity, threading"}
+{"file": ".trellis/tasks/archive/2026-10/10-20-server-mod-sync/research/location-delivery.md", "reason": "Raw packet ids, unknown-id handling, anticheat, trailer"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/spike-s1-s5.md", "reason": "Raw packet path, queues, send rules, PacketType reliability/channel fields, hook table"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/spike-s2-s4.md", "reason": "Touch-recording hooks, keys, digest field list, reconcile call sequence"}

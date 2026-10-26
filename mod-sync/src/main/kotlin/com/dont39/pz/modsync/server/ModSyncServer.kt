@@ -1,8 +1,8 @@
 package com.dont39.pz.modsync.server
 
-import com.dont39.pz.common.SandboxOption
 import com.dont39.pz.modsync.ModSync
 import com.dont39.pz.modsync.protocol.Trailer
+import com.dont39.pz.zbktutils.SandboxOption
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path

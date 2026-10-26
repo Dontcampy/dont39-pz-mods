@@ -17,6 +17,9 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.util.Properties
 
+/** The project dir of the mod that bundles every feature. */
+const val FEATURE_BUNDLE = "dont39-all-in-one"
+
 /**
  * A bundled feature as its descriptor folder ([PzArtifact.FEATURE]) describes it: the module [name], the [facade] whose
  * `init()` the mod calls (null for a Lua-only feature), and the hook and Lua listings its glue generator wrote.

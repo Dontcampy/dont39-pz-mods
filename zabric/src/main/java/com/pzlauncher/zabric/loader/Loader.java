@@ -169,6 +169,10 @@ public final class Loader {
      * Calls {@code listener} at each jar of each of the loader's passes over the mod list. Throws naming the loader
      * version when the hook cannot be installed. The hook never throws into the loader: a pass it cannot follow, or
      * what {@code listener} throws, is kept for {@link #jarLoadEscaped} and ends its calls for that pass.
+     * <p>
+     * Before the loader applies any jar's patches, at game start too, the hook loads the member types of the loaded
+     * classes they name, so that those pass the access widener; what it cannot load is kept for
+     * {@link #weavePrepEscaped}.
      */
     public static void onJarLoad(Instrumentation inst, JarListener listener) {
         JarLoadHook.install(inst, listener);
@@ -181,6 +185,14 @@ public final class Loader {
      */
     public static void jarPassEnded() {
         JarLoadHook.passEnded();
+    }
+
+    /**
+     * What the {@link #onJarLoad} hook could not load before the loader applied a jar's patches since the last call,
+     * or null. The loader's weaving went on as without it.
+     */
+    public static Throwable weavePrepEscaped() {
+        return JarLoadHook.takeUnprepared();
     }
 
     /** What the {@link #onJarLoad} hook could not follow since the last call, or null. */

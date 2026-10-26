@@ -1,0 +1,11 @@
+name=Server Reborn
+id=Dont39ServerReborn
+author=Dont39
+modversion=@VERSION@
+description=Server-side improvements for multiplayer: repairs container and item updates that never reached a player, and an optional faster server tick. Needed on the server and the clients.
+require=\ZombieBuddy,\Zabric,\ZabricKotlin
+loadModAfter=\ZabricKotlin
+javaJarFile=media/java/Dont39ServerReborn.jar
+javaPkgName=com.dont39.pz.serverreborn
+ZBVersionMin=2.3.4
+versionMin=42.21.0

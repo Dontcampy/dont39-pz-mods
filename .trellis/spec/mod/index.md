@@ -16,6 +16,8 @@ One Gradle build ships three Workshop items, layered as a small platform for Zom
   ([Kotlin Runtime](./kotlin-runtime.md)).
 - **Dont39 All-in-One** (`dont39-all-in-one`), one consumer of both. Each fix is its own Gradle subproject (a
   *feature module*), and `dont39-all-in-one` packages all of them into one jar and mod folder.
+- **Server Reborn** (`server-reborn`), another consumer: a Kotlin mod of its own for multiplayer servers, built from
+  one module (`pz-kotlin-mod`).
 
 It also builds `zb-skip-online-checks`, a Java mod whose target is ZombieBuddy itself, outside these layers and not on
 the Workshop ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
@@ -45,7 +47,7 @@ enter/exit restore) link the shared code that implements them. ZombieBuddy's doc
 | Guide | Description |
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Modules, packages, mod assets, naming, adding a feature |
-| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, loading on client and server, patch classes, server configuration, extending the join, Lua UI wrapping, gating, enter/exit restore |
+| [ZombieBuddy Patching](./zombiebuddy-patching.md) | Loader seam, loading on client and server, patch classes, server configuration, extending the join, own network packets, Lua UI wrapping, gating, enter/exit restore |
 | [Zabric Hooks](./zabric-hooks.md) | Hook API, processors, generated glue and listing, gates, publishing |
 | [Access Widening](./access-widening.md) | Reaching game and mod members, `.classtweaker`, Zabric |
 | [Error Handling](./error-handling.md) | Never crash the game, never hide a problem: gate, report, disable |

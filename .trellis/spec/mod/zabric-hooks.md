@@ -33,10 +33,20 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
   test together.
 - `WeaveGlue.java` is the generator's reference (`GoldenTest`). A new glue shape gets a weave test case: ZombieBuddy
   drops advice that fails verification without an error, so before release only a weave test catches it.
+- Patch class names are unique ignoring case: each is a class file, and on Windows two names that differ only in case
+  overwrite each other (`NoClassDefFoundError ... wrong name` at load). A later name that clashes takes the next
+  number, as an overload does; a name that clashes with none keeps its form, which released listings name
+  (`patchName` in `PatchBuilder.java`).
+- ZombieBuddy applies `@Argument` glue to every longer overload whose first parameters accept it. Where that would
+  select another method, the generator binds the arguments by position instead, which ZombieBuddy matches to that
+  parameter count only (`PatchBuilder.positional`, `WeaveTest.aShorterOverloadIsWovenWithoutItsLongerOnes`); all
+  other glue keeps the `@Argument` shape released mods have. Still refused: another overload with as many parameters
+  that accepts the bound types (a bridge too), and `@ModifyVariable` there (a positional argument is read-only).
 - Every advice the generator writes keeps its read of the glue's `MOD`: the weave check looks for it
   (`WeaveCheck.java`).
 - A class that loads while a transformer of the same agent runs is seen by none of its transformers (patches, widener,
-  weave check); Zabric loads a target's member types before retransforming it (`WeaveCheck.java`).
+  weave check); Zabric loads a target's member types before it retransforms the target (`WeaveCheck.java`) and before
+  the loader applies a jar's patches (`loader/PatchTargets.java`).
 - The glue calls only the API package, never `hook.impl`; outside Zabric's loader package it is the only code that
   names ZombieBuddy ([Loader Seam](./zombiebuddy-patching.md#loader-seam)).
 - Hook listings (`HookListingFormat.java`, `HookListing.java`, `listing.ftl`): change the writer and all readers
@@ -65,6 +75,9 @@ nested class, named by binary name: `ClientHooks.kt` in `mod-sync`, with weave c
 - Library classes in the game jar (LWJGL) are hookable from a preloaded mod when the descriptor is JDK-only. A hook on
   a call the game makes from its first splash frame runs its pure argument checks before anything that needs the game
   up (settings, log, cache folder) (`TextureHooks.java`).
+- A method's local is taken where the method builds it: a hook on its constructor that keeps the instance only when
+  the caller frame is that method, checked only on that path and only until it acted once
+  (`server-reborn`'s `tick/TickRateHooks.kt`, `UpdateLimit.<init>(J)V`).
 - After a ZombieBuddy update, recheck `LoaderMatcher.java` against ZombieBuddy's `PatchEngine.java`, run the weave
   tests, and bump the ZombieBuddy release in `.github/actions/pz-jars/action.yml`.
 

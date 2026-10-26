@@ -16,8 +16,12 @@ buildSrc/src/main/kotlin/
   pz-mod.gradle.kts                  every shipped mod: pzMod from mod.info, assembleMod, deployWorkshop
   pz-bundled.gradle.kts              every module dont39-all-in-one bundles: Lua, media, classtweaker variants
   pz-bundled-feature.gradle.kts      every feature: pz-bundled plus the descriptor variant; Lua-only features apply it
-  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin, pz-bundled-feature, pz-widening, KSP glue,
-                                     allinone-common compile-only
+  pz-kotlin-glue.gradle.kts          every Kotlin module with KSP glue: pz-kotlin, KSP, zb-kt-utils and Zabric
+                                     compile-only; the next two set where the glue goes (pzGlue, mod/PzGlue.kt)
+  pz-feature.gradle.kts              every Kotlin feature module: pz-kotlin-glue into the bundling mod's package,
+                                     pz-bundled-feature, pz-widening, allinone-common compile-only
+  pz-kotlin-mod.gradle.kts           a Kotlin mod built from one module: pz-kotlin-glue into its javaPkgName, pz-mod,
+                                     pz-widening, packaging, the Zabric-Main check and smokeTest
   pz-widening.gradle.kts             pzTargets and the module's .classtweaker: widened compile jars (access-widening.md)
   pz-junit.gradle.kts, pz-loader-test.gradle.kts  JUnit; tests against ZombieBuddy's classes
   pz-bootstrap.gradle.kts            modules whose Java classes run before Kotlin is installed (kotlin-runtime.md)
@@ -26,7 +30,7 @@ buildSrc/src/main/kotlin/
   mod/                               machine paths, mod.info, typed extensions, JVM levels, version catalog
   feature/                           the variants projects exchange data through, feature descriptors, initFeatures(),
                                      the merged media folder (MergeMedia.kt)
-  smoke/                             smoke tests
+  smoke/                             smoke tests; registerSmokeTest() for a shipped mod's smokeTest
   widening/                          target mods and widened compile jars (see access-widening.md)
   check/                             class-reference checks, checkGlue, checkJdkGlue (see zombiebuddy-patching.md,
                                      kotlin-runtime.md, zabric-hooks.md)
@@ -61,6 +65,10 @@ loading-progress/                    shipped mod: client-only Java mod, preloade
                                      frames and a timing report per load, switches on a mod options page (its README)
 faster-loading/                      shipped mod: client-only Java mod, preloaded with launch-wide hooks; load-time fixes,
                                      one switch each in its ini and options page (its README)
+server-reborn/                       shipped mod: Kotlin mod (pz-kotlin-mod) for client and dedicated server, not
+                                     preloaded; network sync optimization (repairs lost container and item sync, with its
+                                     own packets, zombiebuddy-patching.md) and the server tick rate, under one gate (its
+                                     README)
 mod-settings/                        no project: the switches ini reader/writer (Switches.java), its options page
                                      (Switches.lua) and the page's test check (SwitchesPage.java), which pz-switches
                                      compiles into <javaPkgName>.settings and ships as <modId>_Switches.lua, since the
@@ -141,4 +149,8 @@ is not added to `loadModAfter`: the mod
 selector's auto-sort (`ModLoadOrderPanel:sortMods`) leaves a hole for a listed mod that is not enabled, and client Lua
 already runs after every mod's shared Lua. Its status line goes in `smokeTest`'s `luaTargeted` list, where idle passes.
 
-A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts.
+A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts. A Kotlin mod
+of its own (not bundled) applies `buildsrc.convention.pz-kotlin-mod` (reference: `server-reborn/`); its areas are
+packages of the one module, and All-in-One stays one module per feature because a feature may later become a mod of
+its own. Areas that run on the dedicated server's main loop share one loop object at the module's root for its
+thread, tick rate and tick boundaries (`ServerLoop.kt`), rather than each finding them itself.
