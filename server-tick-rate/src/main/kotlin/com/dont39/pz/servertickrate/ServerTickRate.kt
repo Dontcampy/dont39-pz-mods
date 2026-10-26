@@ -31,9 +31,9 @@ object ServerTickRate : Feature("server-tick-rate", "Dont39AllInOne") {
   @Volatile
   private var mainThread: Thread? = null
 
-  // the option's rate until the tick loop's limiter is found, else 0
+  // the 100 ms limiter GameServer.main built just before it sets the lock fps
   @Volatile
-  private var pending = 0
+  private var built: UpdateLimit? = null
 
   // what the compensations read: the game's rate until the limiter runs at another
   @Volatile
@@ -62,28 +62,32 @@ object ServerTickRate : Feature("server-tick-rate", "Dont39AllInOne") {
       return original
     }
     check(wanted in VANILLA_RATE..MAX_RATE) { "sandbox option $OPTION is $wanted, outside $VANILLA_RATE-$MAX_RATE" }
-    mainThread = Thread.currentThread()
-    pending = wanted
-    return wanted
-  }
-
-  /** At `UpdateLimit.Check` HEAD: the tick loop's limiter is a local of `GameServer.main`, found at its first check. */
-  internal fun limitChecked(limit: UpdateLimit) {
-    val wanted = pending
-    if (wanted == 0 || Thread.currentThread() !== mainThread || limit.delay != VANILLA_PERIOD) {
-      return
+    val limit = built
+    if (limit == null) {
+      disable(
+        "setting the server's tick rate",
+        IllegalStateException("GameServer.main set the lock fps without building a $VANILLA_PERIOD ms limiter first"),
+      )
+      return original
     }
-    if (!calledFromServerMain()) {
-      return
-    }
-    pending = 0
+    built = null
     val period = TickScale.periodMillis(wanted)
     limit.setUpdatePeriod(period)
     this.limit = limit
+    mainThread = Thread.currentThread()
     rate = wanted
     measuredTicks = 0
     log { "on: $wanted ticks per second (period $period ms)" }
     debug { "Rand.AdjustForFramerate(30) returns ${Rand.AdjustForFramerate(30)} (the game's server: 10)" }
+    return wanted
+  }
+
+  /** At `UpdateLimit(long)` RETURN: the tick loop's limiter is a local of `GameServer.main`, taken as main builds it. */
+  internal fun limitBuilt(limit: UpdateLimit, delay: Long) {
+    if (decided || delay != VANILLA_PERIOD || !calledFromServerMain()) {
+      return
+    }
+    built = limit
   }
 
   /** At `ServerMap.preupdate` HEAD, the start of each tick; also while the feature is off, to undo the rate. */
@@ -91,15 +95,11 @@ object ServerTickRate : Feature("server-tick-rate", "Dont39AllInOne") {
     if (Thread.currentThread() !== mainThread) {
       return
     }
-    if (pending == 0 && rate == VANILLA_RATE) {
+    if (rate == VANILLA_RATE) {
       return
     }
     if (!active()) {
       restore()
-      return
-    }
-    if (pending != 0) {
-      mismatch("GameServer.main ran a tick without checking a $VANILLA_PERIOD ms limiter first")
       return
     }
     measure()
@@ -155,7 +155,6 @@ object ServerTickRate : Feature("server-tick-rate", "Dont39AllInOne") {
   }
 
   private fun restore() {
-    pending = 0
     rate = VANILLA_RATE
     measuredTicks = -1
     limit?.setUpdatePeriod(VANILLA_PERIOD)

@@ -20,11 +20,11 @@ internal object LockFps {
   fun lockFps(original: Int): Int = ServerTickRate.lockFps(original)
 }
 
-// the limiter's constructor cannot be hooked alone: ZombieBuddy's matcher also takes its (JJ)V overload
+// GameServer.main keeps its tick limiter in a local: it is taken where main builds it
 @Hooks(UpdateLimit::class)
-internal object LimitCheck {
-  @Inject(method = ["Check"], at = [At("HEAD")])
-  fun check(@Self limit: UpdateLimit, ci: CallbackInfoReturnable<Boolean>) = ServerTickRate.limitChecked(limit)
+internal object LimitBuilt {
+  @Inject(method = ["<init>(J)V"], at = [At("RETURN")])
+  fun built(@Self limit: UpdateLimit, delay: Long, ci: CallbackInfo) = ServerTickRate.limitBuilt(limit, delay)
 }
 
 @Hooks(ServerMap::class)

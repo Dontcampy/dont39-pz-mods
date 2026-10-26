@@ -49,14 +49,14 @@ rate, so per real second they stay as at 10:
 
 ## How it works
 
-- `PerformanceSettings.setLockFPS` (`@ModifyVariable` at HEAD): when `GameServer.main` sets 10, the option's rate.
-- `UpdateLimit.Check` (`@Inject` at HEAD): the tick loop's limiter is a local of `GameServer.main`, so the feature
-  finds it at its first check from there and sets its period. The constructor `UpdateLimit(long)` cannot be hooked
-  alone (ZombieBuddy's matcher also takes `UpdateLimit(long, long)`).
+- `UpdateLimit(long)` (`@Inject` at RETURN): the tick loop's limiter is a local of `GameServer.main`, so the feature
+  takes the 100 ms limiter main builds.
+- `PerformanceSettings.setLockFPS` (`@ModifyVariable` at HEAD): when `GameServer.main` sets 10, right after building
+  the limiter, the feature sets the limiter's period and returns the option's rate.
 - `ServerMap.preupdate` (`@Inject` at HEAD, also while the feature is off): counts the first 10 s of ticks, and puts
   the 10 Hz limiter and lock fps back once the feature is off.
 - `Rand.AdjustForFramerate` (`@ModifyReturnValue`) and `WorldSoundManager$WorldSound.init(Object, int x5, float,
   float, short)` (`@Inject` at RETURN), the overload every other one but the copy ends in.
-- When the loop is not as expected (no 100 ms limiter checked from `GameServer.main` before the first tick, or more
+- When the loop is not as expected (no 100 ms limiter built by `GameServer.main` before it sets the lock fps, or more
   ticks than the limiter allows), the feature logs what differed, puts back 10 Hz and the game's values, and turns
   itself off. Setting the option back to 10 and restarting undoes everything.
