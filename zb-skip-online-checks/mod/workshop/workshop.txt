@@ -1,4 +1,5 @@
 version=1
+id=3821335660
 title=ZB Skip Online Checks
 description=[h1]ZB Skip Online Checks[/h1]
 description=A mod by Dont39 that makes ZombieBuddy skip its online checks. It is not made by ZombieBuddy's author.
