@@ -1,0 +1,12 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview and pre-development checklist"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Module layout, naming, convention plugins; a new pz-kotlin-mod convention"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Rules for dependent Kotlin modules: require ZabricKotlin, compile-only Kotlin, main entrypoint"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature facade and hook gate; what a Kotlin mod must not re-implement"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook API, KSP front end, gates, exact-overload rule, constructor-local rule"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loading on client and server, extending the join, own packets, gating"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "The .classtweaker list and widened compile jars"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Gate, report, disable; mismatch is an error"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Prefix, lifecycle lines, summaries"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, in-game verification, style"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/design.md", "reason": "Sync Guard behaviour and decisions D1-D8 the port must keep"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/research/spike-s2-s4.md", "reason": "Touch-recording hooks, keys, digest fields, reconcile sequence"}

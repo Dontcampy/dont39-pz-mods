@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate and review checklist"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin module rules"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature and gate usage"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook object rules and gates"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "Failure handling"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log wording and prefix"}
+{"file": ".trellis/tasks/10-24-mp-sync-loss-recovery/design.md", "reason": "Behaviour the port must keep"}
