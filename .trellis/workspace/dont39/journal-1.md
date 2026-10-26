@@ -945,3 +945,26 @@ Network Status counts the client's received game packets by type at GameClient.a
 ### Status
 
 [OK] **Completed**
+
+
+## Session 41: Faster Loading: depth map order without its main entrypoint
+<!-- trellis-session: v=2 fp=bbf2ce35d0d69e35 -->
+
+**Date**: 2026-10-26
+**Task**: Faster Loading: depth map order without its main entrypoint
+**Branch**: `feat/jolly-taussig-87321c`
+
+### Summary
+
+Root cause: Zabric runs main only for mods the mod list loads; preload-only Faster Loading (e.g. the -nosteam Sync Guard harness client) threw at the first TileDepthTextureManager.init and Zabric stopped all its hooks. DepthOrder.widened() now asks AccessWidener.report once, from main or the first depth maps. Build green; harness join checked (widener ok, depth map order ran, no hooks stopped); user state restored. PR #31.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8fe95ce` | Faster Loading: ask Zabric for the widener status at first use, not only from main |
+| `fff5405` | chore(task): Faster Loading preload-only fix checked in a harness join |
+
+### Status
+
+[OK] **Completed**

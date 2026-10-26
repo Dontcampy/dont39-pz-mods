@@ -54,7 +54,9 @@ start) by doing the same work faster: with the game's own results, or, for textu
 - The depth map order reads the game's file queue and depth-map tasks through members
   `src/main/resources/META-INF/dont39/faster-loading.classtweaker` lists, which Zabric makes public at game start (the
   jar ships it as `META-INF/zabric/Dont39FasterLoading.classtweaker`). The main entrypoint logs whether the list is in
-  effect (`[Dont39FasterLoading] access widener: ...`); when it is not, the depth map order stays idle and says so. It
+  effect (`[Dont39FasterLoading] access widener: ...`), or the first depth maps do when the mod is only preloaded and
+  the mod list lacks it, as Zabric then never calls the main entrypoint; when it is not, the depth map order stays idle
+  and says so. It
   reads the tasks not yet sorted in under the queue's own lock, the way the game queues them, and releases it before
   anything else. A batch that is not as the game queues it (count, priority, a tileset without rows, another file system
   or worker pool) throws before any priority changes and stops all the mod's hooks.
