@@ -34,10 +34,11 @@ local function guarded(page)
     if not ok then fail("reporting the shown container", err, trace) end
 end
 
-if not ISInventoryPage or not ISInventoryPage.selectContainer or not Events.OnRefreshInventoryWindowContainers then
+if not ISInventoryPage or not ISInventoryPage.selectContainer or not ISInventoryPage.setNewContainer
+    or not Events.OnRefreshInventoryWindowContainers then
     pcall(function()
         DebugType.Mod:error(PREFIX .. "open checks off: the game's loot window (ISInventoryPage.selectContainer,"
-            .. " OnRefreshInventoryWindowContainers) was not found")
+            .. " setNewContainer, OnRefreshInventoryWindowContainers) was not found")
     end)
     return
 end
@@ -47,6 +48,14 @@ local vanilla = ISInventoryPage.selectContainer
 function ISInventoryPage:selectContainer(button)
     -- outside pcall, so vanilla's errors surface as without this mod
     vanilla(self, button)
+    guarded(self)
+end
+
+-- a click on a container in the world, and mods that show a container without a button for it (RPGInventory's
+-- bags inside other containers)
+local vanillaNew = ISInventoryPage.setNewContainer
+function ISInventoryPage:setNewContainer(inventory)
+    vanillaNew(self, inventory)
     guarded(self)
 end
 

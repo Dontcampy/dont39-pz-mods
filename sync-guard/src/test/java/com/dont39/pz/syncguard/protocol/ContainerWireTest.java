@@ -4,9 +4,12 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -152,5 +155,107 @@ class ContainerWireTest {
     void trailingBytesAreRefused() {
         byte[] wire = bytes(square(ISO_OBJECT, 1, 2, 0).putShort((short) 4).put((byte) 0));
         assertThrows(ProtocolException.class, () -> ContainerWire.decode(wire));
+    }
+
+    // ---- nested addresses (the mod's own)
+
+    private static final byte[] CRATE = bytes(square(OBJECT_CONTAINER, 10500, 9600, 0).putShort((short) 4)
+            .putShort((short) 1));
+    private static final ContainerKey CRATE_KEY = ContainerKey.objectContainer(10500, 9600, 0, 4, 1);
+
+    @Test
+    void nestedOneBagDeep() {
+        byte[] wire = ContainerWire.nested(CRATE, List.of(-77));
+        assertArrayEquals(bytes(out().put((byte) ContainerWire.NESTED).put((byte) 1).putInt(-77).put(CRATE)), wire);
+        ContainerKey key = ContainerWire.decode(wire);
+        assertEquals(ContainerKey.nested(CRATE_KEY, List.of(-77)), key);
+        assertEquals(ContainerKey.Kind.NESTED, key.kind());
+        assertEquals(CRATE_KEY, key.anchor());
+        assertArrayEquals(CRATE, ContainerWire.anchor(wire));
+        assertEquals("bag -77 in container 1 of object 4 at 10500,9600,0", key.toString());
+    }
+
+    @Test
+    void nestedThreeBagsDeep() {
+        byte[] corpse = bytes(square(DEAD_BODY, 10500, 9600, 1).putShort((short) 2));
+        byte[] wire = ContainerWire.nested(corpse, List.of(1, 2, 3));
+        ContainerKey key = ContainerWire.decode(wire);
+        assertEquals(ContainerKey.nested(ContainerKey.corpse(10500, 9600, 1, 2), List.of(1, 2, 3)), key);
+        assertEquals(List.of(1, 2, 3), key.bags());
+        assertArrayEquals(corpse, ContainerWire.anchor(wire));
+        assertEquals("bag 3 in bag 2 in bag 1 in corpse 2 at 10500,9600,1", key.toString());
+    }
+
+    @Test
+    void nestedKeysCompareByChain() {
+        assertEquals(ContainerWire.decode(ContainerWire.nested(CRATE, List.of(1, 2))),
+                ContainerWire.decode(ContainerWire.nested(CRATE, List.of(1, 2))));
+        assertNotEquals(ContainerWire.decode(ContainerWire.nested(CRATE, List.of(1, 2))),
+                ContainerWire.decode(ContainerWire.nested(CRATE, List.of(2, 1))));
+        assertNotEquals(ContainerWire.decode(ContainerWire.nested(CRATE, List.of(2))),
+                ContainerWire.decode(ContainerWire.nested(CRATE, List.of(1, 2))));
+    }
+
+    @Test
+    void nestedAnchorsAreOuterContainers() {
+        byte[] bagOnFloor = bytes(square(WORLD_OBJECT, 10500, 9600, 0).putInt(5));
+        byte[] part = bytes(square(VEHICLE, 0, 0, 0).putShort((short) 77).putShort((short) 5));
+        byte[] object = bytes(square(ISO_OBJECT, 1, 2, 0).putShort((short) 3));
+        assertEquals(ContainerKey.worldItem(10500, 9600, 0, 5),
+                ContainerWire.decode(ContainerWire.nested(bagOnFloor, List.of(6))).anchor());
+        assertEquals(ContainerKey.vehicle(77, 5),
+                ContainerWire.decode(ContainerWire.nested(part, List.of(6, 7))).anchor());
+        assertEquals(ContainerKey.object(1, 2, 0, 3),
+                ContainerWire.decode(ContainerWire.nested(object, List.of(6))).anchor());
+    }
+
+    @Test
+    void nestedRefusesAnchorsThatAreNotOuterContainers() {
+        byte[] inventory = bytes(out().put(PLAYER_INVENTORY).putShort((short) 12).put((byte) 0));
+        byte[] playerBag = bytes(out().put(INVENTORY_CONTAINER).putShort((short) 12).put((byte) 0).putInt(9));
+        byte[] vehicleBag = bytes(square(OBJECT_IN_VEHICLE, 0, 0, 0).putShort((short) 77).putShort((short) 5)
+                .putInt(9));
+        byte[] floor = bytes(square(FLOOR, 10500, 9600, 0).put((byte) 0));
+        byte[] nested = ContainerWire.nested(CRATE, List.of(1));
+        for (byte[] anchor : List.of(inventory, playerBag, vehicleBag, floor, nested)) {
+            assertThrows(IllegalArgumentException.class, () -> ContainerWire.nested(anchor, List.of(1)));
+            byte[] wire = bytes(out().put((byte) ContainerWire.NESTED).put((byte) 1).putInt(1).put(anchor));
+            assertThrows(ProtocolException.class, () -> ContainerWire.decode(wire));
+        }
+        assertThrows(IllegalArgumentException.class, () -> ContainerKey.nested(ContainerKey.player(1), List.of(1)));
+    }
+
+    @Test
+    void nestedDepthIsBounded() {
+        List<Integer> most = Collections.nCopies(ContainerKey.MAX_BAGS, 7);
+        assertEquals(most, ContainerWire.decode(ContainerWire.nested(CRATE, most)).bags());
+        List<Integer> tooMany = Collections.nCopies(ContainerKey.MAX_BAGS + 1, 7);
+        assertThrows(IllegalArgumentException.class, () -> ContainerWire.nested(CRATE, tooMany));
+        assertThrows(IllegalArgumentException.class, () -> ContainerWire.nested(CRATE, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> ContainerKey.nested(CRATE_KEY, tooMany));
+        for (int count : new int[] {0, ContainerKey.MAX_BAGS + 1, -1}) {
+            ByteBuffer b = out().put((byte) ContainerWire.NESTED).put((byte) count);
+            for (int i = 0; i < Math.max(count, 0); i++) {
+                b.putInt(7);
+            }
+            byte[] wire = bytes(b.put(CRATE));
+            assertThrows(ProtocolException.class, () -> ContainerWire.decode(wire), "count " + count);
+        }
+    }
+
+    @Test
+    void nestedTruncatedOrTrailingIsRefused() {
+        byte[] whole = ContainerWire.nested(CRATE, List.of(1, 2, 3));
+        for (int length = 0; length < whole.length; length++) {
+            byte[] part = Arrays.copyOf(whole, length);
+            assertThrows(ProtocolException.class, () -> ContainerWire.decode(part), "length " + length);
+        }
+        byte[] longer = Arrays.copyOf(whole, whole.length + 1);
+        assertThrows(ProtocolException.class, () -> ContainerWire.decode(longer));
+    }
+
+    @Test
+    void anchorOfAnAddressThatIsNotNested() {
+        assertThrows(ProtocolException.class, () -> ContainerWire.anchor(CRATE));
     }
 }

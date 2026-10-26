@@ -1,6 +1,7 @@
 -- Server half of Sync Guard's test driver (research/harness, not shipped). On the driver's client command it changes
 -- a container on the server without any packet to the client, as a lost or never-sent update leaves it (AC4, AC5,
--- AC9). Each change is printed with the prefix [SGTEST] and answered with the server command SGTest.result.
+-- AC9), or gives the player a bag (AC12). Each change is printed with the prefix [SGTEST] and answered with the server
+-- command SGTest.result.
 if not isServer() then return end
 
 local function log(s) print("[SGTEST] server: " .. tostring(s)) end
@@ -50,6 +51,21 @@ function commands.clearHands(player, args)
     player:setPrimaryHandItem(nil)
     player:setSecondaryHandItem(nil)
     log("clearHands")
+end
+
+-- a bag in the player's inventory for the nested test, sent to the client as the game sends an added item
+function commands.giveBag(player, args)
+    local inv = player:getInventory()
+    local bag = inv:AddItem(args.type or "Base.Bag_Schoolbag")
+    if not bag then
+        log("giveBag: AddItem returned nothing")
+        reply(player, { what = "giveBag", line = "error AddItem returned nothing" })
+        return
+    end
+    sendAddItemToContainer(inv, bag)
+    local line = "giveBag " .. bag:getFullType() .. " id=" .. bag:getID()
+    log(line)
+    reply(player, { what = "giveBag", id = bag:getID(), line = line })
 end
 
 -- how: Remove (n items through ItemContainer.Remove), removeAll (removeAllItems, as fire empties a burning object),

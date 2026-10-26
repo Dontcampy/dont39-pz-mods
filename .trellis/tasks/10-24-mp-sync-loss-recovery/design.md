@@ -123,6 +123,36 @@ Implemented deviations (digest tuning, 2026-10-24; evidence in `research/digest-
   that enables the mod through the server's list); the loader's pass had run before it.
 - A container id of type `Undefined` (the loot window's own floor container) is not checked, like a floor container.
 
+Implemented deviations (nested bags, D8, R10, 2026-10-26):
+
+- `ContainerID.set` names a bag in a world, corpse or floor-bag container (any depth) as its outer container
+  (`ObjectContainer` with container index -1, which resolves to nothing; for an outer bag on the floor, whose
+  container has no parent object, it throws), and
+  `ContainerID.findObject` looks a bag in a vehicle part up one level deep only (`getItemWithID`). Such a bag gets the
+  mod's own nested address (`ContainerKey.Kind.NESTED`, protocol 1): the anchor, the first container up the chain
+  that is not a bag or is a bag lying on the floor (object container, corpse, vehicle part, floor bag), as the game's
+  container id bytes, and the bag item ids from the one in the anchor down, at most 8
+  (`[0x80][count][ids][anchor bytes]`, `protocol/ContainerWire`). Bags in a player's inventory and depth-1 bags in a
+  vehicle part keep the game's address. Which bags need it follows `set`'s branches (`Containers.unaddressedBag`).
+- Both sides resolve it alike (`Containers.find`): the anchor through the game's lookup, checked to be the
+  container at that address (not a stand-in), then `getItemWithID` per id, each an `InventoryContainer`. A missing
+  link resolves to nothing: the client keeps the entry unresolved, the server refuses a request or open check for it
+  and answers a queued snapshot as gone. The server keeps a nested address only when it resolves back to the same
+  container (`Containers.address`, as for the game's addresses); packet touches of a bag the packet's id names as its
+  outer container are recorded under the nested address (`Containers.of`).
+- Relevance: a nested bag goes to the peers its anchor goes to (by position, or the vehicle's); never owner-only.
+- Snapshots: the game's payload packets carry a `ContainerID` that their `parse` and `processClient` resolve, and no
+  game id reaches a nested bag (`SyncItemModData.parse` would throw on the null container). For a nested key both
+  sides swap the packets' `containerId` for `PinnedContainerID`, a `ContainerID` subclass: on the server its `set` /
+  `setFloor` do nothing, so it writes `Undefined` (one byte, which `parse` reads without a lookup); on the client its
+  `findObject` does nothing and `getContainer` returns the bag found from the snapshot's own key. The packets' code
+  runs unchanged. `AddInventoryItemToContainerPacket.containerId` is private final: widened `mutable`.
+- Open check: the client builds the nested address from the shown container; an unexplored nested bag is checked at
+  once (the game's item request cannot reach it). The open-check Lua also reports `ISInventoryPage:setNewContainer`
+  (a click on a world container; RPGInventory shows bags inside containers through it).
+- Not covered: bags more than 8 deep, bags in a zombie's inventory (no anchor address), and a nested bag whose anchor
+  index has drifted (as for any container; checked, not repaired).
+
 ## Own packets
 
 - Carried as raw packets with a reserved id outside the `PacketTypes` enum, sent with
@@ -159,7 +189,7 @@ behind earlier channel-1 messages.
   `hashCode` includes them). On the wire a container is written as vanilla's `ContainerID` bytes, so the client
   resolves it with `parse` → `findObject` → `getContainer()`. Floor containers and out-of-range object indexes
   resolve to throwaway containers: check-only, never repaired; bags inside world or corpse containers have no
-  address and are skipped (S3).
+  address and are skipped (S3), until D8 gave them the mod's nested address (deviations above).
 - Container key, computed from the parent the way `ContainerID.set` does: player inventory (online id), bag in a
   player inventory (owner id + bag item id), object container (x, y, z, object index, container index), vehicle
   part (vehicle id, part index), corpse (x, y, z, static-moving index), floor/world item (x, y, z, world item id).

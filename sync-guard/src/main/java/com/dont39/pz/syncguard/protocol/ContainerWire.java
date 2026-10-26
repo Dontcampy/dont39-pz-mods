@@ -2,11 +2,14 @@ package com.dont39.pz.syncguard.protocol;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * The mod's key of a container id as the game's {@code ContainerID.write} writes it: read from the bytes, as the
- * fields that hold it are package-private.
+ * fields that hold it are package-private. Also the mod's own nested address of a bag the game's ids cannot address:
+ * {@code [byte NESTED][byte bag count][int bag id from the outermost one in, per bag][the anchor's container id]}.
  */
 public final class ContainerWire {
     /** {@code ContainerID.ContainerType}'s constants in ordinal order, as this version of the mod reads them. */
@@ -23,6 +26,8 @@ public final class ContainerWire {
     private static final int PLAYER_INVENTORY = 7;
     private static final int INVENTORY_CONTAINER = 8;
     private static final int FLOOR = 9;
+    // the mod's own, outside the game's types
+    static final int NESTED = 0x80;
 
     private ContainerWire() {
     }
@@ -30,12 +35,12 @@ public final class ContainerWire {
     /**
      * The key of the container {@code wire} addresses, or null for a floor container: the game builds a throwaway one
      * from the square's items on each side. Throws {@link ProtocolException} for bytes that are not one whole
-     * container id of a type the game addresses.
+     * container id of a type the game addresses, or one whole nested address.
      */
     public static ContainerKey decode(byte[] wire) {
         ByteBuffer in = ByteBuffer.wrap(wire);
         try {
-            ContainerKey key = read(in);
+            ContainerKey key = read(in, true);
             if (in.hasRemaining()) {
                 throw new ProtocolException(in.remaining() + " bytes after a container id");
             }
@@ -43,6 +48,40 @@ public final class ContainerWire {
         } catch (BufferUnderflowException e) {
             throw new ProtocolException("a container id ends early", e);
         }
+    }
+
+    /**
+     * The nested address of the bags {@code bags} (from the one in the anchor down) in the container whose game bytes
+     * are {@code anchor}. Throws {@link IllegalArgumentException} for an anchor no nested address starts at, and for
+     * no bags or more than {@link ContainerKey#MAX_BAGS}.
+     */
+    public static byte[] nested(byte[] anchor, List<Integer> bags) {
+        ContainerKey key;
+        try {
+            key = decode(anchor);
+        } catch (ProtocolException e) {
+            throw new IllegalArgumentException("an anchor that is not a container id: " + e.getMessage(), e);
+        }
+        if (key == null || !key.kind().anchors()) {
+            throw new IllegalArgumentException("a nested address cannot start at "
+                    + (key == null ? "a floor container" : key));
+        }
+        if (bags.isEmpty() || bags.size() > ContainerKey.MAX_BAGS) {
+            throw new IllegalArgumentException("a nested address of " + bags.size() + " bags");
+        }
+        ByteBuffer out = ByteBuffer.allocate(2 + bags.size() * Integer.BYTES + anchor.length);
+        out.put((byte) NESTED).put((byte) bags.size());
+        bags.forEach(out::putInt);
+        return out.put(anchor).array();
+    }
+
+    /** The anchor's game bytes of a nested address. Throws {@link ProtocolException} for bytes that are not one. */
+    public static byte[] anchor(byte[] nested) {
+        ContainerKey key = decode(nested);
+        if (key == null || key.kind() != ContainerKey.Kind.NESTED) {
+            throw new ProtocolException("not a nested address");
+        }
+        return Arrays.copyOfRange(nested, 2 + key.bags().size() * Integer.BYTES, nested.length);
     }
 
     /**
@@ -63,8 +102,27 @@ public final class ContainerWire {
         }
     }
 
-    private static ContainerKey read(ByteBuffer in) {
+    private static ContainerKey read(ByteBuffer in, boolean outermost) {
         int type = in.get() & 0xFF;
+        if (type == NESTED) {
+            if (!outermost) {
+                throw new ProtocolException("a nested address inside another");
+            }
+            int count = in.get();
+            if (count < 1 || count > ContainerKey.MAX_BAGS) {
+                throw new ProtocolException("a nested address of " + count + " bags");
+            }
+            List<Integer> bags = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                bags.add(in.getInt());
+            }
+            ContainerKey anchor = read(in, false);
+            if (anchor == null || !anchor.kind().anchors()) {
+                throw new ProtocolException("a nested address starting at "
+                        + (anchor == null ? "a floor container" : anchor));
+            }
+            return ContainerKey.nested(anchor, bags);
+        }
         switch (type) {
             case PLAYER_INVENTORY -> {
                 int player = playerId(in);

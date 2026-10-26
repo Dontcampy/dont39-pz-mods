@@ -27,7 +27,6 @@ import zombie.inventory.ItemContainer;
 import zombie.network.GameClient;
 import zombie.network.PacketTypes.PacketType;
 import zombie.network.ZomboidNetData;
-import zombie.network.fields.ContainerID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -369,31 +368,30 @@ public final class ClientSync {
 
     /** At ItemContainer.requestServerItemsForContainer HEAD: the game fills the container; checked once it did. */
     public static void itemsRequested(ItemContainer container) {
-        WireKey wire = openKey(container);
-        if (wire != null) {
-            ledger.filling(wire, System.currentTimeMillis());
+        Containers.Address at = openKey(container);
+        if (at != null) {
+            ledger.filling(WireKey.container(at.wire()), System.currentTimeMillis());
         }
     }
 
-    /** From the loot window's Lua: the container it shows now. One the game is still filling waits for that. */
+    /**
+     * From the loot window's Lua: the container it shows now. One the game is still filling waits for that; the game
+     * cannot ask the server for a nested bag's items, so an unexplored one is checked at once.
+     */
     public static void containerShown(ItemContainer container) {
-        if (!container.isExplored()) {
+        Containers.Address at = openKey(container);
+        if (at == null || !container.isExplored() && at.key().kind() != ContainerKey.Kind.NESTED) {
             return;
         }
-        WireKey wire = openKey(container);
-        if (wire != null && ledger.open(wire, System.currentTimeMillis())) {
+        WireKey wire = WireKey.container(at.wire());
+        if (ledger.open(wire, System.currentTimeMillis())) {
             openCheck(wire, container);
         }
     }
 
-    // null when not checked: inactive, or a container the game does not address (floor, out of the world)
-    private static WireKey openKey(ItemContainer container) {
-        if (!active) {
-            return null;
-        }
-        ContainerID id = Containers.locate(container);
-        ContainerKey key = id == null ? null : Containers.keyOf(id);
-        return key == null ? null : WireKey.container(Containers.wire(id));
+    // null when not checked: inactive, or a container without an address (floor, out of the world)
+    private static Containers.Address openKey(ItemContainer container) {
+        return active ? Containers.current(container) : null;
     }
 
     private static void openCheck(WireKey wire, ItemContainer container) {

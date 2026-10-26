@@ -193,6 +193,25 @@ class CodecTest {
     }
 
     @Test
+    void nestedKeysRoundTrip() {
+        byte[] crate = {4, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 3, 0, 1};
+        for (List<Integer> bags : List.of(List.of(55), List.of(55, -66, 77))) {
+            byte[] nested = ContainerWire.nested(crate, bags);
+            WireKey container = WireKey.container(nested);
+            WireKey item = WireKey.item(nested, 99);
+            SyncFrame frame = new SyncFrame(3, List.of(new SyncFrame.Entry(container, false, 1, true),
+                    new SyncFrame.Entry(item, true, 0)));
+            SyncFrame read = roundTrip(frame, SyncFrame.class);
+            assertEquals(frame, read);
+            assertEquals(ContainerKey.nested(ContainerKey.objectContainer(1, 2, 0, 3, 1), bags),
+                    ContainerWire.decode(read.entries().get(1).key().containerBytes()));
+            assertEquals(new SnapshotRequest(List.of(item)),
+                    roundTrip(new SnapshotRequest(List.of(item)), SnapshotRequest.class));
+            assertEquals(new OpenCheck(container, 5), roundTrip(new OpenCheck(container, 5), OpenCheck.class));
+        }
+    }
+
+    @Test
     void wireKeysCompareByContent() {
         assertEquals(WireKey.container(new byte[] {1, 2}), WireKey.container(new byte[] {1, 2}));
         assertEquals(WireKey.container(new byte[] {1, 2}).hashCode(), WireKey.container(new byte[] {1, 2}).hashCode());

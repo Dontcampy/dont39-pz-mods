@@ -3,8 +3,10 @@ package com.dont39.pz.syncguard.server;
 import com.dont39.pz.syncguard.game.Containers;
 import com.dont39.pz.syncguard.game.ItemDigests;
 import com.dont39.pz.syncguard.game.Net;
+import com.dont39.pz.syncguard.game.PinnedContainerID;
 import com.dont39.pz.syncguard.game.Settings;
 import com.dont39.pz.syncguard.protocol.ContainerDigest;
+import com.dont39.pz.syncguard.protocol.ContainerKey;
 import com.dont39.pz.syncguard.protocol.ItemKey;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
 import com.dont39.pz.syncguard.protocol.Protocol;
@@ -16,8 +18,8 @@ import zombie.debug.DebugType;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
 import zombie.inventory.types.HandWeapon;
-import zombie.network.fields.ContainerID;
 import zombie.network.packets.AddInventoryItemToContainerPacket;
+import zombie.network.packets.INetworkPacket;
 import zombie.network.packets.ItemStatsPacket;
 import zombie.network.packets.SyncHandWeaponFieldsPacket;
 import zombie.network.packets.SyncItemFieldsPacket;
@@ -57,8 +59,8 @@ final class Snapshots {
             Peer.Job job = p.snapshots.poll();
             p.queued.remove(job.key());
             // read once already when asked; null when the parent left since
-            ContainerID id = ServerSync.parse(p, job.wire().containerBytes());
-            bytes += send(p, job, id == null ? null : id.getContainer(), player);
+            Containers.Resolved at = ServerSync.parse(p, job.wire().containerBytes());
+            bytes += send(p, job, at == null ? null : at.container(), player);
             sent++;
         }
     }
@@ -124,9 +126,11 @@ final class Snapshots {
         long digest = only != null ? digests[0] : whole.get();
         // the game's field packets name a player; the owner's, or the asking player for a world container
         IsoPlayer player = container.getCharacter() instanceof IsoPlayer owner ? owner : requester;
+        // no game id addresses a nested bag; the client pins the payloads to the bag it finds from the snapshot's key
+        ItemContainer pin = job.key().container().kind() == ContainerKey.Kind.NESTED ? container : null;
         SnapshotWriter w = SnapshotWriter.start(out, job.wire(), version, Snapshot.State.PRESENT, digest);
         w.add(b -> {
-            AddInventoryItemToContainerPacket add = new AddInventoryItemToContainerPacket();
+            AddInventoryItemToContainerPacket add = pinned(new AddInventoryItemToContainerPacket(), pin);
             add.setData(container, new ArrayList<>(items));
             add.write(new ByteBufferWriter(b));
         });
@@ -135,8 +139,9 @@ final class Snapshots {
         }
         for (int i = 0; i < digests.length; i++) {
             InventoryItem item = items.get(i);
-            w.item(item.getID(), digests[i], fields(player, item), item.hasModData() ? modData(item) : null,
-                    stats(container, item), item instanceof HandWeapon weapon ? weapon(player, weapon) : null);
+            w.item(item.getID(), digests[i], fields(player, item, pin), item.hasModData() ? modData(item, pin) : null,
+                    stats(container, item, pin),
+                    item instanceof HandWeapon weapon ? weapon(player, weapon, pin) : null);
         }
         w.finish();
         return Snapshot.State.PRESENT;
@@ -161,33 +166,38 @@ final class Snapshots {
         }
     }
 
-    private static Payload fields(IsoPlayer player, InventoryItem item) {
+    // pin: the nested bag the payloads are for, else null
+    private static <P extends INetworkPacket> P pinned(P packet, ItemContainer pin) {
+        return pin == null ? packet : PinnedContainerID.pin(packet, pin);
+    }
+
+    private static Payload fields(IsoPlayer player, InventoryItem item, ItemContainer pin) {
         return b -> {
-            SyncItemFieldsPacket packet = new SyncItemFieldsPacket();
+            SyncItemFieldsPacket packet = pinned(new SyncItemFieldsPacket(), pin);
             packet.setData(player, item);
             packet.write(new ByteBufferWriter(b));
         };
     }
 
-    private static Payload modData(InventoryItem item) {
+    private static Payload modData(InventoryItem item, ItemContainer pin) {
         return b -> {
-            SyncItemModDataPacket packet = new SyncItemModDataPacket();
+            SyncItemModDataPacket packet = pinned(new SyncItemModDataPacket(), pin);
             packet.setData(item);
             packet.write(new ByteBufferWriter(b));
         };
     }
 
-    private static Payload stats(ItemContainer container, InventoryItem item) {
+    private static Payload stats(ItemContainer container, InventoryItem item, ItemContainer pin) {
         return b -> {
-            ItemStatsPacket packet = new ItemStatsPacket();
+            ItemStatsPacket packet = pinned(new ItemStatsPacket(), pin);
             packet.setData(container, item);
             packet.write(new ByteBufferWriter(b));
         };
     }
 
-    private static Payload weapon(IsoPlayer player, HandWeapon weapon) {
+    private static Payload weapon(IsoPlayer player, HandWeapon weapon, ItemContainer pin) {
         return b -> {
-            SyncHandWeaponFieldsPacket packet = new SyncHandWeaponFieldsPacket();
+            SyncHandWeaponFieldsPacket packet = pinned(new SyncHandWeaponFieldsPacket(), pin);
             packet.setData(player, weapon);
             packet.write(new ByteBufferWriter(b));
         };

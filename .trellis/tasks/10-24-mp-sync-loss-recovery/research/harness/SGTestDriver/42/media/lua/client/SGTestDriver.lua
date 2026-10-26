@@ -505,8 +505,13 @@ end
 
 -- ---- tests (cfg test=<name>): one scripted check instead of the loop; the server half is SGTestDriver_Server.lua ----
 
+-- the server half's last answer per command (args.what)
+local serverResults = {}
 Events.OnServerCommand.Add(function(module, command, args)
-    if module == "SGTest" and command == "result" then mark("server " .. tostring(args and args.line)) end
+    if module == "SGTest" and command == "result" then
+        mark("server " .. tostring(args and args.line))
+        if args and args.what then serverResults[args.what] = args end
+    end
 end)
 
 -- logTransfers=1: each Multiplayer Weight Limit Breaker AddItem whose target container holds an instance of the item
@@ -712,6 +717,222 @@ function tests.burst(done)
         for i = 2, 11 do changeOnServer(cands[i], "Remove", 1, "burst" .. (i - 1)) end
         mark("test burst: ten more sent")
         after(30000, done)
+    end)
+end
+
+-- AC12: items moved from the inventory into a bag inside a world container and back, for the whole duration.
+-- RPGInventory replaces such transfers (ISInventoryTransferAction:new returns its ISRPGNestedTransfer) and syncs them
+-- with its own broadcast RPGInventoryNestedTransfer.moved, which -Dsyncguard.debugDropModule drops on this client.
+-- Each move logs where the items are on this client right after it and 4 s later (after Sync Guard's grace and
+-- snapshot); every third round shows the bag in the loot window (Sync Guard's open check).
+function tests.nested(done)
+    local p = getPlayer()
+    local inv = p:getInventory()
+    local n = { rounds = 0, into = 0, out = 0, inBag = 0, inInv = 0, missing = 0, notNested = 0, shown = 0 }
+    local crate, bagId
+
+    local function nestedLine()
+        return string.format("rounds=%d into=%d out=%d atBagAfter=%d atInventoryAfter=%d missingAfter=%d"
+            .. " notNested=%d shown=%d", n.rounds, n.into, n.out, n.inBag, n.inInv, n.missing, n.notNested, n.shown)
+    end
+    local function bagContainer()
+        local bag = crate.cont:getItemWithID(bagId)
+        return bag and instanceof(bag, "InventoryContainer") and bag:getInventory() or nil
+    end
+    local function attached(it)
+        local ok, slot = pcall(function() return it:getAttachedSlot() end)
+        return ok and slot and slot >= 0
+    end
+    -- light items the player carries loose
+    local function movable(max)
+        local out, items = {}, inv:getItems()
+        for i = 0, items:size() - 1 do
+            local it = items:get(i)
+            if #out >= max then break end
+            if not instanceof(it, "InventoryContainer") and not p:isEquipped(it) and not p:isEquippedClothing(it)
+                and not it:isFavorite() and not attached(it) and weight(it) <= 1 then
+                table.insert(out, it)
+            end
+        end
+        return out
+    end
+    -- ids: where each item is on this client
+    local function places(ids, bc)
+        local parts = {}
+        for _, id in ipairs(ids) do
+            local at = (bc and bc:containsID(id)) and "bag" or inv:containsID(id) and "inventory" or "nowhere"
+            table.insert(parts, id .. ":" .. at)
+        end
+        return table.concat(parts, " ")
+    end
+    local function queue(items, from, to)
+        local ids, kinds = {}, {}
+        for _, it in ipairs(items) do
+            local a = ISInventoryTransferUtil.newInventoryTransferAction(p, it, from, to)
+            kinds[tostring(a.Type)] = true
+            if a.Type ~= "ISRPGNestedTransfer" then n.notNested = n.notNested + 1 end
+            ISTimedActionQueue.add(a)
+            table.insert(ids, it:getID())
+        end
+        local k = {}
+        for t in pairs(kinds) do table.insert(k, t) end
+        return ids, table.concat(k, ",")
+    end
+    local function showBag(bc)
+        local loot = getPlayerLoot(0)
+        if not loot or not loot.setNewContainer then
+            mark("test nested: no loot window to show the bag in")
+            return
+        end
+        loot:setNewContainer(bc)
+        n.shown = n.shown + 1
+        mark("test nested: bag " .. bagId .. " shown in the loot window; open check marked="
+            .. tostring(loot.dont39SyncGuardShown == bc))
+    end
+
+    local round -- forward
+    local function moveBack(ids)
+        local bc = bagContainer()
+        local back = {}
+        for _, id in ipairs(ids) do
+            local it = bc and bc:getItemWithID(id)
+            if it then table.insert(back, it) end
+        end
+        if #back == 0 then
+            mark("test nested: nothing of " .. table.concat(ids, ",") .. " in the bag to move back")
+            step(1000, round)
+            return
+        end
+        local backIds, kinds = queue(back, bc, inv)
+        n.out = n.out + #back
+        mark("test nested out: " .. table.concat(backIds, ",") .. " bag " .. bagId .. " -> inventory via " .. kinds)
+        stepWhenIdle(60000, function()
+            mark("test nested out +0s: " .. places(backIds, bagContainer()))
+            after(4000, function()
+                mark("test nested out +4s: " .. places(backIds, bagContainer()))
+                step(500, round)
+            end)
+        end)
+    end
+    round = function()
+        if now() >= endAt then
+            mark("test nested result " .. nestedLine())
+            done()
+            return
+        end
+        local bc = bagContainer()
+        if not bc then
+            mark("error test nested: bag " .. bagId .. " is no longer in " .. where(crate) .. " on this client")
+            done()
+            return
+        end
+        n.rounds = n.rounds + 1
+        if n.rounds % 3 == 0 then showBag(bc) end
+        local items = movable(num("take", 3))
+        if #items == 0 then
+            -- refill from the crate (a native transfer: the crate itself is not nested)
+            local picked, list = {}, crate.cont:getItems()
+            for i = 0, list:size() - 1 do
+                local it = list:get(i)
+                if #picked >= 3 then break end
+                if not instanceof(it, "InventoryContainer") and weight(it) <= 1 then table.insert(picked, it) end
+            end
+            if #picked == 0 then
+                mark("error test nested: nothing light to move, carried or in " .. where(crate))
+                done()
+                return
+            end
+            queue(picked, crate.cont, inv)
+            mark("test nested: took " .. #picked .. " items from the crate to move")
+            stepWhenIdle(60000, function() step(500, round) end)
+            return
+        end
+        local ids, kinds = queue(items, inv, bc)
+        n.into = n.into + #items
+        mark("test nested in: " .. table.concat(ids, ",") .. " inventory -> bag " .. bagId .. " via " .. kinds)
+        stepWhenIdle(60000, function()
+            mark("test nested in +0s: " .. places(ids, bagContainer()))
+            after(4000, function()
+                local now4 = bagContainer()
+                for _, id in ipairs(ids) do
+                    if now4 and now4:containsID(id) then n.inBag = n.inBag + 1
+                    elseif inv:containsID(id) then n.inInv = n.inInv + 1
+                    else n.missing = n.missing + 1 end
+                end
+                mark("test nested in +4s: " .. places(ids, now4))
+                if n.rounds % 10 == 0 then mark("test nested progress " .. nestedLine()) end
+                moveBack(ids)
+            end)
+        end)
+    end
+
+    -- the bag into the crate (a native transfer), then the rounds
+    local function placeBag(bag)
+        walkThen(crate, function()
+            open(crate)
+            bagId = bag:getID()
+            if bag:getContainer() == crate.cont then
+                mark("test nested: bag " .. bagId .. " (" .. bag:getFullType() .. ") already in " .. where(crate))
+                step(500, round)
+                return
+            end
+            ISTimedActionQueue.add(ISInventoryTransferUtil.newInventoryTransferAction(p, bag, bag:getContainer(),
+                crate.cont))
+            stepWhenIdle(60000, function()
+                if not bagContainer() then
+                    mark("error test nested: bag " .. bagId .. " did not reach " .. where(crate))
+                    done()
+                    return
+                end
+                mark("test nested: bag " .. bagId .. " (" .. bag:getFullType() .. ") put into " .. where(crate))
+                step(500, round)
+            end)
+        end)
+    end
+
+    scan()
+    -- a bag already lying in a container nearby
+    for _, e in ipairs(containers) do
+        local items = e.cont:isExplored() and e.cont:getItems()
+        for i = 0, (items and items:size() or 0) - 1 do
+            local it = items:get(i)
+            if instanceof(it, "InventoryContainer") and it:getInventory() then
+                crate = e
+                mark("test nested: found bag " .. it:getID() .. " in " .. where(e))
+                placeBag(it)
+                return
+            end
+        end
+    end
+    crate = scanFor(1, 1)[1] or containers[1]
+    if not crate then
+        mark("error test nested: no container nearby")
+        done()
+        return
+    end
+    -- a bag the player carries loose, else one from the server half
+    local items = inv:getItems()
+    for i = 0, items:size() - 1 do
+        local it = items:get(i)
+        if instanceof(it, "InventoryContainer") and not p:isEquipped(it) and not p:isEquippedClothing(it)
+            and not attached(it) then
+            placeBag(it)
+            return
+        end
+    end
+    serverResults.giveBag = nil
+    sendClientCommand(p, "SGTest", "giveBag", {})
+    waitFor(function()
+        local r = serverResults.giveBag
+        return r and r.id and inv:getItemWithID(r.id) ~= nil
+    end, 15000, function(ok)
+        local r = serverResults.giveBag
+        if not ok then
+            mark("error test nested: no bag from the server (" .. tostring(r and r.line) .. ")")
+            done()
+            return
+        end
+        placeBag(inv:getItemWithID(r.id))
     end)
 end
 

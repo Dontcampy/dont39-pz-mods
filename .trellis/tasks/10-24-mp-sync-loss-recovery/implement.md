@@ -59,6 +59,14 @@ Order matters: spikes first, each recorded in `research/` before dependent code.
     driver's teleport next to containers. Done 2026-10-24 (`research/digest-tuning.md`; 600-s run: no frame
     mismatch, 227 open checks).
 
+17. Nested bags (D8, R10; `design.md`, "nested bags"): the nested address in `protocol` with codec tests (depth 1
+    and 3, bounds, truncation, anchors), addressing and resolution on both sides (`Containers`), relevance by the
+    anchor, snapshot payloads pinned to the bag (`PinnedContainerID`, `mutable` widening of the Add packet's
+    container), open checks of nested bags (also on `setNewContainer`), and the driver's `-Test nested`. Done
+    2026-10-26 (not run in game). In game: AC12 on `myserver1`'s list, once with
+    `-Dsyncguard.debugDropModule=RPGInventoryNestedTransfer.moved` and once without (harness README, "Driver
+    tests").
+
 ## Validation
 
 - Build gate (Gradle needs JDK 25):

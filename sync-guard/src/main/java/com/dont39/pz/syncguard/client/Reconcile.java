@@ -1,7 +1,9 @@
 package com.dont39.pz.syncguard.client;
 
 import com.dont39.pz.syncguard.game.ItemDigests;
+import com.dont39.pz.syncguard.game.PinnedContainerID;
 import com.dont39.pz.syncguard.protocol.ContainerDigest;
+import com.dont39.pz.syncguard.protocol.ContainerKey;
 import com.dont39.pz.syncguard.protocol.Message.Snapshot;
 import com.dont39.pz.syncguard.protocol.WireKey;
 import zombie.Lua.LuaEventManager;
@@ -11,7 +13,6 @@ import zombie.core.network.ByteBufferReader;
 import zombie.core.raknet.UdpConnection;
 import zombie.inventory.InventoryItem;
 import zombie.inventory.ItemContainer;
-import zombie.network.fields.ContainerID;
 import zombie.network.packets.AddInventoryItemToContainerPacket;
 import zombie.network.packets.INetworkPacket;
 import zombie.network.packets.ItemStatsPacket;
@@ -91,24 +92,28 @@ final class Reconcile {
         Map<Integer, Long> before = digests(mine);
         Map<Integer, FieldDiff.Fields> beforeFields = diff != null ? FieldDiff.of(mine.values()) : null;
         Map<Integer, FieldDiff.Fields> serverFields = null;
+        // no game id addresses a nested bag: its payloads are read against the bag found here
+        ItemContainer pin = found.key().kind() == ContainerKey.Kind.NESTED ? container : null;
         try {
-            AddInventoryItemToContainerPacket list = itemList(s, name, container, connection);
+            AddInventoryItemToContainerPacket list = itemList(s, name, container, pin, connection);
             if (diff != null) {
                 serverFields = FieldDiff.of(list.items.stream().filter(Objects::nonNull).toList());
             }
             if (!wire.isItem()) {
-                remove(container, found.id(), mine.values().stream().filter(i -> !serverIds.contains(i.getID()))
+                remove(container, found.part(), mine.values().stream().filter(i -> !serverIds.contains(i.getID()))
                         .toList());
             }
             Set<Integer> missing = new HashSet<>(serverIds);
             missing.removeAll(mine.keySet());
             add(list, missing, connection);
             for (Snapshot.Item item : s.items()) {
-                payload(new SyncItemFieldsPacket(), item.fields(), "SyncItemFields", item.id(), connection);
-                payload(new SyncItemModDataPacket(), item.modData(), "SyncItemModData", item.id(), connection);
-                payload(new ItemStatsPacket(), item.stats(), "ItemStats", item.id(), connection);
-                payload(new SyncHandWeaponFieldsPacket(), item.weapon(), "SyncHandWeaponFields", item.id(),
+                payload(pinned(new SyncItemFieldsPacket(), pin), item.fields(), "SyncItemFields", item.id(),
                         connection);
+                payload(pinned(new SyncItemModDataPacket(), pin), item.modData(), "SyncItemModData", item.id(),
+                        connection);
+                payload(pinned(new ItemStatsPacket(), pin), item.stats(), "ItemStats", item.id(), connection);
+                payload(pinned(new SyncHandWeaponFieldsPacket(), pin), item.weapon(), "SyncHandWeaponFields",
+                        item.id(), connection);
             }
         } catch (Failed f) {
             return new Result(Outcome.UNREPAIRABLE, name, List.of(), List.of(), List.of(), List.of(), f.getMessage(),
@@ -177,11 +182,11 @@ final class Reconcile {
 
     // the server's items as AddInventoryItemToContainer carries them, read but not added yet
     private static AddInventoryItemToContainerPacket itemList(Snapshot s, String name, ItemContainer container,
-            UdpConnection connection) {
+            ItemContainer pin, UdpConnection connection) {
         if (s.add().length == 0) {
             throw new IllegalStateException("the snapshot of " + name + " has no item list");
         }
-        AddInventoryItemToContainerPacket list = new AddInventoryItemToContainerPacket();
+        AddInventoryItemToContainerPacket list = pinned(new AddInventoryItemToContainerPacket(), pin);
         game("reading the snapshot's item list", () -> list.parse(reader(s.add()), connection));
         if (list.containerId.getContainer() != container) {
             throw new Failed("its item list names another container on this client", null);
@@ -194,7 +199,7 @@ final class Reconcile {
      * SyncClothingPacket.processClient does, then the container's removal, which also empties the hands (as
      * RemoveInventoryItemFromContainerPacket.processClient). Attached items are left to the hotbar's own update.
      */
-    private static void remove(ItemContainer container, ContainerID id, List<InventoryItem> extras) {
+    private static void remove(ItemContainer container, VehiclePart part, List<InventoryItem> extras) {
         if (extras.isEmpty()) {
             return;
         }
@@ -213,7 +218,6 @@ final class Reconcile {
         game("removing items", () -> {
             extras.forEach(item -> container.removeItemWithID(item.getID()));
             container.setExplored(true);
-            VehiclePart part = id.getPart();
             if (part != null) {
                 part.setContainerContentAmount(container.getCapacityWeight());
             }
@@ -244,6 +248,11 @@ final class Reconcile {
                 packet.processClient(connection);
             }
         });
+    }
+
+    // pin: the nested bag the snapshot is of, else null
+    private static <P extends INetworkPacket> P pinned(P packet, ItemContainer pin) {
+        return pin == null ? packet : PinnedContainerID.pin(packet, pin);
     }
 
     private static ByteBufferReader reader(byte[] bytes) {

@@ -22,8 +22,8 @@ How long the loot loop runs at the spot; -Quit quits the game after it.
 Stays at the spot without looting (zombies and the player's presence only).
 
 .PARAMETER Test
-Runs one scripted check instead of the loot loop, then finishes: equipRemove (AC5), empty (AC4), burst (AC9); see the
-harness README, "Driver tests".
+Runs one scripted check instead of the loot loop, then finishes: equipRemove (AC5), empty (AC4), burst (AC9), nested
+(AC12, runs for -DurationSec); see the harness README, "Driver tests".
 
 .PARAMETER VanillaTransfers
 Puts back the game's own transaction functions that Multiplayer Weight Limit Breaker replaces, so the driver's
@@ -40,7 +40,7 @@ ZombieBuddy (AC8's vanilla client).
 param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $DurationSec = 1800, [switch] $Quit,
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
     [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @(),
-    [ValidateSet('', 'equipRemove', 'empty', 'burst')] [string] $Test = '', [switch] $VanillaTransfers,
+    [ValidateSet('', 'equipRemove', 'empty', 'burst', 'nested')] [string] $Test = '', [switch] $VanillaTransfers,
     [switch] $NoZombieBuddy, [switch] $LogTransfers)
 . (Join-Path $PSScriptRoot 'common.ps1')
 

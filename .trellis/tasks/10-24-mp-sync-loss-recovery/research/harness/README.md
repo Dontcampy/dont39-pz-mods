@@ -187,6 +187,21 @@ command (`SGTest`) without any packet to the client, as a lost or never-sent upd
 | `equipRemove` (AC5) | Equips a carried item in the primary hand (`ISEquipWeaponAction`; takes one from a container first if nothing is carried) and picks a worn clothing item; the server removes both from the inventory (the worn one also from its worn list; its hands stay, then `clearHands`). The driver logs every change of `inInventory` / `inHand` / `worn` for 20 s | Sync Guard's snapshot removes both: worn and in hand until the `repaired ... removed [...]` line, then neither |
 | `empty` (AC4) | Container A emptied with `removeAllItems` (as fire empties a burning object; Sync Guard's content hooks see it), container B (at least 4 squares away) by clearing its item list directly (nothing sees it); counts after 8 s, then opens B in the loot window and counts again | A empty on the client after the frame's grace; B unchanged until opened, empty after its open check |
 | `burst` (AC9) | One item removed from one container, then 4 s later one from each of ten more | One notice for the first repair, then one notice for the ten (`repair notice shown for N repairs`) |
+| `nested` (AC12) | A bag inside a world container: one already lying in a container nearby, else a carried loose bag or one the server half gives (`giveBag`, `Base.Bag_Schoolbag`), put into the nearest container with items. Then until `-DurationSec` ends: up to `-Take` light loose items from the inventory into the bag and back with `ISInventoryTransferUtil.newInventoryTransferAction`, which RPGInventory turns into its `ISRPGNestedTransfer` (logged as `via ...`; `notNested=` counts others). Each move logs where the items are on the client right after and 4 s later (`test nested in/out +0s/+4s: id:bag|inventory|nowhere`); every third round the bag is shown in the loot window (`setNewContainer`, Sync Guard's open check). Ends with `test nested result ...` | With the drop: per move `dropped incoming server command RPGInventoryNestedTransfer.moved`, then `repaired bag <id> in container ... of object ...` and `repaired inventory of player ...` lines, and the items where they belong at `+4s` (`atBagAfter=` equals `into=`). Without it: no `repaired` line, client `mismatches=0` |
+
+AC12 (RPGInventory, Workshop 3800660445, is on `myserver1`'s list; Sync Guard on): the dropped run, then the
+normal one, each five minutes at the prison spot.
+
+```powershell
+$h = '.trellis\tasks\10-24-mp-sync-loss-recovery\research\harness'
+& "$h\setup-server.ps1" -WithSyncGuard
+& "$h\run-scenario.ps1" -Label ac12-drop -DurationSec 300 `
+    -ClientJvmArgs '-Dsyncguard.debugDropModule=RPGInventoryNestedTransfer.moved' -ClientArgs @{ Test = 'nested' }
+& "$h\run-scenario.ps1" -Label ac12-normal -DurationSec 300 -ClientArgs @{ Test = 'nested' }
+$r = "$env:TEMP\sgtest\runs"
+Select-String -Path "$r\ac12-*\sgtest_state.txt" -Pattern 'test nested (result|in \+4s)'
+Select-String -Path "$r\ac12-*\*-console.txt" -Pattern 'Dont39SyncGuard.*(repaired|could not|scope=|dropped)'
+```
 
 `-LogTransfers` logs each Multiplayer Weight Limit Breaker `AddItem` whose target container holds another instance of
 its item (the game's `Error, container already has id`), with where the client's own copy is (`transfer: ...` lines).

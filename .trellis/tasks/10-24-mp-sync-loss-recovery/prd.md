@@ -91,6 +91,11 @@ that unnecessary; PZ's losses are apply-side, so that check is what this mod add
   `sendServerCommand` broadcasts). Frames carry these entries to every active connection the container is relevant
   to, marked as change-recorded; the client waits a short grace period before comparing them, so a mod's own
   unordered sync packet can land first.
+- D8 (user, 2026-10-26): bags nested inside a world, corpse or floor container (which vanilla's `ContainerID` cannot
+  address, so vanilla never syncs them) get their own Sync Guard address: the outer container's address plus the chain
+  of bag item ids. Generic, not specific to a mod; on `myserver1` RPGInventory moves items into and out of such bags
+  through its own `sendServerCommand('RPGInventoryNestedTransfer','moved')` broadcast, limited to players within 50
+  tiles, with no gap detection or resend.
 
 ## Scope
 
@@ -134,6 +139,10 @@ but not repaired by this task (its object list is out of scope); it is reported,
 - R8. Activation: the server advertises the protocol in a versioned connection-details trailer; a client activates
   only when advertised and then announces itself; the server sends the mod's packets only to clients that announced.
   A vanilla client on a modded server and a modded client on a vanilla server see no mod packets and no errors.
+- R10. A bag inside a world, corpse or floor container (at any depth, including bags inside such bags) is addressed
+  by its outer container's address and its bag item id chain. Frames, snapshot requests, snapshots and open checks
+  work for it as for any other container; content changes in it are recorded (R3) for the peers its outer container
+  is relevant to.
 - R9. On a repair that changed something on the client, the player sees a short notice (rate-limited, counting
   repairs since the last one), and both sides log the object, what differed and the outcome. Each side keeps
   counters (checks, mismatches, snapshots, repaired, unrepairable) and logs a summary periodically and at disconnect.
@@ -164,6 +173,9 @@ but not repaired by this task (its object list is out of scope); it is reported,
 - [ ] AC11 (D7). On `myserver1`'s mod list (transfers through "Multiplayer Weight Limit Breaker"), a transfer whose
   mod broadcast the test drops on the client is detected and repaired; normal transfers cause no mismatch after the
   grace period.
+- [ ] AC12 (D8, R10). On `myserver1`'s list, an RPGInventory nested transfer into and out of a bag inside a world
+  container whose `moved` broadcast the test drops on the client is detected and repaired; normal nested transfers
+  cause no mismatch after the grace period.
 - [ ] AC10 (D4). `./gradlew build` passes; `assembleMod` yields the mod folder with `mod.info`, jar and translations.
   The smoke run uses the local dedicated server with the user's modded server config (`myserver1`, its full mod
   list plus Sync Guard) and a client joining it, to check compatibility with those mods: both sides log Sync Guard

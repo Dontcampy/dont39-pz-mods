@@ -375,26 +375,29 @@ public final class ServerSync {
 
     private static void touchContainer(Peer p, ContainerID id) {
         ItemContainer container = id.getContainer();
-        ContainerKey key = container != null ? Containers.keyOf(id) : null;
+        Containers.Address at = container != null ? Containers.of(id) : null;
         if (Settings.touches()) {
-            debug("touch %s %s: %s", id.getContainerType(), key, container == null ? "no container" : "recorded");
+            debug("touch %s %s: %s", id.getContainerType(), at == null ? null : at.key(), outcome(container, at));
         }
-        if (key != null) {
-            p.touched.computeIfAbsent(key, k -> new Touch(k, container, Containers.wire(id), false));
+        if (at != null) {
+            p.touched.computeIfAbsent(at.key(), k -> new Touch(k, container, at.wire(), false));
         }
     }
 
     private static void touchItem(Peer p, ContainerID id, int itemId) {
         ItemContainer container = id.getContainer();
-        ContainerKey key = container != null ? Containers.keyOf(id) : null;
+        Containers.Address at = container != null ? Containers.of(id) : null;
         if (Settings.touches()) {
-            debug("touch item %d in %s %s: %s", itemId, id.getContainerType(), key,
-                    container == null ? "no container" : "recorded");
+            debug("touch item %d in %s %s: %s", itemId, id.getContainerType(), at == null ? null : at.key(),
+                    outcome(container, at));
         }
-        if (key != null) {
-            p.touched.computeIfAbsent(new ItemKey(key, itemId),
-                    k -> new Touch(k, container, Containers.wire(id), false));
+        if (at != null) {
+            p.touched.computeIfAbsent(new ItemKey(at.key(), itemId), k -> new Touch(k, container, at.wire(), false));
         }
+    }
+
+    private static String outcome(ItemContainer container, Containers.Address at) {
+        return container == null ? "no container" : at == null ? "not addressed" : "recorded";
     }
 
     /**
@@ -549,13 +552,13 @@ public final class ServerSync {
     }
 
     private static void openCheck(Peer p, Message.OpenCheck o) {
-        ContainerID id = parse(p, o.key().containerBytes());
-        Key key = id == null ? null : key(id, o.key());
+        Containers.Resolved at = parse(p, o.key().containerBytes());
+        Key key = at == null ? null : key(o.key());
         if (key == null || !relevant(p.connection, key)) {
             p.session.requested(true);
             return;
         }
-        ItemContainer container = id.getContainer();
+        ItemContainer container = at.container();
         Long digest = null;
         if (Containers.live(container, key.container())) {
             if (key instanceof ItemKey ik) {
@@ -574,17 +577,15 @@ public final class ServerSync {
     }
 
     private static Key key(Peer p, WireKey wire) {
-        ContainerID id = parse(p, wire.containerBytes());
-        return id == null ? null : key(id, wire);
+        return parse(p, wire.containerBytes()) == null ? null : key(wire);
     }
 
-    /** Null for a floor container, and for a kind of address the server never sends. */
-    private static Key key(ContainerID id, WireKey wire) {
+    /** Null for a floor container, and for an address this version of the mod cannot read. */
+    private static Key key(WireKey wire) {
         ContainerKey ck;
         try {
-            ck = Containers.keyOf(id);
+            ck = Containers.keyOf(wire.containerBytes());
         } catch (IllegalStateException e) {
-            // an address the game parses but this version of the mod cannot read
             return null;
         }
         if (ck == null) {
@@ -594,12 +595,12 @@ public final class ServerSync {
     }
 
     /**
-     * A client's bytes as the game reads them, or null when the game cannot: the client's garbage, or a parent that
-     * left (the game's lookup throws for a player who is gone).
+     * The container a client's bytes address, or null when there is none to look in: the client's garbage, a parent
+     * that left (the game's lookup throws for a player who is gone), a nested bag that is gone.
      */
-    static ContainerID parse(Peer p, byte[] wire) {
+    static Containers.Resolved parse(Peer p, byte[] wire) {
         try {
-            return Containers.parse(wire, p.connection);
+            return Containers.find(wire, p.connection);
         } catch (RuntimeException e) {
             return null;
         }
@@ -632,6 +633,8 @@ public final class ServerSync {
                 yield v != null && c.isRelevantTo(v.getX(), v.getY());
             }
             case OBJECT, OBJECT_CONTAINER, CORPSE, WORLD_ITEM -> c.isRelevantTo(k.x(), k.y());
+            // never only its owner's: an anchor is not a player's
+            case NESTED -> relevant(c, k.anchor());
         };
     }
 
