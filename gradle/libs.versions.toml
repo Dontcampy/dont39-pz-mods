@@ -15,7 +15,7 @@ kctfork = "0.14.0"
 # build only: publishes zabric and zabric-processor (buildSrc pz-publish)
 mavenPublish = "0.37.0"
 # Zabric's mod version, also the version of its two Maven artifacts
-zabric = "0.7.1"
+zabric = "0.7.2"
 
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
