@@ -3,7 +3,7 @@
 A Kotlin mod for multiplayer servers, made for game 42.21: network sync optimization (formerly the Sync Guard mod) and
 the server tick rate (formerly an All-in-One feature). Both run on one lifecycle: they are checked, turned on and, after
 an error, turned off together. Needed on the dedicated server and the clients; requires ZombieBuddy, Zabric and
-ZabricKotlin. Design and decisions: `.trellis/tasks/10-26-server-reborn/` and, for the sync part's mechanism, the
+ZabricKotlin. Design and decisions: the archived task `10-26-server-reborn` and, for the sync part's mechanism, the
 archived task `10-24-mp-sync-loss-recovery` (`design.md`, `research/`).
 
 ## Lifecycle
