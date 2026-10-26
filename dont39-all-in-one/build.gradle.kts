@@ -27,7 +27,6 @@ val features = listOf(
   ":tunnel",
   ":mod-sync",
   ":network-status",
-  ":server-tick-rate",
 )
 
 val modId = pzMod.modId
