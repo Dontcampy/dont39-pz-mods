@@ -33,7 +33,7 @@ convention `buildSrc/src/main/kotlin/pz-kotlin-mod.gradle.kts`:
   `ksp(:zb-kt-utils-processor)`; no `allinone-common` (unrelocated in All-in-One's jar; a second copy would clash on
   the shared class loader);
 - KSP options from `pzMod`: glue package = `javaPkgName`, Lua prefix `<modId>_`, mod id, glue class and Lua bridge
-  name from the mod id without `Dont39` (`ServerRebornGlue`, `ServerReborn` → `ServerRebornLua`);
+  name from the module name in PascalCase (`ServerRebornGlue`, `ServerRebornLua`);
 - `checkLoaderRefs` excludes the generated glue classes;
 - jar: `Zabric-Main` = `<javaPkgName>.<Name>Main`, the expanded `.classtweaker` into
   `META-INF/zabric/<modId>.classtweaker`, `META-INF/dont39/**` excluded; `assembleMod` copies `src/main/lua` to

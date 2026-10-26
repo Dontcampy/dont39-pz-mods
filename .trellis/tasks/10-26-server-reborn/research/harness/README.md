@@ -83,23 +83,27 @@ from the main menu with `ConnectToServer:connect`, as the load-speed task's driv
 
 ## Sequence: Server Reborn smoke join (minimal list)
 
-Zabric, ZabricKotlin, Server Reborn and the driver only, on a save of its own, so it needs no `myserver1` mod copies.
+ZombieBuddy, Zabric, ZabricKotlin, Server Reborn and the driver only, on a save of its own, so it copies a few small
+folders instead of `myserver1`'s list.
 Back up the Loading Progress reports and check `default.txt` first (the launcher rewrites it).
 
 ```powershell
 $h = '.trellis\tasks\10-26-server-reborn\research\harness'
 & "$h\backup-client.ps1"
 & "$h\setup-server.ps1" -Minimal -WithServerReborn
-& "$h\start-server.ps1" -Label smoke -Wait
-& "$h\start-client.ps1" -Label smoke -NoLoop -DurationSec 60 -Quit
+& "$h\start-server.ps1" -Label smoke -Wait -ZbAllowAll
+& "$h\start-client.ps1" -Label smoke -NoLoop -DurationSec 60 -Quit -ZbAllowAll
 & "$h\stop-client.ps1"; & "$h\stop-server.ps1"
 Select-String -Path "$env:TEMP\sgtest\runs\smoke\*-console.txt" -Pattern 'Dont39ServerReborn|hooks stopped|ERROR'
 & "$h\cleanup.ps1"
 ```
 
 Pass: server `active on a dedicated server` and the tick rate `off` at 10; client `ready on a client` and active for
-the server; no `hooks stopped`, `disabled` or error line from the mod, Zabric or ZombieBuddy. A fresh `srmin` may
-need one restart after the server registers Zabric's preload (see the next section).
+the server; no `hooks stopped`, `disabled` or error line from the mod, Zabric or ZombieBuddy. A fresh `srmin` needs
+one server restart after the server registers Zabric's preload (see the next section), and the join that creates the
+character is not checked (`../smoke-join.md`): join a second time. `-ZbAllowAll` loads new jars without ZombieBuddy's
+approval dialog for that launch only; ZombieBuddy still records them in `mod_approvals.json`, which `cleanup.ps1`
+restores.
 
 ## Sequence: smoke and compatibility (AC10)
 

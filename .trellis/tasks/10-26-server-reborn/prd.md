@@ -86,5 +86,8 @@ Defaults taken: mod id `Dont39ServerReborn`, package `com.dont39.pz.serverreborn
 - Sync Guard's open items, carried over: AC2 (no field update lost after its add under loss), AC6 (two clients, 30
   min, no false mismatch), AC3 (its example is not rejected on B42; needs another rejected change), and the client
   error `container already has id` seen only with the mod active (`research/acceptance.md` of the archived task).
+- A join that creates a new character is not checked for that session: `ConnectToServerState.exit()` clears the
+  instance the client reads the trailer from before `sendPlayerConnect` (pre-existing in Sync Guard;
+  `research/smoke-join.md`). Fix: keep the trailer's result when the join parses the connection-details.
 - Moving All-in-One to one subproject.
 - Workshop upload, preview image, PR #28's fate beyond saying this PR supersedes it.

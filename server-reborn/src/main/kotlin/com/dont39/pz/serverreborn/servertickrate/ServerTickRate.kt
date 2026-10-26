@@ -74,7 +74,9 @@ internal object ServerTickRate {
     rate = wanted
     measuredTicks = 0
     ServerReborn.log { "tick rate on: $wanted ticks per second (period $period ms)" }
-    ServerReborn.debug { "Rand.AdjustForFramerate(30) returns ${Rand.AdjustForFramerate(30)} (the game's server: 10)" }
+    ServerReborn.debug {
+      "Rand.AdjustForFramerate(30) returns ${Rand.AdjustForFramerate(30)} (the game's server: 10)"
+    }
     return wanted
   }
 

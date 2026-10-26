@@ -36,12 +36,16 @@ Logs each Multiplayer Weight Limit Breaker AddItem whose item the target contain
 .PARAMETER NoZombieBuddy
 Launches without ZombieBuddy's -agentlib:zbNative, so no Java mod runs: the mods' Lua loads as on a client without
 ZombieBuddy (AC8's vanilla client).
+
+.PARAMETER ZbAllowAll
+ZombieBuddy's policy=allow-all for this launch only: new or changed mod jars load without its approval dialog. The
+user's ZombieBuddy config and approvals are not changed.
 #>
 param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $DurationSec = 1800, [switch] $Quit,
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
     [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @(),
     [ValidateSet('', 'equipRemove', 'empty', 'burst', 'nested')] [string] $Test = '', [switch] $VanillaTransfers,
-    [switch] $NoZombieBuddy, [switch] $LogTransfers)
+    [switch] $NoZombieBuddy, [switch] $LogTransfers, [switch] $ZbAllowAll)
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 if (-not (Test-Path (Join-Path $SG.Backup 'hashes.txt'))) { throw 'no client backup; run backup-client.ps1 first' }
@@ -79,6 +83,7 @@ $winArgs = @($json.windows.PSObject.Properties | Where-Object { [Environment]::O
 $vm = foreach ($a in @($json.vmArgs) + $winArgs) {
     if ($a -eq '-Dzomboid.steam=1') { '-Dzomboid.steam=0' }
     elseif ($NoZombieBuddy -and $a -like '-agentlib:zbNative*') { }
+    elseif ($ZbAllowAll -and $a -like '-agentlib:zbNative*') { if ($a.Contains('=')) { "$a,policy=allow-all" } else { "$a=policy=allow-all" } }
     else { $a }
 }
 $argList = @($vm) + $JvmArgs + @('-cp', ($json.classpath -join ';'), $json.mainClass.Replace('/', '.'), '-nosteam')

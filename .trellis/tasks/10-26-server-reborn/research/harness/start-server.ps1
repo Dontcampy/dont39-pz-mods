@@ -14,7 +14,7 @@ Blocks until the console shows SERVER STARTED.
 Starts the game's own Prometheus exporter (-DprometheusPort) on that port; sampler.ps1 -PrometheusPort reads it.
 #>
 param([Parameter(Mandatory)] [string] $Label, [switch] $Wait, [int] $TimeoutSec = 900, [string] $Xmx = '16g',
-    [int] $PrometheusPort = 0, [string[]] $JvmArgs = @())
+    [int] $PrometheusPort = 0, [string[]] $JvmArgs = @(), [switch] $ZbAllowAll)
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 $name = $SG.ServerName
@@ -31,7 +31,11 @@ New-Item -ItemType Directory -Force $zbCfg | Out-Null
 $vm = foreach ($a in @($json.vmArgs) + @($json.windows.'10'.vmArgs)) {
     if ($a -like '-Xmx*') { "-Xmx$Xmx" }
     elseif ($a -eq '-Dzomboid.steam=1') { '-Dzomboid.steam=0' }
-    elseif ($a -like '-agentlib:zbNative*') { if ($a.Contains('=')) { "$a,config_dir=$zbCfg" } else { "$a=config_dir=$zbCfg" } }
+    elseif ($a -like '-agentlib:zbNative*') {
+        # allow-all: new or changed jars load without approval, for this launch only
+        $opts = "config_dir=$zbCfg" + $(if ($ZbAllowAll) { ',policy=allow-all' } else { '' })
+        if ($a.Contains('=')) { "$a,$opts" } else { "$a=$opts" }
+    }
     else { $a }
 }
 if (-not ($vm | Where-Object { $_ -like '-agentlib:zbNative*' })) { throw "no -agentlib:zbNative in $sd\ProjectZomboid64.json: ZombieBuddy is not installed on the server" }

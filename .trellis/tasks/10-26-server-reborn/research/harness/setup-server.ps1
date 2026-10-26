@@ -2,7 +2,7 @@
 .SYNOPSIS
 Creates or updates the local test server "sgtest" from ~/Zomboid/Server/myserver1.* in the short cache folder, and
 copies the mods it needs (real copies, not junctions) for the server and the client. With -Minimal, the server
-"srmin" instead: myserver1's settings with only Zabric, ZabricKotlin, Server Reborn and the driver.
+"srmin" instead: myserver1's settings with only ZombieBuddy, Zabric, ZabricKotlin, Server Reborn and the driver.
 
 .DESCRIPTION
 Idempotent: rerun it to switch Server Reborn on or off (only Mods= changes) or to refresh the copies. Every copy it
@@ -16,8 +16,8 @@ uses) from there; Dont39ServerReborn from server-reborn/build/mod; SGTestDriver 
 Adds Dont39ServerReborn to Mods= right after ZabricKotlin; without it Mods= has no Dont39ServerReborn.
 
 .PARAMETER Minimal
-Mods= is Zabric, ZabricKotlin (and Server Reborn) only, with no Workshop items, the vanilla map, no spawn files and a
-save of its own (server "srmin"), for a smoke join. The other scripts use the server the last setup chose.
+Mods= is ZombieBuddy, Zabric, ZabricKotlin (and Server Reborn) only, with no Workshop items, the vanilla map, no
+spawn files and a save of its own (server "srmin"), for a smoke join. The other scripts use the server the last setup chose.
 
 .PARAMETER DryRun
 Prints what would be copied and the total size, changes nothing.
@@ -34,7 +34,8 @@ $kv = @{}
 foreach ($l in $iniLines) { if ($l -match '^([A-Za-z0-9_]+)=(.*)$') { $kv[$Matches[1]] = $Matches[2] } }
 $modIds = @($kv['Mods'] -split ';' | Where-Object { $_ } | ForEach-Object { $_.TrimStart('\') })
 $items = @($kv['WorkshopItems'] -split ';' | Where-Object { $_ })
-if ($Minimal) { $modIds = @('Zabric', 'ZabricKotlin'); $items = @() }
+# the mod ZombieBuddy is what Zabric requires; the source's items still locate its folder
+if ($Minimal) { $modIds = @('ZombieBuddy', 'Zabric', 'ZabricKotlin') }
 
 # ---- resolve mod folders ----
 

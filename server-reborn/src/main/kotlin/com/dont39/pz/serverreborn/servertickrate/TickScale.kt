@@ -5,7 +5,9 @@ internal object TickScale {
   const val VANILLA_RATE = 10
   const val MAX_RATE = 20
 
-  /** `Rand.AdjustForFramerate` at [rate]: the game's client formula with [rate] as its frame rate, as 10 is on the server. */
+  /**
+   * `Rand.AdjustForFramerate` at [rate]: the game's client formula with [rate] as its frame rate, as 10 is on the server.
+   */
   fun adjustForFramerate(n: Int, rate: Int): Int = (n * (rate / 30f)).toInt()
 
   /** [ticks] at 10 Hz as ticks at [rate], to the nearest tick. */
