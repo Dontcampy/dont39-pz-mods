@@ -1,11 +1,11 @@
 package com.dont39.pz.serverreborn
 
-import com.dont39.pz.serverreborn.networksyncoptimization.client.ClientSync
-import com.dont39.pz.serverreborn.networksyncoptimization.client.LuaGlobals
-import com.dont39.pz.serverreborn.networksyncoptimization.game.Containers
-import com.dont39.pz.serverreborn.networksyncoptimization.game.PacketScope
-import com.dont39.pz.serverreborn.networksyncoptimization.game.Settings
-import com.dont39.pz.serverreborn.networksyncoptimization.server.ServerSync
+import com.dont39.pz.serverreborn.network.client.ClientSync
+import com.dont39.pz.serverreborn.network.client.LuaGlobals
+import com.dont39.pz.serverreborn.network.game.Containers
+import com.dont39.pz.serverreborn.network.game.PacketScope
+import com.dont39.pz.serverreborn.network.game.Settings
+import com.dont39.pz.serverreborn.network.server.ServerSync
 import com.pzlauncher.zabric.entrypoint.MainEntrypoint
 import com.pzlauncher.zabric.widener.AccessWidener
 import zombie.network.GameServer

@@ -183,7 +183,7 @@ For a feature that adds to the multiplayer join. Reference: `mod-sync`.
 ## Own Network Packets
 
 For a feature that sends its own messages between client and server. Reference: `server-reborn`'s network sync
-optimization (`networksyncoptimization/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` in
+optimization (`network/`: `game/Net.kt`, `NetDataHooks` in `client/ClientHooks.kt`, `NetHooks` in
 `server/ServerHooks.kt`; the main loop's pass and tick hooks in `ServerLoop.kt`).
 
 - Header 134 and a reserved short id outside the `PacketTypes` enum; the first byte of the body is the feature's
