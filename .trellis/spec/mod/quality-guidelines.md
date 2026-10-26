@@ -48,7 +48,10 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
    `console.txt` shows the feature ready, then active, and the fix is visible.
 3. Without it (a target mod disabled or at another version, or what `problem()` checks unmet): the feature reports
    idle/inactive, behavior unchanged, no errors.
-4. Debug output on (the target mod's debug option, or `-debug`): at most periodic summary lines, no per-frame spam.
+4. Debug output on (the target mod's debug option, or `-debug` with `debuglog.cfg`
+   ([Logging](./logging-guidelines.md#debug-output))): at most periodic summary lines, no per-frame spam. An
+   unattended run avoids `-debug`: it stops in the Lua debugger at the first Lua error of any mod (Map Mod Manager
+   throws one under `-nosteam`).
 5. Hook not applying: raise ZombieBuddy's log verbosity
    ([CommandLine.md](../../../external-repos/ZombieBuddy/doc/CommandLine.md)) and check the glue's patch class was
    found.
@@ -61,7 +64,10 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 7. Driving the game without a person: a temporary Lua file in the deployed mod that acts through the real buttons'
    callbacks and writes its state with `getFileWriter` (under `~/Zomboid/Lua/`). `console.txt` can lag or stop
    while the game runs; the main menu fires `OnFETick`, not `OnTick`; a window in the background loads the world
-   very slowly. A Workshop upload asks for a native confirmation that a person must click.
+   very slowly. A Workshop upload asks for a native confirmation that a person must click. In multiplayer the server
+   decides damage: a test character that must survive gets `/godmode -true` (self; another player:
+   `/godmodplayer <name> -true`) and waits for the server's "is now invincible" chat reply; the client's own
+   `setGodMod` does not reach the server.
 8. A real client launch goes through `ProjectZomboid64.exe` (JNI), not `java`: `smokeTest` does not show what differs
    there (e.g. `sun.java.command` is empty at premain).
 9. Chinese text with missing characters is the game's CN bitmap fonts without a font patch, not the mod's strings.

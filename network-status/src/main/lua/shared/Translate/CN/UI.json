@@ -2,6 +2,8 @@
     "UI_Dont39AllInOne_NetworkStatus_Options": "Dont39 All-in-One：网络状态",
     "UI_Dont39AllInOne_NetworkStatus_Show": "显示网络状态图标",
     "UI_Dont39AllInOne_NetworkStatus_ShowTooltip": "多人游戏中，左下角显示信号图标：信号格表示延迟，警告三角表示丢包。鼠标悬停可查看详情。",
+    "UI_Dont39AllInOne_NetworkStatus_Report": "把下载分类写入 console.txt",
+    "UI_Dont39AllInOne_NetworkStatus_ReportTooltip": "离开服务器时，把本次各类游戏数据的接收量写入 console.txt，每类一行。",
     "UI_Dont39AllInOne_NetworkStatus_Disabled": "网络状态出错后已停止（详情见 console.txt）。",
     "UI_Dont39AllInOne_NetworkStatus_Method": "连接方式：%1",
     "UI_Dont39AllInOne_NetworkStatus_MethodUdp": "直连 UDP",
@@ -28,5 +30,8 @@
     "UI_Dont39AllInOne_NetworkStatus_CongestionNone": "拥塞控制：未限速",
     "UI_Dont39AllInOne_NetworkStatus_Bandwidth": "带宽上限：限速至 %1 KB/s",
     "UI_Dont39AllInOne_NetworkStatus_BandwidthNone": "带宽上限：未限速",
-    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "发送缓冲：%1 字节"
+    "UI_Dont39AllInOne_NetworkStatus_SendBuffer": "发送缓冲：%1 字节",
+    "UI_Dont39AllInOne_NetworkStatus_Received": "已接收：游戏数据包 %1 MB，%2 分钟（占全部接收字节的 %3）",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedNoTotal": "已接收：游戏数据包 %1 MB，%2 分钟",
+    "UI_Dont39AllInOne_NetworkStatus_ReceivedType": "  %1：%2 MB（%3），%4 个包"
 }

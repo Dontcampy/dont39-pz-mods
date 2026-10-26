@@ -925,6 +925,30 @@ ZabricKotlin 0.7.0 is a preload mod: PreMain swaps Kotlin at game start; on a la
 [OK] **Completed**
 
 
+## Session 39: Per-packet-type download stats in Network Status
+<!-- trellis-session: v=2 fp=69fcb0e601622097 -->
+
+**Date**: 2026-10-24
+**Task**: Per-packet-type download stats in Network Status
+**Branch**: `worktree-mp-download-stats`
+
+### Summary
+
+Network Status counts the client's received game packets by type at GameClient.addIncoming: tooltip shows total, share of RakNet bytes and top 6 types; full table logged at info when the session ends. Verified on local -nosteam servers (4 mods; live 244 mods with insane zombies, god mode, prison and military base). Findings: map chunks are resent in full on revisit; with many zombies, zombie sync dominates; each hit on a player sends ~5 KB (PlayerDamage, SyncVisuals, SyncClothing, PVPEvents). Specs: debug lines need debuglog.cfg even in -debug; unattended runs avoid -debug; /godmode -true for test characters.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `079d7a9` | Add Server tick rate: an opt-in sandbox option for a dedicated server's world tick, 10-20 per second |
+| `66c768b` | Server tick rate: escape the percent sign in the option's tooltips |
+| `028c679` | chore(task): record the 20 Hz play test (AC6) for 10-24-server-tick-20hz |
+| `fa31814` | Show received game data by packet type in Network Status |
+
+### Status
+
+[OK] **Completed**
+
 ## Session 40: Server tick rate option (20 Hz)
 <!-- trellis-session: v=2 fp=7af24762ae725743 -->
 
@@ -935,15 +959,3 @@ ZabricKotlin 0.7.0 is a preload mod: PreMain swaps Kotlin at game start; on a la
 ### Summary
 
 Researched the B42 dedicated server's hardcoded 10 Hz tick (zombie/player/vehicle sync relayed from clients, tick-bound logic), measured 10 vs 20 Hz with FakeClientManager load on the Linux test server (+20% process CPU, flat bandwidth, exact game time), and shipped server-tick-rate: an opt-in sandbox option 10-20 that retunes GameServer.main's limiter and lock fps and scales Rand.AdjustForFramerate and world sound life. Verified on the test server; short real-client play test accepted by the user.
-
-### Git Commits
-
-| Hash | Message |
-|------|---------|
-| `079d7a9` | Add Server tick rate: an opt-in sandbox option for a dedicated server's world tick, 10-20 per second |
-| `66c768b` | Server tick rate: escape the percent sign in the option's tooltips |
-| `028c679` | chore(task): record the 20 Hz play test (AC6) for 10-24-server-tick-20hz |
-
-### Status
-
-[OK] **Completed**
