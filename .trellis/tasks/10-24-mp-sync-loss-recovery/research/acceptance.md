@@ -44,7 +44,8 @@
   below.
 - The client error `[Zabric] Dont39FasterLoading: hooks stopped after an error while running DepthHooks.initBegins`
   (`IllegalStateException: a fix that needs the access widener ran before the mod's main entrypoint reported it`) is in
-  both runs: pre-existing, not Sync Guard's.
+  both runs: pre-existing, not Sync Guard's. Faster Loading was only preloaded there (the client's list is the server's);
+  fixed on main in Dontcampy/dont39-pz-mods#31, merged into this branch.
 - Every other run below was also diffed against `compat-off2` (both sides): no signature only with Sync Guard, except
   the duplicate-id line and the two world-load lines noted under "Other observations".
 
