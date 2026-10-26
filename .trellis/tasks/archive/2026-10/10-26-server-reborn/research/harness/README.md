@@ -7,7 +7,7 @@ below keep); renamed for Server Reborn, whose smoke join is the first section. A
 machine.
 
 PowerShell 7 on Windows. Run every script from the repo root as `& "$h\<script>.ps1"` after
-`$h = '.trellis\tasks\10-26-server-reborn\research\harness'`. `Get-Help "$h\<script>.ps1" -Full` shows each
+`$h = '.trellis\tasks\archive\2026-10\10-26-server-reborn\research\harness'`. `Get-Help "$h\<script>.ps1" -Full` shows each
 script's parameters.
 
 ## Files
@@ -88,7 +88,7 @@ folders instead of `myserver1`'s list.
 Back up the Loading Progress reports and check `default.txt` first (the launcher rewrites it).
 
 ```powershell
-$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+$h = '.trellis\tasks\archive\2026-10\10-26-server-reborn\research\harness'
 & "$h\backup-client.ps1"
 & "$h\setup-server.ps1" -Minimal -WithServerReborn
 & "$h\start-server.ps1" -Label smoke -Wait -ZbAllowAll
@@ -112,7 +112,7 @@ world, and the first join creates the character; a warm-up run takes those, so t
 existing world with an existing character.
 
 ```powershell
-$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+$h = '.trellis\tasks\archive\2026-10\10-26-server-reborn\research\harness'
 & "$h\backup-client.ps1"
 & "$h\setup-server.ps1" -DryRun             # check sources and size first
 & "$h\setup-server.ps1"                     # Server Reborn off
@@ -149,7 +149,7 @@ Same script and duration with the mod off, then on; one client in god mode at th
 moving items. Run the warm-up above first if the server is fresh.
 
 ```powershell
-$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+$h = '.trellis\tasks\archive\2026-10\10-26-server-reborn\research\harness'
 foreach ($mode in 'off', 'on') {
     if ($mode -eq 'on') { & "$h\setup-server.ps1" -WithServerReborn } else { & "$h\setup-server.ps1" }
     & "$h\start-server.ps1" -Label "load-$mode" -Wait
@@ -219,7 +219,7 @@ AC12 (RPGInventory, Workshop 3800660445, is on `myserver1`'s list; Server Reborn
 normal one, each five minutes at the prison spot.
 
 ```powershell
-$h = '.trellis\tasks\10-26-server-reborn\research\harness'
+$h = '.trellis\tasks\archive\2026-10\10-26-server-reborn\research\harness'
 & "$h\setup-server.ps1" -WithServerReborn
 & "$h\run-scenario.ps1" -Label ac12-drop -DurationSec 300 `
     -ClientJvmArgs '-Dserverreborn.debugDropModule=RPGInventoryNestedTransfer.moved' -ClientArgs @{ Test = 'nested' }
