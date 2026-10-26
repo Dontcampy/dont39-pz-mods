@@ -37,6 +37,10 @@ Logs each Multiplayer Weight Limit Breaker AddItem whose item the target contain
 Launches without ZombieBuddy's -agentlib:zbNative, so no Java mod runs: the mods' Lua loads as on a client without
 ZombieBuddy (AC8's vanilla client).
 
+.PARAMETER ServerHost
+Joins this host instead of the local test server (e.g. the Linux test instance, started -nosteam); with -ServerPort
+and -ServerPassword (its admin password). The local server need not run then.
+
 .PARAMETER ZbAllowAll
 ZombieBuddy's policy=allow-all for this launch only: new or changed mod jars load without its approval dialog. The
 user's ZombieBuddy config and approvals are not changed.
@@ -45,11 +49,14 @@ param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
     [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @(),
     [ValidateSet('', 'equipRemove', 'empty', 'burst', 'nested')] [string] $Test = '', [switch] $VanillaTransfers,
-    [switch] $NoZombieBuddy, [switch] $LogTransfers, [switch] $ZbAllowAll)
+    [switch] $NoZombieBuddy, [switch] $LogTransfers, [switch] $ZbAllowAll, [string] $ServerHost = '',
+    [int] $ServerPort = 0, [string] $ServerPassword = '')
 . (Join-Path $PSScriptRoot 'common.ps1')
 
 if (-not (Test-Path (Join-Path $SG.Backup 'hashes.txt'))) { throw 'no client backup; run backup-client.ps1 first' }
-if (-not (Get-RecordedProcess (Read-StateJson 'server'))) { throw 'server not running; start-server.ps1 -Wait first' }
+if ($ServerHost) {
+    if (-not $ServerPort -or -not $ServerPassword) { throw '-ServerHost needs -ServerPort and -ServerPassword' }
+} elseif (-not (Get-RecordedProcess (Read-StateJson 'server'))) { throw 'server not running; start-server.ps1 -Wait first' }
 $running = Get-RecordedProcess (Read-StateJson 'client')
 if ($running) { throw "client already running (pid $($running.Id)); stop-client.ps1 first" }
 if (-not (Test-Path (Join-Path $SG.ClientMods 'SGTestDriver\42\mod.info'))) { throw 'SGTestDriver not in ~/Zomboid/mods; run setup-server.ps1' }
@@ -68,7 +75,9 @@ if ($text -notmatch '(?m)^\s*mod = SGTestDriver,') {
 }
 
 $cfg = [ordered]@{
-    label = $Label; ip = '127.0.0.1'; port = $SG.GamePort; user = 'admin'; pw = Get-AdminPassword
+    label = $Label; ip = $(if ($ServerHost) { $ServerHost } else { '127.0.0.1' })
+    port = $(if ($ServerHost) { $ServerPort } else { $SG.GamePort }); user = 'admin'
+    pw = $(if ($ServerHost) { $ServerPassword } else { Get-AdminPassword })
     spotName = $s.Name; x = $s.X; y = $s.Y; z = $s.Z; duration = $DurationSec; quit = [int][bool]$Quit
     loop = [int](-not $NoLoop); invisible = [int](-not $Visible); radius = $Radius; take = $Take; eatEvery = $EatEvery
     test = $Test; vanillaTransfers = [int][bool]$VanillaTransfers; logTransfers = [int][bool]$LogTransfers
