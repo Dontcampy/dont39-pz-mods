@@ -1,4 +1,5 @@
 version=1
+id=3827655974
 title=Faster Loading
 description=[h1]Faster Loading[/h1]
 description=Shorter loading screens at game start, when joining a server and when loading a save: the same loading work, done faster. 中文说明在下方。
