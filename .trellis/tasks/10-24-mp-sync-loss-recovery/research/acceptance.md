@@ -24,6 +24,7 @@
 | AC9 notice, log lines both sides, counters; ten losses one notice | pass (after adding the server's repair line) | `ac11-add1`, `ac9-burst2` |
 | AC10 build, mod folder, smoke on the full list, no new errors | build and activation pass; not clean: one vanilla error signature only with Sync Guard active, open (see below) | `compat-off2`, `compat-on2` |
 | AC11 dropped mod broadcast detected and repaired; no mismatch after grace otherwise | pass | `ac11-add1`, `ac11-remove1`, `compat-on2` |
+| AC12 nested bags (RPGInventory nested transfer) | pass | `ac12-drop`, `ac12-normal` |
 
 ## AC10: build and compatibility
 
@@ -246,3 +247,16 @@ the client").
 - `container already has id` stays open. Hypothesis from the review: Sync Guard moves the four item-field packet types
   onto ordered channel 1, which changes their timing against the transfer mod's channel-0 broadcasts. Test: a run with
   Sync Guard active but without the channel change.
+
+## AC12: bags nested in world containers (2026-10-26)
+
+Driver `-Test nested`: a `Base.Bag_TrashBag` inside a bin at the prison spot; 30 rounds of 3 items moved from the
+player's inventory into that bag and back, every move through RPGInventory's `ISRPGNestedTransfer` (`notNested=0`).
+
+- `ac12-drop` (client `-Dsyncguard.debugDropModule=RPGInventoryNestedTransfer.moved`): 168 `moved` broadcasts dropped;
+  client `mismatches=161 requested=161 snapshotsApplied=161 repaired=161 unrepairable=0 notices=28`. Right after each
+  move the driver saw the items nowhere on the client, 4 s later in the bag (or back in the inventory); final
+  `atBagAfter=90` of `into=90`, `missingAfter=0`. No Sync Guard error on either side.
+- `ac12-normal` (no drops): client `checks=158 mismatches=0 snapshotsApplied=0 repaired=0`, server `mismatches=0
+  snapshotsSent=0 bytesOut=12808` over the connection; `atBagAfter=90`, `missingAfter=0`. No "container already has id"
+  or "can't find inventory container" line in either run.

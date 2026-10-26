@@ -173,7 +173,7 @@ but not repaired by this task (its object list is out of scope); it is reported,
 - [ ] AC11 (D7). On `myserver1`'s mod list (transfers through "Multiplayer Weight Limit Breaker"), a transfer whose
   mod broadcast the test drops on the client is detected and repaired; normal transfers cause no mismatch after the
   grace period.
-- [ ] AC12 (D8, R10). On `myserver1`'s list, an RPGInventory nested transfer into and out of a bag inside a world
+- [x] AC12 (D8, R10). On `myserver1`'s list, an RPGInventory nested transfer into and out of a bag inside a world
   container whose `moved` broadcast the test drops on the client is detected and repaired; normal nested transfers
   cause no mismatch after the grace period.
 - [ ] AC10 (D4). `./gradlew build` passes; `assembleMod` yields the mod folder with `mod.info`, jar and translations.
