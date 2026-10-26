@@ -1,4 +1,4 @@
-package com.dont39.pz.serverreborn.servertickrate
+package com.dont39.pz.serverreborn.tick
 
 import com.dont39.pz.serverreborn.ServerReborn
 import com.pzlauncher.zabric.hook.At

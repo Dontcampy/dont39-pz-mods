@@ -1,8 +1,8 @@
-package com.dont39.pz.serverreborn.servertickrate
+package com.dont39.pz.serverreborn.tick
 
 import com.dont39.pz.serverreborn.ServerReborn
-import com.dont39.pz.serverreborn.servertickrate.TickScale.MAX_RATE
-import com.dont39.pz.serverreborn.servertickrate.TickScale.VANILLA_RATE
+import com.dont39.pz.serverreborn.tick.TickScale.MAX_RATE
+import com.dont39.pz.serverreborn.tick.TickScale.VANILLA_RATE
 import java.util.Locale
 import zombie.SandboxOptions
 import zombie.WorldSoundManager

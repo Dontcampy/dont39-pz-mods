@@ -1,4 +1,4 @@
-package com.dont39.pz.serverreborn.servertickrate
+package com.dont39.pz.serverreborn.tick
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

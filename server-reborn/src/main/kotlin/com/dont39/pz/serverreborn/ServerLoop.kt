@@ -1,7 +1,7 @@
 package com.dont39.pz.serverreborn
 
 import com.dont39.pz.serverreborn.network.server.ServerSync
-import com.dont39.pz.serverreborn.servertickrate.ServerTickRate
+import com.dont39.pz.serverreborn.tick.ServerTickRate
 import com.pzlauncher.zabric.hook.At
 import com.pzlauncher.zabric.hook.CallbackInfo
 import com.pzlauncher.zabric.hook.Hooks

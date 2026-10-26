@@ -1,4 +1,4 @@
-package com.dont39.pz.serverreborn.servertickrate
+package com.dont39.pz.serverreborn.tick
 
 /** The game's server constants that count 10 Hz ticks, at another tick rate. */
 internal object TickScale {
