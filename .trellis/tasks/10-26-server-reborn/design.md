@@ -5,106 +5,81 @@ Requirements: `prd.md`. Behaviour sources: Sync Guard's `design.md` (D1-D8, in t
 
 ## Model
 
-A Kotlin mod is one Gradle subproject; each part of it is a **feature**: a package with one `Feature` facade that
-gates that package's hooks. Server Reborn has two features in one compilation. All-in-One keeps its model (one
-subproject per feature, bundled), because its features may later move to mods of their own; Server Reborn's will not.
-
-Built from scratch, without the old modules' constraints:
-
-- both parts are `Feature`s; Sync Guard's own `Gate` goes away, and `Feature` gains the two things it lacked;
-- the KSP front end serves a compilation with several features;
-- generic helpers the mod needs move to `zb-kt-utils`.
+One mod, one Gradle subproject, one lifecycle. Network sync optimization (was Sync Guard) and the server tick rate
+are areas of the same mod that are expected to depend on each other, so they are decided, gated and disabled
+together. Each keeps its own package.
 
 ## Names
 
 | Thing | Value |
 |---|---|
 | Module, mod id, jar | `server-reborn/`, `Dont39ServerReborn`, `media/java/Dont39ServerReborn.jar` (client and server, not preloaded) |
-| `javaPkgName` | `com.dont39.pz.serverreborn`: generated glue `ServerRebornGlue`, Lua bridge `ServerRebornLua`, `initFeatures()`, and `ServerRebornMain` (as `AllInOneMain` sits in All-in-One's) |
-| Features | `network-sync-optimization`: package `...serverreborn.networksyncoptimization` (sub-packages `protocol`, `game`, `server`, `client`, `stats`), facade `NetworkSyncOptimization`; `server-tick-rate`: package `...serverreborn.servertickrate`, facade `ServerTickRate` |
-| Log prefix | `[Dont39ServerReborn] ` for mod lines, `[Dont39ServerReborn] <feature>: ` from `Feature` |
+| `javaPkgName` | `com.dont39.pz.serverreborn`: `ServerRebornMain` (`Zabric-Main`), `ServerRebornGate`, and the generated `ServerRebornGlue` / `ServerRebornLua` |
+| Areas | `...serverreborn.networksyncoptimization` (Sync Guard's `protocol`, `game`, `server`, `client`, `stats` beneath it); `...serverreborn.servertickrate` |
+| Log prefix | `[Dont39ServerReborn] ` on every line; a line names its area where the text alone would not |
 | Sandbox page | `Dont39ServerReborn`, "Server Reborn" / "服务器重生" |
-| Sandbox options | `Dont39ServerReborn_NetworkSyncOptimization.Enabled` (boolean, default true); `Dont39ServerReborn_ServerTickRate.TicksPerSecond` (10-20, default 10). One dot each: `SandboxOptions.parseName` splits only `table.option`. |
+| Sandbox option | `Dont39ServerReborn_ServerTickRate.TicksPerSecond` (10-20, default 10). One dot: `SandboxOptions.parseName` splits only `table.option`. |
 | Lua | `Dont39ServerReborn_OpenCheck.lua`, global `Dont39ServerReborn_containerShown` (`@LuaGlobal`) |
-| Translation | `UI_Dont39ServerReborn_SyncRepaired`; sandbox keys `Sandbox_Dont39ServerReborn_NetworkSyncOptimizationEnabled`, `Sandbox_Dont39ServerReborn_ServerTickRateTicksPerSecond` (+ `_tooltip`) |
+| Translation | `UI_Dont39ServerReborn_SyncRepaired`; `Sandbox_Dont39ServerReborn`, `Sandbox_Dont39ServerReborn_ServerTickRateTicksPerSecond` (+ `_tooltip`) |
 | Launch switches | `-Dserverreborn.summarySeconds`, `.debugDropDelta`, `.debugFieldDiff`, `.debugTouches`, `.debugDropModule` |
 | Unchanged | packet id `0x5347`, trailer magic "D39SYNCG", mod sync's magic it steps over, protocol version 1, digest fields |
 
 ## Build: `pz-kotlin-mod`
 
-New convention `buildSrc/src/main/kotlin/pz-kotlin-mod.gradle.kts`, a Kotlin mod in one subproject:
+No module builds a standalone Kotlin mod with hooks yet: `pz-feature` wires KSP only for All-in-One features. New
+convention `buildSrc/src/main/kotlin/pz-kotlin-mod.gradle.kts`:
 
 - applies `pz-kotlin`, KSP, `pz-mod`, `pz-widening`; `compileOnly` `:zb-kt-utils` and `:zabric`,
-  `ksp(:zb-kt-utils-processor)`; no `allinone-common`;
-- an extension with the features in init order (`features = listOf("server-tick-rate", "network-sync-optimization")`);
-- KSP options from `pzMod`: glue package = `javaPkgName`, Lua prefix `<modId>_`, mod id, glue class and bridge name
-  from the mod id without `Dont39` (`ServerRebornGlue`, `ServerRebornLua`);
-- a task that writes `initFeatures()` into `javaPkgName`, calling each listed feature's facade by the naming rule
-  (`server-tick-rate` → `<javaPkgName>.servertickrate.ServerTickRate`); a missing facade fails the compile.
-  `GenerateFeatureInit` (All-in-One) stays as is; the two share the naming function;
+  `ksp(:zb-kt-utils-processor)`; no `allinone-common` (unrelocated in All-in-One's jar; a second copy would clash on
+  the shared class loader);
+- KSP options from `pzMod`: glue package = `javaPkgName`, Lua prefix `<modId>_`, mod id, glue class and Lua bridge
+  name from the mod id without `Dont39` (`ServerRebornGlue`, `ServerReborn` → `ServerRebornLua`);
 - `checkLoaderRefs` excludes the generated glue classes;
-- jar: `Zabric-Main` = `<javaPkgName>.<ModName>Main`, the expanded `.classtweaker` into
+- jar: `Zabric-Main` = `<javaPkgName>.<Name>Main`, the expanded `.classtweaker` into
   `META-INF/zabric/<modId>.classtweaker`, `META-INF/dont39/**` excluded; `assembleMod` copies `src/main/lua` to
   `42/media/lua` and `src/main/media` to `42/media`;
-- `smokeTest` (`GameSmokeTest`): `hooks = true`, `kotlinMod` from `:zb-kt`, and a new input with the in-module
-  feature names, whose status lines it checks as it checks bundled features' (ready/active/idle pass, disabled
-  fails).
+- `smokeTest` (`GameSmokeTest`, `hooks = true`, `kotlinMod` from `:zb-kt`).
 
-The module script holds the version, the features list and its test dependencies.
+The module script holds the version and test dependencies (`pz-junit`, `testImplementation(libs.kotlinStdlib)`).
+`GlueProcessor`'s missing-option message names both conventions. Every hook object names the gate, so the KSP
+front end's facade default never applies and the processor is otherwise unchanged.
 
-## KSP front end (`zb-kt-utils-processor`, compile time only)
+## Gate: `ServerRebornGate`
 
-- A compilation may hold several `Feature` facades (top-level objects). A hook object without `gate` is gated by the
-  facade in its own package or the nearest enclosing one; none or two at that level is a compile error naming them.
-  An All-in-One feature has one facade at its package root, so its glue is unchanged (golden tests).
-- New tests: two facades in sibling packages gate their own hooks; a hook outside both is an error; a facade in a
-  sub-package of another's is chosen for that sub-package.
-- The missing-option message names both conventions.
+Sync Guard's `Gate` (`game/Gate.java`) ported as a Kotlin `object : HookGate`, the gate of every hook object:
 
-## Runtime (`zb-kt-utils`, ships in ZabricKotlin)
+- shut until `ServerRebornMain` opens it; `open(onFailure)` registers the undo of what the mod changed;
+- the first failure (a hook's, or the mod's own via `disable`) shuts it, logs the error and runs the undo once;
+  later errors are still logged.
 
-`Feature` (`Feature.kt`) gains:
+Why not `Feature` or Zabric's default gate (`ModState.DefaultGate`): the default gate's first failure stops the mod
+in Zabric, which also stops `always` hooks and has no callback, so the channel change and the 50 ms limiter would stay
+in the game without their compensations. `Feature` decides lazily from `problem()` for features with target mods;
+neither area has one.
 
-- `decideAgain()` (protected): forgets an ACTIVE or INACTIVE decision so the next `active()` asks `problem()` again,
-  as `setForce` already does inside; a no-op once DISABLED. For a feature whose decision needs state that appears
-  after `init()` (the save's sandbox options on a server).
-- `onDisabled()` (protected open, default empty): runs once, on the first `disable`, after the state is DISABLED; an
-  exception there is logged as an error while undoing, the feature stays disabled.
+## Lifecycle
 
-`SandboxOption` moves from `allinone-common` to `zb-kt-utils` (generic platform API); `mod-sync`, `tunnel` and
-All-in-One's other users import it from there.
+`ServerRebornMain.onMain`, as Sync Guard's `MainEntry` today:
 
-ZabricKotlin's version goes from 0.7.0 to 0.8.0; `zb-kt/README.md` and the spec's "new in" notes say what is new. It
-must be uploaded before Server Reborn and before the next All-in-One release. Tests: `Feature` state transitions in a
-new `zb-kt-utils` test source set if `Feature` runs outside the game there (its logging goes through `DebugType`);
-else the smoke join covers them and the plan says so.
+1. `loaded` line, `Settings.load()` (launch switches).
+2. `AccessWidener.report` for the mod; not in effect → idle line, gate stays shut.
+3. Hook targets (`ZabricHooks.gateProblem(ServerRebornGate)`, covers both areas' hooks) → off line on a mismatch.
+4. `PacketScope.resolve`, `Containers.check` → off line on a mismatch.
+5. Client: `exposeIfMissing` for `ServerRebornLua`, open with `ClientSync::stop`, `ready on a client ...`.
+   Co-op host: off line (both areas; the tick rate never applied there). Dedicated server: `ServerSync.start()`, open
+   with `ServerSync::stop`, `active on a dedicated server ...`.
 
-## The two features
+Server tick rate inside that lifecycle:
 
-**server-tick-rate**: `ServerTickRate` as today, with `"Dont39ServerReborn"` as its mod id and the new option name;
-hooks unchanged (they gate on it by package). README text moves to `server-reborn/README.md`.
-
-**network-sync-optimization**: `NetworkSyncOptimization : Feature("network-sync-optimization",
-"Dont39ServerReborn", widened = true)`, replacing `Gate` and `MainEntry`:
-
-| Sync Guard today | Feature |
-|---|---|
-| `AccessWidener.report` check, `Gate.targetProblem()` | `Feature`'s own widening and hook-target checks |
-| `PacketScope.resolve`, `Containers.check` | `resolve()` (a throw disables, with `resolveContext()`) |
-| client: `LuaGlobals.exposeIfMissing`, then open | `resolve()` on a client also exposes `ServerRebornLua` when the join's Lua environment predates the jar |
-| server: `ServerSync.start()`, open | the server-start decision below |
-| co-op host: off | `problem()`: "this server runs a hosted (co-op) game; ..." |
-| `Gate.failed` → `ClientSync::stop` / `ServerSync::stop` | `onDisabled()` stops the side that started |
-| `Settings.load()` and the switch lines at main | the facade's `init` path, before the decision |
-
-Server-start decision: the save's sandbox options are loaded after Zabric's main entrypoint on a dedicated server.
-`problem()` returns "the server has not started its world yet" until then. An `always = true` hook at
-`PerformanceSettings.setLockFPS` HEAD (gated by the facade, so it also runs while inactive) acts once on
-`GameServer.main`'s first call: reads `Enabled`; true → `ServerSync.start()`; then `decideAgain()`. False →
-`problem()` returns "sandbox option ... is false" and nothing in the game changes. `GameServer.main` calls
-`setLockFPS` (offset 2709) before its loop first handles net data (3060), so no join is answered before the decision
-(javap of 42.21's `GameServer.main`). Clients are unchanged: a server with the feature off sends no trailer, which a
-client logs as for a server without the mod.
+- Its handlers run whenever the gate is open; on a client they stay inert as today (`calledFromServerMain` false,
+  rate 10).
+- It reads `TicksPerSecond` at `setLockFPS` from `GameServer.main` (its own state, not gating) through a mod-local
+  sandbox reader (`SandboxOption.int` from `allinone-common`, copied).
+- Its mismatches (no 100 ms limiter before `setLockFPS`, more ticks than the limiter allows) call
+  `ServerRebornGate.disable`: the whole mod turns off, as the areas depend on each other. `TickStart` stays
+  `always = true`: once the gate is shut it puts the 10 Hz limiter and lock fps back on `GameServer.main`'s thread,
+  which an undo on the failing thread could not.
+- A rate below the option after 10 s stays an error line only, as today.
 
 ## Port rules (Java → Kotlin)
 
@@ -112,9 +87,9 @@ client logs as for a server without the mod.
   hashes, map iteration order where the digest or wire depends on it (`LinkedHashMap` where Java used it).
 - Records → `data class`, sealed interfaces → `sealed interface`, static utility classes → `object`, static mutable
   state → `object` properties with the same `@Volatile` / thread confinement.
-- Hook classes → top-level `internal object`s with public handlers (`HookReader.kt`); the same targets, injection
-  points, `always`, `@Share`/`@Thrown`/`@Self`, and the exact-overload targets (`AddItem(String)`,
-  `AddItem(String,float)`).
+- Hook classes → top-level `internal object`s with public handlers (`HookReader.kt`), `gate = ServerRebornGate::class`;
+  the same targets, injection points, `always`, `@Share`/`@Thrown`/`@Self`, and the exact-overload targets
+  (`AddItem(String)`, `AddItem(String,float)`).
 - Idiomatic Kotlin over micro-allocation, also per tick; comments short, why only.
 - The 90 JUnit tests become Kotlin tests with the same cases and expected values (golden digests included);
   `TickScaleTest` moves as is.
@@ -122,7 +97,7 @@ client logs as for a server without the mod.
 ## All-in-One and old modules
 
 - `dont39-all-in-one/build.gradle.kts`: drop `:server-tick-rate`; its `workshop.txt` line and the root README's
-  feature list go back to `main`'s text. Its features import `SandboxOption` from `zb-kt-utils`.
+  feature list go back to `main`'s text. No version bump: no release had the feature.
 - `settings.gradle.kts`: remove `:sync-guard` and `:server-tick-rate`, add `:server-reborn`; delete both directories.
 
 ## Harness and the old task
@@ -135,11 +110,11 @@ client logs as for a server without the mod.
 
 ## Specs and docs
 
-- `directory-structure.md`: `pz-kotlin-mod` and `server-reborn/` in the layout; "a Kotlin mod with several features in
-  one subproject" next to "Adding a Feature"; `sync-guard/` and the tick-rate feature removed.
-- `zb-kt-utils.md`: `decideAgain`, `onDisabled`, `SandboxOption` (new in 0.8.0); facades per package.
-- `zabric-hooks.md`, `kotlin-runtime.md`: the KSP front end serves bundled features and `pz-kotlin-mod` mods; the
-  default gate by package; the moved file references (`TickHooks.kt`).
+- `directory-structure.md`: `pz-kotlin-mod` and `server-reborn/` in the layout; `sync-guard/` and the tick-rate
+  feature removed.
+- `zb-kt-utils.md`, `kotlin-runtime.md`, `zabric-hooks.md`: a Kotlin mod built with `pz-kotlin-mod` may implement
+  `HookGate` itself when `Feature`'s lazy model does not fit (it then runs the widening and target checks itself); the
+  moved file references (`TickHooks.kt`).
 - `zombiebuddy-patching.md`, `access-widening.md`, `quality-guidelines.md`, `index.md`: `sync-guard` references point
   at the Kotlin files; the overview lists Server Reborn.
 - `server-reborn/README.md`; `server-reborn/mod/workshop/workshop.txt` from Sync Guard's text plus the tick rate,
@@ -148,5 +123,5 @@ client logs as for a server without the mod.
 ## Rollback
 
 Each step is its own commit on `feat/server-reborn-46640e`. The old modules are deleted only after the new module
-builds and its tests pass. The `Feature` additions and the processor change are additive; reverting their commits
-restores the previous behaviour. Nothing is published until the user uploads.
+builds and its tests pass; reverting those commits restores them. Nothing outside this repo changes: no Zabric or
+ZabricKotlin release.
