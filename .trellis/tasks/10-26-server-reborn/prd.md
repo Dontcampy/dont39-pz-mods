@@ -64,20 +64,20 @@ Defaults taken: mod id `Dont39ServerReborn`, package `com.dont39.pz.serverreborn
 
 ## Acceptance Criteria
 
-- [ ] AC1 (R1, R2, R6, R7). `JAVA_HOME=~/.jdks/graalvm-ce-25.0.2 ./gradlew build :server-reborn:assembleMod` passes;
+- [x] AC1 (R1, R2, R6, R7). `JAVA_HOME=~/.jdks/graalvm-ce-25.0.2 ./gradlew build :server-reborn:assembleMod` passes;
   the mod folder holds `mod.info`, the jar with its widening list, the Lua, EN/CN translations and
   `sandbox-options.txt`.
-- [ ] AC2 (R2, R3). Kotlin unit tests cover every behaviour Sync Guard's 90 tests and the tick rate's 5 tests cover
+- [x] AC2 (R2, R3). Kotlin unit tests cover every behaviour Sync Guard's 90 tests and the tick rate's 5 tests cover
   (message and key round trips, refusals, truncation, digest relations, trailer placement, ledger and notice rules,
   timings, tick scaling), table-driven where cases share a shape, and pass.
-- [ ] AC3 (R3, R4). One smoke join on a local `-nosteam` server with only Zabric, ZabricKotlin and Server Reborn
+- [x] AC3 (R3, R4). One smoke join on a local `-nosteam` server with only Zabric, ZabricKotlin and Server Reborn
   (default options): the server logs the mod active on a dedicated server and the tick rate off at 10; the client
   logs ready and active for the server; no `hooks stopped`, `disabled` or other error line from the mod, Zabric or
   ZombieBuddy on either side.
-- [ ] AC4 (R5, R7). No `Dont39SyncGuard`, `syncguard.` switch, `Dont39AllInOne_ServerTickRate`, `sync-guard` or
+- [x] AC4 (R5, R7). No `Dont39SyncGuard`, `syncguard.` switch, `Dont39AllInOne_ServerTickRate`, `sync-guard` or
   `server-tick-rate` module name left outside git history, archived tasks and journals, except deliberate "formerly"
   mentions.
-- [ ] AC5 (R8). The Workshop staging and `server-reborn/README.md` describe both areas and the option.
+- [x] AC5 (R8). The Workshop staging and `server-reborn/README.md` describe both areas and the option.
 
 ## Out of Scope / Follow-ups
 
