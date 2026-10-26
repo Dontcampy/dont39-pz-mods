@@ -4,11 +4,7 @@ import buildsrc.convention.feature.MergeMedia
 import buildsrc.convention.feature.PzArtifact
 import buildsrc.convention.feature.jvmFolders
 import buildsrc.convention.feature.pzIncoming
-import buildsrc.convention.mod.kotlinVersions
-import buildsrc.convention.mod.modInfoOf
-import buildsrc.convention.mod.pzDir
-import buildsrc.convention.mod.pzUserDir
-import buildsrc.convention.smoke.GameSmokeTest
+import buildsrc.convention.smoke.registerSmokeTest
 import buildsrc.convention.widening.MergeClassTweakers
 
 plugins {
@@ -36,15 +32,12 @@ val bundledFeatures = configurations.dependencyScope("bundledFeatures")
 configurations.implementation { extendsFrom(bundledFeatures.get()) }
 // code the features share: bundled like them, but no feature (no descriptor, init or glue)
 val bundledLibs = configurations.dependencyScope("bundledLibs")
-// ZabricKotlin, whose version the smokeTest checks
-val kotlinLib = configurations.dependencyScope("kotlinLib")
 
 dependencies {
   features.forEach { bundledFeatures(project(it)) }
   bundledLibs(project(":allinone-common"))
   compileOnly(project(":zb-kt-utils"))
   compileOnly(project(":zabric"))
-  kotlinLib(project(":zb-kt"))
 }
 
 val featureClasses = jvmFolders("featureClasses", bundledFeatures, LibraryElements.CLASSES)
@@ -54,7 +47,6 @@ val featureClassTweakers = pzIncoming("featureClassTweakers", bundledFeatures, P
 val featureInfo = pzIncoming("featureInfo", bundledFeatures, PzArtifact.FEATURE)
 val libClasses = jvmFolders("libClasses", bundledLibs, LibraryElements.CLASSES)
 val libModFiles = pzIncoming("libModFiles", bundledLibs, PzArtifact.MOD_FILES)
-val kotlinLibFolder = pzIncoming("kotlinLibFolder", kotlinLib, PzArtifact.MOD_FOLDER)
 
 val generateFeatureInit = tasks.register<GenerateFeatureInit>("generateFeatureInit") {
   description = "Generates initFeatures(), which AllInOneMain calls."
@@ -100,16 +92,7 @@ tasks.named<Sync>("assembleMod") {
   from(mergeMedia) { into("42/media") }
 }
 
-tasks.register<GameSmokeTest>("smokeTest") {
-  description = "Launches Project Zomboid until ZombieBuddy has loaded ${pzMod.modId}, then checks the log."
-  dependsOn(tasks.named("deployWorkshop"), ":zb-kt:deployWorkshop", ":zabric:deployWorkshop")
-  gameDir = pzDir()
-  console = pzUserDir().map { it.file("console.txt") }
-  modId = pzMod.modId
-  version = project.version.toString()
-  zabricId = modInfoOf("zabric").id
-  kotlinMod.from(kotlinLibFolder)
-  kotlinVersions = kotlinVersions()
+registerSmokeTest(kotlin = true) {
   featureFolders.from(featureInfo)
   // Lua-only features that gate on a target mod (directory-structure.md)
   luaTargeted = listOf()

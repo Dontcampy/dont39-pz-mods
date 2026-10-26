@@ -1,9 +1,6 @@
 import buildsrc.convention.check.CheckJdkGlue
 import buildsrc.convention.check.CheckLoaderRefs
-import buildsrc.convention.mod.modInfoOf
-import buildsrc.convention.mod.pzDir
-import buildsrc.convention.mod.pzUserDir
-import buildsrc.convention.smoke.GameSmokeTest
+import buildsrc.convention.smoke.registerSmokeTest
 
 // Java: its hooks are written for zabric-processor, the javac glue front end; the KSP one serves Kotlin
 // modules (All-in-One features, pz-kotlin-mod).
@@ -73,13 +70,6 @@ tasks.named<Sync>("assembleMod") {
   from("src/main/lua") { into("42/media/lua") }
 }
 
-tasks.register<GameSmokeTest>("smokeTest") {
-  description = "Launches Project Zomboid until ZombieBuddy has loaded $modId, then checks the log."
-  dependsOn(tasks.named("deployWorkshop"), ":zabric:deployWorkshop")
-  gameDir = pzDir()
-  console = pzUserDir().map { it.file("console.txt") }
-  modId = pzMod.modId
-  version = project.version.toString()
-  zabricId = modInfoOf("zabric").id
+registerSmokeTest {
   hooks = true
 }
