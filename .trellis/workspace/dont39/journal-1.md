@@ -923,3 +923,27 @@ ZabricKotlin 0.7.0 is a preload mod: PreMain swaps Kotlin at game start; on a la
 ### Status
 
 [OK] **Completed**
+
+
+## Session 40: Server tick rate option (20 Hz)
+<!-- trellis-session: v=2 fp=7af24762ae725743 -->
+
+**Date**: 2026-10-26
+**Task**: Server tick rate option (20 Hz)
+**Branch**: `feat/nostalgic-elion-ecd9c5`
+
+### Summary
+
+Researched the B42 dedicated server's hardcoded 10 Hz tick (zombie/player/vehicle sync relayed from clients, tick-bound logic), measured 10 vs 20 Hz with FakeClientManager load on the Linux test server (+20% process CPU, flat bandwidth, exact game time), and shipped server-tick-rate: an opt-in sandbox option 10-20 that retunes GameServer.main's limiter and lock fps and scales Rand.AdjustForFramerate and world sound life. Verified on the test server; short real-client play test accepted by the user.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `079d7a9` | Add Server tick rate: an opt-in sandbox option for a dedicated server's world tick, 10-20 per second |
+| `66c768b` | Server tick rate: escape the percent sign in the option's tooltips |
+| `028c679` | chore(task): record the 20 Hz play test (AC6) for 10-24-server-tick-20hz |
+
+### Status
+
+[OK] **Completed**

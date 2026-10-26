@@ -1,0 +1,222 @@
+{
+ "version": "1",
+ "config": {
+  "client": {
+   "connection": {
+    "serverHost": "192.168.50.249",
+    "serverPort": 48261,
+    "interval": 2000,
+    "timeout": 20000,
+    "delay": 2000
+   },
+   "statistics": {
+    "period": 0,
+    "id": -1
+   }
+  },
+  "zombies": {
+   "behaviour": "Normal"
+  },
+  "player": {
+   "fps": 10,
+   "predict": 1000
+  },
+  "movement": {
+   "radius": 15,
+   "motion": {
+    "aim": 2,
+    "sneak": 3,
+    "sneakrun": 6,
+    "walk": 5,
+    "run": 10,
+    "sprint": 18,
+    "pedestrian": {
+     "min": 3,
+     "max": 6
+    },
+    "vehicle": {
+     "min": 30,
+     "max": 60
+    }
+   }
+  }
+ },
+ "movements": [
+  {
+   "id": 1,
+   "description": "walker 1",
+   "spawn": {
+    "x": 12000,
+    "y": 6760
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 2,
+   "description": "walker 2",
+   "spawn": {
+    "x": 12040,
+    "y": 6760
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 3,
+   "description": "walker 3",
+   "spawn": {
+    "x": 12080,
+    "y": 6760
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 4,
+   "description": "walker 4",
+   "spawn": {
+    "x": 12120,
+    "y": 6760
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 5,
+   "description": "walker 5",
+   "spawn": {
+    "x": 12000,
+    "y": 6800
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 6,
+   "description": "walker 6",
+   "spawn": {
+    "x": 12040,
+    "y": 6800
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 7,
+   "description": "walker 7",
+   "spawn": {
+    "x": 12080,
+    "y": 6800
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 8,
+   "description": "walker 8",
+   "spawn": {
+    "x": 12120,
+    "y": 6800
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 9,
+   "description": "walker 9",
+   "spawn": {
+    "x": 12000,
+    "y": 6840
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 10,
+   "description": "walker 10",
+   "spawn": {
+    "x": 12040,
+    "y": 6840
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 11,
+   "description": "walker 11",
+   "spawn": {
+    "x": 12080,
+    "y": 6840
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 12,
+   "description": "walker 12",
+   "spawn": {
+    "x": 12120,
+    "y": 6840
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 13,
+   "description": "walker 13",
+   "spawn": {
+    "x": 12000,
+    "y": 6880
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 14,
+   "description": "walker 14",
+   "spawn": {
+    "x": 12040,
+    "y": 6880
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 15,
+   "description": "walker 15",
+   "spawn": {
+    "x": 12080,
+    "y": 6880
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  },
+  {
+   "id": 16,
+   "description": "walker 16",
+   "spawn": {
+    "x": 12120,
+    "y": 6880
+   },
+   "motion": "Walk",
+   "type": "Circle",
+   "radius": 15
+  }
+ ]
+}
