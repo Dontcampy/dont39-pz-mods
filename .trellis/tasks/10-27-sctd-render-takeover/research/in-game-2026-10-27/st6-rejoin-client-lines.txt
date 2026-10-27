@@ -1,0 +1,21 @@
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (client)
+LOG  : Mod          f:1 st:0> [Dont39AllInOne] appearance-override: set of admin, revision 1: {Base.Jacket_Black=Look(type=Base.Jacket_Leather_Punk, textureChoice=2, baseTexture=-1, tint=Tint(r=0.2, g=0.6, b=0.9, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:2 st:0> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk
+LOG  : Mod          f:2 st:0> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk
+LOG  : Mod          f:2 st:0> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk

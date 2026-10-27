@@ -143,8 +143,12 @@ expects of every Lua-only feature.
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 
-A Lua-only feature may fix another mod's Lua (the first one, `sctd-transmog-flush-fix`, is removed; see git
-history): it gates on that mod's exact source text and goes idle once the text changes without the bug. Its target
+A Lua-only feature may fix or take over another mod's Lua (reference: `sctd-render-takeover/`): it gates on that
+mod's exact source text, block by block (length and hash; the reviewed blocks live in its task's `research/`), checks
+that the live globals come from those blocks, and reports `disabled` on any mismatch. Kahlua's `string.byte` returns
+UTF-16 units, so a hash over source text must take values up to 65535. Lua under `server/` runs last on every side
+(MP clients included), so it sees every mod's globals without load-order entries; but the main menu loads only shared
+and client Lua, so such a feature also needs a client file that logs its status there for `smokeTest`. Its target
 is not added to `loadModAfter`: the mod
 selector's auto-sort (`ModLoadOrderPanel:sortMods`) leaves a hole for a listed mod that is not enabled, and client Lua
 already runs after every mod's shared Lua. Its status line goes in `smokeTest`'s `luaTargeted` list, where idle passes.

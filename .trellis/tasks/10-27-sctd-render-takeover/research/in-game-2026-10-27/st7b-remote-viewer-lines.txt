@@ -1,0 +1,7 @@
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part idle: its Java side is not loaded
+ERROR: Mod          f:0 st:0 at Lua((MOD:Dont39 All-in-One)).pcall  > [Dont39AllInOne] sctd-render-takeover: disabled after an error while checking SCTD's code: appearance-override: its Java side is not loaded
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override: active
+ERROR: Mod          f:0 st:0 at Lua((MOD:Dont39 All-in-One)).pcall  > [Dont39AllInOne] sctd-render-takeover: disabled after an error while checking SCTD's code: appearance-override: its Java side is not loaded
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] network-status icon: no icon: the Java part of Dont39 All-in-One is not loaded
+LOG  : Mod          f:77 st:1,770,167,613> [Dont39AllInOne] appearance-override: debug: mannequin of items: nothing

@@ -1,0 +1,17 @@
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (client)

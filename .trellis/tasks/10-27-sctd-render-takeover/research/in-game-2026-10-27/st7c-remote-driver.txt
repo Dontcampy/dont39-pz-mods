@@ -1,0 +1,15 @@
+1793117310231 menu
+1793117313233 join 192.168.50.249:48261 as admin
+1793117317637 menu
+1793117317693 connected existing
+1793117327144 ingame label=st7c-remote at 7560,11815,0
+1793117327145 menu: no password in sgtest.txt, not joining
+1793117332147 admin setup try=1
+1793117332153 god mode on
+1793117332154 teleport Rosewood prison 7560,11815,0
+1793117332160 arrived ok=true at 7560,11815,0
+1793117332171 server: User admin is now invincible.
+1793117342162 loop off; staying at 7560,11815,0
+1793117402164 progress cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=758
+1793117462167 progress cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=728
+1793117463313 stop requested; quit

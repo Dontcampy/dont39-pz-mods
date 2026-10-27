@@ -1,0 +1,53 @@
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : General      f:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.TunnelLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.AppearanceOverrideLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.ModSyncLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.serverreborn.ServerRebornLua
+LOG  : General      f:0 st:0> [ZB] Exposing global functions from class: com.dont39.pz.allinone.NetworkStatusLua
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (client)
+LOG  : Mod          f:1 st:1,768,815,700> [Dont39AllInOne] appearance-override: set of admin, revision 3: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:2 st:1,768,815,711> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:2 st:1,768,815,712> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:2 st:1,768,815,727> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:2064 st:1,768,830,776> [Dont39AllInOne] appearance-override: set of admin, revision 4: {Base.Jacket_Black=Look(type=Base.Jacket_Leather_Punk, textureChoice=0, baseTexture=-1, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:2065 st:1,768,830,780> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk
+LOG  : Mod          f:2065 st:1,768,830,781> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk
+LOG  : Mod          f:2065 st:1,768,830,781> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk
+LOG  : Mod          f:3225 st:1,768,838,835> [Dont39AllInOne] appearance-override: set of admin, revision 5: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:3226 st:1,768,838,839> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:3226 st:1,768,838,839> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:3226 st:1,768,838,839> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:4385 st:1,768,846,891> [Dont39AllInOne] appearance-override: set of admin, revision 6: {Base.Jacket_Black=Look(type=Base.Shirt_Lumberjack, textureChoice=-1, baseTexture=3, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:4386 st:1,768,846,894> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Shirt_Lumberjack
+LOG  : Mod          f:4386 st:1,768,846,894> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Shirt_Lumberjack
+LOG  : Mod          f:4386 st:1,768,846,894> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Black as Base.Shirt_Lumberjack
+LOG  : Mod          f:5546 st:1,768,854,953> [Dont39AllInOne] appearance-override: set of admin, revision 7: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:5547 st:1,768,854,957> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:5547 st:1,768,854,957> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:5547 st:1,768,854,958> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:6710 st:1,768,863,040> [Dont39AllInOne] appearance-override: set of admin, revision 8: {Base.Jacket_Leather_Punk=Look(type=Base.Jacket_Black, textureChoice=0, baseTexture=-1, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:6711 st:1,768,863,043> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Leather_Punk as Base.Jacket_Black
+LOG  : Mod          f:6711 st:1,768,863,043> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Leather_Punk as Base.Jacket_Black
+LOG  : Mod          f:6711 st:1,768,863,044> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Leather_Punk as Base.Jacket_Black
+LOG  : Mod          f:7871 st:1,768,871,099> [Dont39AllInOne] appearance-override: set of admin, revision 9: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:7872 st:1,768,871,103> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:7872 st:1,768,871,103> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:7872 st:1,768,871,103> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:10510 st:1,768,889,429> [Dont39AllInOne] appearance-override: set of admin, revision 10: {Base.Jacket_Varsity=Look(type=Base.Jacket_Black, textureChoice=0, baseTexture=-1, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:10511 st:1,768,889,432> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Varsity as Base.Jacket_Black
+LOG  : Mod          f:10511 st:1,768,889,433> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Varsity as Base.Jacket_Black
+LOG  : Mod          f:10511 st:1,768,889,433> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Varsity as Base.Jacket_Black
+LOG  : Mod          f:11672 st:1,768,897,495> [Dont39AllInOne] appearance-override: set of admin, revision 11: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:11673 st:1,768,897,498> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:11673 st:1,768,897,498> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:11673 st:1,768,897,498> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden

@@ -1,2 +1,4 @@
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "mismatch is an error"}
 {"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, style"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua-only targeted feature rules"}
+{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/sctd-integration.md", "reason": "SCTD behaviour the replacements must keep"}
