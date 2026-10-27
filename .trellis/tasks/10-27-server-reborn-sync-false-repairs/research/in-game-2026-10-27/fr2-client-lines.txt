@@ -1,0 +1,51 @@
+LOG  : Mod          f:0> [Dont39ServerReborn] 0.2.0 loaded
+LOG  : Mod          f:0> [Dont39ServerReborn] access widener: ok (46 directives)
+LOG  : Mod          f:0> [Dont39ServerReborn] ready on a client; it turns on for a server that runs it too
+LOG  : Mod          f:0> [Dont39ServerReborn] debug: logs the digest fields that differ around each repair (-Dserverreborn.debugFieldDiff)
+LOG  : Lua          f:0> [SGTEST] 1793096953735 menu
+LOG  : Lua          f:0> [SGTEST] 1793096956745 join 192.168.50.249:48261 as admin
+LOG  : Lua          f:0 st:0> [SGTEST] 1793096961450 menu
+LOG  : Lua          f:0 st:0> [SGTEST] 1793096961505 connected existing
+LOG  : Mod          f:0 st:0> [Dont39ServerReborn] active: the server checks this client's containers and items
+LOG  : Lua          f:1 st:0> [SGTEST] 1793096970866 ingame label=fr2 at 7560,11815,0
+LOG  : Lua          f:1 st:0> [SGTEST] 1793096970867 menu: no password in sgtest.txt, not joining
+LOG  : Lua          f:286 st:1,749,987,549> [SGTEST] 1793096975880 admin setup try=1
+LOG  : Lua          f:287 st:1,749,987,581> [SGTEST] 1793096975912 server: User admin is now invincible.
+LOG  : Lua          f:288 st:1,749,987,586> [SGTEST] 1793096975917 god mode on
+LOG  : Lua          f:288 st:1,749,987,587> [SGTEST] 1793096975918 teleport Rosewood prison 7560,11815,0
+LOG  : Lua          f:289 st:1,749,987,599> [SGTEST] 1793096975931 arrived ok=true at 7560,11815,0
+LOG  : Lua          f:890 st:1,749,997,615> [SGTEST] 1793096985946 test falseRepairs start at 7560,11815,0
+LOG  : Lua          f:892 st:1,749,997,665> [SGTEST] 1793096985996 server give Base.Apple,Base.SugarPacket,Base.CannedChili ids=1529999117,1347163400,1916179787
+LOG  : Lua          f:894 st:1,749,997,698> [SGTEST] 1793096986030 server syncFoods synced 3
+LOG  : Lua          f:1075 st:1,750,000,700> [SGTEST] 1793096989031 test falseRepairs food Base.SugarPacket 1347163400 same: client end=0.0000 hung=-0.0100 thirst=0.0000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=-0.0100 thirst=0.0000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+LOG  : Lua          f:1075 st:1,750,000,701> [SGTEST] 1793096989032 test falseRepairs food Base.CannedChili 1916179787 same: client end=0.0000 hung=0.0000 thirst=0.0000 base=0.0000 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=0.0000 thirst=0.0000 base=0.0000 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+LOG  : Lua          f:1076 st:1,750,000,731> [SGTEST] 1793096989062 server: User admin is no longer invincible.
+LOG  : Lua          f:1257 st:1,750,003,748> [SGTEST] 1793096992079 server give Base.Bandage ids=1892312877
+LOG  : Lua          f:1406 st:1,750,006,217> [SGTEST] 1793096994549 test falseRepairs bandage: foot bandaged=true
+LOG  : Lua          f:1707 st:1,750,011,233> [SGTEST] 1793096999564 test falseRepairs bandage +5s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:2008 st:1,750,016,249> [SGTEST] 1793097004580 test falseRepairs bandage +10s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:2309 st:1,750,021,265> [SGTEST] 1793097009597 test falseRepairs bandage +15s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:2610 st:1,750,026,282> [SGTEST] 1793097014613 test falseRepairs bandage +20s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:2911 st:1,750,031,299> [SGTEST] 1793097019629 test falseRepairs bandage +25s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:3212 st:1,750,036,315> [SGTEST] 1793097024646 test falseRepairs bandage +30s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:3512 st:1,750,041,316> [SGTEST] 1793097029647 test falseRepairs bandage +35s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:3813 st:1,750,046,334> [SGTEST] 1793097034665 test falseRepairs bandage +40s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:4114 st:1,750,051,349> [SGTEST] 1793097039680 test falseRepairs bandage +45s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:4414 st:1,750,056,349> [SGTEST] 1793097044680 test falseRepairs bandage +50s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:4490 st:1,750,057,615> [SGTEST] 1793097045946 progress cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=157
+LOG  : Lua          f:4715 st:1,750,061,365> [SGTEST] 1793097049696 test falseRepairs bandage +55s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:5015 st:1,750,066,365> [SGTEST] 1793097054697 test falseRepairs bandage +60s models: Base.Bandage_RightFoot#1341524495 Base.Bandage_RightFoot#2077455746
+LOG  : Lua          f:5016 st:1,750,066,398> [SGTEST] 1793097054729 server give Base.M7_cat ids=1440297578
+LOG  : Lua          f:5385 st:1,750,072,532> [SGTEST] 1793097060862 test falseRepairs efk: in hand=true keys AWCWF_AppliedRPM=900 AWCWF_CalibratedCyclic=5.5 AWCWF_ConfiguredRPM=900 AWCWF_DisplayRPM=900 AWCWF_RPMCalibrationIndex=6 AWCWF_RPMCategory=CalibratedRPM AWCWF_RPMCategoryScale=1 AWCWF_RPMGlobalScale=1 MagzineTypeNow=Base.68Clip
+LOG  : Lua          f:5386 st:1,750,072,564> [SGTEST] 1793097060895 server give Base.Pencil ids=48961491
+LOG  : Lua          f:6288 st:1,750,087,598> [SGTEST] 1793097075929 server give Base.Pencil ids=1786833366
+LOG  : Lua          f:6289 st:1,750,087,600> [SGTEST] 1793097075931 test falseRepairs control: modData SGTEST_clientOnly on 1786833366, then a server change
+LOG  : Lua          f:6290 st:1,750,087,631> [SGTEST] 1793097075962 server give Base.Pencil ids=1070936642
+LOG  : Mod          f:6398 st:1,750,089,435> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 08d0fa0203981aee, server 0db99dfe752bee84); 23 items recorded, compared when the snapshot comes
+LOG  : Mod          f:6403 st:1,750,089,523> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1786833366 (Base.Pencil): modData{SGTEST_clientOnly c=1 s=-}
+LOG  : Mod          f:6403 st:1,750,089,524> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: 1786833366 (Base.Pencil): modData{SGTEST_clientOnly c=1 s=-} [differs]
+WARN : Mod          f:6403 st:1,750,089,525 at ClientSync.stuck                    > [Dont39ServerReborn] items [1786833366] in inventory of player 0 still differ from the server's after its snapshot, in fields a snapshot cannot set; until either side changes them they are compared as the server has them
+LOG  : Lua          f:7191 st:1,750,102,633> [SGTEST] 1793097090964 test falseRepairs control: key still on the client: true
+LOG  : Lua          f:7191 st:1,750,102,633> [SGTEST] 1793097090964 test falseRepairs end
+LOG  : Lua          f:7191 st:1,750,102,634> [SGTEST] 1793097090965 done cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=157
+LOG  : Lua          f:7492 st:1,750,107,649> [SGTEST] 1793097095979 quit
