@@ -1,0 +1,28 @@
+1793105806088 menu
+1793105809098 join 192.168.50.249:48261 as admin
+1793105815877 menu
+1793105815931 connected existing
+1793105824741 ingame label=ao5 at 7560,11815,0
+1793105824742 menu: no password in sgtest.txt, not joining
+1793105829750 admin setup try=1
+1793105829767 god mode on
+1793105829768 teleport Rosewood prison 7560,11815,0
+1793105829782 server: User admin is now invincible.
+1793105829785 arrived ok=true at 7560,11815,0
+1793105839800 test appearance start at 7560,11815,0
+1793105839832 server give Base.KnapsackSprayer,Base.Jacket_Padded ids=1386817009,482374470
+1793105842066 server fill Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none
+1793105842068 test appearance fill: fill Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none
+1793105845084 test appearance worn client: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793105845115 server sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793105845117 test appearance worn server: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793105845155 server appearanceSet hidden Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden
+1793105845156 test appearance set sprayer: appearanceSet hidden Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden
+1793105845184 server appearanceSet look Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105845186 test appearance set jacket: appearanceSet look Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105855201 test appearance overridden client: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105855232 server sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105855233 test appearance overridden server: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105855234 test appearance end
+1793105855234 done cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=204
+1793105860249 quit

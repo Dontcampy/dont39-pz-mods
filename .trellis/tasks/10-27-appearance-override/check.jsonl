@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook API rules"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "build gate, tests, style, forbidden patterns"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "mismatch is an error"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "threading, hot paths"}
+{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/engine-appearance.md", "reason": "render-only scope must hold"}

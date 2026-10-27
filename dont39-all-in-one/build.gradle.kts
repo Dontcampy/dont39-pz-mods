@@ -23,6 +23,7 @@ val features = listOf(
   ":tunnel",
   ":mod-sync",
   ":network-status",
+  ":appearance-override",
 )
 
 val modId = pzMod.modId

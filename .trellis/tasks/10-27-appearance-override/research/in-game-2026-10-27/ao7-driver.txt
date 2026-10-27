@@ -1,0 +1,25 @@
+1793105993879 menu
+1793105996892 join 192.168.50.249:48261 as admin
+1793106000941 menu
+1793106000996 connected existing
+1793106009901 ingame label=ao7 at 7560,11815,0
+1793106009902 menu: no password in sgtest.txt, not joining
+1793106014910 admin setup try=1
+1793106014927 god mode on
+1793106014927 teleport Rosewood prison 7560,11815,0
+1793106014942 server: User admin is now invincible.
+1793106014947 arrived ok=true at 7560,11815,0
+1793106024959 test appearanceClear start at 7560,11815,0
+1793106025015 server appearanceSet clear Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106025017 test appearanceClear jacket: appearanceSet clear Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106035027 test appearance jacketCleared client: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106035059 server sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106035061 test appearance jacketCleared server: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106035093 server give Base.KnapsackSprayer ids=305272664
+1793106047294 test appearanceClear first sprayer in the inventory: Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden
+1793106047295 test appearance secondSprayer client: sprayer Base.KnapsackSprayer#305272664 w=5.000 fluid=0.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106047326 server sprayer Base.KnapsackSprayer#305272664 w=5.000 fluid=0.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106047328 test appearance secondSprayer server: sprayer Base.KnapsackSprayer#305272664 w=5.000 fluid=0.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=none
+1793106047328 test appearanceClear end
+1793106047329 done cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=202
+1793106052346 quit

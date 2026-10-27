@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Adding a Feature, naming"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "hook API rules"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua bridge, gating, threading and hot paths"}
+{"file": ".trellis/spec/mod/zb-kt-utils.md", "reason": "Feature base and hook gate"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin rules"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "status lines, debug output"}
+{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/engine-appearance.md", "reason": "bytecode evidence: render consumers, sync, substitute visual"}

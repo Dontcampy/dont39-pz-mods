@@ -1,0 +1,17 @@
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: debug: preview of items: nothing
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:1 st:1,759,494,092> [Dont39AllInOne] appearance-override: set of admin, revision 1: {Base.Jacket_Padded=Look(type=Base.Jacket_Black, textureChoice=0, baseTexture=-1, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:2 st:1,759,494,106> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden, Base.Jacket_Padded as Base.Jacket_Black
+LOG  : Mod          f:2 st:1,759,494,107> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden, Base.Jacket_Padded as Base.Jacket_Black
+LOG  : Mod          f:2 st:1,759,494,127> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden, Base.Jacket_Padded as Base.Jacket_Black
+LOG  : Mod          f:855 st:1,759,509,152> [Dont39AllInOne] appearance-override: set of admin, revision 2: {Base.KnapsackSprayer=Hidden}
+LOG  : Mod          f:856 st:1,759,509,155> [Dont39AllInOne] appearance-override: debug: model of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:856 st:1,759,509,156> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:856 st:1,759,509,156> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.KnapsackSprayer hidden
+LOG  : Mod          f:1525 st:1,759,520,320> [Dont39AllInOne] appearance-override: set of admin, revision 3: {}
+LOG  : Mod          f:1526 st:1,759,520,324> [Dont39AllInOne] appearance-override: debug: model of admin: nothing
+LOG  : Mod          f:1526 st:1,759,520,325> [Dont39AllInOne] appearance-override: debug: attached items of admin: nothing
+LOG  : Mod          f:1526 st:1,759,520,325> [Dont39AllInOne] appearance-override: debug: textures of admin: nothing

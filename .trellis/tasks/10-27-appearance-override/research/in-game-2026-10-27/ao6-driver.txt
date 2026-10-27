@@ -1,0 +1,18 @@
+1793105913588 menu
+1793105916593 join 192.168.50.249:48261 as admin
+1793105924466 menu
+1793105924521 connected existing
+1793105932689 ingame label=ao6 at 7560,11815,0
+1793105932690 menu: no password in sgtest.txt, not joining
+1793105937694 admin setup try=1
+1793105937712 god mode on
+1793105937713 teleport Rosewood prison 7560,11815,0
+1793105937726 server: User admin is now invincible.
+1793105937730 arrived ok=true at 7560,11815,0
+1793105947744 test appearanceCheck start at 7560,11815,0
+1793105957761 test appearance rejoined client: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105957792 server sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105957795 test appearance rejoined server: sprayer Base.KnapsackSprayer#1386817009 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=hidden | jacket Base.Jacket_Padded#482374470 w=3.000 bite=10.0 scratch=20.0 ins=0.95 override=Base.Jacket_Black
+1793105957795 test appearanceCheck end
+1793105957796 done cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=203
+1793105962811 quit

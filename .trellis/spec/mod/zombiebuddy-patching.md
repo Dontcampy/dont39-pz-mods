@@ -141,6 +141,12 @@ What is not behind the seam and needs rework when switching loaders:
   text.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
+- State the server sends to clients with Lua commands (`sendServerCommand`) is derived and re-sent, never assumed
+  delivered once (`appearance-override`'s `Dont39AllInOne_AppearanceOverride{Server,Client}.lua`):
+  - a client's request at `OnGameStart` can reach the server before it has bound the player to the connection and is
+    then dropped without a trace: repeat it until the server's answer ends with a marker, and fail after a bound;
+  - a joined player's worn items are filled from the client's packets without `OnClothingUpdated` on the server: state
+    derived from them is also recomputed on a time-paced check, sending only what changed.
 
 ---
 
@@ -258,6 +264,23 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
 - Restore must not overwrite a value the target replaced in the meantime, and keeps restoring the rest after one
   element fails.
 - Adjust only what the draw call reads; leave the target's simulation state alone.
+
+## Render-Only Changes to Characters
+
+For a feature that changes how a character is drawn but not what it wears. Reference: `appearance-override`
+(`RenderScope.kt`, `VisualEdit.kt`); the evidence is the archived task's `research/engine-appearance.md`
+(`10-27-sctd-render-transmog`).
+
+- `WornItems.getItemVisuals` / `IsoPlayer.getItemVisuals` also feed clothing defense, bite checks, vision, temperature,
+  blood and `SyncVisuals` (which matches visuals by index), so their result is changed only inside a render scope: a
+  `HEAD`/`FINALLY` pair on each render consumer opens a thread-local frame, and the `RETURN` edit acts only while one
+  is open. The list is the caller's; the item's own `ItemVisual` is never changed.
+- A new render consumer after a game update draws the real item until it is added to the scope list.
+- A remote player's visuals on a client carry no item mod data (`SyncClothing` makes items from the type; the join's
+  visuals have no item), and SCTD swaps the local worn list for record-less copies while drawing: per-player state is
+  sent to clients and looked up by worn type, not read from the drawn item.
+- A substitute `ItemVisual` sets every field the getters would otherwise pick at random (texture choice, base
+  texture, tint, hue, decal), or the look changes between rebuilds.
 
 ## Threading and Hot Paths
 
