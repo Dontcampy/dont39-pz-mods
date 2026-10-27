@@ -137,7 +137,7 @@ internal object Reconcile {
     if (wire.isItem) {
       listOfNotNull(container.getItemWithID(wire.itemId))
     } else {
-      container.getItems().toList()
+      ItemDigests.items(container)
     }.associateBy { it.getID() }
 
   private fun digests(items: Map<Int, InventoryItem>): Map<Int, Long> = items.mapValues { ItemDigests.item(it.value) }

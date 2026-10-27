@@ -81,6 +81,9 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
     `-id` (each takes local port 17500+id). Scenario, start script, A/B harness and summarizer:
     `research/prototype/` of `archive/2026-10/10-24-server-tick-20hz`. Restore the save from one snapshot before
     each run, or the runs drift apart as the world fills.
+12. A fix of the game's own client behavior: run the same scripted check once with the client's Java mods off
+    (`start-client.ps1 -NoZombieBuddy`), which must show the bug, so a pass with the fix is not a check that never
+    triggers it. Example: `falseRepairs` in `.trellis/tasks/archive/2026-10/10-27-server-reborn-sync-false-repairs/research/`.
 
 If an in-game check was not done, say so in the task report.
 

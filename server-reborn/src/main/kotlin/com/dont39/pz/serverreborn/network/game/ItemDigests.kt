@@ -7,6 +7,8 @@ import com.dont39.pz.serverreborn.network.protocol.Unordered
 import se.krka.kahlua.j2se.KahluaTableImpl
 import se.krka.kahlua.vm.KahluaTable
 import zombie.characterTextures.BloodBodyPartType
+import zombie.characters.BodyDamage.BodyPartType
+import zombie.characters.CharacterGender
 import zombie.core.Color
 import zombie.entity.components.fluids.FluidContainer
 import zombie.inventory.InventoryItem
@@ -31,8 +33,9 @@ import java.nio.ByteBuffer
  * (setData never sets it); activated, key id, stash map, infection, world scale and rotations (only in the full save,
  * not in a field packet); a name that is not custom (each side translates it into its own language); food stats and
  * clothing weight derived from those; a food's actual weight (follows its name); a sharp weapon's maximum damage (the
- * packet sends it scaled); mod data pairs one side writes for itself (see [KAHLUA]). Values the packets narrow (colour,
- * poison) are hashed as they arrive. Main thread only: one scratch buffer.
+ * packet sends it scaled); mod data pairs one side writes for itself (see [KAHLUA]); the bandage and wound models the
+ * client puts in its player's inventory (see [counted]). Values the packets narrow (colour, poison) are hashed as they
+ * arrive. Main thread only: one scratch buffer.
  */
 internal object ItemDigests {
   /**
@@ -107,16 +110,42 @@ internal object ItemDigests {
       // Clothing.getUsedDelta() writes 0 when absent, on whichever side reads it (client Lua and tooltips); a value
       // set through setUsedDelta still counts
       "usedDelta" -> value is Double && value == 0.0
+      // Escape from Kentucky's client sets them on a gun's first equip, from its script, without a sync
+      // (ExactAutomaticRPM.lua); its shared code writes other AWCWF_ keys on the server too
+      "AWCWF_ConfiguredRPM", "AWCWF_DisplayRPM", "AWCWF_AppliedRPM", "AWCWF_CalibratedCyclic",
+      "AWCWF_RPMCalibrationIndex", "AWCWF_RPMCategory", "AWCWF_RPMCategoryScale", "AWCWF_RPMGlobalScale",
+      -> true
+      // EFK's client records the default magazine on equip; it syncs real changes itself
+      "MagzineTypeNow" -> true
       else -> false
     }
   }
+
+  // the bandage update (IsoGameCharacter.Bandages) gives only the client's player these, and a repair that takes one
+  // off sees it made again under a new id
+  private val MODELS: Set<String> by lazy {
+    (0 until BodyPartType.ToIndex(BodyPartType.MAX)).flatMap { i ->
+      val part = BodyPartType.FromIndex(i)
+      val bandage = part.bandageModel?.takeUnless { it.isBlank() }?.let { listOf(it, it + "_Blood") }.orEmpty()
+      bandage + CharacterGender.entries.flatMap { gender ->
+        listOf(part.getBiteWoundModel(gender), part.getScratchWoundModel(gender), part.getCutWoundModel(gender))
+          .filterNot { it.isNullOrBlank() }
+      }
+    }.toSet()
+  }
+
+  /** Whether the digests and repairs cover [item]. */
+  fun counted(item: InventoryItem) = item.fullType !in MODELS
+
+  /** A container's items the digests and repairs cover. */
+  fun items(container: ItemContainer): List<InventoryItem> = container.getItems().filter(::counted)
 
   private fun on(field: Checked) = field in CHECKED
 
   /** Bags' contents are their own containers. [digest] decides each item's digest from its id and own digest. */
   fun container(container: ItemContainer, digest: (Int, Long) -> Long = { _, own -> own }): Long {
     val d = ContainerDigest()
-    container.getItems().forEach { d.add(it.getID(), it.fullType, digest(it.getID(), item(it))) }
+    items(container).forEach { d.add(it.getID(), it.fullType, digest(it.getID(), item(it))) }
     return d.get()
   }
 
@@ -296,13 +325,9 @@ internal object ItemDigests {
       .i("fluReduction", food.fluReduction).f("painReduction", food.painReduction)
       .f("endChange", food.endChange)
       .f("fatigueChange", food.getFatigueChange())
-      // ItemStats writes both as a byte, and leaves out a detection level of -1 ("none"), which the client then
-      // reads as 0
+      // ItemStats writes both as a byte
       .i("poisonPower", food.poisonPower.toByte().toInt())
-      .i(
-        "poisonDetectionLevel",
-        if (food.poisonDetectionLevel == -1) 0 else food.poisonDetectionLevel.toByte().toInt(),
-      )
+      .i("poisonDetectionLevel", food.poisonDetectionLevel.toByte().toInt())
       .b("alcoholic", food.isAlcoholic)
       .f("baseHunger", food.baseHunger)
       .f("minutesToCook", food.minutesToCook).f("minutesToBurn", food.minutesToBurn)

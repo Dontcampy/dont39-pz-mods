@@ -192,7 +192,7 @@ internal object ClientSync {
       if (!gone) {
         val mine = containerDigest(container)
         if (mine != digest) {
-          mismatch(wire, found.name(wire), container.getItems(), mine, digest, now, asks)
+          mismatch(wire, found.name(wire), ItemDigests.items(container), mine, digest, now, asks)
         }
       }
       return
@@ -206,7 +206,7 @@ internal object ClientSync {
         counters.mismatches++
         if (ledger.ask(whole, now)) {
           counters.requested++
-          diff?.mismatch(whole, found.name(whole), container.getItems(), mine, 0)
+          diff?.mismatch(whole, found.name(whole), ItemDigests.items(container), mine, 0)
           asks.checks += Message.OpenCheck(whole, mine)
         }
       }
