@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview and pre-development checklist"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Writing the @Inject HEAD hook on ItemStatsPacket.parse with a gate"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Adding accessible field lines to server-reborn.classtweaker"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin rules and version bumps"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No hidden fallback; failures turn the mod off"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines and debug output conventions"}

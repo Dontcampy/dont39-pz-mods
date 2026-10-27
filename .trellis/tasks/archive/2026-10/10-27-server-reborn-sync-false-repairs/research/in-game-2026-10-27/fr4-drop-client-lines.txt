@@ -1,0 +1,139 @@
+LOG  : Mod          f:0> [Dont39ServerReborn] 0.2.0 loaded
+LOG  : Mod          f:0> [Dont39ServerReborn] access widener: ok (46 directives)
+LOG  : Mod          f:0> [Dont39ServerReborn] ready on a client; it turns on for a server that runs it too
+WARN : Mod          f:0 at Settings.reportClientSwitches       > [Dont39ServerReborn] debug: drops every 3. incoming container or item update of the game (-Dserverreborn.debugDropDelta), to test repairs; leave it off for play
+LOG  : Mod          f:0> [Dont39ServerReborn] debug: logs the digest fields that differ around each repair (-Dserverreborn.debugFieldDiff)
+LOG  : Lua          f:0> [SGTEST] 1793097216060 menu
+LOG  : Lua          f:0> [SGTEST] 1793097219070 join 192.168.50.249:48261 as admin
+LOG  : Lua          f:0 st:0> [SGTEST] 1793097223714 menu
+LOG  : Lua          f:0 st:0> [SGTEST] 1793097223769 connected existing
+LOG  : Mod          f:0 st:0> [Dont39ServerReborn] active: the server checks this client's containers and items
+LOG  : Lua          f:1 st:0> [SGTEST] 1793097233286 ingame label=fr4-drop at 7560,11815,0
+LOG  : Lua          f:1 st:0> [SGTEST] 1793097233287 menu: no password in sgtest.txt, not joining
+LOG  : Lua          f:284 st:1,750,249,964> [SGTEST] 1793097238288 admin setup try=1
+LOG  : Lua          f:285 st:1,750,249,995> [SGTEST] 1793097238320 server: User admin is now invincible.
+LOG  : Lua          f:286 st:1,750,249,999> [SGTEST] 1793097238323 god mode on
+LOG  : Lua          f:286 st:1,750,249,999> [SGTEST] 1793097238324 teleport Rosewood prison 7560,11815,0
+LOG  : Lua          f:287 st:1,750,250,013> [SGTEST] 1793097238337 arrived ok=true at 7560,11815,0
+LOG  : Lua          f:888 st:1,750,260,029> [SGTEST] 1793097248353 loop start duration=240s
+LOG  : Lua          f:889 st:1,750,260,050> [SGTEST] 1793097248374 scan radius=20 containers=13 at 7560,11815,0
+LOG  : Lua          f:1128 st:1,750,264,106> [SGTEST] 1793097252431 open: shown; global=function marked=true explored=true
+WARN : Mod          f:1264 st:1,750,266,430 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 3) for items [798965350] in container 0 of object 1 at 7570,11831,0
+WARN : Mod          f:1270 st:1,750,266,528 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 6) for inventory of player 0
+LOG  : Lua          f:1355 st:1,750,267,934> [SGTEST] 1793097256258 open: shown; global=function marked=true explored=true
+LOG  : Mod          f:1373 st:1,750,268,248> [Dont39ServerReborn] field diff: container 0 of object 1 at 7570,11831,0 differs (client 68aa7163ea670804, server 17cdd650d88781bf); 2 items recorded, compared when the snapshot comes
+LOG  : Mod          f:1373 st:1,750,268,251> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 74be704645aafeda, server 5d4e15cb42014260); 28 items recorded, compared when the snapshot comes
+LOG  : Lua          f:1374 st:1,750,268,261> [SGTEST] 1793097256586 open: shown; global=function marked=true explored=true
+LOG  : Mod          f:1379 st:1,750,268,349> [Dont39ServerReborn] field diff: container 0 of object 1 at 7570,11831,0 at the mismatch, against the server's copy: 798965350 (Base.DishCloth): only on the client
+LOG  : Mod          f:1379 st:1,750,268,349> [Dont39ServerReborn] field diff: container 0 of object 1 at 7570,11831,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:1379 st:1,750,268,350> [Dont39ServerReborn] repaired container 0 of object 1 at 7570,11831,0 from the server's state: removed [798965350]
+LOG  : Mod          f:1379 st:1,750,268,350> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Mod          f:1379 st:1,750,268,355> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 37623650 (Base.SugarCubes): only on the server
+LOG  : Mod          f:1379 st:1,750,268,356> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:1379 st:1,750,268,356> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [37623650]
+WARN : Mod          f:1486 st:1,750,270,128 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 9) for items [1328181451] in container 0 of object 2 at 7566,11829,0
+WARN : Mod          f:1498 st:1,750,270,328 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 12) for inventory of player 0
+LOG  : Mod          f:1614 st:1,750,272,262> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11829,0 differs (client 42ee2a2531be1f4d, server 17cabff326feb447); 4 items recorded, compared when the snapshot comes
+LOG  : Mod          f:1614 st:1,750,272,263> [Dont39ServerReborn] field diff: inventory of player 0 differs (client d81bfa4c6f77a789, server ea10e464b82f87ec); 31 items recorded, compared when the snapshot comes
+LOG  : Mod          f:1618 st:1,750,272,329> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11829,0 at the mismatch, against the server's copy: 1328181451 (Base.Straw2): only on the client
+LOG  : Mod          f:1618 st:1,750,272,329> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11829,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:1618 st:1,750,272,329> [Dont39ServerReborn] repaired container 0 of object 2 at 7566,11829,0 from the server's state: removed [1328181451]
+LOG  : Mod          f:1618 st:1,750,272,333> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 2075959535 (Base.Cockroach): only on the server
+LOG  : Mod          f:1618 st:1,750,272,333> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:1618 st:1,750,272,333> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [2075959535]
+WARN : Mod          f:1642 st:1,750,272,728 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 15) for items [410473487] in container 0 of object 2 at 7566,11830,0
+LOG  : Mod          f:1736 st:1,750,274,295> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11830,0 differs (client 92559110de29d6a8, server d706dd95e8b9f018); 2 items recorded, compared when the snapshot comes
+LOG  : Mod          f:1744 st:1,750,274,428> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11830,0 at the mismatch, against the server's copy: 410473487 (Base.TinCanEmpty): only on the client
+LOG  : Mod          f:1744 st:1,750,274,429> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11830,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:1744 st:1,750,274,429> [Dont39ServerReborn] repaired container 0 of object 2 at 7566,11830,0 from the server's state: removed [410473487]
+LOG  : Mod          f:1980 st:1,750,278,361> [Dont39ServerReborn] repair notice shown for 4 repairs
+WARN : Mod          f:2475 st:1,750,286,611 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 18) for container 1 of object 2 at 7576,11834,0
+LOG  : Mod          f:2581 st:1,750,288,378> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 differs (client d1a430a3b873845e, server d6a6c2bc295ed31a); 0 items recorded, compared when the snapshot comes
+LOG  : Mod          f:2584 st:1,750,288,428> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 at the mismatch, against the server's copy: 312306530 (Base.HotdogPack): only on the server | 1529848248 (Base.Mussels): only on the server | 1318280128 (Base.Icecream): only on the server | 2087761829 (Base.MuttonChop): only on the server | 468068398 (Base.Popsicle): only on the server
+LOG  : Mod          f:2584 st:1,750,288,429> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:2584 st:1,750,288,429> [Dont39ServerReborn] repaired container 1 of object 2 at 7576,11834,0 from the server's state: added [312306530, 1529848248, 1318280128, 2087761829, 468068398]
+LOG  : Mod          f:2584 st:1,750,288,429> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:3598 st:1,750,305,328 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 21) for inventory of player 0
+LOG  : Mod          f:3696 st:1,750,306,962> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 9bc8a2027e7af9cf, server 87acf9d50993e6c5); 35 items recorded, compared when the snapshot comes
+LOG  : Mod          f:3701 st:1,750,307,047> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1190731193 (Base.PlasticCup): only on the server
+LOG  : Mod          f:3701 st:1,750,307,048> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:3701 st:1,750,307,048> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1190731193]
+LOG  : Mod          f:3701 st:1,750,307,048> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Lua          f:4481 st:1,750,320,032> [SGTEST] 1793097308357 progress cycles=4 taken=10 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=8 notShown=0 teleports=1 pos=7577,11834,0 zombies=878
+WARN : Mod          f:4654 st:1,750,322,928 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 24) for items [1857658558] in container 0 of object 2 at 7576,11834,0
+WARN : Mod          f:4672 st:1,750,323,228 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 27) for inventory of player 0
+LOG  : Mod          f:4786 st:1,750,325,128> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11834,0 differs (client 6ecd64484f2ebf05, server 0584ef27abacede6); 3 items recorded, compared when the snapshot comes
+LOG  : Mod          f:4786 st:1,750,325,129> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 85402860c5366abe, server 5f53e594070ca6db); 37 items recorded, compared when the snapshot comes
+LOG  : Mod          f:4792 st:1,750,325,228> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11834,0 at the mismatch, against the server's copy: 1857658558 (Base.MuttonChop): only on the client
+LOG  : Mod          f:4792 st:1,750,325,229> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11834,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:4792 st:1,750,325,229> [Dont39ServerReborn] repaired container 0 of object 2 at 7576,11834,0 from the server's state: removed [1857658558]
+LOG  : Mod          f:4792 st:1,750,325,229> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Mod          f:4792 st:1,750,325,232> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1705908330 (Base.Milk): only on the server
+LOG  : Mod          f:4792 st:1,750,325,232> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:4792 st:1,750,325,232> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1705908330]
+LOG  : Mod          f:5393 st:1,750,335,245> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:6712 st:1,750,357,228 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 30) for items [141850367] in container 0 of object 2 at 7576,11833,0
+WARN : Mod          f:6736 st:1,750,357,628 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 33) for inventory of player 0
+LOG  : Mod          f:6835 st:1,750,359,278> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11833,0 differs (client 4e29d2672237abb9, server 4ceda13f69cc1a44); 3 items recorded, compared when the snapshot comes
+LOG  : Mod          f:6835 st:1,750,359,279> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 86c8b81edac98569, server b829583e0f8f9103); 40 items recorded, compared when the snapshot comes
+LOG  : Mod          f:6838 st:1,750,359,328> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11833,0 at the mismatch, against the server's copy: 141850367 (Base.Steak): only on the client
+LOG  : Mod          f:6838 st:1,750,359,329> [Dont39ServerReborn] field diff: container 0 of object 2 at 7576,11833,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:6838 st:1,750,359,329> [Dont39ServerReborn] repaired container 0 of object 2 at 7576,11833,0 from the server's state: removed [141850367]
+LOG  : Mod          f:6838 st:1,750,359,329> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Mod          f:6838 st:1,750,359,331> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 794393494 (Base.Avocado): only on the server
+LOG  : Mod          f:6838 st:1,750,359,332> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:6838 st:1,750,359,332> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [794393494]
+LOG  : Mod          f:7439 st:1,750,369,345> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:7816 st:1,750,375,628 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 36) for items [1989357042] in container 0 of object 2 at 7566,11832,0
+WARN : Mod          f:7828 st:1,750,375,828 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 39) for inventory of player 0
+LOG  : Mod          f:7923 st:1,750,377,411> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11832,0 differs (client dad1649b38025771, server 8f056ae5b9a22c09); 2 items recorded, compared when the snapshot comes
+LOG  : Mod          f:7923 st:1,750,377,412> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 4945f3335d0b011c, server 12d0af3c0b11acf1); 43 items recorded, compared when the snapshot comes
+LOG  : Mod          f:7930 st:1,750,377,528> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11832,0 at the mismatch, against the server's copy: 1989357042 (Base.ScrapMetal): only on the client
+LOG  : Mod          f:7930 st:1,750,377,529> [Dont39ServerReborn] field diff: container 0 of object 2 at 7566,11832,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:7930 st:1,750,377,529> [Dont39ServerReborn] repaired container 0 of object 2 at 7566,11832,0 from the server's state: removed [1989357042]
+LOG  : Mod          f:7930 st:1,750,377,531> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1062597698 (Base.Straw2): only on the server
+LOG  : Mod          f:7930 st:1,750,377,532> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:7930 st:1,750,377,532> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1062597698]
+LOG  : Mod          f:8040 st:1,750,379,361> [Dont39ServerReborn] repair notice shown for 2 repairs
+LOG  : Lua          f:8082 st:1,750,380,049> [SGTEST] 1793097368374 progress cycles=8 taken=18 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=16 notShown=0 teleports=1 pos=7569,11838,0 zombies=878
+WARN : Mod          f:8902 st:1,750,393,728 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 42) for items [1912469628] in container 1 of object 2 at 7576,11833,0
+LOG  : Mod          f:9012 st:1,750,395,561> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11833,0 differs (client def3ebdbf2152aee, server 37a081b3ad804537); 2 items recorded, compared when the snapshot comes
+LOG  : Mod          f:9016 st:1,750,395,628> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11833,0 at the mismatch, against the server's copy: 1912469628 (Base.CornFrozen): only on the client
+LOG  : Mod          f:9016 st:1,750,395,629> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11833,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:9016 st:1,750,395,629> [Dont39ServerReborn] repaired container 1 of object 2 at 7576,11833,0 from the server's state: removed [1912469628]
+LOG  : Mod          f:9016 st:1,750,395,629> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:9028 st:1,750,395,828 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 45) for inventory of player 0
+LOG  : Lua          f:9053 st:1,750,396,234> [SGTEST] 1793097384559 eat: nothing edible carried
+LOG  : Mod          f:9163 st:1,750,398,079> [Dont39ServerReborn] field diff: inventory of player 0 differs (client ba00cc7fa7524906, server 4200692e26b726d4); 47 items recorded, compared when the snapshot comes
+LOG  : Mod          f:9166 st:1,750,398,130> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1765023669 (Base.FishFillet): only on the server
+LOG  : Mod          f:9166 st:1,750,398,131> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:9166 st:1,750,398,131> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1765023669]
+LOG  : Mod          f:9617 st:1,750,405,645> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:11050 st:1,750,429,528 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 48) for items [312306530] in container 1 of object 2 at 7576,11834,0
+WARN : Mod          f:11062 st:1,750,429,728 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 51) for inventory of player 0
+LOG  : Mod          f:11179 st:1,750,431,678> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 differs (client 6b6d9f26e1619c5f, server 9851e7f2ff98cbc8); 4 items recorded, compared when the snapshot comes
+LOG  : Mod          f:11179 st:1,750,431,679> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 08ded1459cac394e, server fd6433124e809ec4); 49 items recorded, compared when the snapshot comes
+LOG  : Mod          f:11182 st:1,750,431,729> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 at the mismatch, against the server's copy: 312306530 (Base.HotdogPack): only on the client
+LOG  : Mod          f:11182 st:1,750,431,729> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11834,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:11182 st:1,750,431,729> [Dont39ServerReborn] repaired container 1 of object 2 at 7576,11834,0 from the server's state: removed [312306530]
+LOG  : Mod          f:11182 st:1,750,431,729> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Mod          f:11183 st:1,750,431,747> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1529848248 (Base.Mussels): only on the server
+LOG  : Mod          f:11183 st:1,750,431,747> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:11183 st:1,750,431,748> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1529848248]
+LOG  : Lua          f:11682 st:1,750,440,050> [SGTEST] 1793097428375 progress cycles=11 taken=25 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=23 notShown=0 teleports=1 pos=7571,11845,0 zombies=865
+LOG  : Mod          f:11783 st:1,750,441,745> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:13336 st:1,750,467,628 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming RemoveInventoryItemFromContainer (update 54) for items [1044020876] in container 1 of object 2 at 7576,11835,0
+LOG  : Mod          f:13446 st:1,750,469,461> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11835,0 differs (client 4fd3dfb773c47a02, server d1a430a3b873845e); 1 items recorded, compared when the snapshot comes
+LOG  : Mod          f:13450 st:1,750,469,528> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11835,0 at the mismatch, against the server's copy: 1044020876 (Base.Bacon): only on the client
+LOG  : Mod          f:13450 st:1,750,469,529> [Dont39ServerReborn] field diff: container 1 of object 2 at 7576,11835,0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:13450 st:1,750,469,529> [Dont39ServerReborn] repaired container 1 of object 2 at 7576,11835,0 from the server's state: removed [1044020876]
+LOG  : Mod          f:13450 st:1,750,469,529> [Dont39ServerReborn] repair notice shown for 1 repairs
+WARN : Mod          f:14470 st:1,750,486,528 at DeltaDrop.drop                      > [Dont39ServerReborn] debug: dropped incoming AddInventoryItemToContainer (update 57) for inventory of player 0
+LOG  : Mod          f:14562 st:1,750,488,062> [Dont39ServerReborn] field diff: inventory of player 0 differs (client 01b9f9081705d540, server 82a0b0ce4834cfb0); 52 items recorded, compared when the snapshot comes
+LOG  : Mod          f:14566 st:1,750,488,130> [Dont39ServerReborn] field diff: inventory of player 0 at the mismatch, against the server's copy: 1541244610 (Base.CameraDisposable): only on the server
+LOG  : Mod          f:14566 st:1,750,488,131> [Dont39ServerReborn] field diff: inventory of player 0 after the snapshot, against the server's copy: no item differs
+LOG  : Mod          f:14566 st:1,750,488,131> [Dont39ServerReborn] repaired inventory of player 0 from the server's state: added [1541244610]
+LOG  : Mod          f:14566 st:1,750,488,131> [Dont39ServerReborn] repair notice shown for 1 repairs
+LOG  : Lua          f:15283 st:1,750,500,067> [SGTEST] 1793097488392 progress cycles=14 taken=27 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=28 notShown=0 teleports=1 pos=7574,11843,0 zombies=865
+LOG  : Lua          f:16793 st:1,750,525,232> [SGTEST] 1793097513557 done cycles=15 taken=28 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=30 notShown=0 teleports=1 pos=7567,11832,0 zombies=846
+LOG  : Lua          f:17094 st:1,750,530,248> [SGTEST] 1793097518573 quit

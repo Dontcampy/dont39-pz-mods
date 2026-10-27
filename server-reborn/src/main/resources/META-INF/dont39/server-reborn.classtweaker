@@ -19,3 +19,26 @@ accessible field zombie/network/packets/SyncHandWeaponFieldsPacket containerId L
 accessible field zombie/network/packets/SyncHandWeaponFieldsPacket itemId I
 accessible field zombie/network/packets/ItemStatsPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/ItemStatsPacket id I
+# ItemStats' parse keeps a stat the packet leaves out from the previous packet; the mod resets them first
+accessible field zombie/network/packets/ItemStatsPacket cookingTime F
+accessible field zombie/network/packets/ItemStatsPacket minutesToCook F
+accessible field zombie/network/packets/ItemStatsPacket minutesToBurn F
+accessible field zombie/network/packets/ItemStatsPacket hungChange F
+accessible field zombie/network/packets/ItemStatsPacket calories F
+accessible field zombie/network/packets/ItemStatsPacket proteins F
+accessible field zombie/network/packets/ItemStatsPacket lipids F
+accessible field zombie/network/packets/ItemStatsPacket carbohydrates F
+accessible field zombie/network/packets/ItemStatsPacket thirstChange F
+accessible field zombie/network/packets/ItemStatsPacket fluReduction I
+accessible field zombie/network/packets/ItemStatsPacket painReduction F
+accessible field zombie/network/packets/ItemStatsPacket endChange F
+accessible field zombie/network/packets/ItemStatsPacket foodSicknessChange I
+accessible field zombie/network/packets/ItemStatsPacket stressChange F
+accessible field zombie/network/packets/ItemStatsPacket fatigueChange F
+accessible field zombie/network/packets/ItemStatsPacket unhappyChange F
+accessible field zombie/network/packets/ItemStatsPacket boredomChange F
+accessible field zombie/network/packets/ItemStatsPacket poisonPower I
+accessible field zombie/network/packets/ItemStatsPacket poisonDetectionLevel I
+accessible field zombie/network/packets/ItemStatsPacket baseHunger F
+accessible field zombie/network/packets/ItemStatsPacket fertilizedTime I
+accessible field zombie/network/packets/ItemStatsPacket wetCooldown F

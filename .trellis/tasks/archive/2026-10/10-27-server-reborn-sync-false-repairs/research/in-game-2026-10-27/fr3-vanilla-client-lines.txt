@@ -1,0 +1,20 @@
+LOG  : Lua          f:0> [SGTEST] 1793097133332 menu
+LOG  : Lua          f:0> [SGTEST] 1793097136337 join 192.168.50.249:48261 as admin
+LOG  : Lua          f:0 st:0> [SGTEST] 1793097143545 menu
+LOG  : Lua          f:0 st:0> [SGTEST] 1793097143601 connected existing
+LOG  : Lua          f:1 st:0> [SGTEST] 1793097158899 ingame label=fr3-vanilla at 7560,11815,0
+LOG  : Lua          f:1 st:0> [SGTEST] 1793097158899 menu: no password in sgtest.txt, not joining
+LOG  : Lua          f:284 st:1,750,175,572> [SGTEST] 1793097163904 admin setup try=1
+LOG  : Lua          f:285 st:1,750,175,604> [SGTEST] 1793097163936 server: User admin is now invincible.
+LOG  : Lua          f:286 st:1,750,175,607> [SGTEST] 1793097163939 god mode on
+LOG  : Lua          f:286 st:1,750,175,608> [SGTEST] 1793097163940 teleport Rosewood prison 7560,11815,0
+LOG  : Lua          f:287 st:1,750,175,623> [SGTEST] 1793097163955 arrived ok=true at 7560,11815,0
+LOG  : Lua          f:888 st:1,750,185,639> [SGTEST] 1793097173971 test falseRepairs start at 7560,11815,0
+LOG  : Lua          f:889 st:1,750,185,671> [SGTEST] 1793097174003 server give Base.Apple,Base.SugarPacket,Base.CannedChili ids=1415454239,1309782941,2045595093
+LOG  : Lua          f:891 st:1,750,185,704> [SGTEST] 1793097174037 server syncFoods synced 3
+LOG  : Lua          f:1073 st:1,750,188,722> [SGTEST] 1793097177054 test falseRepairs food Base.SugarPacket 1309782941 DIFFERS: client end=0.1000 hung=-0.0100 thirst=-0.2000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=-0.0100 thirst=0.0000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+LOG  : Lua          f:1073 st:1,750,188,723> [SGTEST] 1793097177055 test falseRepairs food Base.CannedChili 2045595093 DIFFERS: client end=0.1000 hung=-0.0100 thirst=-0.2000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=0.0000 thirst=0.0000 base=0.0000 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+LOG  : Lua          f:1074 st:1,750,188,754> [SGTEST] 1793097177086 server: User admin is no longer invincible.
+LOG  : Lua          f:1255 st:1,750,191,771> [SGTEST] 1793097180102 server give Base.Bandage ids=1838903273
+LOG  : Lua          f:1403 st:1,750,194,224> [SGTEST] 1793097182555 test falseRepairs bandage: foot bandaged=true
+LOG  : Lua          f:1428 st:1,750,194,638> [SGTEST] 1793097182971 stop requested; quit

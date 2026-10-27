@@ -6,7 +6,7 @@ internal object Protocol {
    * The version a server advertises and every message starts with. Bump it with any change to a message, a key's wire
    * form or the fields a digest covers: both sides must hash the same fields.
    */
-  const val VERSION = 1
+  const val VERSION = 2
 
   /** The game's first byte of a packet with a short id, `RakNetPeerInterface.ID_USER_PACKET_ENUM`. */
   const val USER_PACKET = 134

@@ -1,0 +1,45 @@
+1793096770593 menu
+1793096773608 join 192.168.50.249:48261 as admin
+1793096778387 menu
+1793096778486 connected new
+1793096781391 menu: no password in sgtest.txt, not joining
+1793096781491 spawnselect n=4 pick=1
+1793096784507 charcreation profession
+1793096787523 charnext
+1793096796884 ingame label=fr1 at 10637,10267,0
+1793096801891 admin setup try=1
+1793096801941 server: User admin is now invincible.
+1793096801944 god mode on
+1793096801944 teleport Rosewood prison 7560,11815,0
+1793096802018 arrived ok=true at 7560,11815,0
+1793096812024 test falseRepairs start at 7560,11815,0
+1793096812074 server give Base.Apple,Base.SugarPacket,Base.CannedChili ids=1790957662,1737383352,1449031256
+1793096812124 server syncFoods synced 3
+1793096815141 test falseRepairs food Base.SugarPacket 1737383352 same: client end=0.0000 hung=-0.0100 thirst=0.0000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=-0.0100 thirst=0.0000 base=-0.0100 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+1793096815142 test falseRepairs food Base.CannedChili 1449031256 same: client end=0.0000 hung=0.0000 thirst=0.0000 base=0.0000 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1 server end=0.0000 hung=0.0000 thirst=0.0000 base=0.0000 unhappy=0.0000 bored=0.0000 stress=0.0000 fat=0.0000 uses=1
+1793096815173 server: User admin is no longer invincible.
+1793096818190 server give Base.Bandage ids=321156658
+1793096820645 test falseRepairs bandage: foot bandaged=true
+1793096825658 test falseRepairs bandage +5s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096830674 test falseRepairs bandage +10s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096835692 test falseRepairs bandage +15s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096840708 test falseRepairs bandage +20s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096845725 test falseRepairs bandage +25s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096850743 test falseRepairs bandage +30s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096855743 test falseRepairs bandage +35s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096860757 test falseRepairs bandage +40s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096865758 test falseRepairs bandage +45s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096870758 test falseRepairs bandage +50s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096872024 progress cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=157
+1793096875774 test falseRepairs bandage +55s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096880791 test falseRepairs bandage +60s models: Base.Bandage_RightFoot#1867955242 Base.Bandage_RightFoot#1614704342
+1793096880824 server give Base.M7_cat ids=250342256
+1793096886958 test falseRepairs efk: in hand=true keys AWCWF_AppliedRPM=900 AWCWF_CalibratedCyclic=5.5 AWCWF_ConfiguredRPM=900 AWCWF_DisplayRPM=900 AWCWF_RPMCalibrationIndex=6 AWCWF_RPMCategory=CalibratedRPM AWCWF_RPMCategoryScale=1 AWCWF_RPMGlobalScale=1 MagzineTypeNow=Base.68Clip
+1793096886990 server give Base.Pencil ids=122877905
+1793096902023 server give Base.Pencil ids=1466802556
+1793096902025 test falseRepairs control: modData SGTEST_clientOnly on 1466802556, then a server change
+1793096902056 server give Base.Pencil ids=1183100264
+1793096917074 test falseRepairs control: key still on the client: true
+1793096917075 test falseRepairs end
+1793096917075 done cycles=0 taken=0 putBack=0 moved=0 eats=0 walkFails=0 errors=0 shown=0 notShown=0 teleports=0 pos=7560,11815,0 zombies=157
+1793096922091 quit

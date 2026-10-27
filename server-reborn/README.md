@@ -24,6 +24,9 @@ sends each checked client a frame of digests for the containers and items it jus
 differs asks for a snapshot and reconciles in place. Opening a container checks it once more. Repairs show a short note
 over the character and a log line on both sides.
 
+It also fixes the game's ItemStats packet, which gave a food a stat the packet left out from the item before it (on
+the client this works on any server), and it leaves out the bandage and wound model items the client adds to its player's inventory.
+
 Launch switches (JVM system properties, off by default; a switch that is on says so once):
 
 | Switch | Side | Effect |
