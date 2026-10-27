@@ -1007,3 +1007,26 @@ Server Reborn (PR #32, supersedes #28, now closed): Sync Guard as network sync o
 ### Status
 
 [OK] **Completed**
+
+
+## Session 43: Server Reborn 0.2.0: false repairs from ItemStats, bandage models and EFK data
+<!-- trellis-session: v=2 fp=950ad5773a89c721 -->
+
+**Date**: 2026-10-27
+**Task**: Server Reborn 0.2.0: false repairs from ItemStats, bandage models and EFK data
+**Branch**: `fix/server-reborn-false-repairs`
+
+### Summary
+
+Analyzed the live server's debugFieldDiff repairs: vanilla ItemStatsPacket keeps omitted food stats from the previous packet, the client's bandage update makes model items only it has, EFK's client writes RPM keys and MagzineTypeNow without a sync. Fixed in Server Reborn 0.2.0 (parse HEAD reset, ItemDigests.items filter, ownPerSide keys, protocol 2). Verified on the Linux myserver2 instance with a scripted -nosteam client: a -NoZombieBuddy baseline reproduced the stale stats, 0.2.0 showed no false repairs, debugDropDelta repairs still happen. PR Dontcampy/dont39-pz-mods#33. Also planned the All-in-One SCTD transmog server resnap task (PRD only, still planning). Workshop upload of 0.2.0 is the user's.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e3544e7` | Server Reborn 0.2.0: stop false repairs from stale ItemStats, bandage models and EFK gun data |
+| `701a095` | chore(task): plan and in-game check of 10-27-server-reborn-sync-false-repairs |
+
+### Status
+
+[OK] **Completed**
