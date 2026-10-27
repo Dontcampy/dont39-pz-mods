@@ -1007,3 +1007,26 @@ Server Reborn (PR #32, supersedes #28, now closed): Sync Guard as network sync o
 ### Status
 
 [OK] **Completed**
+
+
+## Session 44: Appearance override core for SCTD render-only hide and transmog
+<!-- trellis-session: v=2 fp=6c4f478e80deab57 -->
+
+**Date**: 2026-10-27
+**Task**: Appearance override core for SCTD render-only hide and transmog
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Added the appearance-override All-in-One feature (render-scope hooks, per-player sets by worn type, Lua API storing the override in item mod data). Verified on myserver2: set, rejoin, restart-rejoin, clear; the sprayer keeps its water. Fixed two sync gaps found in game (worn list filled without OnClothingUpdated; snapshot request dropped before the player is bound). Planned the SCTD takeover and legacy migration children. Not covered: remote player view, single player.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `46077ca` | Add appearance-override: draw a worn item hidden or as another item, only when rendering |
+| `01bca87` | chore(task): plan SCTD hide and transmog without swapping items |
+
+### Status
+
+[OK] **Completed**
