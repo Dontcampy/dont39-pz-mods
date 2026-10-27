@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 44
-- **Last Active**: 2026-10-27
+- **Total Sessions**: 45
+- **Last Active**: 2026-10-28
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1032 | Active |
+| `journal-1.md` | ~1054 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 45 | 2026-10-28 | SCTD render takeover | `fb26539` | `feat/sctd-transmog-server-resnap-015452` |
 | 44 | 2026-10-27 | Appearance override core for SCTD render-only hide and transmog | `46077ca`, `01bca87` | `feat/sctd-transmog-server-resnap-015452` |
 | 42 | 2026-10-26 | Server Reborn: merge Sync Guard and Server tick rate into one Kotlin mod; review fixes | `69c4b12`, `78ab9ee`, `262a04e`, `75e82a5`, `758768e` | `feat/server-reborn-46640e` |
 | 41 | 2026-10-26 | Faster Loading: depth map order without its main entrypoint | `8fe95ce`, `fff5405` | `feat/jolly-taussig-87321c` |

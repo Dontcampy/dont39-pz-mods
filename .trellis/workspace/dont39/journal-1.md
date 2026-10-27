@@ -1030,3 +1030,25 @@ Added the appearance-override All-in-One feature (render-scope hooks, per-player
 ### Status
 
 [OK] **Completed**
+
+
+## Session 45: SCTD render takeover
+<!-- trellis-session: v=2 fp=d606c65f4779de44 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD render takeover
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Added sctd-render-takeover: SCTD's hide, transmog (normal, cross-slot, invert), restore, auto-hide, panel and skin panel go through the appearance override; source blocks gated by length+hash, R7a Restore wrapper. Check fixed the wrapper being stopped by unrelated errors and invert in multi-item slots. All 8 in-game tests passed on myserver2 incl. a second client and the disabled path; environment restored. Found: a client that enables All-in-One only from the server's mod list gets no Lua globals from its Java part.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fb26539` | Add sctd-render-takeover: SCTD's hide and transmog only change how the item is drawn |
+
+### Status
+
+[OK] **Completed**
