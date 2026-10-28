@@ -1135,3 +1135,38 @@ Parent task reviewed against its acceptance list, All-in-One bumped to 0.14.0, p
 ### Status
 
 [OK] **Completed**
+
+
+## Session 48: PR 34 review fixes
+<!-- trellis-session: v=2 fp=e644e02aec4aa4e0 -->
+
+**Date**: 2026-10-28
+**Task**: PR 34 review fixes
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Fixed every architecture/performance/reuse finding of the PR 34 review and re-verified in game
+
+### Main Changes
+
+- Kahlua has no weak tables: takeover/migration state pruned to the online list
+- Appearance.put/write batch writes; auto-hide publishes once
+- Takeover split into modules; panel wraps SCTD's own functions; gate reads each file once
+- Zabric reads ZombieBuddy's class list by reflection, survives the next ZombieBuddy
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fd0f61b` | chore(task): archive 10-28-pr34-review-fixes |
+| `dd0725a` | Fix PR 34 review findings: no Kahlua weak tables, one appearance broadcast per batch, Zabric works with the next ZombieBuddy |
+
+### Testing
+
+- [OK] build, zabric/appearance tests, Kahlua syntax, BlockHashes 29 ok, smokeTest ready
+- [OK] myserver2: takeover basics, one set per auto-hide batch, migration + rejoins, viewer with All-in-One only from the server list gets the globals, restart
+
+### Status
+
+[OK] **Completed**

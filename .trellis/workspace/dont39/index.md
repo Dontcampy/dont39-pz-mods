@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 47
+- **Total Sessions**: 48
 - **Last Active**: 2026-10-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1137 | Active |
+| `journal-1.md` | ~1172 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 48 | 2026-10-28 | PR 34 review fixes | `fd0f61b`, `dd0725a` | `feat/sctd-transmog-server-resnap-015452` |
 | 47 | 2026-10-28 | SCTD render transmog: integration review and release | `77b442c`, `9843310` | `feat/sctd-transmog-server-resnap-015452` |
 | 46 | 2026-10-28 | SCTD legacy migration | `f7c9707`, `f85cf22`, `e65d411` | `feat/sctd-transmog-server-resnap-015452` |
 | 45 | 2026-10-28 | SCTD render takeover | `fb26539` | `feat/sctd-transmog-server-resnap-015452` |
