@@ -4,6 +4,7 @@
 
 local Appearance = require "Dont39AllInOne_AppearanceOverrideShared"
 local Takeover = require "Dont39AllInOne_SctdRenderTakeoverShared"
+local Migration = require "Dont39AllInOne_SctdRenderTakeoverMigration"
 
 local stopped = false -- the takeover; final for the session
 local failed = false -- a failure was reported
@@ -15,8 +16,7 @@ local sctdRestore = nil
 local restoreImpl = nil
 local wrapperStopped = false
 
--- per player, while auto-hide runs or SCTD swaps an item: auto-hide must not run inside either
-local busy = setmetatable({}, { __mode = "k" })
+local busy = Takeover.busy
 
 local function putBack()
     restoreImpl = sctdRestore
@@ -83,11 +83,7 @@ end
 
 -- Authoritative part: server and single player -----------------------------------------------------------------------
 
-local function realWorn(player)
-    -- SCTD swaps the worn list for display copies while it draws
-    if SCTD_ClothingAppearance and SCTD_ClothingAppearance.Restore then SCTD_ClothingAppearance.Restore() end
-    return player:getWornItems()
-end
+local realWorn = Takeover.realWorn
 
 local function hideItemServer(player, item, opts)
     if isClient() or not player or not item then return false end
@@ -149,13 +145,8 @@ local function invert(player, base, source, worn)
     end
     -- before the swap: its clothing event runs auto-hide, which leaves transmogged items alone
     Takeover.setRecord(source, Takeover.newRecord(false, false, base:getDisplayName()))
-    player:removeFromHands(base)
-    player:removeWornItem(base, false)
-    -- removeWornItem leaves an item in a multi-item slot (belt) worn
-    if worn:contains(base) then worn:remove(base) end
-    player:removeFromHands(source)
-    player:setWornItem(location, source, false)
-    sendClothing(player, location, source)
+    Takeover.takeOff(player, base)
+    Takeover.wear(player, location, source)
     sendEquip(player)
     Appearance.setLook(player, source, look)
     player:resetModelNextFrame()
@@ -598,7 +589,10 @@ local function sides()
 end
 
 local function install()
-    if not isClient() then installAuthoritative() end
+    if not isClient() then
+        installAuthoritative()
+        Migration.start(function() return not stopped end)
+    end
     if not isServer() then installUi() end
 end
 

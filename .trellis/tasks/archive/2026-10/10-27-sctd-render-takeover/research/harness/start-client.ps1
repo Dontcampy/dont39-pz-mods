@@ -48,7 +48,7 @@ user's ZombieBuddy config and approvals are not changed.
 param([Parameter(Mandatory)] [string] $Label, [string] $Spot = 'prison', [int] $DurationSec = 1800, [switch] $Quit,
     [switch] $NoLoop, [switch] $Visible, [int] $Radius = 20, [int] $Take = 3, [int] $EatEvery = 10,
     [switch] $WaitArrived, [int] $JoinTimeoutSec = 900, [string[]] $JvmArgs = @(),
-    [ValidateSet('', 'equipRemove', 'empty', 'burst', 'nested', 'falseRepairs', 'appearance', 'appearanceCheck', 'appearanceClear', 'sctdHide', 'sctdTransmog', 'sctdSkin', 'sctdAutoHide', 'sctdCheck', 'sctdDisabled', 'sctdView')] [string] $Test = '', [switch] $VanillaTransfers,
+    [ValidateSet('', 'equipRemove', 'empty', 'burst', 'nested', 'falseRepairs', 'appearance', 'appearanceCheck', 'appearanceClear', 'sctdHide', 'sctdTransmog', 'sctdSkin', 'sctdAutoHide', 'sctdCheck', 'sctdDisabled', 'sctdView', 'sctdMigMake', 'sctdMigReport', 'sctdMigPickup', 'sctdMigDisabled', 'sctdMigPickup2')] [string] $Test = '', [switch] $VanillaTransfers,
     [switch] $NoZombieBuddy, [switch] $LogTransfers, [switch] $ZbAllowAll, [string] $ServerHost = '',
     [int] $ServerPort = 0, [string] $ServerPassword = '')
 . (Join-Path $PSScriptRoot 'common.ps1')

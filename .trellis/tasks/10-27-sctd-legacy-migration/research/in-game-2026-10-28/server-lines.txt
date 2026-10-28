@@ -1,0 +1,102 @@
+pz: 1 windows (created Wed Oct  7 12:41:18 2026)
+LOG  : Mod          f:0 st:1,810,251,791> [Dont39AllInOne] appearance-override: ready
+WARN : Mod          f:0 st:1,810,251,794 at ZomboidFileSystem.loadModAndRequired> required mod "ShadowCatTacticsDispatch" not found
+WARN : Mod          f:0 st:1,810,251,794 at ZomboidFileSystem.loadModAndRequired> required mod "ShadowCatTacticsGuardian" not found
+LOG  : Mod          f:0 st:1,810,251,797> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,810,251,798> loading SGTestDriver
+LOG  : Mod          f:0 st:1,810,260,420> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,810,260,420> [Dont39AllInOne] appearance-override sync: server part ready (server)
+LOG  : Mod          f:0 st:1,810,260,423> [Dont39AllInOne] sctd-render-takeover: idle: ShadowCatTacticsDispatch is not enabled
+LOG  : Network      f:0 st:1,810,265,330> *** SERVER STARTED ****
+===== RUN 2 Wed Oct 28 03:15:00 AM UTC 2026
+LOG  : Mod          f:0 st:1,810,329,864> [Dont39AllInOne] appearance-override: ready
+LOG  : Mod          f:0 st:1,810,329,870> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,810,329,870> loading ShadowCatTacticsDispatch
+LOG  : Mod          f:0 st:1,810,329,880> loading ShadowCatTacticsGuardian
+LOG  : Mod          f:0 st:1,810,329,910> loading SGTestDriver
+LOG  : Mod          f:0 st:1,810,339,192> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,810,339,193> [Dont39AllInOne] appearance-override sync: server part ready (server)
+ERROR: Mod          f:0 st:1,810,339,212 at Lua((MOD:Dont39 All-in-One)).pcall  > [Dont39AllInOne] sctd-render-takeover: disabled after an error while checking SCTD's code: HideItem_Server at media/lua/shared/LingLi_SCTD_Skins.lua:2796 is not the reviewed version (found length 4444, hash 939850532, 2047066782)
+LOG  : Network      f:0 st:1,810,343,849> *** SERVER STARTED ****
+LOG  : Lua          f:15 st:1,811,152,736> [SGTEST] server: online admin at 1793158140541 items=8 worn Base.Belt2#1747175812@base:belt Base.Tshirt_McCoys#1911207120@base:tshirt Base.Shirt_Lumberjack#494345750@base:shirt Base.Socks_Long#2043257292@base:socks Base.Shoes_TrainerTINT#554900543@base:shoes Base.Trousers_JeanBaggy#1763208641@base:pants
+LOG  : Lua          f:242 st:1,811,176,210> [SGTEST] server: fill Base.KnapsackSprayer#2091772814 w=5.000 fluid=2.000/16.000 bite=0.0 scratch=0.0 ins=0.00 override=none
+LOG  : Lua          f:273 st:1,811,179,318> [SGTEST] server: sctd hide Base.KnapsackSprayer#2091772814 -> true Base.SCTD_Invis_back_f684b5d5#372330415
+LOG  : Lua          f:273 st:1,811,179,364> [SGTEST] server: sctd hide Base.Bag_Satchel#842850099 -> true Base.SCTD_Invis_satchel_bag_46c3569b#90141555
+LOG  : Lua          f:274 st:1,811,179,409> [SGTEST] server: sctd apply Base.Jacket_Black#1452241404 -> true Base.Jacket_Leather_Punk#1336517299
+LOG  : Lua          f:274 st:1,811,179,457> [SGTEST] server: sctd apply Base.Hat_BaseballCap#1841070716 -> true Base.Shirt_Lumberjack#1590380137
+LOG  : Lua          f:275 st:1,811,179,507> [SGTEST] server: sctd apply Base.Shoes_Black#1693778039 -> true Base.Shoes_Black#1693778039
+LOG  : Lua          f:275 st:1,811,179,536> [SGTEST] server: sctd hide Base.Gloves_LeatherGloves#1010107564 -> true Base.SCTD_Invis_hands_acb2bb8d#623223693
+LOG  : Lua          f:276 st:1,811,179,576> [SGTEST] server: sctd hide Base.Scarf_StripeBlackWhite#570805057 -> true Base.SCTD_Invis_scarf_5625f2f8#290650797
+===== RUN 3 step2 Wed Oct 28 03:30:35 AM UTC 2026
+LOG  : Mod          f:0 st:1,811,265,476> [Dont39AllInOne] appearance-override: ready
+LOG  : Mod          f:0 st:1,811,265,480> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,811,265,481> loading ShadowCatTacticsDispatch
+LOG  : Mod          f:0 st:1,811,265,490> loading ShadowCatTacticsGuardian
+LOG  : Mod          f:0 st:1,811,265,519> loading SGTestDriver
+LOG  : Mod          f:0 st:1,811,274,452> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,811,274,452> [Dont39AllInOne] appearance-override sync: server part ready (server)
+LOG  : Mod          f:0 st:1,811,274,706> [Dont39AllInOne] sctd-render-takeover: ready (server)
+LOG  : Network      f:0 st:1,811,279,250> *** SERVER STARTED ****
+ERROR: Multiplayer  f:1 st:1,811,326,568> INetworkPacket.send> Exception thrown
+	java.lang.NullPointerException: Cannot invoke "zombie.iso.IsoGridSquare.getX()" because "player.square" is null at ContainerID.setInventoryContainer(ContainerID.java:212). Message: Packet "AddInventoryItemToContainer" send failed
+	Stack trace:
+		zombie.network.fields.ContainerID.setInventoryContainer(ContainerID.java:212)
+ERROR: Multiplayer  f:1 st:1,811,326,569> INetworkPacket.send> Exception thrown
+	java.lang.NullPointerException: Cannot invoke "zombie.iso.IsoGridSquare.getX()" because "player.square" is null at ContainerID.setInventoryContainer(ContainerID.java:212). Message: Packet "RemoveInventoryItemFromContainer" send failed
+	Stack trace:
+		zombie.network.fields.ContainerID.setInventoryContainer(ContainerID.java:212)
+LOG  : Mod          f:1 st:1,811,326,589> [Dont39AllInOne] sctd-render-takeover: converted admin: 8 hidden, 2 transmogs, 1 inverts (0 left as themselves), 0 left (see errors)
+LOG  : Lua          f:1 st:1,811,326,589> [SGTEST] server: online admin at 1793158314395 items=21 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.FemaleBodyT512#104097235@base:ears Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back
+LOG  : Lua          f:509 st:1,811,482,948> [SGTEST] server: online admin at 1793158470754 items=21 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.FemaleBodyT512#104097235@base:ears Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back
+===== RUN 4 step4 Wed Oct 28 03:37:01 AM UTC 2026
+LOG  : Mod          f:0 st:1,811,651,230> [Dont39AllInOne] appearance-override: ready
+LOG  : Mod          f:0 st:1,811,651,236> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,811,651,237> loading ShadowCatTacticsDispatch
+LOG  : Mod          f:0 st:1,811,651,249> loading ShadowCatTacticsGuardian
+LOG  : Mod          f:0 st:1,811,651,287> loading SGTestDriver
+LOG  : Mod          f:0 st:1,811,660,172> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,811,660,173> [Dont39AllInOne] appearance-override sync: server part ready (server)
+LOG  : Mod          f:0 st:1,811,660,494> [Dont39AllInOne] sctd-render-takeover: ready (server)
+LOG  : Network      f:0 st:1,811,665,126> *** SERVER STARTED ****
+LOG  : Lua          f:1 st:1,811,713,525> [SGTEST] server: online admin at 1793158701331 items=21 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.FemaleBodyT512#104097235@base:ears Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back
+===== RUN 5 step5 wrong hash Wed Oct 28 03:43:39 AM UTC 2026
+LOG  : Mod          f:0 st:1,812,049,094> [Dont39AllInOne] appearance-override: ready
+LOG  : Mod          f:0 st:1,812,049,099> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,812,049,099> loading ShadowCatTacticsDispatch
+LOG  : Mod          f:0 st:1,812,049,109> loading ShadowCatTacticsGuardian
+LOG  : Mod          f:0 st:1,812,049,136> loading SGTestDriver
+LOG  : Mod          f:0 st:1,812,057,913> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,812,057,914> [Dont39AllInOne] appearance-override sync: server part ready (server)
+ERROR: Mod          f:0 st:1,812,057,944 at Lua((MOD:Dont39 All-in-One)).pcall  > [Dont39AllInOne] sctd-render-takeover: disabled after an error while checking SCTD's code: HideItem_Server at media/lua/shared/LingLi_SCTD_Skins.lua:2796 is not the reviewed version (found length 4444, hash 939850532, 2047066782)
+LOG  : Network      f:0 st:1,812,062,821> *** SERVER STARTED ****
+LOG  : Lua          f:1 st:1,812,113,844> [SGTEST] server: online admin at 1793159101650 items=22 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.FemaleBodyT512#104097235@base:ears Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:167 st:1,812,130,431> [SGTEST] server: OnClothingUpdated admin at 1793159118236 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:300 st:1,812,143,779> [SGTEST] server: OnClothingUpdated admin at 1793159131585 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#380524727@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.SCTD_Invis_eyes_0674654c#1844893105@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:300 st:1,812,143,779> [SGTEST] server: sctd hide Base.Glasses_Aviators#1234938507 -> true Base.SCTD_Invis_eyes_0674654c#1844893105
+LOG  : Lua          f:300 st:1,812,143,822> [SGTEST] server: OnClothingUpdated admin at 1793159131628 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.SCTD_Invis_necklace#1173409310@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.SCTD_Invis_eyes_0674654c#1844893105@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:300 st:1,812,143,823> [SGTEST] server: sctd hide Base.Necklace_Gold#380524727 -> true Base.SCTD_Invis_necklace#1173409310
+LOG  : Lua          f:413 st:1,812,155,029> [SGTEST] server: OnClothingUpdated admin at 1793159142835 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.SCTD_Invis_eyes_0674654c#1844893105@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:444 st:1,812,158,184> [SGTEST] server: OnClothingUpdated admin at 1793159145990 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:444 st:1,812,158,184> [SGTEST] server: sctd show Base.SCTD_Invis_eyes_0674654c#1844893105 -> true Base.Glasses_Aviators#1188282084
+LOG  : Lua          f:444 st:1,812,158,224> [SGTEST] server: OnClothingUpdated admin at 1793159146030 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+LOG  : Lua          f:444 st:1,812,158,224> [SGTEST] server: sctd restore Base.Jacket_Black#1695406694 -> true Base.Jacket_Black#1695406694
+LOG  : Lua          f:600 st:1,812,241,025> [SGTEST] server: online admin at 1793159228830 items=23 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.SCTD_Invis_scarf_5625f2f8#290650797@base:scarf
+===== RUN 6 step6 correct hash Wed Oct 28 03:48:30 AM UTC 2026
+LOG  : Mod          f:0 st:1,812,340,795> [Dont39AllInOne] appearance-override: ready
+LOG  : Mod          f:0 st:1,812,340,800> loading Dont39AllInOne
+LOG  : Mod          f:0 st:1,812,340,800> loading ShadowCatTacticsDispatch
+LOG  : Mod          f:0 st:1,812,340,809> loading ShadowCatTacticsGuardian
+LOG  : Mod          f:0 st:1,812,340,837> loading SGTestDriver
+LOG  : Mod          f:0 st:1,812,349,982> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0 st:1,812,349,982> [Dont39AllInOne] appearance-override sync: server part ready (server)
+LOG  : Mod          f:0 st:1,812,350,274> [Dont39AllInOne] sctd-render-takeover: ready (server)
+LOG  : Network      f:0 st:1,812,354,764> *** SERVER STARTED ****
+LOG  : Lua          f:1 st:1,812,410,219> [SGTEST] server: OnClothingUpdated admin at 1793159398025 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Mod          f:1 st:1,812,410,219> [Dont39AllInOne] sctd-render-takeover: converted admin: 1 hidden, 0 transmogs, 0 inverts (0 left as themselves), 0 left (see errors)
+LOG  : Lua          f:1 st:1,812,410,220> [SGTEST] server: online admin at 1793159398025 items=23 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer#1236750129@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Lua          f:340 st:1,812,444,087> [SGTEST] server: OnClothingUpdated admin at 1793159431893 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#518385588@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer_Stowed#209876650@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Mod          f:340 st:1,812,444,087> [Dont39AllInOne] sctd-render-takeover: converted admin: 1 hidden, 0 transmogs, 0 inverts (0 left as themselves), 0 left (see errors)
+LOG  : Lua          f:340 st:1,812,444,087> [SGTEST] server: OnClothingUpdated admin at 1793159431893 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#518385588@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer_Stowed#209876650@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Lua          f:372 st:1,812,447,286> [SGTEST] server: OnClothingUpdated admin at 1793159435092 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#518385588@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer_Stowed#209876650@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Lua          f:472 st:1,812,457,378> [SGTEST] server: OnClothingUpdated admin at 1793159445184 worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#518385588@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer_Stowed#209876650@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf
+LOG  : Lua          f:472 st:1,812,457,378> [SGTEST] server: clothingEvent raised; worn Base.Belt2#798110384@base:belt Base.Hat_BaseballCap#131340879@base:hat Base.Tshirt_McCoys#737016605@base:tshirt Base.Shirt_Lumberjack#1252312456@base:shirt Base.Necklace_Gold#518385588@base:necklace Base.Socks_Long#977449349@base:socks Base.Shoes_ArmyBoots#1779522121@base:shoes Base.Trousers_JeanBaggy#1908381835@base:pants Base.Jacket_Black#1695406694@base:jacket Base.Bag_Satchel#1278274416@base:satchel Base.KnapsackSprayer_Stowed#209876650@base:back Base.Glasses_Aviators#1188282084@base:eyes Base.Scarf_StripeBlackWhite#504042403@base:scarf

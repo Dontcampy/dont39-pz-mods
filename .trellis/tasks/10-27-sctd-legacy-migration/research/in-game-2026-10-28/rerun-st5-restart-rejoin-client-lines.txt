@@ -1,0 +1,33 @@
+LOG  : Mod          f:0> [Dont39AllInOne] ime-keyboard-fix: active
+LOG  : Mod          f:0> [Dont39AllInOne] 0.13.0 loaded
+LOG  : Mod          f:0> [Dont39AllInOne] access widener: ok (11 directives)
+LOG  : Mod          f:0> [Dont39AllInOne] ime-keyboard-fix: ready
+LOG  : Mod          f:0> [Dont39AllInOne] missing-anim-folders: ready
+LOG  : Mod          f:0> [Dont39AllInOne] anim-extends-case: ready
+LOG  : Mod          f:0> [Dont39AllInOne] tunnel: ready
+LOG  : Mod          f:0> [Dont39AllInOne] mod-sync: ready
+LOG  : Mod          f:0> [Dont39AllInOne] network-status: ready
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0> [Dont39AllInOne] mod-options-sidebar: ready
+LOG  : Mod          f:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : Mod          f:0> [Dont39AllInOne] mod-options-sidebar: active (3 sections)
+LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: debug: preview of items: nothing
+LOG  : Mod          f:0> [Dont39AllInOne] anim-extends-case: active
+LOG  : Mod          f:0> [Dont39AllInOne] mod-sync: active
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] tunnel: active
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] network-status: active
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] mod-sync: join to 192.168.50.249:48261: no mod sync, as the server sent no mod sync location
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] missing-anim-folders: active
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] mod-options-sidebar: ready
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (SCTD's code is the reviewed version; the takeover starts with a game)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] mod-options-sidebar: active (3 sections)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] sctd-render-takeover: ready (client)
+ERROR: Lua          f:0 st:0 at Lua(Vanilla).handleMannequinZone    > ERROR: Mannequin zone missing properties in media/maps/Muldraugh, KY/objects.lua coords: 13583, 1299, 0
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] mod-options-sidebar: active (3 sections)
+LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override: set of admin, revision 1: {Base.Belt2=Hidden, Base.Hat_BaseballCap=Look(type=Base.Shirt_Lumberjack, textureChoice=-1, baseTexture=4, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.Tshirt_McCoys=Hidden, Base.Shirt_Denim=Hidden, Base.Socks_Long=Hidden, Base.Shoes_ArmyBoots=Look(type=Base.Shoes_Black, textureChoice=-1, baseTexture=0, tint=Tint(r=1.0, g=1.0, b=1.0, a=1.0), decal=null, hue=0.0), Base.Trousers_JeanBaggy=Hidden, Base.Jacket_Black=Look(type=Base.Jacket_Leather_Punk, textureChoice=0, baseTexture=-1, tint=Tint(r=0.2, g=0.6, b=0.8980392, a=1.0), decal=null, hue=0.0), Base.Bag_Satchel=Hidden, Base.KnapsackSprayer=Hidden, Base.Scarf_StripeBlackWhite=Hidden}
+LOG  : Mod          f:1 st:0> [Dont39AllInOne] appearance-override: debug: model of admin: Base.Scarf_StripeBlackWhite hidden, Base.KnapsackSprayer hidden, Base.Bag_Satchel hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk, Base.Trousers_JeanBaggy hidden, Base.Shoes_ArmyBoots as Base.Shoes_Black, Base.Socks_Long hidden, Base.Shirt_Denim hidden, Base.Tshirt_McCoys hidden, Base.Hat_BaseballCap as Base.Shirt_Lumberjack, Base.Belt2 hidden
+LOG  : Mod          f:1 st:0> [Dont39AllInOne] appearance-override: debug: attached items of admin: Base.Scarf_StripeBlackWhite hidden, Base.KnapsackSprayer hidden, Base.Bag_Satchel hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk, Base.Trousers_JeanBaggy hidden, Base.Shoes_ArmyBoots as Base.Shoes_Black, Base.Socks_Long hidden, Base.Shirt_Denim hidden, Base.Tshirt_McCoys hidden, Base.Hat_BaseballCap as Base.Shirt_Lumberjack, Base.Belt2 hidden
+LOG  : Mod          f:1 st:0> [Dont39AllInOne] appearance-override: debug: textures of admin: Base.Scarf_StripeBlackWhite hidden, Base.KnapsackSprayer hidden, Base.Bag_Satchel hidden, Base.Jacket_Black as Base.Jacket_Leather_Punk, Base.Trousers_JeanBaggy hidden, Base.Shoes_ArmyBoots as Base.Shoes_Black, Base.Socks_Long hidden, Base.Shirt_Denim hidden, Base.Tshirt_McCoys hidden, Base.Hat_BaseballCap as Base.Shirt_Lumberjack, Base.Belt2 hidden

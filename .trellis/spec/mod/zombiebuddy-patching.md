@@ -149,8 +149,13 @@ What is not behind the seam and needs rework when switching loaders:
   delivered once (`appearance-override`'s `Dont39AllInOne_AppearanceOverride{Server,Client}.lua`):
   - a client's request at `OnGameStart` can reach the server before it has bound the player to the connection and is
     then dropped without a trace: repeat it until the server's answer ends with a marker, and fail after a bound;
-  - a joined player's worn items are filled from the client's packets without `OnClothingUpdated` on the server: state
-    derived from them is also recomputed on a time-paced check, sending only what changed.
+  - a joined player's worn items are filled from the client's packets without `OnClothingUpdated` on the server, and
+    wearing an item fires it only on the client (`ISWearClothing:perform`; the server's `complete` does not): state
+    derived from worn items is also recomputed on a time-paced check, sending only what changed.
+- The server changes a joined player's items only once the player has a square (`getCurrentSquare()`): before that the
+  packet for an item in a bag fails inside the engine (`ContainerID` reads `player.square`) and the failure is caught
+  there, so the client keeps the old item with no error anywhere (`placed` in
+  `Dont39AllInOne_SctdRenderTakeoverMigration.lua`). Being in `getOnlinePlayers()` is not enough.
 
 ---
 
@@ -285,6 +290,9 @@ For a feature that changes how a character is drawn but not what it wears. Refer
   sent to clients and looked up by worn type, not read from the drawn item.
 - A substitute `ItemVisual` sets every field the getters would otherwise pick at random (texture choice, base
   texture, tint, hue, decal), or the look changes between rebuilds.
+- `ItemVisual.getTint(clothing)` gives the item's custom color only while the visual is linked to its item, which only
+  gathering the worn visuals does; an item in a bag, or worn and just loaded on a server, reads white. Read a custom
+  color from the item (`Takeover.lookOf` in `Dont39AllInOne_SctdRenderTakeoverShared.lua`).
 
 ## Threading and Hot Paths
 

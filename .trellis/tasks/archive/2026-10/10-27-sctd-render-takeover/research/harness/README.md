@@ -27,6 +27,30 @@ instance `myserver2` (`../in-game.md` has the server setup and the run sequence)
 A fresh `-cachedir` needs `mods/reset-mods-42_00.txt` (copy the user's), or the game empties its `default.txt` at
 the first launch and the driver never loads.
 
+## Added for task 10-27-sctd-legacy-migration
+
+Its in-game run (`.trellis/tasks/10-27-sctd-legacy-migration/research/in-game.md`) used these on `myserver2`:
+
+| Test / command | What it does |
+|---|---|
+| `sctdMigMake` | With the takeover disabled on the server (a wrong block hash in the server's copy), makes old-style items through SCTD's own server functions: gives sprayer, satchel, `Jacket_Black` + `Jacket_Leather_Punk`, `Hat_BaseballCap` + `Shirt_Lumberjack`, `Shoes_Black` + `Shoes_ArmyBoots`, gloves, school bag, scarf, pencil, battery; wears seven of them, moves pencil and battery into the satchel, fills the sprayer (2 L); then hide sprayer, hide satchel, apply jacket as the punk jacket, apply hat as the shirt (`ignoreBodyLocation`), invert the shoes with the boots, hide gloves, hide scarf; recolors the transmogged jacket with SCTD's own `SCTD_ChangeColor` (0.2, 0.6, 0.9; SCTD's `changeColor` command makes it a custom color); takes the gloves placeholder off into the school bag, drops the scarf placeholder on the floor, wears the body form (SCTD's auto-hide). The new ids go to `sgtest_ids.txt` (`old_<item>`, `form`, `bag`, ...) |
+| `sctdMigReport` | After a join: every item on the client and on the server (`sctdAll`) and the comparison, at the start and 30 s later |
+| `sctdMigPickup` | Picks up the dropped placeholder (`ISGrabItemAction`), reports it carried, wears it, then logs how many ms after the wear the old item left the inventory (`converted <n> ms after the wear`, or `not converted 15 s after the wear`) and reports again |
+| `sctdMigDisabled` | With the takeover disabled again: takes the body form off, gives and wears glasses and a necklace, hides both through SCTD, drops the necklace placeholder on the floor, shows the glasses through SCTD, calls SCTD's `Restore` on the worn `Jacket_Black`; reports after each |
+| `sctdMigPickup2` | After `sctdMigDisabled`, takeover running again: picks up the dropped necklace placeholder, wears it, reports after 10 s (`wornNoEvent`); then equips a pencil and moves it into the school bag (`afterEvent`); if the necklace is still old-style, asks the server for `clothingEvent` (`afterSyntheticEvent`) |
+| `clothingEvent` (server command) | `triggerEvent("OnClothingUpdated", player)`, as SCTD's own swaps raise it |
+| `OnClothingUpdated` (server log) | `[SGTEST] server: OnClothingUpdated <user> at <ms> worn ...` for each Lua clothing event the server sees for a player (the driver loads last, so after every other handler) |
+| `sctdAll` (server command) | One line per item of the player (bags included) and per floor item near the given square that carries an SCTD record or is named in `ids`, keyed by id; prints `[SGTEST] server: sctdAll <tag> ...` |
+| `online` (server log) | `[SGTEST] server: online <user> at <ms> items=<n> worn ...` when a player object first shows in the online list (the migration's own scan runs on its next once-a-second check) |
+
+Item line (client and server alike): `<type>#<id> <where>` (`worn:<slot>`, `hand:*`, `inv`, `in:<bag type>#<bag id>`,
+`ground:x,y,z`), weight, condition, fluid, bite/scratch/bullet/insulation/wind/water/run/combat, container capacity,
+weight reduction and item count, the item's own visual, `cc=` (custom color flag and the color a custom-colored item is
+drawn in), name (the side's language), favorite, `SCTD_Transmog` record,
+`Dont39AllInOne_Appearance` override, `customInventoryIcon`. The client compares its lines with the server's by id and
+field: `test mig <tag> compare: client=n server=n same=n differ=n clientOnly=[...] serverOnly=[...]`, then one
+`differs` line per item with the differing fields.
+
 ## Files
 
 | File | What it does |

@@ -78,12 +78,18 @@ counted, not an error. A not worn: B gets our record and the look of A, so weari
 
 ## When
 
-- Server: a once-a-second `OnTick` check (as the appearance core's) over online players not yet scanned in this
-  session (weak-keyed by player object: a rejoin is a new object, scanned again, and finds nothing the second time).
-  The inventory is loaded before the player shows in the online list (superseded design's bytecode notes).
-- Single player: `OnGameStart` for the local players, `OnCreatePlayer` for a later one.
+- Server: a once-a-second `OnTick` check (as the appearance core's) over online players. A player not yet scanned in
+  this session (weak-keyed by player object: a rejoin is a new object, scanned again, and finds nothing the second
+  time) is scanned once it has a square (`getCurrentSquare()`): its inventory is loaded before it shows in the online
+  list (superseded design's bytecode notes), but its square comes some ticks later, and until then the engine drops
+  the item packets for a container inside an inventory item (`ContainerID.setInventoryContainer` reads
+  `player.square`; in-game failure 1). A player already scanned gets its worn items scanned, since a wear raises no
+  clothing event on a server (`ISWearClothing:complete` only calls `setWornItem`; in-game failure 2).
+- Single player: `OnGameStart` for the local players, `OnCreatePlayer` for a later one; no square needed (nothing is
+  sent).
 - Both: `OnClothingUpdated(player)` scans that player's worn items, for an old-style item worn after the scan (picked
-  up from the ground, a corpse, a container).
+  up from the ground, a corpse, a container): single player raises it on a wear, a server on other paths (an equipped
+  item moved, blood, holes, SCTD's swaps). On a server only once the player has a square, as above.
 - Items outside player inventories are converted when they reach one this way (R1).
 
 Per player: one walk, the conversions, then, if worn items changed, one `resetModelNextFrame`, `syncVisuals`,
@@ -125,3 +131,47 @@ migration.
   new item's script slot, as SCTD's own `GetSavedBodyLocation` does.
 - Duplicate on an error between add and remove (chosen over loss).
 - A fresh source B has script stats and no look; SCTD's restore gives the same.
+
+## Deviations (implementation)
+
+- **Shared helpers**: the takeover's busy flag (`Takeover.busy`), `realWorn`, the invert's take-off and wear
+  (`Takeover.takeOff`, `Takeover.wear`) and the record key (`Takeover.KEY`) moved into the shared module; the
+  takeover's server file and the migration both use them.
+- **Fluid**: `FluidContainer:copyFluidsFrom(FluidContainer)` (`javap`), the call vanilla's
+  `ISClothingExtraAction:createItemNew` uses for the same rebuild.
+- **Custom name**: `setName` plus `setCustomName(true)`: `InventoryItem.save` writes the name only for a custom name
+  (`javap`), so without the flag the name is gone after the next load.
+- **Worn containers**: `setCanBeEquipped(location)` before wearing, as SCTD's `Restore` does.
+- **Hands**: an old item held in a hand and not worn is replaced in the same hand by the new one; a worn one is taken
+  out of the hands with the take-off. One `sendEquip` per player when the hands changed.
+- **More per-item problems** (error line, item left as SCTD made it): the source type does not exist, the new type has
+  no visual, the record's tint is not r, g, b, a transmog or an unworn inverted item has no clothing item to read the
+  look from, a worn item has no body location to be worn at.
+- **Items left are not tried again in the session** (weak-keyed by item): the clothing event after each conversion
+  would otherwise report them again.
+- **The worn scan waits** (clothing event, and the server's once-a-second check) until the player's full scan ran (on
+  a server the player is then in the online list and on a square), and while the takeover's busy flag is held
+  (auto-hide or an SCTD swap) or the migration runs for that player; an item worn then is converted on the next check
+  (server), clothing event or join.
+- **Square, not a connection flag** (`javap`): `UdpConnection.isFullyConnected()` is set in
+  `GameServer.receivePlayerConnect`, the call that adds the player to the online list, so it is already true on the
+  first tick the migration sees the player; `isReady()` is a timer from the connection's timestamp; and Lua cannot reach
+  either (`IsoPlayer.getOwner()` returns a `UdpConnection`, which is not exposed). The packets read `IsoObject.square`,
+  which `IsoMovingObject.update`/`postupdate` copy from `current` (`getCurrentSquare()`), the nearest value Lua sees.
+- **Custom colors in a look** (`Takeover.lookOf`): `ItemVisual.getTint(ClothingItem)` gives the item's custom color
+  only while the visual is linked to its item, and only `WornItems.getItemVisuals` links it (the only caller of
+  `ItemVisual.setInventoryItem`, `javap`); otherwise it reads the visual's own tint, or white (and stores it) for a
+  clothing item without random tint. An item in a bag, or worn and just loaded on a server, is not linked, so a custom
+  color is read from the item itself (`isCustomColor`, `getR/G/B`, as the linked branch does). This is also why the
+  server reads a converted custom-colored T-shirt as white after a reload (in-game observation 2): engine behaviour for
+  any custom-colored clothing until its worn visuals are gathered (`syncVisuals`, clothing packets); the item's
+  `customColor` and color are saved and loaded, and clients draw it from them.
+- **Inverts swap last**: every inverted record is cleared before the first `Apply`, since each `Apply` fires the
+  clothing event, whose single player resnap would put the source's stats on an inverted item still holding its record.
+- **An error part way** still finishes the player (`sendEquip`, visuals, clothing event, publish, log line) for what
+  was converted, then stops the migration.
+- **The log line** also comes when nothing was converted but items were left; `n inverts` includes those left as
+  themselves.
+- **Single player order** (`javap`): `OnCreatePlayer` fires from `GameLoadingState`, after `server/` Lua has loaded
+  and before `IngameState` fires `OnGameStart`, so the migration runs before SCTD's game-start resnap and an inverted
+  item never gets the source's stats in that session.

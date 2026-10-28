@@ -344,6 +344,137 @@ function commands.sctdState(player, args)
     reply(player, { what = "sctdState", line = line })
 end
 
+-- ---- SCTD legacy migration (task 10-27-sctd-legacy-migration) ----
+
+-- no spaces inside a value, so the client can split the line into fields
+local function flat(s) return (string.gsub(tostring(s), "%s", "_")) end
+
+-- same line as the client driver's migLine
+local function migLine(player, it, where)
+    local s = it:getFullType() .. "#" .. it:getID() .. " " .. where
+    s = s .. string.format(" w=%.3f cond=%d/%d", it:getActualWeight(), it:getCondition(), it:getConditionMax())
+    local fc = it:getFluidContainer()
+    s = s .. (fc and string.format(" fluid=%.3f/%.3f", fc:getAmount(), fc:getCapacity()) or " fluid=-")
+    if instanceof(it, "Clothing") then
+        s = s .. string.format(" bite=%.1f scratch=%.1f bullet=%.1f ins=%.2f wind=%.2f water=%.2f run=%.2f combat=%.2f",
+            it:getBiteDefense(), it:getScratchDefense(), it:getBulletDefense(), it:getInsulation(),
+            it:getWindresistance(), it:getWaterResistance(), it:getRunSpeedModifier(), it:getCombatSpeedModifier())
+    end
+    if it:IsInventoryContainer() then
+        local c = it:getItemContainer()
+        s = s .. string.format(" cap=%d wr=%d n=%d", c:getCapacity(), it:getWeightReduction(), c:getItems():size())
+    end
+    local v, ci = it:getVisual(), it:getClothingItem()
+    if v and ci then
+        local t = v:getTint(ci)
+        s = s .. string.format(" vis=%d,%d,%.2f/%.2f/%.2f", v:getTextureChoice(), v:getBaseTexture(), t:getRedFloat(),
+            t:getGreenFloat(), t:getBlueFloat())
+    end
+    local md = it:hasModData() and it:getModData() or {}
+    -- the custom color the tint of a custom-colored item is drawn from
+    s = s .. string.format(" cc=%s:%.2f/%.2f/%.2f", tostring(it:isCustomColor()), it:getR(), it:getG(), it:getB())
+    return s .. " name=" .. flat(it:getName()) .. " fav=" .. tostring(it:isFavorite()) .. " record="
+        .. flat(ser(md.SCTD_Transmog)) .. " override=" .. flat(ser(md.Dont39AllInOne_Appearance))
+        .. " icon=" .. flat(md.customInventoryIcon)
+end
+
+local function migWhere(player, it, inv)
+    local worn = player:getWornItems()
+    if worn:contains(it) then return "worn:" .. tostring(worn:getLocation(it)) end
+    if player:getPrimaryHandItem() == it then return "hand:primary" end
+    if player:getSecondaryHandItem() == it then return "hand:secondary" end
+    local c = it:getContainer()
+    if c == inv then return "inv" end
+    if c and c:getContainingItem() then
+        local bag = c:getContainingItem()
+        return "in:" .. bag:getFullType() .. "#" .. bag:getID()
+    end
+    return "nowhere"
+end
+
+local function migCollect(player, container, inv, out)
+    local items = container:getItems()
+    for i = 0, items:size() - 1 do
+        local it = items:get(i)
+        out[tostring(it:getID())] = migLine(player, it, migWhere(player, it, inv))
+        if it:IsInventoryContainer() then migCollect(player, it:getItemContainer(), inv, out) end
+    end
+end
+
+-- items on the floor within r squares of x,y,z that carry an SCTD record, or whose id is in ids
+local function migGround(player, args, out)
+    local wanted = {}
+    for id in string.gmatch(tostring(args.ids or ""), "[^,]+") do wanted[tonumber(id)] = true end
+    local x, y, z, r = tonumber(args.x), tonumber(args.y), tonumber(args.z), tonumber(args.r) or 3
+    if not x then return end
+    for dx = -r, r do
+        for dy = -r, r do
+            local sq = getCell():getGridSquare(x + dx, y + dy, z)
+            local objs = sq and sq:getWorldObjects()
+            if objs then
+                for i = 0, objs:size() - 1 do
+                    local it = objs:get(i):getItem()
+                    if it and (wanted[it:getID()] or (it:hasModData() and it:getModData().SCTD_Transmog)) then
+                        out[tostring(it:getID())] = migLine(player, it, "ground:" .. (x + dx) .. "," .. (y + dy) .. "," .. z)
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- every item of the player (bags included) and the matching floor items, by id
+function commands.sctdAll(player, args)
+    local inv = player:getInventory()
+    local lines = {}
+    migCollect(player, inv, inv, lines)
+    migGround(player, args, lines)
+    local n = 0
+    for id, line in pairs(lines) do
+        n = n + 1
+        log("sctdAll " .. tostring(args.tag) .. " " .. line)
+    end
+    log("sctdAll " .. tostring(args.tag) .. " count=" .. n .. " worn " .. wornList(player))
+    reply(player, { what = "sctdAll", lines = lines, worn = wornList(player), count = n,
+        bodyForm = tostring(SCTD_WearsBodyForm(player)) })
+end
+
+-- when each player object first shows in the online list, with its item count (the migration's scan follows on a
+-- tick of its own)
+local seenPlayers = setmetatable({}, { __mode = "k" })
+local nextSeen = 0
+Events.OnTick.Add(function()
+    local now = getTimestampMs()
+    if now < nextSeen then return end
+    nextSeen = now + 250
+    local players = getOnlinePlayers()
+    for i = 0, players:size() - 1 do
+        local p = players:get(i)
+        if not seenPlayers[p] then
+            seenPlayers[p] = true
+            log("online " .. tostring(p:getUsername()) .. " at " .. tostring(now) .. " items=" .. countAll(p:getInventory())
+                .. " worn " .. wornList(p))
+        end
+    end
+end)
+
+-- the Lua clothing event for the player, as SCTD's swaps raise it
+function commands.clothingEvent(player, args)
+    triggerEvent("OnClothingUpdated", player)
+    local line = "clothingEvent raised; worn " .. wornList(player)
+    log(line)
+    reply(player, { what = "clothingEvent", line = line })
+end
+
+-- each clothing event the server's Lua sees for a player; this mod loads last, so the worn list is the one after
+-- every other handler (the migration's included)
+Events.OnClothingUpdated.Add(function(character)
+    if instanceof(character, "IsoPlayer") and not instanceof(character, "IsoAnimal") then
+        log("OnClothingUpdated " .. tostring(character:getUsername()) .. " at " .. tostring(getTimestampMs()) .. " worn "
+            .. wornList(character))
+    end
+end)
+
 Events.OnClientCommand.Add(function(module, command, player, args)
     if module ~= "SGTest" then return end
     local fn = commands[command]

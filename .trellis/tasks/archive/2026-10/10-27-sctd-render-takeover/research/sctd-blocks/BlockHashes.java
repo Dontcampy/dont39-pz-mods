@@ -15,7 +15,9 @@ import se.krka.kahlua.vm.LuaClosure;
 
 /**
  * Cuts and hashes the SCTD blocks sctd-render-takeover checks, by running the feature's own cut and hash in the game's
- * Kahlua, writes each block here and prints the values for Takeover.BLOCKS. Not shipped.
+ * Kahlua, writes each block here and prints the values for Takeover.BLOCKS. Not shipped. The reviewed copies of the
+ * blocks the legacy migration added (CopyState, ApplyAuthoritativeTint, EmptyContainer, IsInvisVariant, RemoveWorn,
+ * WearNoSync) are in the task 10-27-sctd-legacy-migration's research/sctd-blocks/.
  *
  * <pre>
  * cd <the game folder>  (Kahlua reads stdlib.lua from the working folder)

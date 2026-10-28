@@ -25,6 +25,7 @@ end
 -- baseStats its code never swaps or re-stats the item, and its Restore only clears the record.
 local KEY = "SCTD_Transmog"
 local FORMAT = 1
+Takeover.KEY = KEY
 
 function Takeover.newRecord(hidden, autoHidden, srcDisplayName)
     return { Dont39AllInOne = FORMAT, hidden = hidden or nil, autoHidden = autoHidden or nil,
@@ -59,6 +60,33 @@ function Takeover.lookOverride(item)
     return nil
 end
 
+-- per player, while auto-hide or the migration runs or SCTD swaps an item: auto-hide must not run inside any of them
+Takeover.busy = setmetatable({}, { __mode = "k" })
+
+-- Worn items ------------------------------------------------------------------------------------------------------
+
+function Takeover.realWorn(player)
+    -- SCTD swaps the worn list for display copies while it draws
+    if SCTD_ClothingAppearance and SCTD_ClothingAppearance.Restore then SCTD_ClothingAppearance.Restore() end
+    return player:getWornItems()
+end
+
+-- Off the body; the item stays in its container.
+function Takeover.takeOff(player, item)
+    player:removeFromHands(item)
+    player:removeWornItem(item, false)
+    -- removeWornItem leaves an item in a multi-item slot (belt) worn
+    local worn = player:getWornItems()
+    if worn:contains(item) then worn:remove(item) end
+end
+
+-- [item] is already in the player's inventory. The clothing packet carries the whole worn list.
+function Takeover.wear(player, location, item)
+    player:removeFromHands(item)
+    player:setWornItem(location, item, false)
+    sendClothing(player, location, item)
+end
+
 -- Look ------------------------------------------------------------------------------------------------------------
 
 -- The item as it is drawn now, in the appearance override's format.
@@ -69,7 +97,10 @@ function Takeover.lookOf(item)
     -- the getters given the clothing item pick what is still unset, as the item's next draw would
     visual:getTextureChoice(clothing)
     visual:getBaseTexture(clothing)
-    local tint = visual:getTint(clothing)
+    -- the visual gives the custom color only while linked to its item, which only gathering the worn visuals does: an
+    -- item in a bag, or worn and just loaded on a server, would read its own tint or white
+    local tint = item:isCustomColor() and ImmutableColor.new(item:getR(), item:getG(), item:getB(), 1)
+        or visual:getTint(clothing)
     return { type = item:getFullType(), textureChoice = visual:getTextureChoice(),
         baseTexture = visual:getBaseTexture(),
         tint = { tint:getRedFloat(), tint:getGreenFloat(), tint:getBlueFloat(), tint:getAlphaFloat() },
@@ -194,6 +225,25 @@ Takeover.BLOCKS = {
     { name = "Panel_baseRowDraw", file = "Menu",
         header = "    self.baseList.doDrawItem = function(listSelf, y, item, alt)",
         length = 2107, hash = { 554748814, 1948706242 } },
+    -- the migration copies these or mirrors their item moves
+    { name = "CopyState", file = "Skins",
+        header = "local function SCTD_Transmog_CopyState(fromItem, toItem, skipTextureIndices, skipContainerContents)",
+        length = 2840, hash = { 169308000, 1121978666 } },
+    { name = "ApplyAuthoritativeTint", file = "Skins",
+        header = "local function applyAuthoritativeTint(item, r, g, b)",
+        length = 764, hash = { 710792078, 1543788658 } },
+    { name = "EmptyContainer", file = "Skins", global = "SCTD_Transmog_EmptyContainer",
+        header = "function SCTD_Transmog_EmptyContainer(player, item)",
+        length = 555, hash = { 213486501, 1339205753 } },
+    { name = "IsInvisVariant", file = "Skins", global = "SCTD_Transmog_IsInvisVariant",
+        header = "function SCTD_Transmog_IsInvisVariant(fullType)",
+        length = 175, hash = { 196783585, 603382642 } },
+    { name = "RemoveWorn", file = "Skins",
+        header = "local function SCTD_Transmog_RemoveWorn(player, item)",
+        length = 360, hash = { 1152657041, 471707537 } },
+    { name = "WearNoSync", file = "Skins",
+        header = "local function SCTD_Transmog_WearNoSync(player, item, bodyLocation)",
+        length = 293, hash = { 1523763947, 195829436 } },
 }
 
 -- Primes below 2^31: every product stays below 2^53, where Kahlua's numbers are exact. string.byte gives UTF-16

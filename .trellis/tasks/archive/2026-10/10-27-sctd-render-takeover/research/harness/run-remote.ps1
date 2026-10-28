@@ -13,7 +13,8 @@ param([Parameter(Mandatory)] [string] $Label, [string] $Test = '', [Parameter(Ma
 
 $def = Join-Path $SG.ClientMods 'default.txt'
 "default.txt has SGTestDriver: $([bool](Select-String -Path $def -Pattern '^\s*mod = SGTestDriver,' -Quiet))"
-$pw = (Get-Content $PasswordFile)[0]
+# @(): a one-line file reads as a string, whose [0] is its first character
+$pw = @(Get-Content $PasswordFile)[0]
 $extra = @{}
 if ($Test) { $extra.Test = $Test }
 if ($NoLoop) { $extra.NoLoop = $true }

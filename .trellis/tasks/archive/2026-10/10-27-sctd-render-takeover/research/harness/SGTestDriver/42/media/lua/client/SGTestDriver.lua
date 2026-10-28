@@ -1556,6 +1556,363 @@ function tests.sctdView(done)
     end, done)
 end
 
+-- ---- 10-27 SCTD legacy migration: old-style items made by SCTD's own swap (takeover disabled), then reports of every
+-- item on the client next to the server's (SGTestDriver_Server.lua sctdAll) after each join ----
+
+local MIG = {
+    sprayer = "Base.KnapsackSprayer", satchel = "Base.Bag_Satchel", jacket = "Base.Jacket_Black",
+    punk = "Base.Jacket_Leather_Punk", hat = "Base.Hat_BaseballCap", shirt = "Base.Shirt_Lumberjack",
+    shoes = "Base.Shoes_Black", boots = "Base.Shoes_ArmyBoots", gloves = "Base.Gloves_LeatherGloves",
+    bag = "Base.Bag_Schoolbag", scarf = "Base.Scarf_StripeBlackWhite", pencil = "Base.Pencil", battery = "Base.Battery",
+    necklace = "Base.Necklace_Gold",
+}
+
+local function flat(s) return (string.gsub(tostring(s), "%s", "_")) end
+
+-- same line as the server half's migLine
+local function migLine(it, where)
+    local s = it:getFullType() .. "#" .. it:getID() .. " " .. where
+    s = s .. string.format(" w=%.3f cond=%d/%d", it:getActualWeight(), it:getCondition(), it:getConditionMax())
+    local fc = it:getFluidContainer()
+    s = s .. (fc and string.format(" fluid=%.3f/%.3f", fc:getAmount(), fc:getCapacity()) or " fluid=-")
+    if instanceof(it, "Clothing") then
+        s = s .. string.format(" bite=%.1f scratch=%.1f bullet=%.1f ins=%.2f wind=%.2f water=%.2f run=%.2f combat=%.2f",
+            it:getBiteDefense(), it:getScratchDefense(), it:getBulletDefense(), it:getInsulation(),
+            it:getWindresistance(), it:getWaterResistance(), it:getRunSpeedModifier(), it:getCombatSpeedModifier())
+    end
+    if it:IsInventoryContainer() then
+        local c = it:getItemContainer()
+        s = s .. string.format(" cap=%d wr=%d n=%d", c:getCapacity(), it:getWeightReduction(), c:getItems():size())
+    end
+    local v, ci = it:getVisual(), it:getClothingItem()
+    if v and ci then
+        local t = v:getTint(ci)
+        s = s .. string.format(" vis=%d,%d,%.2f/%.2f/%.2f", v:getTextureChoice(), v:getBaseTexture(), t:getRedFloat(),
+            t:getGreenFloat(), t:getBlueFloat())
+    end
+    local md = it:hasModData() and it:getModData() or {}
+    -- the custom color the tint of a custom-colored item is drawn from
+    s = s .. string.format(" cc=%s:%.2f/%.2f/%.2f", tostring(it:isCustomColor()), it:getR(), it:getG(), it:getB())
+    return s .. " name=" .. flat(it:getName()) .. " fav=" .. tostring(it:isFavorite()) .. " record="
+        .. flat(ser(md.SCTD_Transmog)) .. " override=" .. flat(ser(md.Dont39AllInOne_Appearance))
+        .. " icon=" .. flat(md.customInventoryIcon)
+end
+
+local function migWhere(it, inv)
+    local p = getPlayer()
+    local worn = p:getWornItems()
+    if worn:contains(it) then return "worn:" .. tostring(worn:getLocation(it)) end
+    if p:getPrimaryHandItem() == it then return "hand:primary" end
+    if p:getSecondaryHandItem() == it then return "hand:secondary" end
+    local c = it:getContainer()
+    if c == inv then return "inv" end
+    if c and c:getContainingItem() then
+        local bag = c:getContainingItem()
+        return "in:" .. bag:getFullType() .. "#" .. bag:getID()
+    end
+    return "nowhere"
+end
+
+local function migCollect(container, inv, out)
+    local items = container:getItems()
+    for i = 0, items:size() - 1 do
+        local it = items:get(i)
+        out[tostring(it:getID())] = migLine(it, migWhere(it, inv))
+        if it:IsInventoryContainer() then migCollect(it:getItemContainer(), inv, out) end
+    end
+end
+
+-- floor items within r squares of the player that carry an SCTD record, or whose id is in wanted
+local function migGround(out, wanted, r)
+    local p = getPlayer()
+    local x, y, z = math.floor(p:getX()), math.floor(p:getY()), math.floor(p:getZ())
+    for dx = -r, r do
+        for dy = -r, r do
+            local sq = getCell():getGridSquare(x + dx, y + dy, z)
+            local objs = sq and sq:getWorldObjects()
+            if objs then
+                for i = 0, objs:size() - 1 do
+                    local it = objs:get(i):getItem()
+                    if it and (wanted[it:getID()] or (it:hasModData() and it:getModData().SCTD_Transmog)) then
+                        out[tostring(it:getID())] = migLine(it, "ground:" .. (x + dx) .. "," .. (y + dy) .. "," .. z)
+                    end
+                end
+            end
+        end
+    end
+    return x, y, z
+end
+
+local function fields(line)
+    local t, n = {}, 0
+    for tok in string.gmatch(line, "%S+") do
+        n = n + 1
+        if n == 1 then t.item = tok elseif n == 2 then t.where = tok
+        else
+            local k, v = string.match(tok, "^([%w_]+)=(.*)$")
+            if k then t[k] = v end
+        end
+    end
+    return t
+end
+
+local function sortedKeys(t)
+    local keys = {}
+    for k in pairs(t) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return (tonumber(a) or 0) < (tonumber(b) or 0) end)
+    return keys
+end
+
+-- every item on the client and on the server, then the comparison by id and field
+local function migReport(tag, groundIds)
+    local p = getPlayer()
+    local inv = p:getInventory()
+    local mine, wanted = {}, {}
+    for _, id in ipairs(groundIds or {}) do wanted[tonumber(id)] = true end
+    migCollect(inv, inv, mine)
+    local x, y, z = migGround(mine, wanted, 3)
+    for _, id in ipairs(sortedKeys(mine)) do mark("test mig " .. tag .. " client: " .. mine[id]) end
+    mark("test mig " .. tag .. " client: worn " .. wornText())
+    local r = ask("sctdAll", { tag = tag, x = x, y = y, z = z, r = 3, ids = table.concat(groundIds or {}, ",") })
+    if not r or not r.lines then
+        mark("test mig " .. tag .. " server: no answer " .. tostring(r and r.line))
+        return
+    end
+    for _, id in ipairs(sortedKeys(r.lines)) do mark("test mig " .. tag .. " server: " .. r.lines[id]) end
+    mark("test mig " .. tag .. " server: worn " .. tostring(r.worn) .. " bodyForm=" .. tostring(r.bodyForm))
+    local same, differ, clientOnly, serverOnly, n = 0, {}, {}, {}, 0
+    for _, id in ipairs(sortedKeys(mine)) do
+        n = n + 1
+        local theirs = r.lines[id]
+        if not theirs then
+            clientOnly[#clientOnly + 1] = fields(mine[id]).item
+        elseif theirs == mine[id] then
+            same = same + 1
+        else
+            local a, b, keys = fields(mine[id]), fields(theirs), {}
+            for k, v in pairs(a) do if b[k] ~= v then keys[#keys + 1] = k .. " c=" .. v .. " s=" .. tostring(b[k]) end end
+            for k, v in pairs(b) do if a[k] == nil then keys[#keys + 1] = k .. " c=nil s=" .. v end end
+            table.sort(keys)
+            differ[#differ + 1] = a.item .. ": " .. table.concat(keys, "; ")
+        end
+    end
+    for _, id in ipairs(sortedKeys(r.lines)) do
+        if not mine[id] then serverOnly[#serverOnly + 1] = fields(r.lines[id]).item end
+    end
+    mark(string.format("test mig %s compare: client=%d server=%d same=%d differ=%d clientOnly=[%s] serverOnly=[%s]",
+        tag, n, r.count or 0, same, #differ, table.concat(clientOnly, " "), table.concat(serverOnly, " ")))
+    for _, d in ipairs(differ) do mark("test mig " .. tag .. " differs " .. d) end
+end
+
+local function moveTo(id, container)
+    local it = byId(id)
+    if not it then error("no item " .. tostring(id) .. " to move") end
+    ISTimedActionQueue.add(ISInventoryTransferAction:new(getPlayer(), it, it:getContainer(), container))
+    whenIdle()
+end
+
+local function resultOf(r)
+    return r and r.ok and r.result or nil
+end
+
+-- step 1 (takeover disabled on the server): the old-style items, through SCTD's own server functions
+function tests.sctdMigMake(done)
+    seq(function()
+        local p = getPlayer()
+        local st = ask("sctdState", {})
+        mark("test mig state: " .. tostring(st and st.line))
+        local order = { "sprayer", "satchel", "jacket", "punk", "hat", "shirt", "shoes", "boots", "gloves", "bag",
+            "scarf", "pencil", "battery" }
+        local types = {}
+        for _, k in ipairs(order) do types[#types + 1] = MIG[k] end
+        local got = give(table.concat(types, ","))
+        local id = {}
+        for i, k in ipairs(order) do id[k] = got[i] end
+        for _, k in ipairs({ "sprayer", "satchel", "jacket", "hat", "shoes", "gloves", "scarf" }) do wear(id[k]) end
+        moveTo(id.pencil, byId(id.satchel):getItemContainer())
+        moveTo(id.battery, byId(id.satchel):getItemContainer())
+        local f = ask("fill", { id = id.sprayer, amount = 2 })
+        mark("test mig fill: " .. tostring(f and f.line))
+        sleep(3000)
+        migReport("beforeSwap")
+
+        local old = {}
+        old.sprayer = resultOf(sctdServer("hide", id.sprayer))
+        old.satchel = resultOf(sctdServer("hide", id.satchel))
+        old.jacket = resultOf(sctdServer("apply", id.jacket, { source = id.punk, ignore = false, invert = false }))
+        old.hat = resultOf(sctdServer("apply", id.hat, { source = id.shirt, ignore = true, invert = false }))
+        old.shoes = resultOf(sctdServer("apply", id.shoes, { source = id.boots, ignore = false, invert = true }))
+        old.gloves = resultOf(sctdServer("hide", id.gloves))
+        old.scarf = resultOf(sctdServer("hide", id.scarf))
+        sleep(8000)
+        -- the transmogged jacket recolored in SCTD's skin panel (SCTD's own changeColor command): a custom color
+        if old.jacket then
+            local c = SCTD_ChangeColor(p, byId(old.jacket), 0.2, 0.6, 0.9)
+            mark("test mig ChangeColor transmogged jacket returned " .. tostring(c))
+            sleep(5000)
+        end
+        migReport("swapped")
+
+        -- a hidden placeholder taken off into the school bag
+        if old.gloves then
+            ISTimedActionQueue.add(ISUnequipAction:new(p, byId(old.gloves), 50))
+            whenIdle()
+            moveTo(old.gloves, byId(id.bag):getItemContainer())
+        end
+        -- a hidden placeholder dropped on the floor, for the pick-up after the migration
+        if old.scarf then
+            ISInventoryPaneContextMenu.dropItem(byId(old.scarf), 0)
+            whenIdle()
+            sleep(3000)
+        end
+        -- SCTD's auto-hide of the vanilla clothes still worn
+        local form = give(p:isFemale() and "Base.FemaleBodyT512" or "Base.MaleBodyT512")[1]
+        wear(form)
+        sleep(10000)
+        migReport("made", { old.scarf })
+
+        local saved = { form = form, bag = id.bag, punk = id.punk, shirt = id.shirt, boots = id.boots,
+            gx = math.floor(p:getX()), gy = math.floor(p:getY()), gz = math.floor(p:getZ()) }
+        for k, v in pairs(old) do saved["old_" .. k] = v end
+        saveIds(saved)
+        mark("test mig ids: " .. ser(saved))
+    end, done)
+end
+
+-- steps 2, 3 and after: every item on both sides after a join, twice
+function tests.sctdMigReport(done)
+    seq(function()
+        local saved = loadIds()
+        mark("test mig ids: " .. ser(saved))
+        migReport("join", { saved.old_scarf })
+        sleep(30000)
+        migReport("join30s", { saved.old_scarf })
+    end, done)
+end
+
+local function worldItem(id, x, y, z, r)
+    for dx = -r, r do
+        for dy = -r, r do
+            local sq = getCell():getGridSquare(x + dx, y + dy, z)
+            local objs = sq and sq:getWorldObjects()
+            if objs then
+                for i = 0, objs:size() - 1 do
+                    local o = objs:get(i)
+                    if o:getItem() and o:getItem():getID() == id then return o end
+                end
+            end
+        end
+    end
+end
+
+-- step 4: the placeholder dropped before the migration, picked up (not converted while carried) and worn (converted
+-- on the clothing event)
+function tests.sctdMigPickup(done)
+    seq(function()
+        local p = getPlayer()
+        local saved = loadIds()
+        local id = tonumber(saved.old_scarf)
+        migReport("beforePickup", { id })
+        local o = worldItem(id, math.floor(p:getX()), math.floor(p:getY()), math.floor(p:getZ()), 3)
+        if not o then error("dropped item " .. tostring(id) .. " not on the floor near the player") end
+        ISTimedActionQueue.add(ISGrabItemAction:new(p, o, 50))
+        whenIdle()
+        sleep(5000)
+        local it = byId(id)
+        mark("test mig picked up: " .. (it and migLine(it, migWhere(it, p:getInventory())) or "not in the inventory"))
+        migReport("carried", { id })
+        if it then
+            wear(id)
+            local worn = now()
+            mark("test mig worn at " .. worn)
+            -- the old item leaves the inventory when the server swaps it
+            local gone = waitUntil(function() return byId(id) == nil end, 15000)
+            mark("test mig " .. (gone and ("converted " .. (now() - worn) .. " ms after the wear")
+                or "not converted 15 s after the wear"))
+            sleep(3000)
+        end
+        migReport("pickedUpWorn", { id })
+    end, done)
+end
+
+-- step 5 (takeover disabled again): SCTD hides and shows its own items; the migration converts nothing on the clothing
+-- events; SCTD's Restore clears a converted item's record (the takeover's wrapper)
+function tests.sctdMigDisabled(done)
+    seq(function()
+        local p = getPlayer()
+        local saved = loadIds()
+        local st = ask("sctdState", {})
+        mark("test mig state: " .. tostring(st and st.line))
+        migReport("disabledStart")
+        local form = byId(saved.form)
+        if form and p:getWornItems():contains(form) then
+            takeOff(saved.form)
+            sleep(8000)
+            migReport("formOff")
+        end
+        local got = give("Base.Glasses_Aviators,Base.Necklace_Gold")
+        wear(got[1])
+        wear(got[2])
+        sleep(3000)
+        local glasses = resultOf(sctdServer("hide", got[1]))
+        local necklace = resultOf(sctdServer("hide", got[2]))
+        sleep(10000)
+        migReport("sctdHidden")
+        -- the necklace placeholder goes to the floor, for sctdMigPickup2 once the takeover runs again
+        if necklace then
+            ISInventoryPaneContextMenu.dropItem(byId(necklace), 0)
+            whenIdle()
+            sleep(3000)
+        end
+        if glasses then sctdServer("show", glasses) end
+        local worn = p:getWornItems()
+        for i = 0, worn:size() - 1 do
+            local it = worn:getItemByIndex(i)
+            if it:getFullType() == MIG.jacket then sctdServer("restore", it:getID()) break end
+        end
+        sleep(10000)
+        migReport("sctdShownRestored", { necklace })
+        saved.disabled_necklace = necklace
+        saveIds(saved)
+    end, done)
+end
+
+-- after sctdMigDisabled, takeover running again: the dropped necklace placeholder picked up and worn (the server's
+-- wear fires no Lua clothing event), then a held pencil moved into the school bag (a transaction taking an equipped
+-- item off fires one on the server)
+function tests.sctdMigPickup2(done)
+    seq(function()
+        local p = getPlayer()
+        local saved = loadIds()
+        local id = tonumber(saved.disabled_necklace)
+        migReport("join", { id })
+        local o = worldItem(id, math.floor(p:getX()), math.floor(p:getY()), math.floor(p:getZ()), 3)
+        if not o then error("dropped item " .. tostring(id) .. " not on the floor near the player") end
+        ISTimedActionQueue.add(ISGrabItemAction:new(p, o, 50))
+        whenIdle()
+        sleep(5000)
+        migReport("carried", { id })
+        if not byId(id) then error("picked-up item " .. tostring(id) .. " not in the inventory") end
+        wear(id)
+        sleep(10000)
+        migReport("wornNoEvent", { id })
+        local pencil = give("Base.Pencil")[1]
+        ISTimedActionQueue.add(ISEquipWeaponAction:new(p, byId(pencil), 50, true, false))
+        whenIdle()
+        sleep(3000)
+        moveTo(pencil, byId(saved.bag):getItemContainer())
+        sleep(10000)
+        migReport("afterEvent", { id })
+        local it = byId(id)
+        if it and it:getFullType() == MIG.necklace then return end
+        -- the event the server's own code fires (SCTD's swaps, a transaction), raised directly
+        local r = ask("clothingEvent", {})
+        mark("test mig clothingEvent: " .. tostring(r and r.line))
+        sleep(10000)
+        migReport("afterSyntheticEvent", { id })
+    end, done)
+end
+
 -- Multiplayer Weight Limit Breaker replaces the game's transaction functions and keeps the originals in VacMod13.raw;
 -- vanillaTransfers=1 puts them back, so transfers go through the game's own container packets (AC1)
 local function useVanillaTransfers()
