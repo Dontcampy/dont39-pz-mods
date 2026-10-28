@@ -209,6 +209,20 @@ public final class Loader {
     }
 
     /**
+     * The classes with global Lua functions ({@code @LuaMethod(global = true)}) the loader found in the jars it loaded.
+     * It exposes them only when the game starts a Lua state, so a jar it loads after that has none in that state.
+     * Throws naming the loader version when it does not list them.
+     */
+    public static List<Class<?>> globalLuaClasses() {
+        try {
+            return me.zed_0xff.zombie_buddy.Exposer.getClassesWithGlobalLuaMethod();
+        } catch (RuntimeException | LinkageError e) {
+            throw new IllegalStateException(NAME + " " + version() + " does not list its classes with global Lua"
+                    + " functions (me.zed_0xff.zombie_buddy.Exposer.getClassesWithGlobalLuaMethod)", e);
+        }
+    }
+
+    /**
      * Makes the loader run {@code modId} at game start from {@code versionDir}, the folder the game uses this session,
      * unless it already runs it from there or from a byte-identical copy, and keeps the preload order Zabric first, then
      * by {@code require}. {@code commonDir}: the mod's common folder, null when it has none. Throws when the mod cannot

@@ -1009,16 +1009,16 @@ Server Reborn (PR #32, supersedes #28, now closed): Sync Guard as network sync o
 [OK] **Completed**
 
 
-## Session 44: Appearance override core for SCTD render-only hide and transmog
-<!-- trellis-session: v=2 fp=6c4f478e80deab57 -->
+## Session 43: Server Reborn 0.2.0: false repairs from ItemStats, bandage models and EFK data
+<!-- trellis-session: v=2 fp=950ad5773a89c721 -->
 
 **Date**: 2026-10-27
-**Task**: Appearance override core for SCTD render-only hide and transmog
-**Branch**: `feat/sctd-transmog-server-resnap-015452`
+**Task**: Server Reborn 0.2.0: false repairs from ItemStats, bandage models and EFK data
+**Branch**: `fix/server-reborn-false-repairs`
 
 ### Summary
 
-Added the appearance-override All-in-One feature (render-scope hooks, per-player sets by worn type, Lua API storing the override in item mod data). Verified on myserver2: set, rejoin, restart-rejoin, clear; the sprayer keeps its water. Fixed two sync gaps found in game (worn list filled without OnClothingUpdated; snapshot request dropped before the player is bound). Planned the SCTD takeover and legacy migration children. Not covered: remote player view, single player.
+Analyzed the live server's debugFieldDiff repairs: vanilla ItemStatsPacket keeps omitted food stats from the previous packet, the client's bandage update makes model items only it has, EFK's client writes RPM keys and MagzineTypeNow without a sync. Fixed in Server Reborn 0.2.0 (parse HEAD reset, ItemDigests.items filter, ownPerSide keys, protocol 2). Verified on the Linux myserver2 instance with a scripted -nosteam client: a -NoZombieBuddy baseline reproduced the stale stats, 0.2.0 showed no false repairs, debugDropDelta repairs still happen. PR Dontcampy/dont39-pz-mods#33. Also planned the All-in-One SCTD transmog server resnap task (PRD only, still planning). Workshop upload of 0.2.0 is the user's.
 
 ### Git Commits
 
@@ -1032,6 +1032,16 @@ Added the appearance-override All-in-One feature (render-scope hooks, per-player
 [OK] **Completed**
 
 
+## Session 44: Appearance override core for SCTD render-only hide and transmog
+<!-- trellis-session: v=2 fp=6c4f478e80deab57 -->
+
+**Date**: 2026-10-27
+**Task**: Appearance override core for SCTD render-only hide and transmog
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Added the appearance-override All-in-One feature (render-scope hooks, per-player sets by worn type, Lua API storing the override in item mod data). Verified on myserver2: set, rejoin, restart-rejoin, clear; the sprayer keeps its water. Fixed two sync gaps found in game (worn list filled without OnClothingUpdated; snapshot request dropped before the player is bound). Planned the SCTD takeover and legacy migration children. Not covered: remote player view, single player.
 ## Session 45: SCTD render takeover
 <!-- trellis-session: v=2 fp=d606c65f4779de44 -->
 
@@ -1048,6 +1058,8 @@ Added sctd-render-takeover: SCTD's hide, transmog (normal, cross-slot, invert), 
 | Hash | Message |
 |------|---------|
 | `fb26539` | Add sctd-render-takeover: SCTD's hide and transmog only change how the item is drawn |
+| `e3544e7` | Server Reborn 0.2.0: stop false repairs from stale ItemStats, bandage models and EFK gun data |
+| `701a095` | chore(task): plan and in-game check of 10-27-server-reborn-sync-false-repairs |
 
 ### Status
 

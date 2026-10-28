@@ -202,6 +202,7 @@ public final class Lifecycle {
             Map<String, List<Path>> loaded = byMod(jars);
             HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
             loaded.forEach(Lifecycle::load);
+            LuaGlobals.exposeMissing();
         } catch (Throwable t) {
             stop("the main phase failed: " + t, t);
         }

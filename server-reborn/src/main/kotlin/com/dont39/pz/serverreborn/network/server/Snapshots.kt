@@ -114,7 +114,7 @@ internal object Snapshots {
       SnapshotWriter.start(out, job.wire, version, Snapshot.State.GONE, 0).add(null).finish()
       return Snapshot.State.GONE
     }
-    val items = if (only != null) listOf(only) else container.getItems().toList()
+    val items = if (only != null) listOf(only) else ItemDigests.items(container)
     val digests = items.map(ItemDigests::item)
     val whole = ContainerDigest()
     items.forEachIndexed { i, item -> whole.add(item.getID(), item.fullType, digests[i]) }

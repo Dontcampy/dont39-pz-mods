@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Quality check list for the mod layer"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, style, forbidden patterns"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook gating and HEAD/FINALLY rules"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "classtweaker entries match what the code reads"}
+{"file": ".trellis/spec/mod/kotlin-runtime.md", "reason": "Kotlin rules and version bumps"}

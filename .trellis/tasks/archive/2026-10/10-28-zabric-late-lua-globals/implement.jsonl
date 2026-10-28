@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Loader seam: only zabric/loader uses ZombieBuddy types"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "report once, never stop entrypoints for this part"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Zabric prefix, Java message building"}
+{"file": ".trellis/tasks/10-28-zabric-late-lua-globals/research/root-cause.md", "reason": "why globals are missing after a join"}

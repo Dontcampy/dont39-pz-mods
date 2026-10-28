@@ -66,7 +66,7 @@ What is not behind the seam and needs rework when switching loaders:
 |------------|-------|
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric` and `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
-| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
+| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates; the late exposure `entrypoint/LuaGlobals.java` (`Loader.globalLuaClasses`) |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
@@ -127,6 +127,10 @@ What is not behind the seam and needs rework when switching loaders:
 - Functions called from Lua are `@LuaGlobal` functions in the feature (`Glue.kt`); their names keep the mod-id prefix
   and are unique across features. A facade exposes its mod option by overriding `setForce` (`Feature.kt`) with
   `@LuaGlobal`. Other exposure options: ModdingGuide "Exposing Classes to Lua".
+- ZombieBuddy exposes global Lua functions only when the game starts a Lua state, and a join or a mod reload starts it
+  before loading the new mod list; Zabric exposes the ones that state lacks at the end of each pass
+  ([`LuaGlobals.java`](../../../zabric/src/main/java/com/pzlauncher/zabric/entrypoint/LuaGlobals.java)). Features need
+  nothing for it; a mod without Zabric gets no global functions when a client enables it only through a server.
 - Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent:
   check a global exists before calling it.
 - Features do not depend on each other in Kotlin (facades are `internal`). One feature uses another's data through
