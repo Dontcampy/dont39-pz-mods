@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "loader seam, Lua bridge, gating, render-only, Lua UI wrapping"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua-only takeover feature, allinone-common"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "style, in-game verification"}
+{"file": ".trellis/tasks/archive/2026-10/10-27-sctd-render-takeover/design.md", "reason": "takeover design and deviations"}
+{"file": ".trellis/tasks/archive/2026-10/10-27-sctd-legacy-migration/design.md", "reason": "migration design and deviations"}
+{"file": ".trellis/tasks/archive/2026-10/10-27-appearance-override/design.md", "reason": "appearance-override design"}
+{"file": ".trellis/tasks/archive/2026-10/10-28-zabric-late-lua-globals/design.md", "reason": "Zabric late globals design"}

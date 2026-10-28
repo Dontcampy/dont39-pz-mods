@@ -3,37 +3,26 @@
 -- Authoritative side only, while the takeover runs.
 
 local Appearance = require "Dont39AllInOne_AppearanceOverrideShared"
+local Common = require "Dont39AllInOne_CommonShared"
 local Takeover = require "Dont39AllInOne_SctdRenderTakeoverShared"
+local Runtime = require "Dont39AllInOne_SctdRenderTakeoverRuntime"
 
 local Migration = {}
 
 local HIDDEN, TRANSMOG, INVERT = "hidden", "transmog", "invert"
 
-local stopped = false -- the migration only; final for the session
-local takeoverActive = nil
--- players whose whole inventory was scanned; a rejoin is a new object, scanned again
-local scanned = setmetatable({}, { __mode = "k" })
-local converting = setmetatable({}, { __mode = "k" })
--- items left as SCTD made them, reported once
-local left = setmetatable({}, { __mode = "k" })
+-- the migration only; the takeover keeps running
+local guard = Common.guard(Takeover.PREFIX .. "migration ")
 
--- Kahlua prints large whole numbers in exponent form.
-local function idText(id)
-    if id < 0 then return "-" .. Takeover.digits(-id) end
-    return Takeover.digits(id)
-end
-
-local function fail(what, err, trace)
-    stopped = true
-    Takeover.logError("migration disabled after an error while " .. what .. ": " .. tostring(err) .. "\n"
-        .. tostring(trace))
-end
+-- per player whose whole inventory was scanned: { left = ids of the items left as SCTD made them, reported once }. A
+-- rejoin is a new object, scanned again. Kahlua has no weak tables: players no longer there are dropped (prune).
+local scanned = {}
 
 -- What to find ------------------------------------------------------------------------------------------------------
 
 -- SCTD's record of an item its own swap made, and the kind; nil for anything else, which SCTD's Restore still handles.
-local function oldStyle(item)
-    if left[item] or not item:hasModData() or Takeover.ourRecord(item) then return nil end
+local function oldStyle(item, left)
+    if left[item:getID()] or not item:hasModData() or Takeover.ourRecord(item) then return nil end
     local data = item:getModData()[Takeover.KEY]
     if type(data) ~= "table" or type(data.baseFullType) ~= "string" or data.baseFullType == "" then return nil end
     local fullType = item:getFullType()
@@ -50,28 +39,28 @@ local function oldStyle(item)
     return nil
 end
 
-local function add(found, item)
-    local data, kind = oldStyle(item)
+local function add(found, item, left)
+    local data, kind = oldStyle(item, left)
     if data then found[#found + 1] = { item = item, data = data, kind = kind } end
 end
 
 -- Outer bags come first: converting one moves its contents into the new bag, where the inner items are then found.
-local function collect(container, found)
+local function collect(container, found, left)
     local items = container:getItems()
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        add(found, item)
-        if item:IsInventoryContainer() then collect(item:getItemContainer(), found) end
+        add(found, item, left)
+        if item:IsInventoryContainer() then collect(item:getItemContainer(), found, left) end
     end
     return found
 end
 
-local function collectWorn(player)
+local function collectWorn(player, left)
     local found = {}
     local worn = Takeover.realWorn(player)
     for i = 0, worn:size() - 1 do
         local item = worn:getItemByIndex(i)
-        if item then add(found, item) end
+        if item then add(found, item, left) end
     end
     return found
 end
@@ -132,9 +121,9 @@ local function rebuild(old, data, kind)
     local look = nil
     if kind == TRANSMOG then
         if not old:getClothingItem() then return nil, "it has no clothing item to take the look from" end
-        look = Takeover.lookOf(old)
-        local problem = Dont39AllInOne_checkAppearanceOverride(look)
-        if problem then return nil, "its look cannot be drawn: " .. problem end
+        local problem
+        look, problem = Takeover.drawableLook(old)
+        if not look then return nil, "its look cannot be drawn: " .. problem end
     elseif data.baseTint ~= nil and not isTint(data.baseTint) then
         return nil, "its record's tint is " .. tostring(data.baseTint) .. ", not r, g, b"
     end
@@ -161,12 +150,12 @@ local function rebuild(old, data, kind)
             item:setCustomName(true)
         end
         Takeover.setRecord(item, Takeover.newRecord(true, data.autoHidden == true))
-        md[Appearance.KEY] = { hidden = true }
+        Appearance.write(item, { hidden = true })
     else
         local fluid, oldFluid = item:getFluidContainer(), old:getFluidContainer()
         if fluid and oldFluid then fluid:copyFluidsFrom(oldFluid) end
         Takeover.setRecord(item, Takeover.newRecord(false, false, sourceName(data, old)))
-        md[Appearance.KEY] = look
+        Appearance.write(item, look)
     end
     item:synchWithVisual()
     return item
@@ -241,7 +230,7 @@ local function convertSwapped(player, old, data, kind)
     end
     -- before the contents move: the new item must have a container to go to, or they would go with it
     local container = old:getContainer()
-    if not container then error(old:getFullType() .. " " .. idText(old:getID()) .. " is in no container") end
+    if not container then error(old:getFullType() .. " " .. Takeover.digits(old:getID()) .. " is in no container") end
     if item:IsInventoryContainer() and old:IsInventoryContainer() then
         item:getItemContainer():takeItemsFrom(old:getItemContainer())
     else
@@ -260,9 +249,9 @@ local function convertInverted(player, item, data)
     local look = nil
     if not worn then
         if not item:getClothingItem() then return nil, "it has no clothing item to give its look" end
-        look = Takeover.lookOf(item)
-        local problem = Dont39AllInOne_checkAppearanceOverride(look)
-        if problem then return nil, "its look cannot be drawn: " .. problem end
+        local problem
+        look, problem = Takeover.drawableLook(item)
+        if not look then return nil, "its look cannot be drawn: " .. problem end
     end
     Takeover.setRecord(item, nil)
     -- the owner's client drops the record and takes the server's stats
@@ -270,7 +259,7 @@ local function convertInverted(player, item, data)
     if not worn then
         -- wearing the source later draws this item
         Takeover.setRecord(source, Takeover.newRecord(false, false, item:getDisplayName()))
-        source:getModData()[Appearance.KEY] = look
+        Appearance.write(source, look)
         give(player, source)
         return { kind = INVERT }
     end
@@ -284,12 +273,12 @@ local function convertItem(player, entry)
     return convertSwapped(player, entry.item, entry.data, entry.kind)
 end
 
--- [state] collects what changed as it goes, so an error part way still leaves it to finish.
-local function convertAll(player, found, state)
+-- [state] collects what changed as it goes, so an error part way still leaves it to finish. [left]: the player's.
+local function convertAll(player, found, state, left)
     local counts, inverts = state.counts, {}
     for _, entry in ipairs(found) do
         -- a takeover that stopped put SCTD's functions back
-        if not takeoverActive() then break end
+        if Runtime.stopped() then break end
         local item = entry.item
         local result, why = convertItem(player, entry)
         if result then
@@ -298,16 +287,16 @@ local function convertAll(player, found, state)
             state.worn = state.worn or result.worn == true
             state.hands = state.hands or result.hands == true
         else
-            left[item] = true
+            left[item:getID()] = true
             counts.left = counts.left + 1
-            Takeover.logError("migration left " .. item:getFullType() .. " " .. idText(item:getID()) .. " of "
+            Takeover.logError("migration left " .. item:getFullType() .. " " .. Takeover.digits(item:getID()) .. " of "
                 .. tostring(player:getUsername()) .. " as SCTD made it: " .. why)
         end
     end
     -- Each Apply fires the clothing event, whose single player resnap would give an inverted item still holding its
     -- record the source's stats. Refused, both stay as they are.
     for _, pending in ipairs(inverts) do
-        if takeoverActive() and SCTD_Transmog_Apply(player, pending.item, pending.source, true, true) then
+        if not Runtime.stopped() and SCTD_Transmog_Apply(player, pending.item, pending.source, true, true) then
             state.worn = true
         else
             counts.kept = counts.kept + 1
@@ -331,35 +320,26 @@ local function finish(player, state)
         .. " left as themselves), " .. counts.left .. " left (see errors)")
 end
 
-local function convertPlayer(player, found)
+-- [left]: the player's; [what]: for the error lines.
+local function convertPlayer(player, found, left, what)
     if #found == 0 then return end
     local state = { counts = { [HIDDEN] = 0, [TRANSMOG] = 0, [INVERT] = 0, kept = 0, left = 0 },
         worn = false, hands = false }
-    Takeover.busy[player] = true
-    converting[player] = true
-    local ok, err, trace = pcall(convertAll, player, found, state)
-    Takeover.busy[player] = nil
-    converting[player] = nil
+    local ok, err, trace = pcall(Takeover.whileBusy, player, convertAll, player, found, state, left)
     -- before finish's clothing event, which would try the rest again
-    if not ok then stopped = true end
+    if not ok then guard.fail(what, err, trace) end
     -- items converted before an error still reach the clients as they are on the server
     local finished, finishErr, finishTrace = pcall(finish, player, state)
-    local finishText = tostring(finishErr) .. "\n" .. tostring(finishTrace)
-    if not ok then
-        error(tostring(err) .. "\n" .. tostring(trace) .. (finished and "" or ("\nthen, finishing: " .. finishText)))
-    end
-    if not finished then error(finishText) end
+    if finished then return end
+    if ok then Takeover.rethrow(finishErr, finishTrace) end
+    Takeover.logError("migration also failed finishing " .. what .. ": " .. tostring(finishErr) .. "\n"
+        .. tostring(finishTrace))
 end
 
 -- Entry points --------------------------------------------------------------------------------------------------------
 
-local function isPlayer(character)
-    -- an animal is an IsoPlayer too
-    return instanceof(character, "IsoPlayer") and not instanceof(character, "IsoAnimal")
-end
-
 local function canRun(player)
-    return not stopped and takeoverActive() and not converting[player] and not Takeover.busy[player]
+    return not guard.disabled and not Runtime.stopped() and not Takeover.isBusy(player)
 end
 
 -- A server's packets for a container inside an inventory item need the player's square, which comes some ticks after
@@ -368,75 +348,88 @@ local function placed(player)
     return not isServer() or player:getCurrentSquare() ~= nil
 end
 
-local function scan(player)
+local function scan(player, what)
     if scanned[player] or not canRun(player) or not placed(player) then return end
-    scanned[player] = true
+    local state = { left = {} }
+    scanned[player] = state
     -- puts SCTD's display copies back, so the real worn items are found
     Takeover.realWorn(player)
-    convertPlayer(player, collect(player:getInventory(), {}))
-end
-
-local function guarded(what, fn, player)
-    local ok, err, trace = pcall(fn, player)
-    if ok then return end
-    Takeover.busy[player] = nil
-    converting[player] = nil
-    local name = "?"
-    pcall(function() name = tostring(player:getUsername()) end)
-    fail(what .. " of " .. name, err, trace)
+    convertPlayer(player, collect(player:getInventory(), {}, state.left), state.left, what)
 end
 
 -- An old-style item worn after the player's scan: picked up from the ground, a corpse or a container. Not before the
 -- scan: on a server the player may not be in the online list yet.
-local function scanWorn(player)
-    if not scanned[player] or not canRun(player) or not placed(player) then return end
-    convertPlayer(player, collectWorn(player))
+local function scanWorn(player, what)
+    local state = scanned[player]
+    if not state or not canRun(player) or not placed(player) then return end
+    convertPlayer(player, collectWorn(player, state.left), state.left, what)
+end
+
+local function guarded(what, fn, player)
+    local name = "?"
+    pcall(function() name = tostring(player:getUsername()) end)
+    what = what .. " of " .. name
+    guard.run(what, fn, player, what)
+end
+
+-- The players there now: the online list on a server, the local players in single player.
+local function present()
+    local players = {}
+    if isServer() then
+        local online = getOnlinePlayers()
+        for i = 0, online:size() - 1 do players[#players + 1] = online:get(i) end
+    else
+        for i = 0, getNumActivePlayers() - 1 do
+            local player = getSpecificPlayer(i)
+            if player then players[#players + 1] = player end
+        end
+    end
+    return players
+end
+
+-- Forgets the players no longer there; returns those there.
+local function prune()
+    local players, kept = present(), {}
+    for _, player in ipairs(players) do kept[player] = scanned[player] end
+    scanned = kept
+    return players
 end
 
 local function scanOnline()
-    local players = getOnlinePlayers()
-    for i = 0, players:size() - 1 do
-        local player = players:get(i)
+    for _, player in ipairs(prune()) do
         if scanned[player] then
             -- a wear raises no clothing event on a server
             guarded("converting the newly worn items", scanWorn, player)
         else
             guarded("converting the items", scan, player)
         end
-        if stopped then return end
+        if guard.disabled then return end
     end
 end
 
 local function scanLocal()
-    for i = 0, getNumActivePlayers() - 1 do
-        local player = getSpecificPlayer(i)
-        if player then guarded("converting the items", scan, player) end
+    for _, player in ipairs(prune()) do
+        guarded("converting the items", scan, player)
     end
 end
 
--- [isTakeoverActive] whether the takeover still runs; the migration does nothing once it stopped.
-function Migration.start(isTakeoverActive)
-    takeoverActive = isTakeoverActive
+-- Does nothing once the takeover stopped.
+function Migration.start()
     if isServer() then
-        local nextCheck = 0
-        Events.OnTick.Add(function()
-            if stopped or not takeoverActive() then return end
-            local now = getTimestampMs()
-            if now < nextCheck then return end
-            nextCheck = now + 1000
-            local ok, err, trace = pcall(scanOnline)
-            if not ok then fail("looking for online players to convert", err, trace) end
+        Common.every(1000, function()
+            if not Runtime.stopped() then guard.run("looking for online players to convert", scanOnline) end
         end)
     else
         Events.OnGameStart.Add(function()
-            if not stopped then scanLocal() end
+            guard.run("looking for local players to convert", scanLocal)
         end)
         Events.OnCreatePlayer.Add(function(_, player)
-            if not stopped and player then guarded("converting the items", scan, player) end
+            if not player or not guard.run("forgetting players no longer there", prune) then return end
+            guarded("converting the items", scan, player)
         end)
     end
     Events.OnClothingUpdated.Add(function(character)
-        if not stopped and isPlayer(character) then
+        if not guard.disabled and Common.isPlayer(character) then
             guarded("converting the newly worn items", scanWorn, character)
         end
     end)

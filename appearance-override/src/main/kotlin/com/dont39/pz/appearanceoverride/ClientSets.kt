@@ -52,7 +52,13 @@ internal object ClientSets {
   /** At the start of a game, before its sets arrive: the revisions start again with the server's Lua. */
   @LuaGlobal("Dont39AllInOne_clearAppearanceOverrideSets")
   fun luaClear() {
-    byPlayer.clear()
+    guarded("dropping the overrides of the last game") {
+      val dropped = synchronized(this) {
+        byPlayer.filterValues { it.set.overrides.isNotEmpty() }.keys.also { byPlayer.clear() }
+      }
+      // a model built with a dropped set would keep drawing it
+      dropped.forEach { find(it)?.resetModelNextFrame() }
+    }
   }
 
   private inline fun guarded(what: String, block: () -> Unit) {
@@ -95,7 +101,10 @@ internal object ClientSets {
     }
   }
 
-  private fun find(user: String): IsoPlayer? =
-    (IsoPlayer.players.asSequence() + GameClient.IDToPlayerMap.values.asSequence())
-      .firstOrNull { it != null && it.username == user }
+  // a multiplayer client keeps its local players in the online-id map too (ConnectedPacket.parse)
+  private fun find(key: String): IsoPlayer? = if (GameClient.client) {
+    GameClient.instance.getPlayerFromUsername(key)
+  } else {
+    IsoPlayer.players.firstOrNull { it != null && keyOf(it) == key }
+  }
 }

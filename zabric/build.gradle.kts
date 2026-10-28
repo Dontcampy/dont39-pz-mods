@@ -48,10 +48,9 @@ sourceSets.main {
 }
 
 dependencies {
-  // the weave test applies glue through ZombieBuddy's own patch engine, which needs the game's classes to load
-  testRuntimeOnly(files(pzGame.gameJar))
-  // the Lua globals test exposes through Kahlua's own exposer
-  testCompileOnly(files(pzGame.gameJar))
+  // the weave test applies glue through ZombieBuddy's own patch engine, and the Lua globals test exposes through
+  // Kahlua's own exposer
+  testImplementation(files(pzGame.gameJar))
 }
 
 // the one hand-written place that uses ZombieBuddy's types

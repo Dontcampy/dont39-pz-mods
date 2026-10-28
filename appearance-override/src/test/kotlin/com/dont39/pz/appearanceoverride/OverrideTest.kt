@@ -1,6 +1,7 @@
 package com.dont39.pz.appearanceoverride
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -45,6 +46,44 @@ class OverrideTest {
     assertTrue("tint[4]" in refused(look(tint = array(1.0, 1.0, 1.0, "1"))))
     assertTrue("hue" in refused(look(hue = 2.0)))
     assertTrue("decal" in refused(look(decal = 3.0)))
+  }
+
+  @Test
+  fun `the stored table reads back as the same override`() {
+    listOf(
+      Override.Hidden,
+      Override.parse(table(look())),
+      Override.parse(table(look(textureChoice = 2.0, baseTexture = 1.0, decal = "Logo", hue = -0.5))),
+      Override.parse(table(look(tint = array(0.3, 0.1, 0.7, 1.0), hue = 0.1))),
+    ).forEach { assertEquals(it, Override.parse(table(it.toTable()))) }
+  }
+
+  @Test
+  fun `the stored table holds each value as drawn`() {
+    val stored = Override.parse(table(look(tint = array(0.3, 0.25, 1.0, 1.0)))).toTable()
+    assertEquals(mapOf("hidden" to true), Override.Hidden.toTable())
+    assertEquals(setOf("type", "textureChoice", "baseTexture", "tint", "hue"), stored.keys)
+    // a missing hue is 0; the tint as the float the visual gets
+    assertEquals(0.0, stored["hue"])
+    assertEquals(array(0.3f.toDouble(), 0.25, 1.0, 1.0), stored["tint"])
+    assertEquals(-1.0, stored["baseTexture"])
+  }
+
+  @Test
+  fun `the text is the same exactly when the override draws the same`() {
+    fun text(map: Map<Any, Any?>) = Override.parse(table(map)).text
+    val base = text(look())
+    assertEquals(base, text(look(hue = 0.0)))
+    assertEquals(base, Override.parse(table(Override.parse(table(look())).toTable())).text)
+    listOf(
+      look(type = "Base.Jacket_White"),
+      look(textureChoice = 1.0),
+      look(baseTexture = 0.0),
+      look(tint = array(0.5, 0.25, 1.0, 0.5)),
+      look(decal = "Logo"),
+      look(hue = 0.5),
+    ).forEach { assertNotEquals(base, text(it), it.toString()) }
+    assertNotEquals(base, Override.Hidden.text)
   }
 
   @Test

@@ -27,6 +27,14 @@ instance `myserver2` (`../in-game.md` has the server setup and the run sequence)
 A fresh `-cachedir` needs `mods/reset-mods-42_00.txt` (copy the user's), or the game empties its `default.txt` at
 the first launch and the driver never loads.
 
+Added for task 10-28-pr34-review-fixes: each client UI line ends with `invisAfter=…`, where
+`SCTD_Transmog_IsInvisVariant` is after each panel helper call (`sctd` = SCTD's own, `LingLi_SCTD_Skins.lua:2619`);
+`sctdHide`, `sctdTransmog` and `sctdAutoHide` draw every row of SCTD's transmog panel through its row closure (panel
+built with `SCTD_TransmogPanel:new/initialise/instantiate`, never shown; the list's draw calls captured: `test sctd
+panel <tag> row n <item>: <texts with colors>`), and `sctdHide` shows A again with the panel's button
+(`SCTD_Transmog_ClickHide`); every appearance `set` message the client gets is logged as
+`appearance set <user> revision=n entries=n`.
+
 ## Added for task 10-27-sctd-legacy-migration
 
 Its in-game run (`.trellis/tasks/10-27-sctd-legacy-migration/research/in-game.md`) used these on `myserver2`:

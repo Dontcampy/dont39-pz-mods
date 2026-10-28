@@ -188,23 +188,24 @@ public final class Lifecycle {
             }
             if (stopped) {
                 HookRuntime.closeAll();
-                return;
-            }
-            if (!zabricLoaded) {
+            } else if (!zabricLoaded) {
                 // the player denied Zabric, or the loader skipped it: its preloaded hooks must not act for it
                 stopped = true;
                 DebugType.Mod.warn(PREFIX + "entrypoints: not run this session: %s did not approve and load Zabric%s",
                         Loader.name(), closeHooks());
-                return;
+            } else {
+                List<Loader.ModJar> jars = Loader.loadedThisPass(pass);
+                JarHistory.passLoaded(jars, Loader::recordedSha256);
+                Map<String, List<Path>> loaded = byMod(jars);
+                HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
+                loaded.forEach(Lifecycle::load);
             }
-            List<Loader.ModJar> jars = Loader.loadedThisPass(pass);
-            JarHistory.passLoaded(jars, Loader::recordedSha256);
-            Map<String, List<Path>> loaded = byMod(jars);
-            HookRuntime.passProcessed(loaded, ClassLoader.getSystemClassLoader(), instrumentation);
-            loaded.forEach(Lifecycle::load);
-            LuaGlobals.exposeMissing();
         } catch (Throwable t) {
             stop("the main phase failed: " + t, t);
+        }
+        // other Java mods' Lua, not Zabric's entrypoints: it does not end with them
+        if (zabricLoaded) {
+            LuaGlobals.exposeMissing();
         }
     }
 

@@ -9,10 +9,14 @@ import se.krka.kahlua.j2se.J2SEPlatform;
 import se.krka.kahlua.vm.KahluaTable;
 import zombie.HiddenFromLua;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -67,6 +71,12 @@ class LuaGlobalsTest {
     public static final class Hidden {
         @LuaMethod(name = "LuaGlobalsTest_hidden", global = true)
         public void hidden() {
+        }
+    }
+
+    public abstract static class Abstract {
+        @LuaMethod(name = "LuaGlobalsTest_abstract", global = true)
+        public void abstractGlobal() {
         }
     }
 
@@ -129,15 +139,71 @@ class LuaGlobalsTest {
     }
 
     @Test
-    void aClassThatCannotBeMadeFailsAloneAndIsSkippedOnceReported() {
+    void aClassThatCannotBeMadeFailsAlone() {
         LuaGlobals.Result result = expose(List.of(Broken.class, Other.class), Set.of());
 
         assertEquals(List.of(Other.class), result.exposed());
         assertEquals(Set.of(Broken.class), result.failed().keySet());
         assertInstanceOf(IllegalStateException.class, result.failed().get(Broken.class).getCause());
         assertNull(env.rawget("LuaGlobalsTest_broken"));
+    }
 
-        assertTrue(expose(List.of(Broken.class), Set.of(Broken.class)).failed().isEmpty());
+    @Test
+    void anAbstractClassFailsAsTheLoaderRefusesIt() {
+        LuaGlobals.Result result = expose(List.of(Abstract.class), Set.of());
+
+        assertEquals("class must be concrete", result.failed().get(Abstract.class).getMessage());
+    }
+
+    @Test
+    void aFailingClassIsReportedOncePerSession() {
+        LuaGlobals session = new LuaGlobals();
+        List<Class<?>> classes = List.of(Broken.class, Other.class);
+
+        LuaGlobals.Result first = session.exposeMissing(env, exposer::exposeGlobalFunctions, () -> classes);
+        LuaGlobals.Result second = session.exposeMissing(env, exposer::exposeGlobalFunctions, () -> classes);
+
+        assertEquals(Set.of(Broken.class), first.failed().keySet());
+        assertTrue(second.failed().isEmpty());
+        assertTrue(second.exposed().isEmpty());
+    }
+
+    @Test
+    void aSourceThatThrowsEndsTheSession() {
+        LuaGlobals session = new LuaGlobals();
+        AtomicInteger asked = new AtomicInteger();
+        Supplier<Collection<Class<?>>> failing = () -> {
+            asked.incrementAndGet();
+            throw new IllegalStateException("no list on purpose");
+        };
+
+        session.exposeMissing(env, exposer::exposeGlobalFunctions, failing);
+        LuaGlobals.Result after = session.exposeMissing(env, exposer::exposeGlobalFunctions, () -> {
+            asked.incrementAndGet();
+            return List.of(Bridge.class);
+        });
+
+        assertTrue(session.unavailable());
+        assertEquals(1, asked.get());
+        assertTrue(after.exposed().isEmpty());
+        assertNull(env.rawget("LuaGlobalsTest_named"));
+    }
+
+    @Test
+    void noLuaStateYetDoesNothing() {
+        LuaGlobals session = new LuaGlobals();
+        AtomicInteger asked = new AtomicInteger();
+        Supplier<Collection<Class<?>>> source = () -> {
+            asked.incrementAndGet();
+            return List.of(Bridge.class);
+        };
+
+        session.exposeMissing(null, exposer::exposeGlobalFunctions, source);
+        session.exposeMissing(env, null, source);
+
+        assertEquals(0, asked.get());
+        assertEquals(0, Bridge.made);
+        assertFalse(session.unavailable());
     }
 
     @Test

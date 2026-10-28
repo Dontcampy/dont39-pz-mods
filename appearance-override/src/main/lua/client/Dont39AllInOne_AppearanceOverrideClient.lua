@@ -12,11 +12,8 @@ local ASK_TRIES = 30
 local asking = {}
 local inGame = false
 
-local function guarded(what, fn, a, b, c)
-    -- a stopped sync was reported once
-    if not isClient() or Appearance.problem() then return end
-    local ok, err, trace = pcall(fn, a, b, c)
-    if not ok then Appearance.fail(what, err, trace) end
+local function guarded(what, fn, ...)
+    if isClient() then Appearance.run(what, fn, ...) end
 end
 
 local function startAsking(player)

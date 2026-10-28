@@ -1244,6 +1244,21 @@ local function hideLabel(item)
     return tostring(captured)
 end
 
+-- where SCTD's placeholder check lives now; the takeover's panel wrappers swap it in only during a call
+local function invisAt()
+    local f = SCTD_Transmog_IsInvisVariant
+    if type(f) ~= "function" then return tostring(f) end
+    local name = tostring(getFilenameOfClosure(f))
+    return (string.match(name, "([^/\]+)$") or name) .. ":" .. tostring(getFirstLineOfClosure(f))
+end
+-- getFirstLineOfClosure gives the line after the header (SCTD_Transmog_IsInvisVariant is at 2618)
+local SCTD_INVIS_AT = "LingLi_SCTD_Skins.lua:2619"
+-- after each panel helper: "sctd" when the check is SCTD's own again, else where it is
+local function invisMark()
+    local at = invisAt()
+    return at == SCTD_INVIS_AT and "sctd" or ("NOT:" .. at)
+end
+
 local function sctdLine(it)
     if not it then return "none" end
     local p = getPlayer()
@@ -1271,11 +1286,18 @@ local function sctdLine(it)
     local md = it:hasModData() and it:getModData() or {}
     s = s .. " record=" .. ser(md.SCTD_Transmog) .. " override=" .. ser(md.Dont39AllInOne_Appearance)
         .. " shown=" .. tostring(md.SCTD_TransmogShown)
+    local marks = {}
     local fHidden = SCTD_Transmog_MatchesBaseFilter({ baseFilter = "hidden" }, it)
+    marks[#marks + 1] = invisMark()
     local fTrans = SCTD_Transmog_MatchesBaseFilter({ baseFilter = "transmogged" }, it)
-    return s .. string.format(" | ui filterHidden=%s filterTransmogged=%s isTransmogged=%s button=%s previewSkipped=%s",
-        tostring(fHidden), tostring(fTrans), tostring(SCTD_Transmog_IsTransmogged(it)), hideLabel(it),
-        tostring(SCTD_IsPreviewSkipped(p, it)))
+    marks[#marks + 1] = invisMark()
+    local label = hideLabel(it)
+    marks[#marks + 1] = invisMark()
+    local skipped = SCTD_IsPreviewSkipped(p, it)
+    marks[#marks + 1] = invisMark()
+    return s .. string.format(" | ui filterHidden=%s filterTransmogged=%s isTransmogged=%s button=%s previewSkipped=%s"
+        .. " invisAfter=%s", tostring(fHidden), tostring(fTrans), tostring(SCTD_Transmog_IsTransmogged(it)), label,
+        tostring(skipped), table.concat(marks, ","))
 end
 
 local function byId(id)
@@ -1314,6 +1336,59 @@ local function sctdServer(op, id, extra)
     return r
 end
 
+-- SCTD's transmog panel, built as its opener builds it but never shown; [fn](panel), then the panel is dropped
+local function withPanel(fn)
+    local panel = SCTD_TransmogPanel:new()
+    panel:initialise()
+    panel:instantiate()
+    local ok, err = pcall(fn, panel)
+    pcall(function() panel:close() end)
+    SCTD_TransmogPanel.instance = nil
+    if not ok then error(err) end
+end
+
+-- each worn-list row as the panel's row closure draws it: its texts (name, hide button label) with their colors
+local function panelRows(tag)
+    withPanel(function(panel)
+        panel:refreshBases()
+        local list = panel.baseList
+        local drawAt = tostring(getFilenameOfClosure(list.doDrawItem)) .. ":" .. tostring(getFirstLineOfClosure(list.doDrawItem))
+        mark("test sctd panel " .. tag .. " row closure from " .. (string.match(drawAt, "([^/\]+)$") or drawAt))
+        local texts = {}
+        list.drawText = function(_, text, x, y, r, g, b)
+            texts[#texts + 1] = string.format("%s(%.2f/%.2f/%.2f)", tostring(text), r or -1, g or -1, b or -1)
+        end
+        local function none() end
+        list.drawTextureScaled, list.drawRect, list.drawRectBorder = none, none, none
+        list.drawTextureScaledAspect, list.drawTexture, list.drawTextureScaledUniform = none, none, none
+        for i, row in ipairs(list.items) do
+            texts = {}
+            local ok, err = pcall(list.doDrawItem, list, 0, row, false)
+            mark("test sctd panel " .. tag .. " row " .. i .. " "
+                .. (row.item and (row.item:getFullType() .. "#" .. row.item:getID()) or "-") .. ": "
+                .. (ok and table.concat(texts, " | ") or ("error " .. tostring(err))) .. " invisAfter=" .. invisMark())
+        end
+    end)
+end
+
+-- a click on the item's hide/show button in the panel's worn list (SCTD_Transmog_ClickHide)
+local function panelClick(tag, id)
+    withPanel(function(panel)
+        panel:refreshBases()
+        local list = panel.baseList
+        for row, entry in ipairs(list.items) do
+            if entry.item and entry.item:getID() == id then
+                local bx, by = SCTD_Transmog_HideBounds(list, list:topOfItem(row))
+                local r = SCTD_Transmog_ClickHide(panel, list, row, bx + 1, by + 1)
+                mark("test sctd panel " .. tag .. " ClickHide row " .. row .. " " .. entry.item:getFullType() .. "#" .. id
+                    .. " returned " .. tostring(r) .. " invisAfter=" .. invisMark())
+                return
+            end
+        end
+        mark("test sctd panel " .. tag .. " ClickHide: item " .. tostring(id) .. " not listed")
+    end)
+end
+
 local function give(types)
     local r = ask("give", { types = types })
     if not r or not r.ids then error("give " .. types .. ": " .. tostring(r and r.line)) end
@@ -1344,6 +1419,12 @@ Events.OnServerCommand.Add(function(module, command, args)
         mark("notice SCTD_Transmog." .. tostring(command) .. " item=" .. tostring(args and args.itemId) .. " "
             .. tostring(args and args.fullType) .. " record=" .. ser(args and args.record))
     end
+    -- the appearance sets this client gets: one per publish (revision, entry count)
+    if module == "Dont39AllInOne_AppearanceOverride" and command == "set" and cfg.test and string.find(cfg.test, "^sctd") then
+        local n = 0
+        for _ in pairs(args and args.entries or {}) do n = n + 1 end
+        mark("appearance set " .. tostring(args and args.user) .. " revision=" .. tostring(args and args.revision) .. " entries=" .. n)
+    end
 end)
 
 -- 1: hide the sprayer (2 L of water) and jacket A on the server; show A again from the client (SCTD's command)
@@ -1361,8 +1442,9 @@ function tests.sctdHide(done)
         sctdServer("hide", a)
         sleep(10000)
         both("hidden", { sprayer, a })
-        local shown = SCTD_Transmog_ShowItem(getPlayer(), byId(a))
-        mark("test sctd client ShowItem A returned " .. tostring(shown))
+        panelRows("hidden")
+        -- show A again through the panel's button (SCTD_Transmog_ClickHide, which sends SCTD's showItem command)
+        panelClick("show", a)
         sleep(10000)
         both("shown", { sprayer, a })
         saveIds({ sprayer = sprayer, a = a })
@@ -1383,6 +1465,7 @@ function tests.sctdTransmog(done)
         sctdServer("apply", a, { source = b, ignore = false, invert = false })
         sleep(8000)
         both("normal", { a, b })
+        panelRows("normal")
         sctdServer("restore", a)
         sleep(8000)
         both("normalRestored", { a, b })
@@ -1397,6 +1480,7 @@ function tests.sctdTransmog(done)
         sctdServer("apply", a, { source = b, ignore = false, invert = true })
         sleep(8000)
         both("invert", { a, b })
+        panelRows("invert")
         sctdServer("restore", b)
         sleep(8000)
         both("invertRestored", { a, b })
@@ -1492,6 +1576,7 @@ function tests.sctdAutoHide(done)
         sleep(10000)
         local during = wornIds()
         both("bodyForm", during)
+        panelRows("bodyForm")
         takeOff(form)
         sleep(10000)
         both("bodyFormOff", wornIds())

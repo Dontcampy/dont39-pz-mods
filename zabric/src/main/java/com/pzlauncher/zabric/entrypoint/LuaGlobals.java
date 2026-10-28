@@ -8,7 +8,6 @@ import zombie.Lua.LuaManager;
 import zombie.debug.DebugType;
 import zombie.debug.LogSeverity;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.pzlauncher.zabric.internal.Log.PREFIX;
 
@@ -32,26 +32,38 @@ final class LuaGlobals {
     record Result(List<Class<?>> exposed, Map<Class<?>, Throwable> failed) {
     }
 
+    private static final LuaGlobals session = new LuaGlobals();
+
     // reported once, not retried
-    private static final Set<Class<?>> failed = new HashSet<>();
-    private static boolean unavailable;
+    private final Set<Class<?>> failed = new HashSet<>();
+    private boolean unavailable;
 
-    private LuaGlobals() {
-    }
-
-    /** At the end of each of the loader's passes over the mod list. Never throws. */
-    static synchronized void exposeMissing() {
-        if (unavailable) {
-            return;
-        }
+    /**
+     * At the end of each of the loader's passes over the mod list, under {@link Lifecycle}'s lock, which also guards
+     * this state. Never throws.
+     */
+    static void exposeMissing() {
         try {
             KahluaTable env = LuaManager.env;
             LuaManager.Exposer exposer = LuaManager.exposer;
-            // game start: the loader exposes them when the game starts Lua
-            if (env == null || exposer == null) {
-                return;
-            }
-            Result result = expose(env, exposer::exposeGlobalFunctions, Loader.globalLuaClasses(), failed);
+            session.exposeMissing(env, exposer == null ? null : exposer::exposeGlobalFunctions,
+                    Loader::globalLuaClasses);
+        } catch (Throwable t) {
+            session.giveUp(t);
+        }
+    }
+
+    /**
+     * {@link #exposeMissing()} on {@code env} through {@code exposer}, for the classes {@code source} lists; null
+     * {@code env} or {@code exposer}: no Lua state yet. Returns what this pass exposed and newly failed.
+     */
+    Result exposeMissing(KahluaTable env, Consumer<Object> exposer, Supplier<Collection<Class<?>>> source) {
+        // no Lua state at game start: the loader exposes them when the game starts Lua
+        if (unavailable || env == null || exposer == null) {
+            return new Result(List.of(), Map.of());
+        }
+        try {
+            Result result = expose(env, exposer, source.get(), failed);
             for (Class<?> cls : result.exposed()) {
                 DebugType.Mod.println(PREFIX + "Lua: exposed the global functions of %s, whose jar %s loaded after the"
                         + " game started Lua", cls.getName(), Loader.name());
@@ -61,11 +73,25 @@ final class LuaGlobals {
                 DebugType.Mod.printException(t, PREFIX + "Lua: cannot expose the global functions of " + cls.getName()
                         + "; Lua code that calls them fails", LogSeverity.Error);
             });
+            return result;
         } catch (Throwable t) {
-            unavailable = true;
-            DebugType.Mod.printException(t, PREFIX + "Lua: global functions of Java mods that load with a server's or"
-                    + " a reloaded mod list stay missing this session: " + t, LogSeverity.Error);
+            giveUp(t);
+            return new Result(List.of(), Map.of());
         }
+    }
+
+    private void giveUp(Throwable t) {
+        if (unavailable) {
+            return;
+        }
+        unavailable = true;
+        DebugType.Mod.printException(t, PREFIX + "Lua: global functions of Java mods that load with a server's or"
+                + " a reloaded mod list stay missing this session", LogSeverity.Error);
+    }
+
+    /** Whether a failure ended the exposure for this session. */
+    boolean unavailable() {
+        return unavailable;
     }
 
     /**
@@ -85,9 +111,7 @@ final class LuaGlobals {
                 if (missing(env, cls).isEmpty()) {
                     continue;
                 }
-                Constructor<?> constructor = cls.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                exposer.accept(constructor.newInstance());
+                exposer.accept(Loader.newGlobalLuaInstance(cls));
                 // Kahlua skips classes it hides from Lua without a word; they would come back on every pass
                 List<String> still = missing(env, cls);
                 if (!still.isEmpty()) {

@@ -1,22 +1,29 @@
 -- Dont39 All-in-One: sctd-render-takeover, the parts its files share: the record it writes under SCTD's transmog key,
--- the look of an item, and the check of the SCTD code it replaces or relies on.
+-- the busy flag, worn items and looks, and the check of the SCTD code it replaces or relies on.
 
 local Appearance = require "Dont39AllInOne_AppearanceOverrideShared"
+local Common = require "Dont39AllInOne_CommonShared"
+local SourceGate = require "Dont39AllInOne_SctdRenderTakeoverSourceGate"
 
 local Takeover = {}
 
 Takeover.MOD_ID = "ShadowCatTacticsDispatch"
 Takeover.MODULE = "Dont39AllInOne_SctdRenderTakeover" -- the look edits clients send
+Takeover.PREFIX = "[Dont39AllInOne] sctd-render-takeover: "
 
-local PREFIX = "[Dont39AllInOne] sctd-render-takeover: "
-
--- Never throws.
 function Takeover.log(message)
-    pcall(function() DebugType.Mod:println(PREFIX .. message) end)
+    Common.log(Takeover.PREFIX, message)
 end
 
 function Takeover.logError(message)
-    pcall(function() DebugType.Mod:error(PREFIX .. message) end)
+    Common.logError(Takeover.PREFIX, message)
+end
+
+Takeover.digits = SourceGate.digits
+
+-- An error caught to undo something, raised again with the stack where it was first raised.
+function Takeover.rethrow(err, trace)
+    error(tostring(err) .. "\n" .. tostring(trace))
 end
 
 -- Record ----------------------------------------------------------------------------------------------------------
@@ -45,13 +52,6 @@ function Takeover.setRecord(item, record)
     item:getModData()[KEY] = record
 end
 
--- Hidden by this feature, or an SCTD placeholder made before it.
-function Takeover.isHidden(item)
-    local data = Takeover.ourRecord(item)
-    if data then return data.hidden == true end
-    return SCTD_Transmog_IsInvisVariant(item:getFullType())
-end
-
 -- The look override of an item this feature transmogged, else nil.
 function Takeover.lookOverride(item)
     if not Takeover.ourRecord(item) then return nil end
@@ -60,8 +60,25 @@ function Takeover.lookOverride(item)
     return nil
 end
 
--- per player, while auto-hide or the migration runs or SCTD swaps an item: auto-hide must not run inside any of them
-Takeover.busy = setmetatable({}, { __mode = "k" })
+-- Busy ------------------------------------------------------------------------------------------------------------
+
+-- players for whom auto-hide or the migration runs or SCTD swaps an item: auto-hide must not run inside any of them.
+-- whileBusy puts each entry back, so the table holds no player after the call.
+local busy = {}
+
+function Takeover.isBusy(player)
+    return busy[player] == true
+end
+
+-- [fn](...) with [player] marked busy; the mark is put back as it was, also when [fn] throws.
+function Takeover.whileBusy(player, fn, ...)
+    local was = busy[player]
+    busy[player] = true
+    local ok, r1, r2 = pcall(fn, ...)
+    busy[player] = was
+    if not ok then Takeover.rethrow(r1, r2) end
+    return r1, r2
+end
 
 -- Worn items ------------------------------------------------------------------------------------------------------
 
@@ -89,28 +106,13 @@ end
 
 -- Look ------------------------------------------------------------------------------------------------------------
 
--- The item as it is drawn now, in the appearance override's format.
-function Takeover.lookOf(item)
-    local clothing = item:getClothingItem()
-    local visual = item:getVisual()
-    if not clothing or not visual then error(item:getFullType() .. " has no clothing visual") end
-    -- the getters given the clothing item pick what is still unset, as the item's next draw would
-    visual:getTextureChoice(clothing)
-    visual:getBaseTexture(clothing)
-    -- the visual gives the custom color only while linked to its item, which only gathering the worn visuals does: an
-    -- item in a bag, or worn and just loaded on a server, would read its own tint or white
-    local tint = item:isCustomColor() and ImmutableColor.new(item:getR(), item:getG(), item:getB(), 1)
-        or visual:getTint(clothing)
-    return { type = item:getFullType(), textureChoice = visual:getTextureChoice(),
-        baseTexture = visual:getBaseTexture(),
-        tint = { tint:getRedFloat(), tint:getGreenFloat(), tint:getBlueFloat(), tint:getAlphaFloat() },
-        decal = visual:getDecal(clothing), hue = visual:getHue(clothing) }
-end
-
-local function copyLook(look)
-    local t = look.tint
-    return { type = look.type, textureChoice = look.textureChoice, baseTexture = look.baseTexture,
-        tint = { t[1], t[2], t[3], t[4] }, decal = look.decal, hue = look.hue }
+-- [item]'s look as it is drawn now, or nil and why the appearance override cannot draw it: stored data, not a
+-- mismatch.
+function Takeover.drawableLook(item)
+    local look = Appearance.lookOf(item)
+    local problem = Dont39AllInOne_checkAppearanceOverride(look)
+    if problem then return nil, problem end
+    return look
 end
 
 function Takeover.clothingAsset(fullType)
@@ -123,7 +125,7 @@ end
 -- The look with SCTD's skin index applied as its skin panel applies it, or nil when the index fits neither list.
 function Takeover.withTexture(look, index)
     local asset = Takeover.clothingAsset(look.type)
-    local edited, changed = copyLook(look), false
+    local edited, changed = Appearance.copy(look), false
     if index < asset:getTextureChoices():size() then
         edited.textureChoice = index
         changed = true
@@ -136,7 +138,7 @@ function Takeover.withTexture(look, index)
 end
 
 function Takeover.withTint(look, r, g, b)
-    local edited = copyLook(look)
+    local edited = Appearance.copy(look)
     edited.tint = { r, g, b, 1 }
     return edited
 end
@@ -151,9 +153,7 @@ Takeover.FILES = {
     Menu2 = "media/lua/client/LingLi_SCTD_Menu_2.lua",
 }
 
--- Each block runs from its header line to the first line of the header's indent plus "end". The texts are in the
--- task's research/sctd-blocks/; length and hash come from cut and hash below. global: the live value must be the one
--- from this block. client: the global is in client Lua, which a dedicated server does not load.
+-- The reviewed texts are in the archived tasks' research/sctd-blocks/. Format: SourceGate.new.
 Takeover.BLOCKS = {
     { name = "HideItem_Server", file = "Skins", global = "SCTD_Transmog_HideItem_Server",
         header = "function SCTD_Transmog_HideItem_Server(player, item, opts)",
@@ -246,89 +246,9 @@ Takeover.BLOCKS = {
         length = 293, hash = { 1523763947, 195829436 } },
 }
 
--- Primes below 2^31: every product stays below 2^53, where Kahlua's numbers are exact. string.byte gives UTF-16
--- units in Kahlua, hence base 65536.
-local P1, P2, BASE = 2147483647, 2147483629, 65536
-
-function Takeover.hash(text)
-    local a, b = 0, 0
-    for i = 1, string.len(text) do
-        local c = string.byte(text, i)
-        a = (a * BASE + c) % P1
-        b = (b * BASE + c) % P2
-    end
-    return a, b
-end
-
--- Returns the block's text and its first and last line numbers.
-function Takeover.cut(lines, header, path)
-    local first = nil
-    for n, line in ipairs(lines) do
-        if line == header then
-            if first then error(header .. " appears more than once in " .. path) end
-            first = n
-        end
-    end
-    if not first then error(header .. " was not found in " .. path) end
-    local last = string.match(header, "^(%s*)") .. "end"
-    for n = first, #lines do
-        if lines[n] == last then
-            local block = {}
-            for i = first, n do block[#block + 1] = lines[i] end
-            return table.concat(block, "\n"), first, n
-        end
-    end
-    error(header .. " in " .. path .. " has no closing '" .. last .. "' line")
-end
-
-function Takeover.readLines(path)
-    local reader = getModFileReader(Takeover.MOD_ID, path, false)
-    if not reader then error(Takeover.MOD_ID .. "'s " .. path .. " was not found") end
-    local lines = {}
-    local ok, err = pcall(function()
-        local line = reader:readLine()
-        while line ~= nil do
-            lines[#lines + 1] = line
-            line = reader:readLine()
-        end
-    end)
-    -- a failing close must not hide the read error
-    local closed, closeErr = pcall(function() reader:close() end)
-    if not ok then error(err) end
-    if not closed then error(closeErr) end
-    return lines
-end
-
--- Kahlua prints large whole numbers in exponent form.
-local function digits(n)
-    if n < 100000 then return tostring(n) end
-    local low = n % 100000
-    return digits((n - low) / 100000) .. string.sub(tostring(100000 + low), 2)
-end
-Takeover.digits = digits
-
-local function resolve(path)
-    local value = _G
-    for part in string.gmatch(path, "[^%.]+") do
-        if type(value) ~= "table" then return nil end
-        value = value[part]
-    end
-    return value
-end
-
--- Whether [fn] is defined inside [range] (a block found by check).
-function Takeover.isFrom(fn, range)
-    if type(fn) ~= "function" then return false end
-    local name = string.lower(tostring(getFilenameOfClosure(fn)))
-    local file = string.lower(string.match(range.path, "([^/]+)$"))
-    local line = getFirstLineOfClosure(fn)
-    return string.sub(name, -string.len(file)) == file and line >= range.first and line <= range.last
-end
-
-function Takeover.describe(fn)
-    if type(fn) ~= "function" then return tostring(fn) end
-    return tostring(getFilenameOfClosure(fn)) .. ":" .. tostring(getFirstLineOfClosure(fn))
-end
+-- Lengths and hashes are over Kahlua's strings: BlockHashes.java (archived task 10-27-sctd-render-takeover,
+-- research/sctd-blocks/) runs this gate in the game's Kahlua to give them.
+Takeover.gate = SourceGate.new(Takeover.MOD_ID, Takeover.FILES, Takeover.BLOCKS)
 
 -- Whether SCTD's code is the reviewed version. Returns why there is nothing to do, or nil and the blocks' ranges by
 -- name. Throws when anything does not match. [identity]: also check that the live globals are SCTD's, once all of
@@ -338,28 +258,7 @@ function Takeover.check(identity)
     if not info or not isModActive(info) then return Takeover.MOD_ID .. " is not enabled" end
     local problem = Appearance.problem()
     if problem then error("appearance-override: " .. problem) end
-    local files, ranges = {}, {}
-    for _, block in ipairs(Takeover.BLOCKS) do
-        local path = Takeover.FILES[block.file]
-        files[path] = files[path] or Takeover.readLines(path)
-        local text, first, last = Takeover.cut(files[path], block.header, path)
-        local a, b = Takeover.hash(text)
-        if string.len(text) ~= block.length or a ~= block.hash[1] or b ~= block.hash[2] then
-            error(block.name .. " at " .. path .. ":" .. digits(first) .. " is not the reviewed version (found length "
-                .. digits(string.len(text)) .. ", hash " .. digits(a) .. ", " .. digits(b) .. ")")
-        end
-        local range = { path = path, first = first, last = last }
-        if identity and block.global and not (block.client and isServer()) then
-            local live = resolve(block.global)
-            if type(live) ~= "function" then error(block.global .. " was not found") end
-            if not Takeover.isFrom(live, range) then
-                error(block.global .. " is not the one at " .. path .. ":" .. digits(first) .. " but from "
-                    .. Takeover.describe(live))
-            end
-        end
-        ranges[block.name] = range
-    end
-    return nil, ranges
+    return nil, Takeover.gate.check(identity)
 end
 
 return Takeover

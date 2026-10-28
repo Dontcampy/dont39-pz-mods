@@ -16,7 +16,17 @@ internal interface LuaShape {
  * (`Dont39AllInOne_AppearanceOverrideShared.lua`) writes it in the format [parse] reads.
  */
 internal sealed interface Override {
-  data object Hidden : Override
+  /** The table [parse] reads back as this override, each value as it is drawn: what the Lua API stores. */
+  fun toTable(): Map<String, Any>
+
+  /** The same text exactly when two overrides draw the same: what the server compares before it sends a set. */
+  val text: String
+
+  data object Hidden : Override {
+    override fun toTable(): Map<String, Any> = mapOf(HIDDEN to true)
+
+    override val text: String get() = HIDDEN
+  }
 
   /** Drawn as [type]. Every value a getter of the game's visual would otherwise pick at random is given. */
   data class Look(
@@ -26,7 +36,19 @@ internal sealed interface Override {
     val tint: Tint,
     val decal: String?,
     val hue: Float,
-  ) : Override
+  ) : Override {
+    override fun toTable(): Map<String, Any> = buildMap {
+      put(TYPE, type)
+      put(TEXTURE_CHOICE, textureChoice.toDouble())
+      put(BASE_TEXTURE, baseTexture.toDouble())
+      put(TINT, tint.toTable())
+      decal?.let { put(DECAL, it) }
+      put(HUE, hue.toDouble())
+    }
+
+    override val text: String
+      get() = listOf(type, textureChoice, baseTexture, tint.r, tint.g, tint.b, tint.a, decal, hue).joinToString(",")
+  }
 
   companion object {
     const val KEY = "Dont39AllInOne_Appearance"
@@ -90,4 +112,8 @@ internal sealed interface Override {
   }
 }
 
-internal data class Tint(val r: Float, val g: Float, val b: Float, val a: Float)
+internal data class Tint(val r: Float, val g: Float, val b: Float, val a: Float) {
+  /** As a Lua array: keys 1 to 4, as Lua numbers. */
+  fun toTable(): Map<Double, Double> =
+    listOf(r, g, b, a).withIndex().associate { (i, v) -> (i + 1).toDouble() to v.toDouble() }
+}

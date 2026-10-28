@@ -4,6 +4,7 @@ import com.dont39.pz.zbktutils.glue.LuaGlobal
 import java.util.Collections
 import java.util.WeakHashMap
 import se.krka.kahlua.vm.KahluaTable
+import zombie.Lua.LuaManager
 import zombie.core.skinnedmodel.visual.ItemVisual
 import zombie.inventory.InventoryItem
 
@@ -17,21 +18,54 @@ internal object ItemOverrides {
 
   /** The Lua API's check: null when [table] can be stored and drawn as an override, else why not. */
   @LuaGlobal("Dont39AllInOne_checkAppearanceOverride")
-  fun luaCheck(table: KahluaTable?): String? {
-    AppearanceOverride.whyNotActive()?.let { return "appearance-override is not running: $it" }
+  fun luaCheck(table: KahluaTable?): String? = checked(table).exceptionOrNull()?.message
+
+  /**
+   * The Lua API's reading of an override: `{ override = <the table to store>, text = <the same exactly when two
+   * overrides draw the same> }` when [table] can be stored and drawn as an override, else `{ problem = <why not> }`.
+   */
+  @LuaGlobal("Dont39AllInOne_readAppearanceOverride")
+  fun luaRead(table: KahluaTable?): KahluaTable {
+    val result = LuaManager.platform.newTable()
+    checked(table)
+      .onSuccess {
+        result.rawset("override", kahlua(it.toTable()))
+        result.rawset("text", it.text)
+      }
+      .onFailure { result.rawset("problem", it.message) }
+    return result
+  }
+
+  /** The Lua API's look of [item], which has a clothing item and a visual, as stored; null when the feature is off. */
+  @LuaGlobal("Dont39AllInOne_readAppearanceOverrideLook")
+  fun luaReadLook(item: InventoryItem?): KahluaTable? {
+    if (!AppearanceOverride.active()) return null
     return try {
-      problem(table)
+      kahlua(Looks.of(checkNotNull(item) { "no item" }).toTable())
     } catch (t: Throwable) {
-      AppearanceOverride.disable("checking an override", t)
-      "appearance-override is not running: it was disabled after an error (details in console.txt)"
+      AppearanceOverride.disable("reading an item's look", t)
+      null
     }
   }
 
-  private fun problem(value: Any?): String? = try {
-    valid(value)
-    null
-  } catch (e: IllegalArgumentException) {
-    e.message
+  /** The override [value] gives, or an [IllegalArgumentException] naming why it cannot be stored and drawn. */
+  private fun checked(value: KahluaTable?): Result<Override> {
+    AppearanceOverride.whyNotActive()?.let { return notRunning(it) }
+    return try {
+      Result.success(valid(value))
+    } catch (e: IllegalArgumentException) {
+      Result.failure(e)
+    } catch (t: Throwable) {
+      AppearanceOverride.disable("checking an override", t)
+      notRunning("it was disabled after an error (details in console.txt)")
+    }
+  }
+
+  private fun notRunning(why: String): Result<Override> =
+    Result.failure(IllegalArgumentException("appearance-override is not running: $why"))
+
+  private fun kahlua(map: Map<*, *>): KahluaTable = LuaManager.platform.newTable().apply {
+    map.forEach { (key, value) -> rawset(key, if (value is Map<*, *>) kahlua(value) else value) }
   }
 
   /** Throws [IllegalArgumentException] naming what does not match. */

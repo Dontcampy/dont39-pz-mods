@@ -2,6 +2,7 @@ package com.dont39.pz.appearanceoverride
 
 import zombie.core.ImmutableColor
 import zombie.core.skinnedmodel.visual.ItemVisual
+import zombie.inventory.InventoryItem
 import zombie.scripting.ScriptManager
 
 /** What drawing an [Override.Look] needs from the game's scripts, and the visual drawn in the worn item's place. */
@@ -23,6 +24,30 @@ internal object Looks {
       return "${look.type} draws a decal from group ${clothing.decalGroup}, and none is given"
     }
     return null
+  }
+
+  /** [item] as it is drawn now. */
+  fun of(item: InventoryItem): Override.Look {
+    val clothing = checkNotNull(item.clothingItem) { "${item.fullType} has no clothing item" }
+    val visual = checkNotNull(item.visual) { "${item.fullType} has no visual" }
+    // given the clothing item, the getters pick what is still unset, as the item's next draw would
+    visual.getTextureChoice(clothing)
+    visual.getBaseTexture(clothing)
+    // the visual gives the custom color only while linked to its item, which only gathering the worn visuals does: an
+    // item in a bag, or worn and just loaded on a server, would read its own tint or white
+    val tint = if (item.isCustomColor) {
+      ImmutableColor(item.getR(), item.getG(), item.getB(), 1f)
+    } else {
+      visual.getTint(clothing)
+    }
+    return Override.Look(
+      item.fullType,
+      visual.getTextureChoice(),
+      visual.getBaseTexture(),
+      Tint(tint.r, tint.g, tint.b, tint.a),
+      visual.getDecal(clothing),
+      visual.getHue(clothing),
+    )
   }
 
   /** A visual of [look]'s type with every value set; it has no inventory item, so the item's own colour is not used. */

@@ -66,7 +66,7 @@ What is not behind the seam and needs rework when switching loaders:
 |------------|-------|
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric` and `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
-| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates; the late exposure `entrypoint/LuaGlobals.java` (`Loader.globalLuaClasses`) |
+| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates; the late exposure `entrypoint/LuaGlobals.java` (`Loader.globalLuaClasses`, `Loader.newGlobalLuaInstance`) |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
@@ -156,6 +156,14 @@ What is not behind the seam and needs rework when switching loaders:
   packet for an item in a bag fails inside the engine (`ContainerID` reads `player.square`) and the failure is caught
   there, so the client keeps the old item with no error anywhere (`placed` in
   `Dont39AllInOne_SctdRenderTakeoverMigration.lua`). Being in `getOnlinePlayers()` is not enough.
+- Kahlua ignores `__mode`: `setmetatable({}, {__mode = "k"})` is a strong table, so a table keyed by player or item
+  objects keeps them for the server's uptime. Key per-player state by the player and drop the players no longer in
+  `getOnlinePlayers()` on each time-paced pass (`prune` in `Dont39AllInOne_SctdRenderTakeoverMigration.lua`), or key
+  it by something small (user name, item id); a flag set around a call is put back by the same call
+  (`Takeover.whileBusy`).
+- Lua the features share on every side, the dedicated server included (`log`, the fail-once `guard`, the animal check,
+  a time-paced ticker), is `allinone-common`'s `Dont39AllInOne_CommonShared.lua`; client-only helpers stay in
+  `Dont39AllInOne_Common.lua`, which also carries the shared ones.
 
 ---
 
@@ -292,7 +300,10 @@ For a feature that changes how a character is drawn but not what it wears. Refer
   texture, tint, hue, decal), or the look changes between rebuilds.
 - `ItemVisual.getTint(clothing)` gives the item's custom color only while the visual is linked to its item, which only
   gathering the worn visuals does; an item in a bag, or worn and just loaded on a server, reads white. Read a custom
-  color from the item (`Takeover.lookOf` in `Dont39AllInOne_SctdRenderTakeoverShared.lua`).
+  color from the item (`Looks.of` in `appearance-override`, Lua `Appearance.lookOf`).
+- Every publish of a player's overrides is a broadcast to all clients: a batch writes each item with `Appearance.put`
+  (an item not sent yet: `Appearance.write`, its add packet carries it) and publishes once at its end
+  (`reconcileWorn` in `Dont39AllInOne_SctdRenderTakeoverAuthoritative.lua`).
 
 ## Threading and Hot Paths
 
