@@ -12,7 +12,7 @@ parent's AC5.
   pages (A10). `-PqualityDump=<dir>` writes a SHA-256 of every BC7 level `qualityCheck` defines (284 levels: 21 pages'
   level 0, the 6 odd mip chains, the 2048x2048 and 1501x1099 levels, the GL-state level, and the 21 padded pages with
   all levels) to `<dir>/bc7-blocks.txt`.
-- Baseline: the encoder at 02bea37 with only that `QualityCheck` change, `research/baseline/` (dump and three runs).
+- Baseline: the encoder at 02bea37 with only that `QualityCheck` change, `research/baseline/bc7-blocks.txt` (the dump).
   Three runs gave the same hashes.
 - After each step: 3 runs of `qualityCheck` (each 7 interleaved runs, medians a page), hashes compared with the
   baseline's. The machine was shared with the other implementer's builds, so absolute GL-thread times move with

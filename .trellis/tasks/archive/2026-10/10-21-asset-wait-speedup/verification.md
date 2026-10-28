@@ -35,7 +35,7 @@ threads), RTX 4090 24 GB, driver 617.42, game 42.21 `4a0e9546ec`, game option `t
 - The 5 `AngelCodeFont failed to load page 0 texture` errors in every run predate this change (same count in the
   morning's runs without it, compression on and off).
 - Series: local nosteam server with the live server's full mod list, Loading Progress 0.2.0, each run a fresh client
-  launch + join; Faster Loading's comment stripping on in all runs. Reports: `research/join-r2-*.txt`.
+  launch + join; Faster Loading's comment stripping on in all runs.
 
 | Run | Join total | Loading the world | Asset wait | Budget sleep | Largest frame gap |
 |---|---|---|---|---|---|
@@ -48,8 +48,7 @@ threads), RTX 4090 24 GB, driver 617.42, game 42.21 `4a0e9546ec`, game option `t
 | **median off** | **141,682** | **103,840** | **70,422** | | 1,320 |
 | **median on** | **69,849** | **32,267** | **12,479** | | 1,351 |
 
-  (ms). on1-on3 ran the first encoder (before the alpha rewrite): wait 29.2-30.6 s, join 94.0-97.3 s;
-  `research/join-r2-on1..3.txt`.
+  (ms). on1-on3 ran the first encoder (before the alpha rewrite): wait 29.2-30.6 s, join 94.0-97.3 s.
 
 - **AC3 met:** asset wait median 12.5 s ≤ 25 s; join total drops by 71.8 s (≥ 35 s). The wait is below the
   morning's compression-off join (13.8 s).
@@ -74,7 +73,7 @@ threads), RTX 4090 24 GB, driver 617.42, game 42.21 `4a0e9546ec`, game option `t
 ## Profiles (JFR, `settings=profile`; files in the session scratchpad)
 
 - Compression on, before the fix: render thread 52 % `glTexImage2D` (driver compression), 26 % `glfwSwapBuffers`.
-- First encoder in game (`join-jfr-on1.txt`, wait 35.5 s): encoder threads ~90 % in `Dxt5Alpha`, stb colour ~2 %;
+- First encoder in game (wait 35.5 s): encoder threads ~90 % in `Dxt5Alpha`, stb colour ~2 %;
   the render thread encoded small levels inline. Fixed by the alpha rewrite above.
 
 ## Restored after the runs

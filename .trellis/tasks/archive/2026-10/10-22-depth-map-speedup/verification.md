@@ -15,8 +15,7 @@ and texture compression on in every run; only `depthMapOrder` changes.
 Setup: R2's recipe (`archive/2026-10/10-21-asset-wait-speedup/implement.md` step 6). Local nosteam server with the live
 server's mod list (245 mods + LPTestDriver, real copies), Loading Progress 0.2.0, Faster Loading 0.3.0 from
 `deployWorkshop`. Each run is a fresh client launch plus a join. One registration launch and one warm-up join were
-discarded. The ZombieBuddy approval for the new jar was already in place, so no dialog came up. Reports:
-`research/join-dmo-<run>.txt|.csv`, `research/launch-dmo-<run>.txt`.
+discarded. The ZombieBuddy approval for the new jar was already in place, so no dialog came up.
 
 | Run | Launch total | Join total | Loading the world | Asset wait | Depth phase | Depth worker time | Largest frame gap | Depth tasks done / failed |
 |---|---|---|---|---|---|---|---|---|
@@ -129,7 +128,6 @@ Setup:
   in every run.
 - Loading Progress's "waiting in the menu" stays at about 0.5 s. It counts only pauses inside the join flow, which
   starts at the connect click, so the 30 s fall before the flow.
-- Reports: `research/join-dmm-<run>.txt|.csv`, `research/launch-dmm-<run>.txt`.
 
 | Run | Join total (menu wait excluded) | Loading the world | Asset wait | Depth tasks | Animation tasks | Pack images | All file tasks in the wait |
 |---|---|---|---|---|---|---|---|

@@ -44,7 +44,7 @@ instance's depth maps decode one at a time and a waiting task holds a worker.
 ## Measured (2026-10-22, local nosteam server, live mod list; Faster Loading not loaded; JFR `settings=profile`)
 
 PC: Ryzen 7 9800X3D (8C/16T), RTX 4090 24 GB, driver 617.42 (OpenGL 4.6). `vsync=false`, `frameRate=144`.
-Reports: `join-jfr-comp1.txt`, `join-jfr-nocomp1.txt`. JFR files and scripts stay in the session scratchpad.
+Raw reports, JFR files and scripts were not kept.
 
 | | `textureCompression=true` (as played) | `=false` |
 |---|---|---|

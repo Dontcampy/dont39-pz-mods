@@ -13,7 +13,7 @@ memory) and at least the driver's image quality.
 
 ## Background (evidence)
 
-Sources: `research/join-*.txt` (R1, 7 joins), `research/join-jfr-*.txt` and `research/upload-path.md` (code path,
+Sources: Loading Progress reports of R1 (7 joins) and JFR joins (raw reports not kept), `research/upload-path.md` (code path,
 JFR profile, compression on/off joins, encoder benches, hook points), parent `research/asset-wait.md`.
 
 - **The bound is the render thread compressing textures.** Mod packs get the compress flag whenever the game option
