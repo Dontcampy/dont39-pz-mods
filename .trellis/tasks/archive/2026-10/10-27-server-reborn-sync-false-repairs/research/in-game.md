@@ -5,8 +5,7 @@ mods ZombieBuddy, Zabric 0.7.2, ZabricKotlin 0.8.0, Server Reborn 0.2.0 (this br
 Escape from Kentucky `ModernFirearmsSystem`, same Workshop copy as the client's). The Windows client `-nosteam`, driven by
 `harness/` (a copy of the archived Server Reborn harness with the new driver test `falseRepairs`), at Rosewood prison.
 myserver2's ini, mods, ZombieBuddy config, save, db and Lua were backed up first (`backups-2026-10-27-falserepairs/`
-there) and restored afterwards; the client's files were restored by `cleanup.ps1` (0 differences). Lines of each run in
-`in-game-2026-10-27/`.
+there) and restored afterwards; the client's files were restored by `cleanup.ps1` (0 differences).
 
 `falseRepairs`: the server gives an apple, a sugar packet and a canned chili, gives the apple endurance, thirst and
 hunger, and syncs the three in that order through ItemStats; then a bandage on the right foot (god mode off) and 60 s of

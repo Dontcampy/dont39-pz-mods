@@ -2,7 +2,10 @@ package com.pzlauncher.zabric.loader;
 
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -206,6 +209,47 @@ public final class Loader {
      */
     public static long jarWork() {
         return JarLoadHook.heartbeat();
+    }
+
+    /**
+     * The classes with global Lua functions ({@code @LuaMethod(global = true)}) the loader found in the jars it loaded.
+     * It exposes them only when the game starts a Lua state, so a jar it loads after that has none in that state.
+     * Throws naming the loader version when it does not list them.
+     */
+    public static List<Class<?>> globalLuaClasses() {
+        Object value;
+        try {
+            // public in the installed ZombieBuddy, package-private from its next version on: one path for both
+            Method m = Class.forName("me.zed_0xff.zombie_buddy.Exposer").getDeclaredMethod(
+                    "getClassesWithGlobalLuaMethod");
+            m.setAccessible(true);
+            value = m.invoke(null);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+            throw new IllegalStateException(notListed(), e);
+        }
+        if (!(value instanceof List<?> list) || !list.stream().allMatch(Class.class::isInstance)) {
+            throw new IllegalStateException(notListed() + "; it returned " + value);
+        }
+        return list.stream().<Class<?>>map(Class.class::cast).toList();
+    }
+
+    private static String notListed() {
+        return NAME + " " + version() + " does not list its classes with global Lua functions"
+                + " (me.zed_0xff.zombie_buddy.Exposer.getClassesWithGlobalLuaMethod)";
+    }
+
+    /**
+     * A new instance of {@code cls}, made as the loader makes the one whose global Lua functions it exposes when the
+     * game starts a Lua state.
+     */
+    public static Object newGlobalLuaInstance(Class<?> cls) throws ReflectiveOperationException {
+        // as ZombieBuddy's Exposer.newInstanceForGlobalLuaMethods, message included
+        if (Modifier.isAbstract(cls.getModifiers()) || cls.isInterface()) {
+            throw new ReflectiveOperationException("class must be concrete");
+        }
+        Constructor<?> constructor = cls.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 
     /**

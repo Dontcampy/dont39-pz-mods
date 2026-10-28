@@ -66,7 +66,7 @@ What is not behind the seam and needs rework when switching loaders:
 |------------|-------|
 | Entry points by convention (`PreMain.premain`, `Main.main` in `javaPkgName`) | `Main` / `PreMain` in `zabric` and `zb-kt` |
 | The game's main classes the preLaunch hook targets | `entrypoint/PreLaunchHook.java` in `zabric` |
-| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates |
+| Lua functions exposed from exactly `javaPkgName` | `zabric/.../RestartNotice.java`; the Lua bridge `LuaBridge.kt` generates; the late exposure `entrypoint/LuaGlobals.java` (`Loader.globalLuaClasses`, `Loader.newGlobalLuaInstance`) |
 | The loader's names, annotation shape and method matching in generated glue | `Names.java`, `glue.ftl`, `LoaderMatcher.java` in `zabric-processor`; reference glue `WeaveGlue.java` and `WeaveTest` in `zabric` |
 | The weave check relies on the loader registering its patch transformers before Zabric's mod-list callback | `hook/impl/WeaveCheck.java` in `zabric` |
 | Rejection of hand-written loader patches (`@Patch`, `@UnsafeLoaderPatch`) | both processors, `Messages.java`; the author contract (`zabric/README.md`) |
@@ -127,6 +127,10 @@ What is not behind the seam and needs rework when switching loaders:
 - Functions called from Lua are `@LuaGlobal` functions in the feature (`Glue.kt`); their names keep the mod-id prefix
   and are unique across features. A facade exposes its mod option by overriding `setForce` (`Feature.kt`) with
   `@LuaGlobal`. Other exposure options: ModdingGuide "Exposing Classes to Lua".
+- ZombieBuddy exposes global Lua functions only when the game starts a Lua state, and a join or a mod reload starts it
+  before loading the new mod list; Zabric exposes the ones that state lacks at the end of each pass
+  ([`LuaGlobals.java`](../../../zabric/src/main/java/com/pzlauncher/zabric/entrypoint/LuaGlobals.java)). Features need
+  nothing for it; a mod without Zabric gets no global functions when a client enables it only through a server.
 - Lua files live in the feature module's `src/main/lua/` and must tolerate the Java side or the game API being absent:
   check a global exists before calling it.
 - Features do not depend on each other in Kotlin (facades are `internal`). One feature uses another's data through
@@ -141,6 +145,25 @@ What is not behind the seam and needs rework when switching loaders:
   text.
 - User-facing switches are mod options, not JVM flags: `PZAPI.ModOptions` from the feature's Lua, id
   `Dont39AllInOne_<Name>` (`Dont39AllInOne_NetworkStatus.lua`).
+- State the server sends to clients with Lua commands (`sendServerCommand`) is derived and re-sent, never assumed
+  delivered once (`appearance-override`'s `Dont39AllInOne_AppearanceOverride{Server,Client}.lua`):
+  - a client's request at `OnGameStart` can reach the server before it has bound the player to the connection and is
+    then dropped without a trace: repeat it until the server's answer ends with a marker, and fail after a bound;
+  - a joined player's worn items are filled from the client's packets without `OnClothingUpdated` on the server, and
+    wearing an item fires it only on the client (`ISWearClothing:perform`; the server's `complete` does not): state
+    derived from worn items is also recomputed on a time-paced check, sending only what changed.
+- The server changes a joined player's items only once the player has a square (`getCurrentSquare()`): before that the
+  packet for an item in a bag fails inside the engine (`ContainerID` reads `player.square`) and the failure is caught
+  there, so the client keeps the old item with no error anywhere (`placed` in
+  `Dont39AllInOne_SctdRenderTakeoverMigration.lua`). Being in `getOnlinePlayers()` is not enough.
+- Kahlua ignores `__mode`: `setmetatable({}, {__mode = "k"})` is a strong table, so a table keyed by player or item
+  objects keeps them for the server's uptime. Key per-player state by the player and drop the players no longer in
+  `getOnlinePlayers()` on each time-paced pass (`prune` in `Dont39AllInOne_SctdRenderTakeoverMigration.lua`), or key
+  it by something small (user name, item id); a flag set around a call is put back by the same call
+  (`Takeover.whileBusy`).
+- Lua the features share on every side, the dedicated server included (`log`, the fail-once `guard`, the animal check,
+  a time-paced ticker), is `allinone-common`'s `Dont39AllInOne_CommonShared.lua`; client-only helpers stay in
+  `Dont39AllInOne_Common.lua`, which also carries the shared ones.
 
 ---
 
@@ -258,6 +281,29 @@ When a feature changes another mod's state around a call (a `HEAD` handler and a
 - Restore must not overwrite a value the target replaced in the meantime, and keeps restoring the rest after one
   element fails.
 - Adjust only what the draw call reads; leave the target's simulation state alone.
+
+## Render-Only Changes to Characters
+
+For a feature that changes how a character is drawn but not what it wears. Reference: `appearance-override`
+(`RenderScope.kt`, `VisualEdit.kt`); the evidence is the archived task's `research/engine-appearance.md`
+(`10-27-sctd-render-transmog`).
+
+- `WornItems.getItemVisuals` / `IsoPlayer.getItemVisuals` also feed clothing defense, bite checks, vision, temperature,
+  blood and `SyncVisuals` (which matches visuals by index), so their result is changed only inside a render scope: a
+  `HEAD`/`FINALLY` pair on each render consumer opens a thread-local frame, and the `RETURN` edit acts only while one
+  is open. The list is the caller's; the item's own `ItemVisual` is never changed.
+- A new render consumer after a game update draws the real item until it is added to the scope list.
+- A remote player's visuals on a client carry no item mod data (`SyncClothing` makes items from the type; the join's
+  visuals have no item), and SCTD swaps the local worn list for record-less copies while drawing: per-player state is
+  sent to clients and looked up by worn type, not read from the drawn item.
+- A substitute `ItemVisual` sets every field the getters would otherwise pick at random (texture choice, base
+  texture, tint, hue, decal), or the look changes between rebuilds.
+- `ItemVisual.getTint(clothing)` gives the item's custom color only while the visual is linked to its item, which only
+  gathering the worn visuals does; an item in a bag, or worn and just loaded on a server, reads white. Read a custom
+  color from the item (`Looks.of` in `appearance-override`, Lua `Appearance.lookOf`).
+- Every publish of a player's overrides is a broadcast to all clients: a batch writes each item with `Appearance.put`
+  (an item not sent yet: `Appearance.write`, its add packet carries it) and publishes once at its end
+  (`reconcileWorn` in `Dont39AllInOne_SctdRenderTakeoverAuthoritative.lua`).
 
 ## Threading and Hot Paths
 

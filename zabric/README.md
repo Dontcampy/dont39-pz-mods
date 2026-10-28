@@ -6,7 +6,8 @@ Workshop page links here. A complete author build is in [`samples/zabric-java-ho
 What it does for players: opens up the game and mod internals that installed mods list (at game start, for every
 installed mod's list), runs the entrypoints and hooks of the mods built on it (hooks also from game start for a mod kept
 running then; a failing hook stops that mod's hooks, not the game), and lists on the main menu the mods that take effect
-only after a restart. It changes no game files and nothing in saves.
+only after a restart. It also gives Java mods that load only when you join a server (or reload mods in the main menu)
+the global Lua functions ZombieBuddy leaves out then. It changes no game files and nothing in saves.
 
 Approval: ZombieBuddy asks to approve a mod's Java code when it loads with the mod list. Code that runs at game start
 comes before that question: after an update of Zabric, or of a mod registered through it, the new version runs at the

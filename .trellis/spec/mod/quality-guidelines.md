@@ -87,6 +87,9 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 
 If an in-game check was not done, say so in the task report.
 
+Results go in the task's `research/in-game.md`, with the few lines that prove each result quoted there. Raw test logs
+(consoles, driver output, per-run line files) are not committed.
+
 ---
 
 ## Code Style

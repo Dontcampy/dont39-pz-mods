@@ -29,8 +29,8 @@ Requirements `prd.md`, design `design.md`. Gradle: `JAVA_HOME=~/.jdks/graalvm-ce
      (the user's reports), `~/Zomboid/Lua/Dont39FasterLoading.ini`. Check the mod list before the runs (the launcher
      rewrites it).
    - Stage Faster Loading 0.3.0 (`deployWorkshop`; `git lfs pull` first in this worktree), preload registered.
-   - Warm-up join, then off/on alternating, ≥ 3 each. Copy each run's LP `start`/`launch` `.txt` + `.csv` into
-     `research/` (`join-dmo-on1.txt` ...) before LP prunes them.
+   - Warm-up join, then off/on alternating, ≥ 3 each. Record each run's LP numbers in
+     `verification.md` before LP prunes the reports (raw reports are not committed).
    - Per run: `python -I research/timeline.py <start.csv>` (depth phase, phases by type), join total, asset wait,
      largest frame gap, depth tasks done / failed, `console.txt` errors, the launch report's total.
    - Screenshot the same spot on one on and one off run.

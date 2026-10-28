@@ -45,7 +45,9 @@ buildSrc/src/main/kotlin/
 allinone-common/                     code the features share, bundled only into dont39-all-in-one (not a feature: no
                                      facade, hooks or glue; not in the features list)
   src/main/kotlin/com/dont39/pz/common/        Kotlin helpers, e.g. sandbox option reads, failJoin, writeAtomically
-  src/main/lua/client/Dont39AllInOne_Common.lua   Lua helpers: Common.log, the fail-once Common.guard
+  src/main/lua/shared/Dont39AllInOne_CommonShared.lua   Lua helpers for every side: Common.log, the fail-once
+                                     Common.guard, Common.isPlayer, the time-paced Common.every
+  src/main/lua/client/Dont39AllInOne_Common.lua   the shared helpers plus client-only ones (rich text wrapping)
 dont39-all-in-one/                   shipped mod: all features
   build.gradle.kts                   version, feature list (init order), packaging, smokeTest
   src/main/media/                    the mod's own media files, e.g. the sandbox page's name; merged with the features'
@@ -143,11 +145,19 @@ expects of every Lua-only feature.
 Reference: `mod-options-sidebar/`; its rules are in
 [ZombieBuddy Patching](./zombiebuddy-patching.md#wrapping-vanilla-lua-ui).
 
-A Lua-only feature may fix another mod's Lua (the first one, `sctd-transmog-flush-fix`, is removed; see git
-history): it gates on that mod's exact source text and goes idle once the text changes without the bug. Its target
+A Lua-only feature may fix or take over another mod's Lua (reference: `sctd-render-takeover/`): it gates on that
+mod's exact source text, block by block (length and hash; the reviewed blocks live in its task's `research/`), checks
+that the live globals come from those blocks, and reports `disabled` on any mismatch. Kahlua's `string.byte` returns
+UTF-16 units, so a hash over source text must take values up to 65535. Lua under `server/` runs last on every side
+(MP clients included), so it sees every mod's globals without load-order entries; but the main menu loads only shared
+and client Lua, so such a feature also needs a client file that logs its status there for `smokeTest`. Its target
 is not added to `loadModAfter`: the mod
 selector's auto-sort (`ModLoadOrderPanel:sortMods`) leaves a hole for a listed mod that is not enabled, and client Lua
 already runs after every mod's shared Lua. Its status line goes in `smokeTest`'s `luaTargeted` list, where idle passes.
+The generic gate is its own module (`Dont39AllInOne_SctdRenderTakeoverSourceGate.lua`, files and blocks passed in);
+the parts are modules under `shared/`, so `require` finds them on every side, and the `server/` file only gates,
+installs and logs the status. Every file under `shared/` also runs when the game loads that folder, so a module does
+nothing at load but define its functions.
 
 A further shipped mod applies `buildsrc.convention.pz-mod`; compare the shipped modules' build scripts. A Kotlin mod
 of its own (not bundled) applies `buildsrc.convention.pz-kotlin-mod` (reference: `server-reborn/`); its areas are

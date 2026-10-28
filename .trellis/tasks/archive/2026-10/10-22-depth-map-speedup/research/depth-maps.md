@@ -224,7 +224,7 @@ that depth maps are its tail.
   - `GameServer.doMinimumInit` @198: server.
   - `IsoWorld.loadedTileDefinitions` @282 → `loadedTileDefinitions()`, which merges when no tasks remain.
 - **Consequence for the measured joins**: vanilla maps (`DEPTH_signs_one-off_0x.png`) appear among the join wait's
-  slowest tasks (`join-r2-on5.txt:37-48`). With `game` reused, those can only be the **launch's** tasks still
+  slowest tasks (asset-wait-speedup's run r2-on5). With `game` reused, those can only be the **launch's** tasks still
   queued.
   - Those runs had 492 ms in the menu, and the main thread pumps the queue only in its frame and loading loops.
   - So the join's 900-task depth load is mostly launch backlog plus the server-only mods' maps. Inference, not

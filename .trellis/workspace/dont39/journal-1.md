@@ -1024,8 +1024,175 @@ Analyzed the live server's debugFieldDiff repairs: vanilla ItemStatsPacket keeps
 
 | Hash | Message |
 |------|---------|
+| `46077ca` | Add appearance-override: draw a worn item hidden or as another item, only when rendering |
+| `01bca87` | chore(task): plan SCTD hide and transmog without swapping items |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 44: Appearance override core for SCTD render-only hide and transmog
+<!-- trellis-session: v=2 fp=6c4f478e80deab57 -->
+
+**Date**: 2026-10-27
+**Task**: Appearance override core for SCTD render-only hide and transmog
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Added the appearance-override All-in-One feature (render-scope hooks, per-player sets by worn type, Lua API storing the override in item mod data). Verified on myserver2: set, rejoin, restart-rejoin, clear; the sprayer keeps its water. Fixed two sync gaps found in game (worn list filled without OnClothingUpdated; snapshot request dropped before the player is bound). Planned the SCTD takeover and legacy migration children. Not covered: remote player view, single player.
+## Session 45: SCTD render takeover
+<!-- trellis-session: v=2 fp=d606c65f4779de44 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD render takeover
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Added sctd-render-takeover: SCTD's hide, transmog (normal, cross-slot, invert), restore, auto-hide, panel and skin panel go through the appearance override; source blocks gated by length+hash, R7a Restore wrapper. Check fixed the wrapper being stopped by unrelated errors and invert in multi-item slots. All 8 in-game tests passed on myserver2 incl. a second client and the disabled path; environment restored. Found: a client that enables All-in-One only from the server's mod list gets no Lua globals from its Java part.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fb26539` | Add sctd-render-takeover: SCTD's hide and transmog only change how the item is drawn |
 | `e3544e7` | Server Reborn 0.2.0: stop false repairs from stale ItemStats, bandage models and EFK gun data |
 | `701a095` | chore(task): plan and in-game check of 10-27-server-reborn-sync-false-repairs |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 46: SCTD legacy migration
+<!-- trellis-session: v=2 fp=abc94b8ddb673364 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD legacy migration
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Old-style SCTD items (placeholders, type transmogs, inverts) convert once per player to real items with our record and the same look, while the takeover is active
+
+### Main Changes
+
+- Migration module in sctd-render-takeover (shared), wired after the authoritative install; six more gated SCTD blocks
+- Server waits for the player's square before converting (bag item packets fail silently otherwise); worn items re-checked every second, since wearing fires OnClothingUpdated only on the client
+- Takeover.lookOf reads a custom color from the item: an unlinked ItemVisual reads white
+- Harness: migration driver tests, run-remote password read fixed, README no longer needs All-in-One in default.txt (Zabric 0.7.3)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f7c9707` | chore(task): plan sctd-legacy-migration; harness no longer needs All-in-One in default.txt (Zabric 0.7.3) |
+| `f85cf22` | Add sctd-legacy-migration: items SCTD hid or transmogged before become real items with the same look |
+| `e65d411` | chore(task): archive 10-27-sctd-legacy-migration |
+
+### Testing
+
+- [OK] build, Kahlua syntax, BlockHashes 29 ok, smokeTest ready
+- [OK] myserver2 in game: first run found the square and wear failures; re-run after fixes passed all 5 steps (one converted line, ids equal incl. bag item, second join no-op, worn pickup converted in 397 ms, custom tint equal after restart)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Parent integration review, one All-in-One version bump, PR against main
+
+
+## Session 47: SCTD render transmog: integration review and release
+<!-- trellis-session: v=2 fp=0e760355f8184819 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD render transmog: integration review and release
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Parent task reviewed against its acceptance list, All-in-One bumped to 0.14.0, parent archived, PR opened
+
+### Main Changes
+
+- Acceptance list ticked with the gaps written down (panel clicks, single player, Server Reborn diff replaced by the driver's field compare)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `77b442c` | Bump Dont39 All-in-One to 0.14.0: appearance override, SCTD hide and transmog drawn only, legacy SCTD items converted |
+| `9843310` | chore(task): archive 10-27-sctd-render-transmog |
+
+### Testing
+
+- [OK] build assembleMod, smokeTest: sctd-render-takeover ready, appearance-override active; LP reports and default.txt unchanged
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 48: PR 34 review fixes
+<!-- trellis-session: v=2 fp=e644e02aec4aa4e0 -->
+
+**Date**: 2026-10-28
+**Task**: PR 34 review fixes
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Fixed every architecture/performance/reuse finding of the PR 34 review and re-verified in game
+
+### Main Changes
+
+- Kahlua has no weak tables: takeover/migration state pruned to the online list
+- Appearance.put/write batch writes; auto-hide publishes once
+- Takeover split into modules; panel wraps SCTD's own functions; gate reads each file once
+- Zabric reads ZombieBuddy's class list by reflection, survives the next ZombieBuddy
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fd0f61b` | chore(task): archive 10-28-pr34-review-fixes |
+| `dd0725a` | Fix PR 34 review findings: no Kahlua weak tables, one appearance broadcast per batch, Zabric works with the next ZombieBuddy |
+
+### Testing
+
+- [OK] build, zabric/appearance tests, Kahlua syntax, BlockHashes 29 ok, smokeTest ready
+- [OK] myserver2: takeover basics, one set per auto-hide batch, migration + rejoins, viewer with All-in-One only from the server list gets the globals, restart
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 49: Drop raw test logs from task research
+<!-- trellis-session: v=2 fp=14ece4ce4449a6e2 -->
+
+**Date**: 2026-10-28
+**Task**: Drop raw test logs from task research
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Raw in-game/test logs removed from task research (this PR's and older archived tasks'); results stay quoted in in-game.md / verification.md; summary tables and the BC7 baseline kept
+
+### Main Changes
+
+- Rule added to quality-guidelines.md In-Game Verification and to memory
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `89ee286` | chore: drop raw in-game test logs from task research; results stay quoted in in-game.md |
+| `75c6903` | chore: drop raw test logs from older archived tasks; keep summary tables and the BC7 baseline dump |
 
 ### Status
 

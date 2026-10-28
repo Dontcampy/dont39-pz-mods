@@ -12,7 +12,7 @@ plugins {
   id("buildsrc.convention.pz-mod")
 }
 
-version = "0.13.0"
+version = "0.14.0"
 
 // the bundled features, in init order
 val features = listOf(
@@ -23,6 +23,8 @@ val features = listOf(
   ":tunnel",
   ":mod-sync",
   ":network-status",
+  ":appearance-override",
+  ":sctd-render-takeover",
 )
 
 val modId = pzMod.modId
@@ -95,5 +97,5 @@ tasks.named<Sync>("assembleMod") {
 registerSmokeTest(kotlin = true) {
   featureFolders.from(featureInfo)
   // Lua-only features that gate on a target mod (directory-structure.md)
-  luaTargeted = listOf()
+  luaTargeted = listOf("sctd-render-takeover")
 }

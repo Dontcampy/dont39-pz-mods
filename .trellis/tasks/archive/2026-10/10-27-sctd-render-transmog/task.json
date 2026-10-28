@@ -1,0 +1,30 @@
+{
+  "id": "sctd-render-transmog",
+  "name": "sctd-render-transmog",
+  "title": "SCTD hide and transmog without swapping items (parent)",
+  "description": "Replace Shadow Cat Tactics: Dispatch's item swap for hide/transmog with a render-only appearance override in All-in-One; take over SCTD's entry points; migrate existing placeholders and transmogged items.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-10-27",
+  "completedAt": "2026-10-28",
+  "branch": "feat/sctd-transmog-server-resnap-015452",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-27-appearance-override",
+    "10-27-sctd-render-takeover",
+    "10-27-sctd-legacy-migration"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

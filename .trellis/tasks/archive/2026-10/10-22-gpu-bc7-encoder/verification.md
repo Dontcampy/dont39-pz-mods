@@ -166,8 +166,7 @@ only `textureBc7` changes.
 - Series: local nosteam server `fulltest` with the live server's mod list (245 mods + LPTestDriver, real copies),
   R2's kit with two changes: the client waits 30 s in the menu before it joins (quality guideline 10; the launch's
   depth maps finish first) and the screenshot pair stays 20 s in the world. One warm-up join discarded; off/on
-  alternating; `offshot`/`onshot` a fourth pair. Reports: `research/join-bc7-*.txt`, `research/launch-bc7-*.txt`,
-  table `research/series-table.txt`.
+  alternating; `offshot`/`onshot` a fourth pair. Table `research/series-table.txt`.
 
 | Run | Encoder | Launch | Join total | Loading the world | Entering the world | Asset wait | Budget sleep | Pack pages in the wait | Largest frame gap |
 |---|---|---|---|---|---|---|---|---|---|
@@ -207,7 +206,7 @@ only `textureBc7` changes.
 
 One join each, `textureBc7` off then on, the AC5 setup (30 s menu stay, 20 s in the world), GPU memory in use sampled
 by `nvidia-smi` every 250 ms from before the launch to after the quit. "Game" is the peak minus the baseline just
-before the launch (the desktop and other programs: ~3.2 GB). Window 3840x2054. Reports `research/join-vram*-*.txt`.
+before the launch (the desktop and other programs: ~3.2 GB). Window 3840x2054.
 
 | Build | Encoder | Baseline | Peak (in the world) | Game | At the menu (game) |
 |---|---|---|---|---|---|

@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua-only feature fixing another mod, luaTargeted"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Lua bridge, wrapping Lua, render-only character changes"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable"}
+{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/sctd-integration.md", "reason": "SCTD entry points, record readers"}
+{"file": ".trellis/tasks/archive/2026-10/10-27-appearance-override/design.md", "reason": "appearance API and sync"}
+{"file": "appearance-override/src/main/lua/shared/Dont39AllInOne_AppearanceOverrideShared.lua", "reason": "the Lua API this feature calls"}
