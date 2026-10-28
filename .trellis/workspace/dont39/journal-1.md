@@ -1104,3 +1104,34 @@ Old-style SCTD items (placeholders, type transmogs, inverts) convert once per pl
 ### Next Steps
 
 - Parent integration review, one All-in-One version bump, PR against main
+
+
+## Session 47: SCTD render transmog: integration review and release
+<!-- trellis-session: v=2 fp=0e760355f8184819 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD render transmog: integration review and release
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Parent task reviewed against its acceptance list, All-in-One bumped to 0.14.0, parent archived, PR opened
+
+### Main Changes
+
+- Acceptance list ticked with the gaps written down (panel clicks, single player, Server Reborn diff replaced by the driver's field compare)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `77b442c` | Bump Dont39 All-in-One to 0.14.0: appearance override, SCTD hide and transmog drawn only, legacy SCTD items converted |
+| `9843310` | chore(task): archive 10-27-sctd-render-transmog |
+
+### Testing
+
+- [OK] build assembleMod, smokeTest: sctd-render-takeover ready, appearance-override active; LP reports and default.txt unchanged
+
+### Status
+
+[OK] **Completed**
