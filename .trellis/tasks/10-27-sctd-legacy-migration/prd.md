@@ -17,14 +17,15 @@ player loads with the new version.
   shows a newly worn old-style item. Items elsewhere (world containers, ground, vehicles) are converted when they reach
   a player's inventory this way; until then SCTD's own Show still works on them when worn.
 - R2. Hidden placeholder (`Base.SCTD_Invis_*`, `hidden` record) → a new item of `baseFullType` with the placeholder's
-  current state (condition, blood, dirt, holes, patches, wetness, favorite, mod data minus SCTD's swap fields), the
-  record's stats, textures, tint and name, the bag contents; worn where the placeholder was; override `hidden` (and
+  current state (condition, blood, dirt, holes, patches, wetness, favorite, mod data minus SCTD's swap fields), its
+  own script stats (not the record's snapshot: instance stats are not saved; design.md), the record's textures, tint and
+  custom name, the bag contents; worn where the placeholder was; override `hidden` (and
   `autoHidden` kept). The fluid is already lost; the item gets its script's empty container.
 - R3. Type-transmogged item (type B', record with `baseFullType` A and `srcFullType` B) → a new A built the same way,
   override = B with B''s current texture choice, base texture and tint; a fresh B (`srcCondition`, `srcFavorite`) into
   the inventory, since sources are no longer consumed.
 - R4. Inverted record (A carrying B's stats) → the new invert form: a fresh B worn in its slot, drawn as A; A back to the
-  inventory with `origStats`.
+  inventory with its own script stats.
 - R5. Clients get the change through vanilla item packets and the override sync; the acting client's SCTD panel state
   follows (`SCTD_TransmogSync.Notify`).
 - R6. One log line per converted player (counts), errors → `disabled` for the migration only, items left as they are.

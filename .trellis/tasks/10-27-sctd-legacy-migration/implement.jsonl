@@ -1,3 +1,6 @@
-{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua-only feature fixing another mod"}
+{"file": ".trellis/spec/mod/directory-structure.md", "reason": "Lua-only feature taking over another mod's Lua"}
 {"file": ".trellis/spec/mod/error-handling.md", "reason": "gate, report, disable"}
-{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/sctd-integration.md", "reason": "SCTD entry points, record readers, migration data"}
+{"file": ".trellis/tasks/10-27-sctd-render-transmog/research/sctd-integration.md", "reason": "SCTD records and migration data (section 6)"}
+{"file": ".trellis/tasks/archive/2026-10/10-27-sctd-render-takeover/design.md", "reason": "takeover record, gate and deviations"}
+{"file": "sctd-render-takeover/src/main/lua/shared/Dont39AllInOne_SctdRenderTakeoverShared.lua", "reason": "record, look and gate helpers to reuse"}
+{"file": "sctd-render-takeover/src/main/lua/server/Dont39AllInOne_SctdRenderTakeover.lua", "reason": "install, invert and busy flag to reuse"}

@@ -25,9 +25,7 @@ instance `myserver2` (`../in-game.md` has the server setup and the run sequence)
 | `sctdHide`, `sctdTransmog`, `sctdSkin`, `sctdAutoHide`, `sctdCheck`, `sctdDisabled`, `sctdView` | Driver tests calling SCTD's own functions: hide/show/apply/restore on the server (`SGTest` commands `sctd`, `sctdReport`, `sctdState`), skin panel and UI helpers on the client. Item ids carry over between runs in `Zomboid/Lua/sgtest_ids.txt` |
 
 A fresh `-cachedir` needs `mods/reset-mods-42_00.txt` (copy the user's), or the game empties its `default.txt` at
-the first launch and the driver never loads. All-in-One must be enabled in that `default.txt` too: a client that gets
-it only from the server's list at the join has no Java globals in Lua (`appearance-override sync: client part idle:
-its Java side is not loaded`).
+the first launch and the driver never loads.
 
 ## Files
 
