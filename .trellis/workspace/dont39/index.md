@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 45
+- **Total Sessions**: 46
 - **Last Active**: 2026-10-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1066 | Active |
+| `journal-1.md` | ~1106 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 46 | 2026-10-28 | SCTD legacy migration | `f7c9707`, `f85cf22`, `e65d411` | `feat/sctd-transmog-server-resnap-015452` |
 | 45 | 2026-10-28 | SCTD render takeover | `fb26539` | `feat/sctd-transmog-server-resnap-015452` |
 | 44 | 2026-10-27 | Appearance override core for SCTD render-only hide and transmog | `46077ca`, `01bca87` | `feat/sctd-transmog-server-resnap-015452` |
 | 43 | 2026-10-27 | Server Reborn 0.2.0: false repairs from ItemStats, bandage models and EFK data | `e3544e7`, `701a095` | `fix/server-reborn-false-repairs` |

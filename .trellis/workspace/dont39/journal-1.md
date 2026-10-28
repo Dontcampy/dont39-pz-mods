@@ -1064,3 +1064,43 @@ Added sctd-render-takeover: SCTD's hide, transmog (normal, cross-slot, invert), 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 46: SCTD legacy migration
+<!-- trellis-session: v=2 fp=abc94b8ddb673364 -->
+
+**Date**: 2026-10-28
+**Task**: SCTD legacy migration
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Old-style SCTD items (placeholders, type transmogs, inverts) convert once per player to real items with our record and the same look, while the takeover is active
+
+### Main Changes
+
+- Migration module in sctd-render-takeover (shared), wired after the authoritative install; six more gated SCTD blocks
+- Server waits for the player's square before converting (bag item packets fail silently otherwise); worn items re-checked every second, since wearing fires OnClothingUpdated only on the client
+- Takeover.lookOf reads a custom color from the item: an unlinked ItemVisual reads white
+- Harness: migration driver tests, run-remote password read fixed, README no longer needs All-in-One in default.txt (Zabric 0.7.3)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f7c9707` | chore(task): plan sctd-legacy-migration; harness no longer needs All-in-One in default.txt (Zabric 0.7.3) |
+| `f85cf22` | Add sctd-legacy-migration: items SCTD hid or transmogged before become real items with the same look |
+| `e65d411` | chore(task): archive 10-27-sctd-legacy-migration |
+
+### Testing
+
+- [OK] build, Kahlua syntax, BlockHashes 29 ok, smokeTest ready
+- [OK] myserver2 in game: first run found the square and wear failures; re-run after fixes passed all 5 steps (one converted line, ids equal incl. bag item, second join no-op, worn pickup converted in 397 ms, custom tint equal after restart)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Parent integration review, one All-in-One version bump, PR against main
