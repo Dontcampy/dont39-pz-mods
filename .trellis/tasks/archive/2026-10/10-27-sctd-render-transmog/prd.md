@@ -45,16 +45,29 @@ order. Research shared by all: `research/engine-appearance.md`, `research/sctd-i
 
 ## Acceptance (across children)
 
-- [ ] A worn knapsack sprayer with water, hidden through SCTD's panel, stays a knapsack sprayer: same amount on server
+- [x] A worn knapsack sprayer with water, hidden through SCTD's panel, stays a knapsack sprayer: same amount on server
       and client, accepts more, not drawn on the wearer, on other players' screens, or in previews; shown again, it is
       drawn as before. Survives a server restart and a rejoin.
-- [ ] A transmog through SCTD's panel keeps the real item (stats, contents, fluid, name) and draws it as the source on
+- [x] A transmog through SCTD's panel keeps the real item (stats, contents, fluid, name) and draws it as the source on
       every client; the source stays in the inventory; the skin panel changes the drawn look; restore draws the item
       as itself.
-- [ ] Auto-hide while wearing an SCTD body form hides and later shows vanilla clothing through the override.
-- [ ] Existing placeholders and transmogged items in a player's inventory become the real items, with the same
+- [x] Auto-hide while wearing an SCTD body form hides and later shows vanilla clothing through the override.
+- [x] Existing placeholders and transmogged items in a player's inventory become the real items, with the same
       hidden/transmogged look, on the first load with the new version.
-- [ ] No `weight{...}` or other Server Reborn field diff for these items after a restart and rejoin.
-- [ ] With SCTD changed so a replaced function's source no longer matches, the takeover logs `disabled` and SCTD's
+- [x] No `weight{...}` or other Server Reborn field diff for these items after a restart and rejoin.
+- [x] With SCTD changed so a replaced function's source no longer matches, the takeover logs `disabled` and SCTD's
       own swap works as shipped; items already converted keep their look.
-- [ ] Build gate and `:dont39-all-in-one:smokeTest` pass; All-in-One version bumped once for the release.
+- [x] Build gate and `:dont39-all-in-one:smokeTest` pass; All-in-One version bumped once for the release.
+
+## Integration review (2026-10-28)
+
+All children archived (`archive/2026-10/10-27-{appearance-override,sctd-render-takeover,sctd-legacy-migration}`), each
+verified in game on `myserver2` (their `research/in-game.md`). All-in-One bumped to 0.14.0; build and smokeTest pass
+(`sctd-render-takeover: ready`, `appearance-override: active`). Gaps against the list above:
+
+- The hide and transmog were driven through SCTD's functions, not by clicking its panels (the panel row closure was
+  not exercised); single player was not run.
+- Server Reborn was not on `myserver2`'s list: the driver's field-by-field comparison of every item on server and
+  client (weight, condition, fluid, defenses, insulation, contents) stands in for its diff.
+- Not covered: invert in a multi-item slot (no such pair exists), fluid copy on a type transmog (no pair has a fluid
+  container), an invert SCTD's Apply refuses.
