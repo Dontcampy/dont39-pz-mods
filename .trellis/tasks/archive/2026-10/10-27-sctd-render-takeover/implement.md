@@ -61,7 +61,7 @@ own globals, client tests call SCTD's client functions and read the panel helper
 7. Disabled path: a temporary wrong hash in the deployed copy → `disabled`; SCTD's Restore on one of our items clears
    record and override (R7a).
 
-Record results in `research/in-game.md` with the lines under `research/in-game-<date>/`.
+Record results in `research/in-game.md`, with the proving lines quoted (no raw logs).
 
 ## Rollback
 

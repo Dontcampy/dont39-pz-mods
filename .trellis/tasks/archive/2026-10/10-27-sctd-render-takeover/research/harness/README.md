@@ -283,7 +283,7 @@ keeps them in `VacMod13.raw`), so the loop's transfers go through the game's own
 
 ```powershell
 & "$h\stop-client.ps1"; & "$h\stop-server.ps1"     # if still running
-# copy what the task keeps (samples, consoles) from $env:TEMP\sgtest\runs into research/ first
+# quote the lines that prove each result in research/in-game.md first; the raw logs are not committed
 & "$h\cleanup.ps1"
 Get-Content ~/Zomboid/mods/default.txt | Select-String SGTestDriver   # expect nothing
 ```

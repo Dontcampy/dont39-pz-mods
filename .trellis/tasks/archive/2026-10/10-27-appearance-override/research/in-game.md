@@ -7,7 +7,7 @@ harness plus the driver tests `appearance`, `appearanceCheck`, `appearanceClear`
 `Server`, `mods`, `zombie_buddy`, `Saves`, `db`, `Lua` and `options.ini` were backed up first
 (`backups-2026-10-27-appearance/state.tgz` there) and restored afterwards (7429 entries, the ini's RCON port back);
 the client by `cleanup.ps1` (0 differences) and the Loading Progress reports, `default.txt` and the ZombieBuddy config
-compared with a backup taken before `smokeTest` (no change). Lines of each run in `in-game-2026-10-27/`.
+compared with a backup taken before `smokeTest` (no change).
 
 Before the game: `./gradlew build assembleMod` and `:dont39-all-in-one:smokeTest` passed (`appearance-override:
 active`, hooks transformed, no feature disabled).

@@ -11,9 +11,7 @@ throughout).
 The Windows client `-nosteam` with `-Dappearanceoverride.debug=true`, the same mods copied into `~/Zomboid/mods`,
 driven by `harness/` (the archived appearance-override harness plus `run-remote.ps1`, `start-viewer.ps1`,
 `stop-viewer.ps1` and the driver tests `sctd*`, see `harness/README.md`), at Rosewood prison. A female character, so
-the body form is `Base.FemaleBodyT512` (SCTG's `TriggerClothing`; SCTD itself lists none). Lines of each run in
-`in-game-2026-10-27/` (`<run>-driver.txt`: the driver's client and server report lines; `<run>-client-lines.txt`:
-All-in-One's lines in the client console; `server-lines.txt`).
+the body form is `Base.FemaleBodyT512` (SCTG's `TriggerClothing`; SCTD itself lists none).
 
 Item report fields: id, where (worn slot / inventory / bag), weight, condition, fluid, bite/scratch/insulation, the
 item's own visual, `SCTD_Transmog` record, `Dont39AllInOne_Appearance` override, `SCTD_TransmogShown`; on the client

@@ -39,7 +39,7 @@ Then `trellis-check` on the diff.
 - A screenshot per step from the client (the harness's capture) for the record.
 - Remote view: try a second `-nosteam` client with its own `-cachedir`; if it does not run beside the first on this
   PC, report the remote path as not covered in game.
-- Lines and screenshots under `research/in-game-<date>/`, summary in `research/in-game.md`.
+- Results in `research/in-game.md`, with the proving lines quoted (no raw logs).
 
 ## Rollback
 

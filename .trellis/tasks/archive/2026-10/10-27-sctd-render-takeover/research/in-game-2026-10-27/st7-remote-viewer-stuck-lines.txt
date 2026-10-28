@@ -1,7 +1,0 @@
-LOG  : General      f:0> [ZB] ZomboidFileSystem.loadMods(0 mods) ...
-LOG  : General      f:0> [ZB] patching zombie.ZomboidFileSystem.loadMods with 2 advice(s)
-LOG  : General      f:0> [ZB] patching zombie.ZomboidFileSystem.loadMods with 1 advice(s)
-LOG  : General      f:0> STATE: exit zombie.gameStates.TISLogoState
-LOG  : General      f:0> STATE: exit zombie.gameStates.TermsOfServiceState
-LOG  : General      f:0> binkId: 1
-LOG  : General      f:0> binkId: 2

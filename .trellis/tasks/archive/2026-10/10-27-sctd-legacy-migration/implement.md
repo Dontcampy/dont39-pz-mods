@@ -49,7 +49,7 @@ Back up myserver2 and the client as before; SCTD and SCTG on myserver2; restore 
    after it → converted on the clothing event.
 5. **Takeover disabled**: with a wrong hash again, nothing is converted; SCTD's own items keep working.
 
-Record results in `research/in-game.md`, lines under `research/in-game-<date>/`.
+Record results in `research/in-game.md`, with the proving lines quoted (no raw logs).
 
 ## Rollback
 

@@ -1,5 +1,0 @@
-LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: ready (debug: logs each change to what is drawn instead of a worn item (-Dappearanceoverride.debug); leave it off for play)
-LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: active
-LOG  : Mod          f:0> [Dont39AllInOne] appearance-override sync: client part ready
-LOG  : Mod          f:0> [Dont39AllInOne] appearance-override: debug: preview of items: nothing
-LOG  : Mod          f:0 st:0> [Dont39AllInOne] appearance-override sync: client part ready

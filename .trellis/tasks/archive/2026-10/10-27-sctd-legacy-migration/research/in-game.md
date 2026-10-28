@@ -22,10 +22,9 @@ new driver tests `sctdMigMake`, `sctdMigReport`, `sctdMigPickup`, `sctdMigDisabl
 command `sctdAll` (harness README, "Added for task 10-27-sctd-legacy-migration"). A new female character at Rosewood
 prison (body form `Base.FemaleBodyT512`).
 
-Lines in `in-game-2026-10-28/`: `<run>-driver.txt` (the driver's client and server lines: every item of the player on
-both sides, by id, and the comparison), `<run>-client-lines.txt` (All-in-One's lines in the client console, the
-appearance core's `model of ...` debug lines among them), `server-lines.txt` (All-in-One's and the driver's server
-lines, one `===== RUN n` header per server start, and the engine's packet exception of step 2).
+The Lines column quotes the driver's client and server lines (every item of the player on both sides, by id, and the
+comparison), All-in-One's client console lines (the appearance core's `model of ...` debug lines among them) and the
+server console; the raw logs were not kept.
 
 Comparison lines: `test mig <tag> compare: client=n server=n same=n differ=n clientOnly=[...] serverOnly=[...]`.
 `name` differs on every item (client Chinese, server English display names) and is left out below.
@@ -79,7 +78,7 @@ arrived; only the item inside a bag did not.
 
 | Check | Result | Lines |
 |---|---|---|
-| Nothing converted, no line | yes: one `converted` line in that server run (step 2's), none at this join, no SCTD notices | `server-lines.txt`, `===== RUN 3` section |
+| Nothing converted, no line | yes: one `converted` line in that server run (step 2's), none at this join, no SCTD notices | server console of that run |
 | Client equals server | yes, the gloves now match (`Gloves_LeatherGloves#902976956` on both: the join loads the server's inventory) | `join compare: client=22 server=22 same=3 differ=19 clientOnly=[] serverOnly=[]`; differences: names, and the T-shirt's drawn tint (observation 2) |
 
 ### Step 4: dropped item picked up and worn — `st4-pickup` (server restarted first, for a driver change)
@@ -96,11 +95,11 @@ Repeated as step 6 with a server log of every Lua clothing event, below.
 | Check | Result | Lines |
 |---|---|---|
 | Disabled | yes; `SCTD_Transmog_HideItem_Server` SCTD's own, `SCTD_Transmog_Restore` the takeover's wrapper | server `… disabled after an error while checking SCTD's code: HideItem_Server …`; `sctdState HideItem_Server=…LingLi_SCTD_Skins.lua:2797 Restore=…Dont39AllInOne_SctdRenderTakeover.lua:230` |
-| Nothing converted | yes: the worn old-style scarf stays `SCTD_Invis_scarf` through six server clothing events (body form off, SCTD's two hides, the necklace drop, SCTD's show and restore; none from the two wears, as in failure 2) and through a rejoin; no `converted` line in that server run | `server-lines.txt` `===== RUN 5`; `st5b` `join server: Base.SCTD_Invis_scarf_5625f2f8#290650797 worn:base:scarf …` |
-| SCTD's own items keep working | hide: `sctd hide Base.Glasses_Aviators#1234938507 -> true Base.SCTD_Invis_eyes_0674654c#1844893105`, `sctd hide Base.Necklace_Gold#380524727 -> true Base.SCTD_Invis_necklace#1173409310`; show: `sctd show Base.SCTD_Invis_eyes_0674654c#1844893105 -> true Base.Glasses_Aviators#1188282084` (record nil) | `st5-disabled-driver.txt` |
+| Nothing converted | yes: the worn old-style scarf stays `SCTD_Invis_scarf` through six server clothing events (body form off, SCTD's two hides, the necklace drop, SCTD's show and restore; none from the two wears, as in failure 2) and through a rejoin; no `converted` line in that server run | server console of that run; rejoin `join server: Base.SCTD_Invis_scarf_5625f2f8#290650797 worn:base:scarf …` |
+| SCTD's own items keep working | hide: `sctd hide Base.Glasses_Aviators#1234938507 -> true Base.SCTD_Invis_eyes_0674654c#1844893105`, `sctd hide Base.Necklace_Gold#380524727 -> true Base.SCTD_Invis_necklace#1173409310`; show: `sctd show Base.SCTD_Invis_eyes_0674654c#1844893105 -> true Base.Glasses_Aviators#1188282084` (record nil) | driver |
 | A converted item through SCTD's Restore | `sctd restore Base.Jacket_Black#1695406694 -> true Base.Jacket_Black#1695406694`: record and look cleared (wrapper R7a), same item | `sctdShownRestored server: Base.Jacket_Black#1695406694 worn:base:jacket … record=nil override=nil` |
 | Client equals server | yes but names, the T-shirt's drawn tint and the unconverted placeholders' stats (observation 3) | `compare` lines |
-| Correct copy back | `sctd-render-takeover: ready (server)` | `===== RUN 6` |
+| Correct copy back | `sctd-render-takeover: ready (server)` | server console |
 
 ### Step 6 (added): pick-up with the clothing events logged — `st6-pickup-event`
 
@@ -185,8 +184,7 @@ Lua files equal the sources). Same setup as above: fresh save on myserver2 (`mig
 `migration-rerun-console.log`), SCTD and SCTG copied into `myserver2_Data/mods`, same jars (`Zabric.jar` `2ab64514…`,
 `ZabricKotlin.jar` `1f134bcf…`, `Dont39AllInOne.jar` `8f899f54…`), whole mod folders equal on both sides (Zabric,
 ZabricKotlin, Dont39AllInOne `8169cf3b…`, SGTestDriver, SCTD, SCTG); wrong hash only in the server's copy for step 1.
-New fresh character. Lines: `in-game-2026-10-28/rerun-*` (`rerun-server-lines.txt` with one `===== R<n>` header per
-server start: R1 wrong hash, R2 correct hash for steps 2-4, R3 restart for step 5).
+New fresh character. Server starts: R1 wrong hash, R2 correct hash for steps 2-4, R3 restart for step 5.
 
 Driver additions for the re-run: `sctdMigMake` recolors the transmogged jacket through SCTD's own `SCTD_ChangeColor`
 (SCTD's `changeColor` command → `applyAuthoritativeTint` on the server: a custom color); `sctdMigPickup` logs how long
