@@ -1170,3 +1170,30 @@ Fixed every architecture/performance/reuse finding of the PR 34 review and re-ve
 ### Status
 
 [OK] **Completed**
+
+
+## Session 49: Drop raw test logs from task research
+<!-- trellis-session: v=2 fp=14ece4ce4449a6e2 -->
+
+**Date**: 2026-10-28
+**Task**: Drop raw test logs from task research
+**Branch**: `feat/sctd-transmog-server-resnap-015452`
+
+### Summary
+
+Raw in-game/test logs removed from task research (this PR's and older archived tasks'); results stay quoted in in-game.md / verification.md; summary tables and the BC7 baseline kept
+
+### Main Changes
+
+- Rule added to quality-guidelines.md In-Game Verification and to memory
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `89ee286` | chore: drop raw in-game test logs from task research; results stay quoted in in-game.md |
+| `75c6903` | chore: drop raw test logs from older archived tasks; keep summary tables and the BC7 baseline dump |
+
+### Status
+
+[OK] **Completed**
