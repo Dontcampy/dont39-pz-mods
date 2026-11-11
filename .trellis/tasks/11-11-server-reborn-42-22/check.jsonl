@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smoke tests and in-game verification"}
+{"file": ".trellis/tasks/11-11-game-42-22-update/research/impact-42.22.md", "reason": "The changed targets each fix must account for"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No hidden fallback: a mismatch turns the mod off with the reason"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Classtweaker entries for game members"}
+{"file": ".trellis/tasks/11-11-server-reborn-42-22/research/r2-assumptions-42.22.md", "reason": "The findings each fix must account for, and the assumptions recorded as holding"}
