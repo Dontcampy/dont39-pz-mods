@@ -22,8 +22,10 @@ class ContainerWireTest {
 
   private fun ByteBuffer.square(type: Int, x: Int, y: Int, z: Int) = byte(type).putInt(x).putInt(y).byte(z)
 
-  // PlayerID: online id, player index
-  private fun inventory(player: Int, index: Int = 0) = wire { byte(PLAYER_INVENTORY).short(player).byte(index) }
+  // the online id, as the server writes it
+  private fun inventory(player: Int) = wire { byte(PLAYER_INVENTORY).short(player) }
+
+  private fun bag(player: Int, bagId: Int) = wire { byte(INVENTORY_CONTAINER).short(player).putInt(bagId) }
 
   private fun nestedRaw(count: Int, bags: List<Int>, anchor: ByteArray) = wire {
     byte(ContainerWire.NESTED).byte(count)
@@ -37,7 +39,7 @@ class ContainerWireTest {
   private val bagOnFloor = wire { square(WORLD_OBJECT, 10500, 9600, 0).putInt(5) }
   private val part = wire { square(VEHICLE, 0, 0, 0).short(77).short(5) }
   private val isoObject = wire { square(ISO_OBJECT, 1, 2, 0).short(3) }
-  private val playerBag = wire { byte(INVENTORY_CONTAINER).short(12).byte(0).putInt(9) }
+  private val playerBag = bag(12, 9)
   private val vehicleBag = wire { square(OBJECT_IN_VEHICLE, 0, 0, 0).short(77).short(5).putInt(9) }
   private val floor = wire { square(FLOOR, 10500, 9600, 0).byte(0) }
   private val most = List(ContainerKey.MAX_BAGS) { 7 }
@@ -58,9 +60,8 @@ class ContainerWireTest {
 
   @TestFactory
   fun `addresses decode to their keys`() = listOf(
-    Triple("player inventory", inventory(12, 1), ContainerKey.player(12)),
-    Triple("bag in a player inventory", wire { byte(INVENTORY_CONTAINER).short(12).byte(0).putInt(987654) },
-      ContainerKey.bag(12, 987654)),
+    Triple("player inventory", inventory(12), ContainerKey.player(12)),
+    Triple("bag in a player inventory", bag(12, 987654), ContainerKey.bag(12, 987654)),
     Triple("corpse", wire { square(DEAD_BODY, 10500, 9600, 1).short(3) }, ContainerKey.corpse(10500, 9600, 1, 3)),
     Triple("bag on the floor", wire { square(WORLD_OBJECT, 10500, 9600, 0).putInt(-42) },
       ContainerKey.worldItem(10500, 9600, 0, -42)),
@@ -127,11 +128,13 @@ class ContainerWireTest {
   }
 
   @Test
-  fun `the owner inventory of a bag`() {
-    val bag = wire { byte(INVENTORY_CONTAINER).short(12).byte(1).putInt(987654) }
-    assertArrayEquals(inventory(12, 1), ContainerWire.ownerInventory(bag))
-    assertThrows<ProtocolException> { ContainerWire.ownerInventory(inventory(12, 1)) }
-    assertThrows<ProtocolException> { ContainerWire.ownerInventory(byteArrayOf(INVENTORY_CONTAINER.toByte(), 0)) }
+  fun `a player's containers are written as the server's game writes them`() {
+    assertArrayEquals(inventory(12), ContainerWire.playerInventory(12))
+    assertArrayEquals(bag(12, -987654), ContainerWire.playerBag(12, -987654))
+    assertEquals(ContainerKey.player(1023), ContainerWire.decode(ContainerWire.playerInventory(1023)))
+    assertEquals(ContainerKey.bag(0, 987654), ContainerWire.decode(ContainerWire.playerBag(0, 987654)))
+    assertThrows<IllegalArgumentException> { ContainerWire.playerInventory(-1) }
+    assertThrows<IllegalArgumentException> { ContainerWire.playerBag(Short.MAX_VALUE + 1, 9) }
   }
 
   /** Bytes that are not one whole container id or nested address. */
@@ -139,7 +142,9 @@ class ContainerWireTest {
   fun `refused addresses`(): List<DynamicTest> {
     val plain = wire { square(OBJECT_CONTAINER, 1, 2, 0).short(4).short(1) }
     val nested = ContainerWire.nested(crate, listOf(1, 2, 3))
-    val truncations = listOf("plain" to plain, "nested" to nested).flatMap { (kind, whole) ->
+    val truncations = listOf(
+      "plain" to plain, "nested" to nested, "inventory" to inventory(12), "player bag" to playerBag,
+    ).flatMap { (kind, whole) ->
       whole.indices.map { length -> "$kind cut at $length" to whole.copyOf(length) }
     }
     val badAnchors = listOf(
@@ -154,6 +159,9 @@ class ContainerWireTest {
       "undefined" to byteArrayOf(0),
       "an unknown type" to wire { square(10, 0, 0, 0) },
       "trailing bytes" to wire { square(ISO_OBJECT, 1, 2, 0).short(4).byte(0) },
+      "an inventory with a player index after the id" to wire { byte(PLAYER_INVENTORY).short(12).byte(0) },
+      "a player bag with a player index after the id" to
+        wire { byte(INVENTORY_CONTAINER).short(12).byte(0).putInt(9) },
       "nested with trailing bytes" to nested.copyOf(nested.size + 1),
     ).plus(truncations).plus(badAnchors).plus(badCounts).map { (name, bytes) ->
       DynamicTest.dynamicTest(name) { assertThrows<ProtocolException> { ContainerWire.decode(bytes) } }

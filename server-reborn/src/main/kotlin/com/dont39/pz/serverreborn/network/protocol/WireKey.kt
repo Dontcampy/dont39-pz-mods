@@ -3,11 +3,11 @@ package com.dont39.pz.serverreborn.network.protocol
 import java.nio.ByteBuffer
 
 /**
- * A key as sent: the container as the game's `ContainerID.write` writes it, so the receiver resolves it with the
- * game's own `parse`, and the item id for an item.
+ * A key as sent: the container as the server's `ContainerID.write` writes it, whichever side sends (a player's by
+ * online id, see [ContainerWire]), and the item id for an item.
  */
 internal class WireKey private constructor(
-  /** The game's bytes; not copied, do not change them. */
+  /** Not copied, do not change them. */
   val containerBytes: ByteArray,
   val isItem: Boolean,
   val itemId: Int,
