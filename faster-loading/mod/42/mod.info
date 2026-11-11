@@ -10,4 +10,4 @@ javaJarFile=media/java/client/Dont39FasterLoading.jar
 javaPkgName=com.dont39.pz.fasterloading
 javaPreload=true
 ZBVersionMin=2.3.4
-versionMin=42.21.0
+versionMin=42.22.0

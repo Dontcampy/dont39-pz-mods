@@ -12,13 +12,13 @@ description=[*]Faster Lua file list: before the game runs any Lua, it lists the 
 description=[/list]
 description=Each speed-up has its own switch in Options > Mods > Faster Loading, all on by default (takes effect the next time you start the game). Turned off, that part of loading is exactly as without this mod.
 description=
-description=Made for Project Zomboid 42.21. On another game version it does nothing and says so in console.txt until it is updated.
+description=Made for Project Zomboid 42.22. On another game version it does nothing and says so in console.txt until it is updated.
 description=
 description=[h2]Requirements[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
-description=[*]Project Zomboid 42.21
+description=[*]Project Zomboid 42.22
 description=[/list]
 description=After enabling it, restart the game once when the main menu asks. Only you need it; servers do not.
 description=
@@ -33,13 +33,13 @@ description=[*]更快地列出 Lua 文件：游戏在运行任何 Lua 之前，�
 description=[/list]
 description=每项加速都可在 选项 > 模组 > 加快加载 中单独开关，默认全部开启（下次启动游戏时生效）。关闭后，该部分加载与未安装本模组时完全相同。
 description=
-description=为 Project Zomboid 42.21 制作。在其他游戏版本上本模组不做任何事，并在 console.txt 中说明，直到更新为止。
+description=为 Project Zomboid 42.22 制作。在其他游戏版本上本模组不做任何事，并在 console.txt 中说明，直到更新为止。
 description=
 description=[h2]前置要求[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+（按提示批准本模组的 Java 代码）
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3820726385]Zabric[/url]
-description=[*]Project Zomboid 42.21
+description=[*]Project Zomboid 42.22
 description=[/list]
 description=启用后，按主菜单提示重启一次游戏。只需自己安装，服务器不需要。
 description=

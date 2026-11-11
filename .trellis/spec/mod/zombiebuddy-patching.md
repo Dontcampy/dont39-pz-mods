@@ -269,6 +269,11 @@ For a feature that changes the game's own Lua UI. Reference:
 - Keep a version allowlist for each target mod; a newer target version may change internals or fix the issue itself.
 - A feature that patches only the vanilla game has no target mod: `problem()` gates on what it needs (e.g. the OS).
   Reference: `ImeKeyboardFix.kt`.
+- A mod that reproduces the game's own code also gates on the game build, by `Core.getGitRevisionString()`
+  (`faster-loading`'s `hooks/Session.java`). After a game update the gate moves only once the code behind each fix,
+  its callers and what it calls, is compared old jar against new: an unchanged hook target says nothing about its
+  callees. A message names the game by `getGameAndBuildVersion()` and the revision; since 42.22 `getVersion()` ends
+  in the game's integrity summary.
 
 ---
 

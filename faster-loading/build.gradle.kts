@@ -16,7 +16,7 @@ plugins {
   id("buildsrc.convention.pz-switches")
 }
 
-version = "0.5.0"
+version = "0.5.1"
 
 val modId = pzMod.modId
 val pkg = pzMod.javaPkgName

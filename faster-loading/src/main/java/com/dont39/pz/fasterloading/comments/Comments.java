@@ -1,7 +1,7 @@
 package com.dont39.pz.fasterloading.comments;
 
 /**
- * {@code ScriptParser.stripComments} of game 42.21 in linear time, with the same output for every input. The game
+ * {@code ScriptParser.stripComments} of game 42.22 in linear time, with the same output for every input. The game
  * searches its markers backwards in one buffer and cuts each comment out of it, which moves the rest of the text per
  * comment. Here the text left of the latest cut is never changed, so every search runs on the input, and the text
  * right of it is collected once.
