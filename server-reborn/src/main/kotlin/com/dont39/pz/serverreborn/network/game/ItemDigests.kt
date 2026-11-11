@@ -168,6 +168,17 @@ internal object ItemDigests {
   /** One item's digest fields for the field diff: each group's hash, and every value by name. */
   class Fields(val hashes: Map<String, Long>, val values: Map<String, String>)
 
+  /** Longest value list logged per item; clothing visuals alone have over a hundred values. */
+  private const val LISTED_CHARS = 4000
+
+  /** [values] as `name=value, ...` for a log line, without the unset clothing visuals. */
+  fun listed(values: Map<String, String>): String {
+    val all = values.entries
+      .filterNot { (name, value) -> name.startsWith("visual.") && value == "0.0" }
+      .joinToString(", ") { (name, value) -> "$name=$value" }
+    return if (all.length > LISTED_CHARS) all.substring(0, LISTED_CHARS) + "..." else all
+  }
+
   /**
    * The same values as [item], hashed per field group instead of into one digest, and kept by name as `group.field`
    * (mod data as `modData.<key path>`), for `-Dserverreborn.debugFieldDiff`.

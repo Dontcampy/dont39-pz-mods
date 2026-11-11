@@ -34,9 +34,6 @@ internal object Snapshots {
   // the connection's send buffer is 1,000,000 bytes, the packet header 3 of them
   private val SCRATCH = ByteBuffer.allocate(999_000)
 
-  /** Longest value list logged per item; clothing visuals alone have over a hundred values. */
-  private const val LOGGED_CHARS = 4000
-
   // per connection and frame, so at most 80 snapshots and 640 KiB per second
   private const val SNAPSHOTS_PER_FRAME = 8
   private const val SNAPSHOT_BYTES_PER_FRAME = 64 * 1024
@@ -149,12 +146,8 @@ internal object Snapshots {
   // the client's field diff compares with the item as the snapshot's save restores it; this is the live item
   private fun logValues(job: Peer.Job, items: List<InventoryItem>) {
     items.forEach { item ->
-      val values = ItemDigests.fields(item).values.entries
-        // unset clothing visuals
-        .filterNot { (name, value) -> name.startsWith("visual.") && value == "0.0" }
-        .joinToString(", ") { (name, value) -> "$name=$value" }
-      val shown = if (values.length > LOGGED_CHARS) values.substring(0, LOGGED_CHARS) + "..." else values
-      ServerReborn.log { "field values: ${job.key} item ${item.getID()} (${item.fullType}): $shown" }
+      val values = ItemDigests.listed(ItemDigests.fields(item).values)
+      ServerReborn.log { "field values: ${job.key} item ${item.getID()} (${item.fullType}): $values" }
     }
   }
 
