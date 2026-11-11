@@ -22,11 +22,11 @@ the game code each fix reproduces still has to be read against 42.22 before the 
 
 ## Acceptance Criteria
 
-- [ ] `./gradlew :faster-loading:build :faster-loading:assembleMod` passes on the 42.22 jar.
-- [ ] On 42.22 the game log has no revision mismatch line from Faster Loading and each fix reports itself on.
-- [ ] A load to the main menu and a load into a save finish without an error from the mod; the Loading Progress
+- [x] `./gradlew :faster-loading:build :faster-loading:assembleMod` passes on the 42.22 jar.
+- [x] On 42.22 the game log has no revision mismatch line from Faster Loading and each fix reports itself on.
+- [x] A load to the main menu and a load into a save finish without an error from the mod; the Loading Progress
       reports of before and after are kept (back the existing reports up first).
-- [ ] `deployWorkshop` output is staged for the user's upload.
+- [x] `deployWorkshop` output is staged for the user's upload.
 
 ## Dependencies
 
@@ -40,4 +40,5 @@ Reborn children are done; until then this child is checked by its own module's t
 
 ## Open Questions
 
-- None for the user yet. R1's reading decides whether this stays a one-line gate change.
+- None. R1's reading ([research/game-code-42.22.md](research/game-code-42.22.md)) found no fix to adapt; the in-game
+  results are in [research/in-game.md](research/in-game.md).
