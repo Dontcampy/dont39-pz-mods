@@ -35,6 +35,8 @@ Evidence: the [parent's comparison](../11-11-game-42-22-update/research/impact-4
   may drop, like the other fields whose side is not settled from the bytecode.
 - D4 (user, 2026-11-11). The Linux test server's install, shared with the live `myserver`, is updated to 42.22 in
   place: the live server cannot run as it is.
+- D5 (user, 2026-11-12). The in-game runs found that a snapshot breaks an open map window
+  ([research/in-game.md](research/in-game.md), "Map annotations"). Both fixes are made: R8 and R9.
 
 ## Requirements
 
@@ -49,6 +51,9 @@ Evidence: the [parent's comparison](../11-11-game-42-22-update/research/impact-4
 - R6. The digest covers a map item's annotations as `SyncItemFields` carries them (F3, D3).
 - R7. A digest field that the field diff run on 42.22 shows differing in normal play is dropped from the digest and
   reported with the log lines that show it.
+- R8. A snapshot leaves alone the items whose digest already matches the server's: only items that differ, and items
+  it adds, get the server's state.
+- R9. A map window that is open while the game reloads its map's annotations from a `SyncItemFields` keeps working.
 
 ## Acceptance Criteria
 
@@ -61,6 +66,8 @@ Evidence: the [parent's comparison](../11-11-game-42-22-update/research/impact-4
       The checked player's online id is not 0 (F1's client half is invisible at 0).
 - [ ] With `-Dserverreborn.debugDropDelta` on the client, dropped updates of a player inventory and of a bag in one
       are repaired.
+- [ ] With a map window open, a repair of the map's container leaves the window usable: an annotation added
+      afterwards is placed and synced, and the window shows the server's annotations.
 - [ ] The server tick rate setting takes effect on 42.22.
 - [ ] `deployWorkshop` output is staged for the user's upload.
 
@@ -71,5 +78,5 @@ Evidence: the [parent's comparison](../11-11-game-42-22-update/research/impact-4
 
 ## Out of Scope
 
-- New sync features beyond R6, and 42.22 game bugs the mod did not already address.
+- New sync features beyond R6, and 42.22 game bugs the mod did not already address, apart from R9.
 - Game 42.21.

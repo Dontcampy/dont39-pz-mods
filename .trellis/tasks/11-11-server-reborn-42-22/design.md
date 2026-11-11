@@ -17,8 +17,12 @@ Mechanism of the sync part, unchanged here: the archived tasks `10-24-mp-sync-lo
 
 Nothing else changes: frames, snapshots, reconcile, the ledger, the tick rate and every hook keep their code.
 
-Open after the in-game runs, the user's decision: whether a snapshot leaves alone the items whose digest already
-matches the server's ([research/in-game.md](research/in-game.md), "Map annotations"). Until then `Reconcile` is unchanged.
+Added after the in-game runs (PRD D5), section 8:
+
+| # | Requirement | Change | Files |
+|---|---|---|---|
+| 8 | R8 | A snapshot's field payloads go only to items that differ from the server's or that it added | `Reconcile.kt` |
+| 9 | R9 | After `SyncItemFieldsPacket.parse` the map's listeners are told its annotations were reloaded | `MapSymbolsHooks.kt`, `server-reborn.classtweaker` |
 
 ## 1. Player-owned containers (F1)
 
@@ -127,6 +131,26 @@ No new fallback is added. The existing checks cover the new code:
 differing in normal play (the map annotations, `AMMO`, `CONDITION`, `BLOOD`, `SHARPNESS` are the candidates, see the
 research), that field is dropped as the enum's contract says, inside this task and under the same `VERSION` 3. Each
 drop is reported with its log lines.
+
+## 8. Snapshots and an open map window (R8, R9)
+
+Found in game: `SyncItemFieldsPacket.parse` clears a map's user annotations and loads the packet's straight into the
+item's `WorldMapSymbols`, without the listener calls its add and remove methods make. An open map window keeps its
+own list of symbol wrappers through such a listener (`WorldMapSymbolsV1` / `V2`), so the list goes stale and the
+window's next edit fails in the game's Lua. A snapshot replayed `SyncItemFields` for every item of its container.
+
+- R8, `Reconcile.apply`: the snapshot carries the server's digest of each item. An item the client has whose digest
+  before the snapshot equals it gets no payload. Items that differ and items added from the snapshot's list get all
+  four, as before. No protocol change. Side effect, wanted: fields the digest leaves out are no longer overwritten on
+  items that match.
+- R9, a `RETURN` hook on `SyncItemFieldsPacket.parse`, client and server alike (a server has no window and so no
+  listener): when the packet holds a map item, each listener of its symbols gets `onAfterClear`, at which the game's
+  windows rebuild their list from the symbols as they are now. Two `accessible field` lines: the packet's `mapItem`
+  and `WorldMapSymbols.listeners`. It also covers the game's own `SyncItemFields` of an open map.
+  A parse that finds no container is skipped: the game reuses one packet per connection, and such a parse keeps the
+  map of the packet before, whose windows must not be rebuilt for nothing (a rebuild hands out the wrappers anew).
+
+Together: an open map is rewritten only when it really differs, and its window then follows.
 
 ## Tests
 

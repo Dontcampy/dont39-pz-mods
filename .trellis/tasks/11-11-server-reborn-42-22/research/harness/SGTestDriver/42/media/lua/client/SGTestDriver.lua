@@ -1130,43 +1130,69 @@ local function port4222(done, part)
         end, restart)
     end
 
+    -- a map window left open while the inventory is compared and repaired: first for a pencil's sake (the map and a
+    -- shirt match and must be left alone), then for the map's own (an annotation the server never got)
     local function map()
-        giveAndWait("Base.MuldraughMap", function(ids)
+        giveAndWait("Base.MuldraughMap,Base.Tshirt_DefaultTEXTURE,Base.Pencil", function(ids)
             if not ids then done() return end
-            local item = inv:getItemWithID(ids[1])
-            local function open(fn) openMap(item, fn) end
-            local function addSymbol(api, x, y, sync)
-                local s = api:addTexture("ArrowEast", x, y)
-                s:setRGBA(0, 0, 0, 1)
-                s:setAnchor(0.5, 0.5)
-                s:setScale(ISMap.SCALE)
-                if sync then item:syncItemFields() end
-            end
-            local function line(api, what)
-                mark("test port4222 map " .. what .. ": symbols in the window=" .. api:getSymbolCount())
-            end
-            open(function(api, x, y, close)
-                line(api, "opened")
-                addSymbol(api, x, y, true)
+            local item, shirt, pencil = inv:getItemWithID(ids[1]), inv:getItemWithID(ids[2]), inv:getItemWithID(ids[3])
+            openMap(item, function(api, x, y, close)
+                local n = 0
+                local function addSymbol(sync)
+                    n = n + 1
+                    local s = api:addTexture("ArrowEast", x + n * 40, y)
+                    if s then
+                        s:setRGBA(0, 0, 0, 1)
+                        s:setAnchor(0.5, 0.5)
+                        s:setScale(ISMap.SCALE)
+                    end
+                    if sync then item:syncItemFields() end
+                    return s ~= nil
+                end
+                local function line(what)
+                    mark("test port4222 map " .. what .. ": symbols in the window=" .. api:getSymbolCount())
+                end
+                line("opened")
+                local added = addSymbol(true)
                 local note = api:addUntranslatedText("SGTEST", api:getDefaultTextLayerID(), x, y + 20)
                 note:setRGBA(0, 0, 0, 1)
                 note:setAnchor(0.5, 0.5)
                 note:setScale(ISMap.SCALE)
                 item:syncItemFields()
-                line(api, "a symbol and a note, synced")
+                line("a symbol (added=" .. tostring(added) .. ") and a note, synced")
                 after(5000, function()
                     touch(function()
-                        line(api, "after a server change")
-                        -- the control: an annotation the server never got is taken off by the next comparison
-                        addSymbol(api, x + 40, y, false)
-                        line(api, "one more symbol, not synced")
+                        line("after a server change")
+                        -- wetness is in SyncItemFields and not in the digest: only a replayed payload would reset it
+                        shirt:setWetness(42)
+                        pencil:getModData().SGTEST_clientOnly = 1
                         touch(function()
-                            -- an open window does not follow a SyncItemFields of its map: it is opened again
-                            close()
-                            open(function(api2, _, _, close2)
-                                line(api2, "opened again after a server change (2: the unsynced symbol is gone)")
-                                close2()
-                                done()
+                            mark("test port4222 map after the pencil's repair: pencil key still there="
+                                .. tostring(pencil:getModData().SGTEST_clientOnly ~= nil)
+                                .. string.format(" shirt wetness=%.1f (42 set on the client only)", shirt:getWetness()))
+                            line("window still open")
+                            added = addSymbol(true)
+                            line("one more symbol, synced (added=" .. tostring(added) .. ")")
+                            after(5000, function()
+                                -- the control: an annotation the server never got is taken off by the next comparison
+                                added = addSymbol(false)
+                                line("one more symbol, not synced (added=" .. tostring(added) .. ")")
+                                touch(function()
+                                    line("after the map's repair, window still open (3: the unsynced symbol is gone)")
+                                    added = addSymbol(true)
+                                    line("one more symbol, synced (added=" .. tostring(added) .. ")")
+                                    after(5000, function()
+                                        touch(function()
+                                            close()
+                                            openMap(item, function(api2, _, _, close2)
+                                                mark("test port4222 map opened again at the end (4): symbols in the window="
+                                                    .. api2:getSymbolCount())
+                                                close2()
+                                                done()
+                                            end)
+                                        end)
+                                    end)
+                                end)
                             end)
                         end)
                     end)

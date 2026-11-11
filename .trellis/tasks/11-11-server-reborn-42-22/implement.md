@@ -12,7 +12,8 @@ module and this task directory are touched. Each numbered code step is one commi
 
 Steps 1-6 and 8 are done (commits `5fe5bab`, `7d57512`, `e586fa3`, `858be8c`; results in
 [research/in-game.md](research/in-game.md)); step 7 found no field to drop. Run c was not run: no 0.2.0 build was
-staged. Open: the user's decision on `Reconcile` (design, "What changes"), then step 9.
+staged. Decided on 2026-11-12 (PRD D5): design section 8, steps 10-12 below, done; results in
+[research/in-game.md](research/in-game.md), "With the two fixes".
 
 ## Checklist
 
@@ -41,6 +42,12 @@ staged. Open: the user's decision on `Reconcile` (design, "What changes"), then 
 8. `git lfs pull`, then `:server-reborn:deployWorkshop`; record the staged folder and jar version.
 9. Phase 3: spec update pass, commit (English, no attribution lines, the parent task directory never added), report.
    No push, no PR, no upload, no `task.py archive`.
+
+10. `Reconcile.apply` skips the payloads of matching items; `MapSymbolsHooks` and its two classtweaker lines; README.
+    Gate: build, `trellis-check`.
+11. Under the lock, Linux instance, online id not 0: `port4222map` with the window left open across the control's
+    repair; `port4222`; the loot loop with `debugDropDelta=5`. Results into `research/in-game.md`.
+12. `deployWorkshop` again; commit.
 
 ## Validation
 

@@ -1,6 +1,7 @@
 # In-game checks on 42.22, 2026-11-11 and 2026-11-12
 
-Build: Server Reborn 0.3.0 at `e586fa3` (runs a-f) and at `858be8c` (run g, which only adds a debug line), Zabric 0.7.3, ZabricKotlin 0.8.0, ZombieBuddy 2.3.4, game 42.22.2
+Build: Server Reborn 0.3.0 at `e586fa3` (runs a-f), at `858be8c` (run g, which only adds a debug line) and with the two
+fixes of PRD D5 (run h, the build that is staged), Zabric 0.7.3, ZabricKotlin 0.8.0, ZombieBuddy 2.3.4, game 42.22.2
 (`3d39148846`). Driver: this task's `harness/` (`port4222`, added for these runs). All runs under the shared test
 lock; the client's files were restored by `cleanup.ps1` (0 differences) and the Linux instance from its backup
 (`myserver2_Data/backups-2026-11-11-sr-42.22`).
@@ -16,6 +17,7 @@ lock; the client's files were restored by `cleanup.ps1` (0 differences) and the 
 | e | Linux, tick rate 20, client `-Dserverreborn.debugDropDelta=5`, loot loop 240 s | pass: 12 dropped updates, 12 repairs |
 | f | Linux, sandbox option 20 | pass: `tick rate on: 20 ticks per second (period 50 ms)`, `the server ticked 20.00 times per second in its first 10 s` |
 | g | Linux, as d, a fresh copy of the save, `port4222more`, twice | pass for melee wear and for a map annotated in a bag; one kind of item stays different after a snapshot, see "Items that stay different" |
+| h | With R8 and R9: client `smokeTest`; Linux as d: `port4222map`, `port4222`, the loot loop with `debugDropDelta=5` | pass: `hooks ready (18 hook classes)`, `access widener: ok (50 directives)` on both sides; see "With the two fixes" |
 
 No `hooks stopped`, `disabled`, weave error or exception naming the mod, Zabric or ZombieBuddy in any console. No
 `wrong player connection index` or `remote connection player` line of the game on either side.
@@ -64,7 +66,8 @@ one ordered channel, so the snapshot always has the client's change.
   server's copy: 232768661 (Base.MuldraughMap): map{saved c=157 bytes #69410941d1fa7e44 s=115 bytes
   #f87ae147bfd46b0a}`, then `repaired inventory of player 4 from the server's state: changed [232768661]` and
   `after the snapshot, against the server's copy: no item differs`.
-- Problem: a map window that is open while a snapshot of its container is applied stops working. The game's
+- Problem, fixed since (PRD D5, "With the two fixes"): a map window that is open while a snapshot of its container
+  is applied stops working. The game's
   `SyncItemFieldsPacket.parse` clears the item's user annotations and loads the packet's without telling the window's
   symbols API, whose own list then stays empty: the driver read `symbols in the window=0`, and its next
   `addTexture` returned nothing (`attempted index: setRGBA of non-table: null`, the same call the game's own map tool
@@ -76,6 +79,27 @@ one ordered channel, so the snapshot always has the client's change.
   before each comparison. `map in a bag, in the inventory: symbols in the window=1 added=true`, `in the bag=true`,
   `in the bag: symbols in the window=2 added=true`, `opened again at the end: symbols in the window=2`; no repair of
   the map.
+
+## With the two fixes (run h)
+
+The map scenario with its window left open the whole time, online id 4:
+
+- A snapshot of the inventory for another item's sake (a client-only mod data key on a pencil): `map after the
+  pencil's repair: ... shirt wetness=42.0 (42 set on the client only)`, `window still open: symbols in the window=2`,
+  `one more symbol, synced (added=true): symbols in the window=3`. The matching shirt kept a value `SyncItemFields`
+  carries and the digest leaves out, and the window took the next annotation (R8).
+- The map's own repair (a symbol never synced): `repaired inventory of player 4 from the server's state: changed
+  [1275464061]`, then `after the map's repair, window still open (3: the unsynced symbol is gone): symbols in the
+  window=3`, `one more symbol, synced (added=true): symbols in the window=4`, and after closing and opening it again
+  `symbols in the window=4` (R9). Before the fixes the same step read 0 and the next annotation failed.
+- `port4222` again: both bags repaired, the pistol's values equal at each step, no repair of it.
+- The loot loop with every fifth update dropped: 15 dropped; the 12 for the player's inventory and the containers
+  around it were all repaired (`requested=12 refused=1 snapshotsSent=11`, the refused one a bag that had left its
+  container); the other 3 were additions to containers about 90 squares away at the join, on squares the client had
+  not loaded, which the mod does not check (`objects the server checked were not found on this client within 10 s`).
+
+The pencil's client-only key stayed (`still differ ... in fields a snapshot cannot set`): the server's item has no
+mod data, so no payload carries a table to replace the client's. As in 0.2.0.
 
 ## Items that stay different (run g)
 
