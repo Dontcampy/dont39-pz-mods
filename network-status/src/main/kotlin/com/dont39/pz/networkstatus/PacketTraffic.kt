@@ -116,7 +116,7 @@ internal object PacketTraffic {
   private fun Session.rows(): List<Row> =
     types.map { (id, totals) -> Row(name(id), totals.bytes.sum(), totals.packets.sum()) }.sortedByDescending { it.bytes }
 
-  private fun name(id: Short): String = PacketTypes.packetTypes[id]?.name ?: "unknown packet type $id"
+  private fun name(id: Short): String = PacketTypes.PacketType.getById(id)?.name ?: "unknown packet type $id"
 
   private fun mb(bytes: Long): Double = bytes / (1024.0 * 1024.0)
 }
