@@ -14,6 +14,9 @@ accessible field zombie/network/packets/RemoveInventoryItemFromContainerPacket c
 accessible field zombie/network/packets/ReplaceInventoryItemInContainerPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemFieldsPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemFieldsPacket itemId I
+# the map item whose annotations SyncItemFields' parse reloaded, and the open windows that must hear of it
+accessible field zombie/network/packets/SyncItemFieldsPacket mapItem Lzombie/inventory/types/MapItem;
+accessible field zombie/worldMap/symbols/WorldMapSymbols listeners Ljava/util/ArrayList;
 accessible field zombie/network/packets/SyncItemModDataPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemModDataPacket itemId I
 accessible field zombie/network/packets/SyncHandWeaponFieldsPacket containerId Lzombie/network/fields/ContainerID;
