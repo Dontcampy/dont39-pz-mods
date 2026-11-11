@@ -1,0 +1,4 @@
+name=FL Test Driver
+id=FLTestDriver
+description=Temporary test driver of the Faster Loading 42.22 check; idle unless Zomboid/Lua/fltest.txt exists. Not for players.
+versionMin=42.0.0
