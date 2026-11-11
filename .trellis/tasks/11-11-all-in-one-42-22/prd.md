@@ -42,7 +42,7 @@ Dont39 All-in-One builds against game 42.22 and every bundled feature works ther
 - [x] `deployWorkshop` output is staged for the user's upload (`~/Zomboid/Workshop/Dont39AllInOne`, 0.14.1).
 
 Result: [research/hook-review.md](research/hook-review.md), [research/in-game.md](research/in-game.md), which also
-lists what was not verified in game (tunnel, mod sync and `anim-extends-case` on the Linux server among it).
+lists what was not verified in game. The Linux test server was updated to 42.22 in place for the tunnel joins.
 
 ## Dependencies
 

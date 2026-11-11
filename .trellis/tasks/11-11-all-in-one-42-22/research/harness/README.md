@@ -37,6 +37,11 @@ $h = '.trellis\tasks\11-11-all-in-one-42-22\research\harness'
 
 `Core.TakeScreenshot()` called from the driver's tick hung the client; no test takes one.
 
+Against the Linux test instance (`../in-game.md` has its setup): the same client steps with
+`start-client.ps1 -ServerHost 192.168.50.249 -ServerPort 48261 -ServerPassword <its admin password>`; the tunnel is
+chosen in `~/Zomboid/Lua/Dont39AllInOne_Tunnel.txt` (`192.168.50.249:48261=tcp,48310,48311`, or `kcp`), which
+`backup-client.ps1` does not cover: back it up by hand.
+
 ## Files
 
 | File | What it does |

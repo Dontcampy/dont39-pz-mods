@@ -116,14 +116,56 @@ to compare with either: the earlier tasks did not cover corpses and mannequins i
 Observed, the game's own behavior: right after the transfer the server's mannequin did not list the jacket as worn
 (`mannequin wears 4` against the client's 5); after the server restart the rejoined client drew it worn.
 
+## Linux test server on 42.22
+
+The shared install `~/pz-only/servers` was updated in place to 42.22.2 (Steam build 26486687; the jar's sha256 equals
+the Windows dedicated server's), on the user's word, with no server running there. Anonymous SteamCMD was refused the
+installed build's manifests (`Failed to get manifest request code, 'Access Denied'`, app state 0x6), so the update ran
+as an install over the existing folder: `appmanifest_380870.acf` set aside, then `app_update 380870 validate`. That
+put the stock `ProjectZomboid64.json` back; the user's copy (ZombieBuddy's `-javaagent` line) was restored from
+`~/pz-only/backups-2026-11-11-before-42.22`, which also holds the other launch files and the SteamCMD logs.
+
+Test instance `myserver2` (`-nosteam`, game port 48261, UDP 48262, own RCON port 48015, fresh save, `Map=Muldraugh,
+KY`; mods ZombieBuddy, Zabric, ZabricKotlin, Dont39AllInOne 0.14.1, SGTestDriver; sandbox: TCP tunnel 48310, KCP
+tunnel 48311, mod sync 48320), started from `aio-start.sh` in tmux `pzaio`. Backed up first
+(`backups-2026-11-11-aio-42.22/state.tgz`, 7429 entries) and restored after (7429 entries, `RCONPort=47015`, no
+`Mods=` line, the start script and password file removed). The Windows client `-nosteam` through `harness/`
+(`start-client.ps1 -ServerHost`), 90 s at Rosewood prison per run; its tunnel store, `default.txt`, ZombieBuddy
+files, `options.ini` and Loading Progress reports equal their backup afterwards.
+
+Server start: `[Dont39AllInOne] 0.14.1 loaded`, `access widener: ok (11 directives)`, `anim-extends-case: active`,
+`missing-anim-folders: active`, then
+
+```
+tunnel: listening on TCP port 48310, relaying to UDP ports 48261 and 48262
+tunnel: listening on KCP port 48311, relaying to UDP ports 48261 and 48262, interval 10 ms, fast resend after 2, congestion window off, window 1024, MTU 1350, FEC 10+3, flush 20 ms
+mod-sync: manifest: 0 Workshop items, 0 files, 0.0 MB, built in 5 ms
+mod-sync: serving the Workshop items on TCP port 48320
+```
+
+| Run | Client | Server |
+|---|---|---|
+| `lin-tcp`, store `tcp,48310,48311` | `tunnel: connecting to 192.168.50.249:48261 through the TCP tunnel on port 48310`; in game after 53 s; at the quit `tunnel to 192.168.50.249:48310 closed: the game closed the connection` | `tunnel from 192.168.50.192:6031 open as 127.0.0.1:41529`, `Connected new client`, 135 s later `closed: closed by the other end` |
+| `lin-kcp`, store `kcp,48310,48311` | `tunnel: connecting to 192.168.50.249:48261 through the KCP tunnel on port 48311 (... FEC 10+3, flush 20 ms)`; in game after 42 s; `KCP tunnel ... closed: the game closed the connection (FEC rebuilt 0, could not rebuild 0; KCP resent 1 on timeout, 0 fast; dropped 0 invalid)` | `KCP tunnel from 192.168.50.192:57924 open as 127.0.0.1:50059`, `Connected new client`, 124 s later `closed: closed by the other end (FEC rebuilt 0, ...)` |
+
+Mod sync, both runs: the client logged `mod-sync: join to 192.168.50.249:48261: the server offers its Workshop items
+at http://192.168.50.249:48320/dont39-modsync/v1/`, so the location trailer is written and read on 42.22;
+`manifest.json` there answered HTTP 200. The server has no Workshop items under `-nosteam`, so nothing was taken.
+
+No `disabled`, `hooks stopped` or error line of All-in-One, Zabric or ZombieBuddy on either side; the server's errors
+are the game's own (`IsoPropertyTypeNotFoundException: Property Name not found: WindowShape` and the like).
+
 ## Not verified in game
 
-- `tunnel` (a TCP or KCP join), `mod-sync` (a join that takes a Workshop item from the server) and
-  `anim-extends-case` on a Linux server: they need the Linux test server, which is still on 42.21 and whose install is
-  shared with the running live server `myserver`. It was not touched. On 42.22 these three were only seen `ready`
-  and `active` on the Windows client and server; the tunnel refuses a server on the same machine by design.
+- `mod-sync` taking a Workshop item from the server: it needs a Steam-mode server and an item whose version differs
+  from the player's, which means an upload by the user. Seen: the server part serving, the location reaching the
+  client (above).
+- `anim-extends-case`: `active` on the Linux server and on the client, that is, its hook ran without an error. No mod
+  on the test list has an animation that extends a file under another case, so the fix itself was not seen.
+- `tunnel` under loss, and the tunnel's dialog and list tag in the server list (the driver joins through
+  `serverConnect`).
 - `ime-keyboard-fix`: `active` with its hooks woven; typing with an IME needs a person.
 - `mod-options-sidebar`: `active (2 sections)`; the options screen was not opened.
 - `sctd-render-takeover`: idle without SCTD, disabled with the current SCTD (above). Nothing of it ran.
 - The "unknown packet type" row, the `chunk corpses` consumer and an image of the drawn override (above).
-- Another player's view of an override, single player, and the user's full mod list in a session.
+- Another player's view of an override, single player, Steam mode, and the user's full mod list in a session.
