@@ -57,19 +57,20 @@ Evidence: the [parent's comparison](../11-11-game-42-22-update/research/impact-4
 
 ## Acceptance Criteria
 
-- [ ] `./gradlew :server-reborn:build :server-reborn:assembleMod` passes on the 42.22 jar, and so does the repo-wide
-      `./gradlew build assembleMod` once the All-in-One child is done.
-- [ ] `serverSmokeTest` and a client join on 42.22: no hook target mismatch, no weave failure, the mod stays on, on
+- [x] `./gradlew :server-reborn:build :server-reborn:assembleMod` passes on the 42.22 jar.
+- [ ] The repo-wide `./gradlew build assembleMod` passes once the All-in-One child is done (the parent's check after
+      the merge; not run on this branch).
+- [x] `serverSmokeTest` and a client join on 42.22: no hook target mismatch, no weave failure, the mod stays on, on
       both sides.
-- [ ] On the Linux test server at 42.22, a session with inventory traffic (nested bags, food, weapons, a map item
+- [x] On the Linux test server at 42.22, a session with inventory traffic (nested bags, food, weapons, a map item
       that is annotated) under `-Dserverreborn.debugFieldDiff` reports no false repair and no exception from the mod.
       The checked player's online id is not 0 (F1's client half is invisible at 0).
-- [ ] With `-Dserverreborn.debugDropDelta` on the client, dropped updates of a player inventory and of a bag in one
+- [x] With `-Dserverreborn.debugDropDelta` on the client, dropped updates of a player inventory and of a bag in one
       are repaired.
-- [ ] With a map window open, a repair of the map's container leaves the window usable: an annotation added
+- [x] With a map window open, a repair of the map's container leaves the window usable: an annotation added
       afterwards is placed and synced, and the window shows the server's annotations.
-- [ ] The server tick rate setting takes effect on 42.22.
-- [ ] `deployWorkshop` output is staged for the user's upload.
+- [x] The server tick rate setting takes effect on 42.22.
+- [x] `deployWorkshop` output is staged for the user's upload (`~/Zomboid/Workshop/Dont39ServerReborn`, 0.3.0).
 
 ## Dependencies
 
