@@ -144,8 +144,10 @@ public final class Loading {
         if (end.timed().isEmpty() || reportFailed) {
             return;
         }
+        // not getVersion: it ends with the game's integrity summary, which is no version and changes during a session
+        String gameVersion = Core.getInstance().getGameAndBuildVersion() + " " + Core.getGitRevisionString();
         Report.Context context = new Report.Context(String.format(Locale.ROOT, END_LINE, args),
-                Core.getInstance().getVersion(), Loading.class.getPackage().getImplementationVersion(),
+                gameVersion, Loading.class.getPackage().getImplementationVersion(),
                 ZomboidFileSystem.instance.base.canonicalFile.getPath(), modFolders());
         Path folder = luaFolder().resolve(Reports.FOLDER);
         LocalDateTime time = LocalDateTime.now();
