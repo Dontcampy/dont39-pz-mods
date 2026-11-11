@@ -101,6 +101,14 @@ The map scenario with its window left open the whole time, online id 4:
 The pencil's client-only key stayed (`still differ ... in fields a snapshot cannot set`): the server's item has no
 mod data, so no payload carries a table to replace the client's. As in 0.2.0.
 
+## Food and bandage models (run h's build, `falseRepairs` of the 10-27 task)
+
+The server gave an apple, a sugar packet and a canned chili, gave the apple stats the others lack and synced the
+three through ItemStats: `food Base.SugarPacket ... same: client end=0.0000 hung=-0.0100 thirst=0.0000 ... server
+end=0.0000 hung=-0.0100 thirst=0.0000 ...`, `food Base.CannedChili ... same`. A bandage on the right foot: the two
+`Base.Bandage_RightFoot` model items kept their ids for 60 s, no repair. The only mismatch of the run was the
+control's client-only mod data key. The Escape from Kentucky step did not run: that mod was not on the list.
+
 ## Items that stay different (run g)
 
 A zombie the driver killed left a corpse whose shirt the client reported once: `items [1511957258] in corpse 0 at
@@ -117,4 +125,8 @@ way (dish gloves, a pop bottle, two pens), before the debug line existed; their 
 ## Not covered
 
 - Default map annotations.
+- Food being cooked or eaten; the loot loop ate nothing in these runs.
+- A dropped update of a bag in the player's inventory: the bags were tested with a removal the server made without
+  a packet, which takes the same path from the frame on.
+- A client of 0.2.0 against this server (the protocol refusal): no 0.2.0 build was staged.
 - The server at the live server's mod list; only the minimal list ran.
