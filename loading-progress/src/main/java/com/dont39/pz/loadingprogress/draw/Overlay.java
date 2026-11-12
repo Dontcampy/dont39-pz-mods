@@ -35,7 +35,7 @@ public final class Overlay {
     private static final float FILL = 0.85f;
     // the alpha of the log's top line
     private static final double FADED = 0.2;
-    // vanilla geometry (42.21): LoadingQueueUI.onresize's inset; MainScreen.lua's size for ConnectToServer
+    // vanilla geometry (42.22): LoadingQueueUI.onresize's inset; MainScreen.lua's size for ConnectToServer
     private static final int QUEUE_INSET = 288;
     private static final int SMALL_SCREEN = 1024;
 
