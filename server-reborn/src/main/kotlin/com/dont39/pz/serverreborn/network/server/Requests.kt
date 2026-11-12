@@ -49,7 +49,7 @@ internal object Requests {
 
   /**
    * The container a client's bytes address, or null when there is none to look in: the client's garbage, a parent that
-   * left (the game's lookup throws for a player who is gone), a nested bag that is gone.
+   * left, a nested bag that is gone.
    */
   fun parse(p: Peer, wire: ByteArray): Containers.Resolved? = try {
     Containers.find(wire, p.connection)

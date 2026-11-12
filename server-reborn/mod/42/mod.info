@@ -8,4 +8,4 @@ loadModAfter=\ZabricKotlin
 javaJarFile=media/java/Dont39ServerReborn.jar
 javaPkgName=com.dont39.pz.serverreborn
 ZBVersionMin=2.3.4
-versionMin=42.21.0
+versionMin=42.22.0

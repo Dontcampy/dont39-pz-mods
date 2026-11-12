@@ -8,7 +8,7 @@ import zombie.core.network.ByteBufferReader
 import zombie.network.GameClient
 import zombie.network.PacketTypes.PacketType
 import zombie.network.fields.ContainerID
-import zombie.network.fields.character.PlayerID
+import zombie.network.fields.character.ConnectionPlayer
 
 /**
  * `-Dserverreborn.debugDropDelta=n` (AC1): drops every n-th container or item update the game receives while the
@@ -52,7 +52,7 @@ internal object DeltaDrop {
     val r = ByteBufferReader(input.bb.duplicate())
     return try {
       if (kind == PacketScope.Kind.ITEM_FIELDS || kind == PacketScope.Kind.WEAPON_FIELDS) {
-        PlayerID().parse(r, GameClient.connection)
+        ConnectionPlayer().parse(r, GameClient.connection)
       }
       val id = ContainerID()
       id.parse(r, GameClient.connection)

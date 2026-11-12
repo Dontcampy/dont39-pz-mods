@@ -118,7 +118,7 @@ internal object Touches {
       return
     }
     val kind = PacketScope.kind(type)
-    // these start with the container; the item packets need only a login, which a peer has
+    // these start with the container and need a capability a peer may lack; the others need only a login
     if (kind == PacketScope.Kind.REMOVE || kind == PacketScope.Kind.DELETE) {
       val data = input.bb.duplicate()
       data.position(start)

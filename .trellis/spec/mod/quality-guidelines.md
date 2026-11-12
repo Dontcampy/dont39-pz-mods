@@ -84,6 +84,10 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 12. A fix of the game's own client behavior: run the same scripted check once with the client's Java mods off
     (`start-client.ps1 -NoZombieBuddy`), which must show the bug, so a pass with the fix is not a check that never
     triggers it. Example: `falseRepairs` in `.trellis/tasks/archive/2026-10/10-27-server-reborn-sync-false-repairs/research/`.
+13. A multiplayer check of anything that names a player: the checked player's online id must not be 0. The first
+    player on an empty server has online id 0 and local index 0, which hides code that takes one for the other (since
+    42.22 the game's packets name a player by either, depending on the direction). Join a fake client first (item 11)
+    and log the id. Example: `port4222` in `.trellis/tasks/11-11-server-reborn-42-22/research/harness`.
 
 13. A mod that is out of date for the game stops its hooks, and `smokeTest` fails on any mod's stopped hooks
     (`GameSmokeTest.kt`). A mod registered in ZombieBuddy's `preload_mods` (`~/.zombie_buddy/config.json`) loads

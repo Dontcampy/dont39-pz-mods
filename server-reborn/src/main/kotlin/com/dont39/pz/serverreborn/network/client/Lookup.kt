@@ -7,7 +7,7 @@ import zombie.core.raknet.UdpConnection
 import zombie.inventory.ItemContainer
 import zombie.vehicles.VehiclePart
 
-/** The client's container for a key the server sent, through the game's own lookup. Main thread only. */
+/** The client's container for a key the server sent. Main thread only. */
 internal object Lookup {
   /**
    * [container]: the client's, or null when it has none addressed under that key (not loaded yet, a parent or bag that

@@ -5,14 +5,18 @@ accessible field zombie/core/raknet/UdpConnection bufferLock Ljava/util/concurre
 accessible field zombie/gameStates/ConnectToServerState connectionDetails Lzombie/core/network/ByteBufferReader;
 # what an in-scope packet addresses
 accessible field zombie/network/packets/AddInventoryItemToContainerPacket containerId Lzombie/network/fields/ContainerID;
-# a snapshot of a nested bag pins it (PinnedContainerID); the four field packets' are not final
+# a snapshot of a nested bag pins it (PinnedContainerID); the other three field packets' are not final
 mutable field zombie/network/packets/AddInventoryItemToContainerPacket containerId Lzombie/network/fields/ContainerID;
+mutable field zombie/network/packets/SyncItemFieldsPacket containerId Lzombie/network/fields/ContainerID;
 # a snapshot's item list, of which the client adds only the items it lacks
 accessible field zombie/network/packets/AddInventoryItemToContainerPacket items Ljava/util/ArrayList;
 accessible field zombie/network/packets/RemoveInventoryItemFromContainerPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/ReplaceInventoryItemInContainerPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemFieldsPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemFieldsPacket itemId I
+# the map item whose annotations SyncItemFields' parse reloaded, and the open windows that must hear of it
+accessible field zombie/network/packets/SyncItemFieldsPacket mapItem Lzombie/inventory/types/MapItem;
+accessible field zombie/worldMap/symbols/WorldMapSymbols listeners Ljava/util/ArrayList;
 accessible field zombie/network/packets/SyncItemModDataPacket containerId Lzombie/network/fields/ContainerID;
 accessible field zombie/network/packets/SyncItemModDataPacket itemId I
 accessible field zombie/network/packets/SyncHandWeaponFieldsPacket containerId Lzombie/network/fields/ContainerID;

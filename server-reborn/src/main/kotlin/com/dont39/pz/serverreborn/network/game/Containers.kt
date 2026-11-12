@@ -7,6 +7,8 @@ import zombie.characters.IsoPlayer
 import zombie.core.network.ByteBufferReader
 import zombie.inventory.ItemContainer
 import zombie.inventory.types.InventoryContainer
+import zombie.network.GameClient
+import zombie.network.GameServer
 import zombie.network.IConnection
 import zombie.network.fields.ContainerID
 import zombie.vehicles.BaseVehicle
@@ -21,6 +23,8 @@ import java.nio.ByteBuffer
 internal object Containers {
   // a ContainerID without floor squares is a few dozen bytes
   private const val MAX_WIRE = 256
+
+  private val PLAYER_KINDS = setOf(ContainerKey.Kind.PLAYER, ContainerKey.Kind.BAG)
 
   /** A container's key and the mod's bytes for it. */
   class Address(val key: ContainerKey, val wire: ByteArray)
@@ -58,7 +62,10 @@ internal object Containers {
     throw IllegalStateException("a container id this version of the mod cannot read: ${e.message}", e)
   }
 
-  /** The bytes the game's packets carry for [id]. */
+  /**
+   * The game's bytes of [id]. A player's containers have the mod's form only in an id the server set or either side
+   * parsed: a client's `set` writes the local player index.
+   */
   fun wire(id: ContainerID): ByteArray {
     val b = ByteBuffer.allocate(MAX_WIRE)
     id.write(b)
@@ -81,14 +88,35 @@ internal object Containers {
   }
 
   /**
-   * The mod's address of [container] as it sits now, without a lookup: the game's own, or a nested one for a bag the
-   * game's ids cannot address. Null for a floor container, one out of the world, and a bag whose outer container has
-   * no address or that is more than [ContainerKey.MAX_BAGS] bags deep.
+   * The mod's address of [container] as it sits now, without a lookup: the game's own, a player's container by the
+   * player's online id, or a nested one for a bag the game's ids cannot address. Null for a floor container, one out
+   * of the world, a container of a player without an online id, a bag of a player without a square, and a bag whose
+   * outer container has no address or that is more than [ContainerKey.MAX_BAGS] bags deep.
    */
   fun current(container: ItemContainer): Address? {
     if (unaddressedBag(container)) return nested(container)
+    // a player's containers in the order ContainerID.set decides them
+    val inventoryOf = container.getParent() as? IsoPlayer
+    if (inventoryOf != null) return owned(inventoryOf, null)
+    val bag = container.getContainingItem()
+    val bagOf = bag?.outermostContainer?.getParent() as? IsoPlayer
+    if (bag != null && bagOf != null) return owned(bagOf, bag.getID())
     val id = locate(container) ?: return null
-    return address(id, keyOf(id))
+    val key = keyOf(id)
+    check(key?.kind !in PLAYER_KINDS) { "the game addresses $key, where the mod sees no player's container" }
+    return address(id, key)
+  }
+
+  // not through ContainerID.set: on a client it writes the local player index, and an error for another player
+  private fun owned(player: IsoPlayer, bagId: Int?): Address? {
+    val id = player.getOnlineID().toInt()
+    return when {
+      id < 0 -> null
+      bagId == null -> Address(ContainerKey.player(id), ContainerWire.playerInventory(id))
+      // a snapshot's game packets cannot name the bag yet: their ContainerID.set reads this field
+      player.square == null -> null
+      else -> Address(ContainerKey.bag(id, bagId), ContainerWire.playerBag(id, bagId))
+    }
   }
 
   /** The address of the container a game id was set to: the id's own, or the nested one of a bag it cannot name. */
@@ -102,7 +130,7 @@ internal object Containers {
   /**
    * Where a client finds [container], or null when the lookup of its address would not end at this very container: a
    * floor container, one not in the world, an object no longer on its square, a bag whose outer container has no
-   * address. Server only: resolves players by online id, as a client does.
+   * address.
    */
   fun address(container: ItemContainer): Address? {
     val at = current(container) ?: return null
@@ -119,18 +147,29 @@ internal object Containers {
     container != null && current(container)?.key == key
 
   /**
-   * Finds the container the mod's bytes address: the game's own lookup, then the bags from the anchor for a nested
-   * address. Null when the game's lookup throws, as it does for a parent that is gone (a player who left), and for a
-   * bag, vehicle part or nested bag that is gone. Throws when the bytes are not one whole address.
+   * Finds the container the mod's bytes address: a player's by the online id, on either side; the others by the game's
+   * own lookup, then the bags from the anchor for a nested address. Null when the game's lookup throws, and for a
+   * player, bag, vehicle part or nested bag that is gone. Throws when the bytes are not one whole address.
    */
   fun find(wire: ByteArray, connection: IConnection?): Resolved? {
-    val key = keyOf(wire)
-    if (key != null && key.kind == ContainerKey.Kind.NESTED) {
-      return inBags(key, ContainerWire.anchor(wire), connection)
+    val key = keyOf(wire) ?: return inWorld(wire, connection)
+    return when (key.kind) {
+      ContainerKey.Kind.NESTED -> inBags(key, ContainerWire.anchor(wire), connection)
+      ContainerKey.Kind.PLAYER, ContainerKey.Kind.BAG -> ofPlayer(key)
+      else -> if (parentThere(key)) inWorld(wire, connection) else null
     }
-    if (key != null && !parentThere(key, wire, connection)) return null
-    val id = lookUp(wire, connection) ?: return null
-    return Resolved(id.getContainer(), id.getPart())
+  }
+
+  private fun inWorld(wire: ByteArray, connection: IConnection?): Resolved? =
+    lookUp(wire, connection)?.let { Resolved(it.getContainer(), it.getPart()) }
+
+  // not through ContainerID.parse: a server reads the id as a player index on the connection
+  private fun ofPlayer(key: ContainerKey): Resolved? {
+    val players = if (GameServer.server) GameServer.IDToPlayerMap else GameClient.IDToPlayerMap
+    val inventory = players[key.owner.toShort()]?.getInventory() ?: return null
+    if (key.kind == ContainerKey.Kind.PLAYER) return Resolved(inventory, null)
+    val bag = inventory.getItemWithIDRecursiv(key.sub) as? InventoryContainer
+    return bag?.itemContainer?.let { Resolved(it, null) }
   }
 
   private fun inBags(key: ContainerKey, anchor: ByteArray, connection: IConnection?): Resolved? {
@@ -178,11 +217,7 @@ internal object Containers {
   }
 
   // the game's lookup logs an error for each of these that is gone, and a frame entry may name one that just left
-  private fun parentThere(key: ContainerKey, wire: ByteArray, connection: IConnection?): Boolean = when (key.kind) {
-    ContainerKey.Kind.BAG -> {
-      val inventory = lookUp(ContainerWire.ownerInventory(wire), connection)?.getContainer()
-      inventory?.getItemWithIDRecursiv(key.sub) is InventoryContainer
-    }
+  private fun parentThere(key: ContainerKey): Boolean = when (key.kind) {
     ContainerKey.Kind.VEHICLE, ContainerKey.Kind.VEHICLE_BAG -> {
       val items = VehicleManager.instance.getVehicleByID(key.owner.toShort())?.getPartByIndex(key.index)?.itemContainer
       items != null && (key.kind == ContainerKey.Kind.VEHICLE || items.getItemWithID(key.sub) is InventoryContainer)
