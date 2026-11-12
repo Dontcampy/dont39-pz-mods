@@ -97,7 +97,7 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
 15. A multiplayer check of anything that names a player: the checked player's online id must not be 0. The first
     player on an empty server has online id 0 and local index 0, which hides code that takes one for the other (since
     42.22 the game's packets name a player by either, depending on the direction). Join a fake client first (item 11)
-    and log the id. Example: `port4222` in `.trellis/tasks/11-11-server-reborn-42-22/research/harness`.
+    and log the id. Example: `port4222` in `research/harness/` of `archive/2026-11/11-11-server-reborn-42-22`.
 
 If an in-game check was not done, say so in the task report.
 

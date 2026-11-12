@@ -4,7 +4,7 @@ Copy of the archived task `10-27-server-reborn-sync-false-repairs`'s harness for
 more driver test, `port4222` (game 42.22: bags in the player's inventory with a server-only removal, a pistol loaded,
 fired and unloaded, a map item annotated with and without a sync); its runs are in `../in-game.md`. The script paths
 below still name the archived `10-26-server-reborn` copy: run this task's with
-`$h = '.trellis\tasks\11-11-server-reborn-42-22\research\harness'`.
+`$h = '.trellis\tasks\archive\2026-11\11-11-server-reborn-42-22\research\harness'`.
 
 Local dedicated server `sgtest` built from the user's `myserver1` config (or `srmin`, the same settings with a
 minimal mod list), one `-nosteam` client driven by the `SGTestDriver` Lua mod, a sampler and the comparison scripts.

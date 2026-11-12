@@ -25,7 +25,7 @@ Copied from the archived `10-27-appearance-override` harness for All-in-One's ch
 | `aioMannequinFar` | Dresses a mannequin as above, then stands 9 and 18 squares away for 12 s each |
 
 ```powershell
-$h = '.trellis\tasks\11-11-all-in-one-42-22\research\harness'
+$h = '.trellis\tasks\archive\2026-11\11-11-all-in-one-42-22\research\harness'
 & "$h\backup-client.ps1"
 & "$h\setup-server.ps1" -Minimal -ExtraMods Dont39AllInOne
 & "$h\start-server.ps1" -Label warm -Wait -ZbAllowAll      # a fresh server: stop and start once more (Zabric's preload)

@@ -55,7 +55,7 @@ the repo-wide gate fails until then.
 
 ## Acceptance Criteria
 
-- [ ] All four children are done and archived.
+- [x] All four children are done and archived.
 - [x] `./gradlew build assembleMod` passes on the 42.22 jar.
 - [x] `smokeTest` of `dont39-all-in-one`, `loading-progress`, `faster-loading` and `server-reborn`, and
       `:zb-kt:serverSmokeTest`, pass on 42.22.
