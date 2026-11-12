@@ -18,7 +18,9 @@ import zombie.inventory.types.DrainableComboItem
 import zombie.inventory.types.Food
 import zombie.inventory.types.HandWeapon
 import zombie.inventory.types.Literature
+import zombie.inventory.types.MapItem
 import zombie.inventory.types.WeaponPart
+import java.nio.BufferOverflowException
 import java.nio.ByteBuffer
 
 /**
@@ -77,10 +79,18 @@ internal object ItemDigests {
 
     /** Flips on both sides when the cooldown ends. */
     WET,
+
+    /** A map's save starts with a font table, which may differ while one side also holds default annotations. */
+    MAP,
   }
 
   private val CHECKED = Checked.entries.toSet()
-  private val FLUIDS = ByteBuffer.allocate(64 * 1024)
+
+  /** No packet carries a save near this size. */
+  private const val MAX_SAVED = 16 * 1024 * 1024
+
+  // grown for a save that does not fit: an overflow would turn the mod off
+  private var scratch = ByteBuffer.allocate(64 * 1024)
   private val PARTS = ArrayList<WeaponPart>()
 
   /** Mod data tables deeper than this are described by their hash. */
@@ -157,6 +167,17 @@ internal object ItemDigests {
 
   /** One item's digest fields for the field diff: each group's hash, and every value by name. */
   class Fields(val hashes: Map<String, Long>, val values: Map<String, String>)
+
+  /** Longest value list logged per item; clothing visuals alone have over a hundred values. */
+  private const val LISTED_CHARS = 4000
+
+  /** [values] as `name=value, ...` for a log line, without the unset clothing visuals. */
+  fun listed(values: Map<String, String>): String {
+    val all = values.entries
+      .filterNot { (name, value) -> name.startsWith("visual.") && value == "0.0" }
+      .joinToString(", ") { (name, value) -> "$name=$value" }
+    return if (all.length > LISTED_CHARS) all.substring(0, LISTED_CHARS) + "..." else all
+  }
 
   /**
    * The same values as [item], hashed per field group instead of into one digest, and kept by name as `group.field`
@@ -272,6 +293,10 @@ internal object ItemDigests {
       out("wet").b("wet", item.isWet)
     }
     fluids(out("fluids"), item.fluidContainer)
+    if (on(Checked.MAP) && item is MapItem) {
+      // as SyncItemFields carries it: the map id and the annotations a player made
+      saved(out("map")) { item.saveData(it) }
+    }
     if (item is Clothing) clothing(out, item)
     if (item is Food) food(out, item)
     if (item is Literature) literature(out, item)
@@ -282,9 +307,23 @@ internal object ItemDigests {
   private fun fluids(g: Group, fluids: FluidContainer?) {
     g.b("has", fluids != null)
     if (fluids == null) return
-    FLUIDS.clear()
-    fluids.save(FLUIDS)
-    g.bytes("saved", FLUIDS.array(), FLUIDS.position())
+    saved(g) { fluids.save(it) }
+  }
+
+  private inline fun saved(g: Group, save: (ByteBuffer) -> Unit) {
+    while (true) {
+      scratch.clear()
+      try {
+        save(scratch)
+        break
+      } catch (e: BufferOverflowException) {
+        if (scratch.capacity() >= MAX_SAVED) {
+          throw IllegalStateException("an item's save does not fit into $MAX_SAVED bytes", e)
+        }
+        scratch = ByteBuffer.allocate(scratch.capacity() * 2)
+      }
+    }
+    g.bytes("saved", scratch.array(), scratch.position())
   }
 
   private fun clothing(out: (String) -> Group, clothing: Clothing) {

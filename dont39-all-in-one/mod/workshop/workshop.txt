@@ -8,7 +8,7 @@ description=[h2]Requirements[/h2]
 description=[list]
 description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] 2.3.4+ (approve this mod's Java code when asked)
 description=[*]Zabric and ZabricKotlin (also by Dont39)
-description=[*]Project Zomboid 42.21
+description=[*]Project Zomboid 42.22
 description=[/list]
 description=Load order: ZombieBuddy, Zabric, ZabricKotlin, Dont39 All-in-One. Restart the game once when the main menu asks: on first launch, and after some Zabric or ZabricKotlin updates.
 description=

@@ -6,12 +6,12 @@ internal object Protocol {
    * The version a server advertises and every message starts with. Bump it with any change to a message, a key's wire
    * form or the fields a digest covers: both sides must hash the same fields.
    */
-  const val VERSION = 2
+  const val VERSION = 3
 
   /** The game's first byte of a packet with a short id, `RakNetPeerInterface.ID_USER_PACKET_ENUM`. */
   const val USER_PACKET = 134
 
-  /** "SG": far above the game's packet ids, which are the ordinals of its 298 packet types. */
+  /** "SG": far above the game's packet ids, which are the ordinals of its 303 packet types. */
   const val PACKET_ID: Short = 0x5347
 
   // RakNet's values, as PacketTypes and UdpConnection.endPacket use them

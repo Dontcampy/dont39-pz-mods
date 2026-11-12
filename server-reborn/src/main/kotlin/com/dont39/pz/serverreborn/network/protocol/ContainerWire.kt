@@ -4,8 +4,10 @@ import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 
 /**
- * The mod's key of a container id as the game's `ContainerID.write` writes it: read from the bytes, as the fields that
- * hold it are package-private. Also the mod's own nested address of a bag the game's ids cannot address:
+ * The mod's key of a container id as the server's `ContainerID.write` writes it: read from the bytes, as the fields
+ * that hold it are package-private. A player's containers are also written here, by online id on both sides: a
+ * client's `ContainerID` names a player by the local index. Also the mod's own nested address of a bag the game's ids
+ * cannot address:
  * `[byte NESTED][byte bag count][int bag id from the outermost one in, per bag][the anchor's container id]`.
  */
 internal object ContainerWire {
@@ -73,22 +75,19 @@ internal object ContainerWire {
     return nested.copyOfRange(2 + key.bags.size * Int.SIZE_BYTES, nested.size)
   }
 
-  /**
-   * The id of the inventory that holds the bag [bagWire] addresses, so the owner is found without the game's bag
-   * lookup. Throws [ProtocolException] for bytes that are not a bag in a player inventory.
-   */
-  fun ownerInventory(bagWire: ByteArray): ByteArray {
-    val input = ByteBuffer.wrap(bagWire)
-    return underflowIsProtocol {
-      if (input.get().toInt() and 0xFF != INVENTORY_CONTAINER) {
-        throw ProtocolException("not a bag in a player inventory")
-      }
-      ByteBuffer.allocate(1 + Short.SIZE_BYTES + 1)
-        .put(PLAYER_INVENTORY.toByte())
-        .putShort(input.getShort())
-        .put(input.get())
-        .array()
-    }
+  /** The bytes of the inventory of the player with [onlineId]. Throws [IllegalArgumentException] for no online id. */
+  fun playerInventory(onlineId: Int): ByteArray =
+    player(ByteBuffer.allocate(1 + Short.SIZE_BYTES), PLAYER_INVENTORY, onlineId).array()
+
+  /** The bytes of bag [bagId], at any depth in that player's inventory. Throws as [playerInventory]. */
+  fun playerBag(onlineId: Int, bagId: Int): ByteArray =
+    player(ByteBuffer.allocate(1 + Short.SIZE_BYTES + Int.SIZE_BYTES), INVENTORY_CONTAINER, onlineId)
+      .putInt(bagId)
+      .array()
+
+  private fun player(out: ByteBuffer, type: Int, onlineId: Int): ByteBuffer {
+    require(onlineId in 0..Short.MAX_VALUE) { "a player's online id of $onlineId" }
+    return out.put(type.toByte()).putShort(onlineId.toShort())
   }
 
   private inline fun <T> underflowIsProtocol(read: () -> T): T = try {
@@ -160,10 +159,6 @@ internal object ContainerWire {
     }
   }
 
-  // PlayerID: the online id, then the player index the key leaves out
-  private fun playerId(input: ByteBuffer): Int {
-    val id = input.getShort().toInt()
-    input.get()
-    return id
-  }
+  // the online id: the server's game writes it, and so do the mod's own bytes
+  private fun playerId(input: ByteBuffer): Int = input.getShort().toInt()
 }

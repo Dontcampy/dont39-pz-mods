@@ -23,8 +23,9 @@ import java.nio.ByteBuffer
 
 /**
  * Applies a snapshot in place (R6, D5), by item id and with the game's own packet classes, so fields mean what the
- * game's updates mean: extras off the client, missing items added from the snapshot's item list, then each item's
- * field payloads in the order the server wrote them. Nothing here sends to the server. Main thread only.
+ * game's updates mean: extras off the client, missing items added from the snapshot's item list, then the field
+ * payloads of each item that was added or differs from the server's, in the order the server wrote them. Nothing here
+ * sends to the server. Main thread only.
  */
 internal object Reconcile {
   enum class Outcome {
@@ -88,6 +89,8 @@ internal object Reconcile {
       }
       add(list, serverIds - mine.keys, connection)
       s.items.forEach { item ->
+        // an item that matches already is left alone: its payloads would rewrite what the digest does not cover
+        if (before[item.id] == item.digest) return@forEach
         listOf(
           Triple(SyncItemFieldsPacket(), item.fields, "SyncItemFields"),
           Triple(SyncItemModDataPacket(), item.modData, "SyncItemModData"),

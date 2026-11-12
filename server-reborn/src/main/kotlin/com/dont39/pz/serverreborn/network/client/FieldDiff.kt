@@ -82,7 +82,9 @@ internal class FieldDiff {
           else -> " [differs]"
         }
         if (fields.isNotEmpty() || verdict == " [differs]") {
-          lines += "$id (${s.type}): ${fields.joinToString("; ")}$verdict"
+          // equal to the saved copy and not to the server's item: the server's log has its values to compare with
+          val own = if (fields.isEmpty()) "; this client's values: ${ItemDigests.listed(c.values)}" else ""
+          lines += "$id (${s.type}): ${fields.joinToString("; ")}$verdict$own"
         }
       }
       client.forEach { (id, c) ->
