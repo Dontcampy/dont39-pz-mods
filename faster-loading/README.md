@@ -2,8 +2,8 @@
 
 A client-only Java mod that shortens Project Zomboid's loads (launch to the main menu, server join and single-player
 start) by doing the same work faster: with the game's own results, or, for texture compression, the mod's own encoder
-(BC7 on the GPU, or the driver's DXT5 format on the CPU). One switch per fix. Made for game 42.21 revision
-`4a0e9546ec`. Workshop text: `mod/workshop/workshop.txt`.
+(BC7 on the GPU, or the driver's DXT5 format on the CPU). One switch per fix. Made for game 42.22 revision
+`3d39148846`. Workshop text: `mod/workshop/workshop.txt`.
 
 ## Fixes
 
@@ -20,7 +20,7 @@ start) by doing the same work faster: with the game's own results, or, for textu
 - Zabric keeps the mod preloaded (its preLaunch entrypoint) and opens its hooks at game start; `Zabric-Hooks: launch`
   keeps them open on server joins, whose mod list lacks a client-only mod.
 - `hooks/Session.java` decides at the first hook call whether the fixes run: not on a dedicated server, and not on a
-  game build other than revision `4a0e9546ec`, where the first hook call throws and the mod's default gate stops all
+  game build other than revision `3d39148846`, where the first hook call throws and the mod's default gate stops all
   its hooks with that reason. A fix reproduces the game's code of that build, which the next build may change.
 - With a switch off, its hook leaves the call as it is and the game's own code runs.
 

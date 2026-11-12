@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview and pre-development checklist"}
+{"file": ".trellis/tasks/11-11-game-42-22-update/research/impact-42.22.md", "reason": "What game 42.22 changed for each module, and how it was found"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smoke tests and in-game verification"}
+{"file": ".trellis/spec/mod/zabric-hooks.md", "reason": "Hook rules for the targets under review"}
+{"file": ".trellis/spec/mod/zombiebuddy-patching.md", "reason": "Gating, loading on client and server"}
+{"file": ".trellis/spec/mod/error-handling.md", "reason": "No hidden fallback: a mismatch turns the mod off with the reason"}
+{"file": ".trellis/spec/mod/logging-guidelines.md", "reason": "Log lines the smoke tests and players read"}
+{"file": ".trellis/spec/mod/access-widening.md", "reason": "Classtweaker entries for game members"}

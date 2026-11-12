@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 /** Whether the session's fixes run, decided at the first hook call: a client of the game build they reproduce. */
 public final class Session {
     // the build whose code the fixes reproduce, by its revision; the next build may change any of it
-    static final String REVISION = "4a0e9546ec";
+    static final String REVISION = "3d39148846";
 
     private static boolean decided;
     // null while the fixes do not run
@@ -49,8 +49,10 @@ public final class Session {
         }
         String revision = Core.getGitRevisionString();
         if (!REVISION.equals(revision)) {
-            mismatch = "game " + Core.getInstance().getVersion() + " is not 42.21 revision " + REVISION + ", the build"
-                    + " whose code this version of the mod reproduces; it needs an update for this game version";
+            // not getVersion(): since 42.22 it ends in the game's integrity summary
+            mismatch = "game " + Core.getInstance().getGameAndBuildVersion() + " " + revision + " is not 42.22"
+                    + " revision " + REVISION + ", the build whose code this version of the mod reproduces; it needs"
+                    + " an update for this game version";
             return;
         }
         Path file = Path.of(ZomboidFileSystem.instance.getCacheDir(), "Lua", Settings.FILE);
