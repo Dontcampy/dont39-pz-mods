@@ -85,6 +85,17 @@ A new feature needs no edit to them, except a Lua-only feature with a target mod
     (`start-client.ps1 -NoZombieBuddy`), which must show the bug, so a pass with the fix is not a check that never
     triggers it. Example: `falseRepairs` in `.trellis/tasks/archive/2026-10/10-27-server-reborn-sync-false-repairs/research/`.
 
+13. A mod that is out of date for the game stops its hooks, and `smokeTest` fails on any mod's stopped hooks
+    (`GameSmokeTest.kt`). A mod registered in ZombieBuddy's `preload_mods` (`~/.zombie_buddy/config.json`) loads
+    whether or not the mod list names it: to keep it out of a run, back up the config and take its entry out too,
+    then restore it. A target mod that changed on the Workshop turns its feature off the same way; say in the report
+    which mods were out for the run.
+14. Appearance override on a mannequin or a corpse: dress the mannequin with the game's own transfer action and kill
+    a player wearing the items (`aio4222` in `research/harness/` of `archive/2026-11/11-11-all-in-one-42-22`). A debug
+    line names the render consumer, not the object. A body reaches the `chunk corpses` consumer only with the game's
+    debug option `corpsesInChunkTexture`; without it the body atlas draws it. `Core.TakeScreenshot()` called from a
+    Lua tick hangs the client.
+
 If an in-game check was not done, say so in the task report.
 
 Results go in the task's `research/in-game.md`, with the few lines that prove each result quoted there. Raw test logs
