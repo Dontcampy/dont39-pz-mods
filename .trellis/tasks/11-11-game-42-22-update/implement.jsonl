@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/mod/index.md", "reason": "Mod layer overview and pre-development checklist"}
+{"file": ".trellis/tasks/11-11-game-42-22-update/research/impact-42.22.md", "reason": "What game 42.22 changed for each module, and how it was found"}
+{"file": ".trellis/spec/mod/quality-guidelines.md", "reason": "Build gate, smoke tests and in-game verification"}

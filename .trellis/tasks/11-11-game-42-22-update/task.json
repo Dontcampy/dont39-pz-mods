@@ -1,0 +1,31 @@
+{
+  "id": "game-42-22-update",
+  "name": "game-42-22-update",
+  "title": "Update mods for game 42.22",
+  "description": "Game updated 42.21 -> 42.22 (rev 3d39148846); find and fix every mod the update breaks or invalidates",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "dont39",
+  "assignee": "dont39",
+  "createdAt": "2026-11-11",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "11-11-faster-loading-42-22",
+    "11-11-all-in-one-42-22",
+    "11-11-loading-progress-42-22",
+    "11-11-server-reborn-42-22"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
